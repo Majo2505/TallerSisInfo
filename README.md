@@ -21,7 +21,7 @@ Carpetas existentes hoy:
 - `docs/` — documentación
   - `docs/database/` — esquema de la base de datos
 
-Archivos en la raíz: `AGENTS.md` (contexto compartido para IAs), `CLAUDE.md`, `README.md`, `.gitignore`.
+Archivos en la raíz: `README.md`, `.gitignore`.
 
 ## Arquitectura
 
