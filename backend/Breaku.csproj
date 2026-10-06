@@ -1,14 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <ItemGroup>
-    <ProjectReference Include="..\Breaku.Application\Breaku.Application.csproj" />
-    <ProjectReference Include="..\Breaku.Infrastructure\Breaku.Infrastructure.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Breaku</RootNamespace>
   </PropertyGroup>
 
 </Project>
