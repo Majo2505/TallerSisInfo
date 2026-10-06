@@ -84,6 +84,29 @@ curl -i http://localhost:5092/health/db
 
 Responde `200 OK` si conecta y `503 Service Unavailable` si no.
 
+#### Usuario de prueba (solo desarrollo)
+
+> ⚠️ **SOLO para desarrollo local, nunca para producción.** La contraseña es pública en este repositorio.
+
+| Dato | Valor |
+|---|---|
+| Correo | `dev.estudiante@ucb.edu.bo` |
+| Contraseña | `Breaku-Dev-2026!` |
+
+El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta ese usuario (rol `ESTUDIANTE`, correo verificado, activo). Es idempotente: se puede ejecutar varias veces. **No incluye `USE`**: hay que ejecutarlo con tu base de datos ya seleccionada (el nombre es el de tu `DB_NAME`).
+
+**Opción 1: MySQL Workbench.** Abrí `docs/database/seed-dev.sql`, dejá tu base de datos como esquema por defecto (clic derecho sobre ella en el panel de esquemas → *Set as Default Schema*) y ejecutá el script.
+
+**Opción 2: línea de comandos**, pasando el nombre de la base como parámetro:
+
+```bash
+mysql -u <usuario> -p <nombre_de_la_base> < docs/database/seed-dev.sql
+```
+
+En Windows, `mysql` puede no estar en el `PATH`; en ese caso usá la ruta completa a `mysql.exe` (carpeta `bin` de tu instalación de MySQL) o la opción 1.
+
+Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
+
 ### Frontend
 
 Requisitos: Node.js 20.9 o superior y npm (probado con Node 24.13.0 y npm 11.6.2).
