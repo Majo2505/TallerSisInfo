@@ -72,9 +72,9 @@ La conexión se configura en `backend/.env` (no se sube al repositorio):
 cp backend/.env.example backend/.env
 ```
 
-Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta.
+Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
 
-> **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
+> **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca.
 
 Para comprobar la conexión a MySQL con la API en marcha:
 
