@@ -1,4 +1,6 @@
 using Breaku.Infrastructure;
+using Breaku.Application.Horarios;
+using Breaku.Infrastructure.Persistence;
 
 const string FrontendCorsPolicy = "Frontend";
 
@@ -23,6 +25,8 @@ builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy
 
 builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
+builder.Services.AddScoped<HorarioService>();
 
 var app = builder.Build();
 
