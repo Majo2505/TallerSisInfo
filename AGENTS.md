@@ -51,6 +51,13 @@ Fuera del sprint: foto con IA, RAG, comunidades, notificaciones, tiempo real.
 - PR a `main` con al menos 1 revisión. Nada de push directo a `main`.
 - Responsables: HU1 Amira, HU2 Maite, HU3 Majo, BD y base Ariana.
 
+## Convenciones de nombres
+
+- **BD:** snake_case, tal como está en [`docs/database/schema.sql`](docs/database/schema.sql). No se cambia.
+- **JSON de la API:** camelCase.
+- **C#:** PascalCase para clases, propiedades y métodos; camelCase para variables locales y parámetros; `_camelCase` para campos privados. Las entidades mapean las columnas snake_case con configuración de EF Core, sin renombrar la BD.
+- **TypeScript/React:** camelCase para variables y funciones; PascalCase para componentes.
+
 ## Instrucciones para las IAs
 
 1. Leer este archivo y `docs/` antes de proponer cambios.

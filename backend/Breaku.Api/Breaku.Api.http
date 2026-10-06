@@ -1,0 +1,5 @@
+@Breaku.Api_HostAddress = http://localhost:5092
+
+GET {{Breaku.Api_HostAddress}}/health
+
+###

@@ -1,0 +1,26 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+appsettings.*.local.json
+
+# Visual Studio
+.vs/
+
+# Node / frontend
+node_modules/
+.next/
+out/
+dist/
+npm-debug.log*
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.idea/
