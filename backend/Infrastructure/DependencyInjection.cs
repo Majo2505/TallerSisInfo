@@ -1,7 +1,7 @@
 using Breaku.Application;
-using Breaku.Application.Common.Interfaces; // <-- Agregar para IAuthService
+using Breaku.Application.Common.Interfaces; 
 using Breaku.Infrastructure.Persistence;
-using Breaku.Infrastructure.Services;          // <-- Agregar para AuthService
+using Breaku.Infrastructure.Services;       
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
