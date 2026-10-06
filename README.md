@@ -64,7 +64,15 @@ Debe responder `200 OK`.
 
 ### Base de datos
 
-Pendiente.
+Requiere una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones). La versión de MySQL usada en el código es 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Pendiente: confirmar la versión del equipo.
+
+La conexión se configura en `backend/.env` (no se sube al repositorio):
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
 
 ### Frontend
 
