@@ -50,7 +50,7 @@ Responsables: **Amira** = HU1 (auth), **Maite** = HU2 (horarios), **Majo** = HU3
 
 ### Formato de error
 
-🟡 **Propuesta:** `ProblemDetails` de ASP.NET (`application/problem+json`). El FE muestra `detail`.
+🟡 **Propuesta:** `ProblemDetails` de ASP.NET (`application/problem+json`), basado en RFC 9457 (Problem Details for HTTP APIs). Es un único formato para todos los endpoints, incluido el login. El FE muestra `detail`.
 
 ```json
 {
@@ -79,9 +79,14 @@ Errores de validación por campo: además se incluye `errors` (campo → lista d
 | Aspecto | Valor | Estado |
 |---|---|---|
 | Header | `Authorization: Bearer <token>` | ✅ Definido |
-| Claims | `sub` = id del usuario; `rol` = rol del usuario | 🟡 Propuesta, a confirmar por Amira |
-| Duración | 60 minutos, sin refresh token; la respuesta de login no incluye `expiresAt` | 🟡 Propuesta, a confirmar por Amira |
+| Claims | `sub` (id del usuario), `role` (rol del usuario), `iat` y `exp`. Sin `email` ni `nombre`: la respuesta de login ya devuelve `usuario` | 🟡 Propuesta, a confirmar por Amira |
+| Duración | 60 minutos, configurable. Nombre de la clave de configuración: 🔴 **Pendiente** (Amira) | 🟡 Propuesta, a confirmar por Amira |
+| Refresh token | Sin refresh en el sprint 1; la respuesta de login no incluye `expiresAt` | 🔴 **Pendiente** (Amira y Ariana) |
 | Sin token / token inválido o vencido | `401` | 🟡 Propuesta |
+
+Fuentes y motivos:
+- **Claims:** RFC 7519 §4.1 define `sub`, `iat` y `exp` como claims registrados (todos opcionales). Se usa `role` y no `rol` porque ASP.NET Core traduce el nombre corto `role` al tipo de claim de roles por defecto (`MapInboundClaims` es `true` por defecto); con `rol` habría que configurar `RoleClaimType` aparte. El campo JSON `usuario.rol` de la respuesta de login no cambia.
+- **Duración:** #9 no fija ningún valor y ningún criterio de HU1 pide sesión persistente (solo entrar y ser redirigido al panel, criterios 1 y 5). RFC 7519 no fija una duración. La OWASP Session Management Cheat Sheet da 4 a 8 horas como rango de tope absoluto para una app de uso durante una jornada completa; por eso se propone 60 minutos y no 24 horas.
 
 ### CORS y URLs de desarrollo
 
@@ -135,17 +140,19 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | 400 | Correo o contraseña vacíos | `Por favor, complete todos los campos` | ✅ Definido (texto y caso); código 🟡 Propuesta |
 | 400 | Correo fuera de `@ucb.edu.bo` | `Solo se permite el acceso con un correo institucional (@ucb.edu.bo)` | ✅ Definido (texto y caso); código 400 confirmado por Ariana |
 | 401 | Contraseña incorrecta | `Correo o contraseña incorrectos` | ✅ Definido (texto y caso); código 🟡 Propuesta |
-| 401 | Correo no registrado | `Correo o contraseña incorrectos` (mismo mensaje) | 🟡 Propuesta, a confirmar por Amira |
-| 401 | Usuario con `activo = 0` | `Correo o contraseña incorrectos` (mismo mensaje) | 🟡 Propuesta, a confirmar por Amira y Ariana |
+| 401 | Correo no registrado | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (mismo mensaje de #9 criterio 3; decisión de Ariana, base, según OWASP Authentication Cheat Sheet: no revelar qué correos existen) |
+| 401 | Usuario con `activo = 0` (el login exige `activo = 1`) | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (decisión de Ariana, base; borrado lógico con `activo`, `AGENTS.md`) |
 
 ### Decisiones de auth
 
 | Duda | Valor por defecto | Estado |
 |---|---|---|
-| Claims, duración y refresh del token | Ver "Token JWT" arriba | 🟡 Propuesta, a confirmar por Amira |
+| Claims, duración y refresh del token | Ver "Token JWT" arriba | 🟡 Propuesta, a confirmar por Amira; refresh y nombre de la clave de duración: 🔴 Pendiente (Amira) |
+| Mensaje de error de login | `Correo o contraseña incorrectos`, el mismo para contraseña incorrecta, correo inexistente y usuario con `activo = 0` | ✅ Definido (#9 criterio 3) |
+| Cuerpo de los errores de login | `ProblemDetails` (RFC 9457); el texto va en `detail` | 🟡 Propuesta, a confirmar por Amira |
 | Algoritmo de hash de contraseña (`password_hash` es `VARCHAR(255)`) | BCrypt (paquete BCrypt.Net-Next; versión por confirmar). El paquete lo agrega Amira en #30 | ✅ Definido (decisión de Ariana, base) |
-| ¿El login exige `correoVerificado = true`? | No en el sprint 1: no existe flujo de verificación y bloquearía al usuario de prueba | 🟡 Propuesta, a confirmar por Amira y Ariana |
-| Creación de usuarios | Sin endpoint de registro en el sprint 1; el usuario de prueba se define aparte (ver #139) | ✅ Definido (alcance del sprint) |
+| ¿El login exige `correoVerificado = true`? | No en el sprint 1 (no existe flujo de verificación). Sí exige `activo = 1`. Si más adelante se agrega verificación, se vuelve a definir | ✅ Definido (decisión de Ariana, base); 🔴 Pendiente (Amira) si se agrega verificación |
+| Creación de usuarios | Sin endpoint de registro en el sprint 1 (el alcance de HU1 es el login, `AGENTS.md`; #9 no tiene criterio de registro) | ✅ Definido (alcance del sprint); 🔴 Pendiente (Amira) si más adelante se agrega registro |
 
 ## 3. Horarios (HU2 — responsable: Maite)
 
@@ -309,10 +316,15 @@ Eliminación de un bloque (#10).
 
 | Responsable | Tema | Valor por defecto | Estado |
 |---|---|---|---|
-| Amira | Claims y duración del JWT, refresh | `sub` + `rol`; 60 min; sin refresh ni `expiresAt` | 🟡 Propuesta, a confirmar por Amira |
+| Amira | Claims del JWT | `sub`, `role`, `iat`, `exp` | 🟡 Propuesta, a confirmar por Amira |
+| Amira | Duración del JWT | 60 min, configurable | 🟡 Propuesta, a confirmar por Amira |
+| Amira | Nombre de la clave de configuración de la duración | — | 🔴 Pendiente (Amira) |
+| Amira, Ariana | Refresh token | Sin refresh en el sprint 1 | 🔴 Pendiente (Amira y Ariana) |
 | Amira | Hash de contraseña | BCrypt (paquete BCrypt.Net-Next; versión por confirmar) | ✅ Definido (decisión de Ariana, base) |
-| Amira | Correo no registrado | Mismo 401 y mismo mensaje que contraseña incorrecta | 🟡 Propuesta, a confirmar por Amira |
-| Amira, Ariana | `correoVerificado` y `activo = 0` en el login | No se exige `correoVerificado`; `activo = 0` da el mismo 401 | 🟡 Propuesta, a confirmar por Amira y Ariana |
+| Amira | Mensaje de login (contraseña incorrecta, correo inexistente, `activo = 0`) | `Correo o contraseña incorrectos` | ✅ Definido (#9 criterio 3) |
+| Amira | Cuerpo de error de login | `ProblemDetails`; el texto va en `detail` | 🟡 Propuesta, a confirmar por Amira |
+| Amira | `correoVerificado` y `activo` en el login | No se exige `correoVerificado`; se exige `activo = 1` | ✅ Definido (decisión de Ariana, base); 🔴 Pendiente (Amira) si se agrega verificación |
+| Amira | Registro de usuarios | Sin endpoint en el sprint 1 | ✅ Definido (alcance); 🔴 Pendiente (Amira) si se agrega más adelante |
 | Maite | Solapamiento | Contiguos (fin = inicio) no se solapan | 🟡 Propuesta, a confirmar por Maite |
 | Maite | Hora local del campus | Sin conversión a UTC | 🟡 Propuesta, a confirmar por Maite |
 | Maite, Majo | Paginación | Ninguna | 🟡 Propuesta, a confirmar por Maite y Majo |
@@ -324,4 +336,5 @@ Eliminación de un bloque (#10).
 | Majo | Campo de duración en `GET /api/puentes` | No se incluye | 🟡 Propuesta, a confirmar por Majo |
 | Majo | Texto de errores de puentes | — | 🔴 Pendiente (Majo) |
 | Ariana | Origen CORS del FE | `http://localhost:3000` | 🟡 Propuesta, a confirmar por Ariana |
-| Ariana | Usuario de prueba y creación de usuarios | Sin registro en el sprint 1; usuario de prueba aparte (ver #139) | 🔴 Pendiente (Ariana) |
+| Ariana | Usuario de prueba | `docs/database/seed-dev.sql` (solo desarrollo; ver README) | ✅ Definido (en `main`, PR #144) |
+| Amira | Token de desarrollo | — | 🔴 Pendiente (depende del JWT de HU1, Amira) |
