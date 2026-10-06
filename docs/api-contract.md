@@ -10,7 +10,7 @@ Cada decisión del documento lleva una de estas marcas:
 
 | Marca | Significado |
 |---|---|
-| ✅ **Definido** | Sale de un criterio de aceptación (#9, #10, #11), de `docs/database/schema.sql` o de `AGENTS.md`. |
+| ✅ **Definido** | Sale de un criterio de aceptación (#9, #10, #11), o de `docs/database/schema.sql`. |
 | 🟡 **Propuesta** | Decisión tomada para poder avanzar; la confirma la persona indicada. |
 | 🔴 **Pendiente** | Nadie decidió todavía; se indica quién decide. |
 | 🔎 **Inferido** | Endpoint que ningún criterio nombra literalmente, pero que el flujo necesita. |
@@ -38,12 +38,12 @@ Responsables: **Amira** = HU1 (auth), **Maite** = HU2 (horarios), **Majo** = HU3
 |---|---|---|
 | Prefijo | Todos los endpoints de negocio cuelgan de `/api` | 🟡 Propuesta (confirmada por Ariana) |
 | Nombres de rutas | Español y plural: `horarios`, `puentes` | 🟡 Propuesta (confirmada por Ariana) |
-| JSON | camelCase | ✅ Definido (`AGENTS.md`) |
+| JSON | camelCase | ✅ Definido (convención del equipo) |
 | Idioma de los mensajes | Español | 🟡 Propuesta |
-| Fechas con hora | UTC, ISO 8601, p. ej. `2026-10-06T13:07:07Z` | ✅ Definido (`AGENTS.md`, `schema.sql`) |
+| Fechas con hora | UTC, ISO 8601, p. ej. `2026-10-06T13:07:07Z` | ✅ Definido (`schema.sql`, convención del equipo) |
 | Horas de clase (`horaInicio`, `horaFin`) | Hora local del campus, sin conversión a UTC (columnas `TIME` sin fecha) | 🟡 Propuesta, a confirmar por Maite |
 | Formato de hora | El backend responde `"HH:mm:ss"` (24 h), p. ej. `"14:30:00"`. Acepta `"HH:mm"` y `"HH:mm:ss"`; rechaza `"2:30 PM"` | 🟡 Propuesta (comportamiento de `TimeOnly` verificado en .NET 10) |
-| Autenticación | Header `Authorization: Bearer <token>` en todo `/api`, salvo el login | ✅ Definido (JWT, `AGENTS.md`) |
+| Autenticación | Header `Authorization: Bearer <token>` en todo `/api`, salvo el login | ✅ Definido (JWT, decisión del equipo) |
 | Usuario de la petición | Sale del token, nunca del body ni de la URL | 🟡 Propuesta |
 | Paginación | Ninguna: las listas devuelven todo | 🟡 Propuesta, a confirmar por Maite y Majo |
 | DTOs | No exponen entidades. Nunca salen `passwordHash`, `correoVerificado`, `consentimientoUbicacion`, `fechaConsentimiento`, `createdAt`, `updatedAt`, `updatedBy` ni `activo` | ✅ Definido (requisito del equipo) |
@@ -141,7 +141,7 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | 400 | Correo fuera de `@ucb.edu.bo` | `Solo se permite el acceso con un correo institucional (@ucb.edu.bo)` | ✅ Definido (texto y caso); código 400 confirmado por Ariana |
 | 401 | Contraseña incorrecta | `Correo o contraseña incorrectos` | ✅ Definido (texto y caso); código 🟡 Propuesta |
 | 401 | Correo no registrado | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (mismo mensaje de #9 criterio 3; decisión de Ariana, base, según OWASP Authentication Cheat Sheet: no revelar qué correos existen) |
-| 401 | Usuario con `activo = 0` (el login exige `activo = 1`) | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (decisión de Ariana, base; borrado lógico con `activo`, `AGENTS.md`) |
+| 401 | Usuario con `activo = 0` (el login exige `activo = 1`) | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (decisión de Ariana, base; borrado lógico con `activo`) |
 
 ### Decisiones de auth
 
@@ -152,7 +152,7 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | Cuerpo de los errores de login | `ProblemDetails` (RFC 9457); el texto va en `detail` | 🟡 Propuesta, a confirmar por Amira |
 | Algoritmo de hash de contraseña (`password_hash` es `VARCHAR(255)`) | BCrypt (paquete BCrypt.Net-Next; versión por confirmar). El paquete lo agrega Amira en #30 | ✅ Definido (decisión de Ariana, base) |
 | ¿El login exige `correoVerificado = true`? | No en el sprint 1 (no existe flujo de verificación). Sí exige `activo = 1`. Si más adelante se agrega verificación, se vuelve a definir | ✅ Definido (decisión de Ariana, base); 🔴 Pendiente (Amira) si se agrega verificación |
-| Creación de usuarios | Sin endpoint de registro en el sprint 1 (el alcance de HU1 es el login, `AGENTS.md`; #9 no tiene criterio de registro) | ✅ Definido (alcance del sprint); 🔴 Pendiente (Amira) si más adelante se agrega registro |
+| Creación de usuarios | Sin endpoint de registro en el sprint 1 (el alcance de HU1 es el login; #9 no tiene criterio de registro) | ✅ Definido (alcance del sprint); 🔴 Pendiente (Amira) si más adelante se agrega registro |
 
 ## 3. Horarios (HU2 — responsable: Maite)
 

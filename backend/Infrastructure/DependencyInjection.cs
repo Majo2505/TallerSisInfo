@@ -9,7 +9,7 @@ namespace Breaku.Infrastructure;
 
 public static class DependencyInjection
 {
-    // Pendiente: confirmar la versión de MySQL del equipo (AGENTS.md propone 8.4 LTS; la BD local es 8.0.46).
+    // Pendiente: confirmar la versión de MySQL del equipo (se propuso 8.4 LTS; la BD local es 8.0.46).
     private static readonly ServerVersion MySqlVersion = new MySqlServerVersion(new Version(8, 0, 46));
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
