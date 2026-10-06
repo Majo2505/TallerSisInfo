@@ -1,15 +1,16 @@
 using Breaku.Application;
+using Breaku.Application.Common.Interfaces; // <-- Agregar para IAuthService
+using Breaku.Infrastructure.Persistence;
+using Breaku.Infrastructure.Services;          // <-- Agregar para AuthService
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
-using Breaku.Infrastructure.Persistence;
 
 namespace Breaku.Infrastructure;
 
 public static class DependencyInjection
 {
-    // Pendiente: confirmar la versión de MySQL del equipo (AGENTS.md propone 8.4 LTS; la BD local es 8.0.46).
     private static readonly ServerVersion MySqlVersion = new MySqlServerVersion(new Version(8, 0, 46));
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, MySqlVersion));
 
         services.AddScoped<IDatabaseHealthCheck, DatabaseHealthCheck>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
