@@ -74,6 +74,14 @@ cp backend/.env.example backend/.env
 
 Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
 
+Para comprobar la conexión a MySQL con la API en marcha:
+
+```bash
+curl -i http://localhost:5092/health/db
+```
+
+Responde `200 OK` si conecta y `503 Service Unavailable` si no.
+
 ### Frontend
 
 Pendiente.

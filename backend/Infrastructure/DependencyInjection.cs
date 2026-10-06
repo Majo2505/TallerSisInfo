@@ -1,3 +1,4 @@
+using Breaku.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,8 @@ public static class DependencyInjection
         }.ConnectionString;
 
         services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, MySqlVersion));
+
+        services.AddScoped<IDatabaseHealthCheck, DatabaseHealthCheck>();
 
         return services;
     }
