@@ -143,7 +143,7 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | Duda | Valor por defecto | Estado |
 |---|---|---|
 | Claims, duración y refresh del token | Ver "Token JWT" arriba | 🟡 Propuesta, a confirmar por Amira |
-| Algoritmo de hash de contraseña (`password_hash` es `VARCHAR(255)`) | Hash con sal estándar (p. ej. el hasher de contraseñas de ASP.NET Core) | 🟡 Propuesta, a confirmar por Amira |
+| Algoritmo de hash de contraseña (`password_hash` es `VARCHAR(255)`) | BCrypt (paquete BCrypt.Net-Next; versión por confirmar). El paquete lo agrega Amira en #30 | ✅ Definido (decisión de Ariana, base) |
 | ¿El login exige `correoVerificado = true`? | No en el sprint 1: no existe flujo de verificación y bloquearía al usuario de prueba | 🟡 Propuesta, a confirmar por Amira y Ariana |
 | Creación de usuarios | Sin endpoint de registro en el sprint 1; el usuario de prueba se define aparte (ver #139) | ✅ Definido (alcance del sprint) |
 
@@ -310,7 +310,7 @@ Eliminación de un bloque (#10).
 | Responsable | Tema | Valor por defecto | Estado |
 |---|---|---|---|
 | Amira | Claims y duración del JWT, refresh | `sub` + `rol`; 60 min; sin refresh ni `expiresAt` | 🟡 Propuesta, a confirmar por Amira |
-| Amira | Hash de contraseña | Hash con sal estándar | 🟡 Propuesta, a confirmar por Amira |
+| Amira | Hash de contraseña | BCrypt (paquete BCrypt.Net-Next; versión por confirmar) | ✅ Definido (decisión de Ariana, base) |
 | Amira | Correo no registrado | Mismo 401 y mismo mensaje que contraseña incorrecta | 🟡 Propuesta, a confirmar por Amira |
 | Amira, Ariana | `correoVerificado` y `activo = 0` en el login | No se exige `correoVerificado`; `activo = 0` da el mismo 401 | 🟡 Propuesta, a confirmar por Amira y Ariana |
 | Maite | Solapamiento | Contiguos (fin = inicio) no se solapan | 🟡 Propuesta, a confirmar por Maite |
