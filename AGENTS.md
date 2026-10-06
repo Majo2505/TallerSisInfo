@@ -35,7 +35,7 @@ Planificado para el **sprint 2** (NO en el sprint 1): SignalR y OpenAI (visión,
   - `Infrastructure` implementa las interfaces de `Application`.
   - `Presentation` llama a `Application`.
   - Solo `Infrastructure` toca la BD y los servicios externos (OpenAI).
-  - El servidor de Next.js no accede a la BD.
+  - El servidor de Next.js no accede a la BD; todo pasa por la API.
 - **NO** usar microservicios ni agregar componentes que no estén en este diseño.
 
 ## Base de datos

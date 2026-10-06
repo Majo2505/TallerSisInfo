@@ -17,7 +17,7 @@ Carpetas existentes hoy:
 
 - `.github/` — configuración de GitHub (incluye `agents/`)
 - `backend/` — proyecto ASP.NET Core único (`Breaku.csproj`, solución `Breaku.slnx`) con las capas como carpetas: `Presentation/`, `Application/`, `Domain/`, `Infrastructure/`
-- `frontend/` — vacía por ahora (Pendiente: scaffold de Next.js)
+- `frontend/` — aplicación Next.js (TypeScript, App Router, `src/`)
 - `docs/` — documentación
   - `docs/database/` — esquema de la base de datos
 
@@ -29,7 +29,7 @@ Archivos en la raíz: `AGENTS.md` (contexto compartido para IAs), `CLAUDE.md`, `
 - Backend: monolito modular en capas con inversión de dependencias, en un solo proyecto con las capas como carpetas (`Presentation`, `Application`, `Domain`, `Infrastructure`).
   - `Domain` no depende de nadie; `Application` solo de `Domain`; `Infrastructure` implementa las interfaces de `Application`; `Presentation` llama a `Application` (por convención).
   - Solo `Infrastructure` accede a la base de datos y a servicios externos.
-  - El servidor de Next.js no accede a la base de datos.
+  - El servidor de Next.js no accede a la base de datos; todo pasa por la API.
 
 ## Base de datos
 
@@ -72,7 +72,9 @@ La conexión se configura en `backend/.env` (no se sube al repositorio):
 cp backend/.env.example backend/.env
 ```
 
-Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
+Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta.
+
+> **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
 
 Para comprobar la conexión a MySQL con la API en marcha:
 
@@ -84,4 +86,15 @@ Responde `200 OK` si conecta y `503 Service Unavailable` si no.
 
 ### Frontend
 
-Pendiente.
+Requisitos: Node.js 20.9 o superior y npm (probado con Node 24.13.0 y npm 11.6.2).
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+El frontend queda en `http://localhost:3000`. `NEXT_PUBLIC_API_URL` (en `frontend/.env.local`, no se sube al repositorio) es la URL base del backend; ejemplo: `http://localhost:5092`. Para que el navegador pueda llamar a la API, el backend debe tener `FRONTEND_ORIGIN=http://localhost:3000` en su `.env`.
+
+Build de producción: `npm run build`. Pendiente: estilos, librerías de UI y de estado (el stack no las define).
