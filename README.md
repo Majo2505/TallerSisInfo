@@ -16,19 +16,18 @@ Proyecto de la materia SIS-227 (UCB). Plataforma web que detecta "puentes" (huec
 Carpetas existentes hoy:
 
 - `.github/` — configuración de GitHub (incluye `agents/`)
-- `backend/` — solución `Breaku.sln` con 4 proyectos: `Breaku.Api`, `Breaku.Application`, `Breaku.Domain`, `Breaku.Infrastructure`
+- `backend/` — proyecto ASP.NET Core único (`Breaku.csproj`, solución `Breaku.slnx`) con las capas como carpetas: `Presentation/`, `Application/`, `Domain/`, `Infrastructure/`
+- `frontend/` — vacía por ahora (Pendiente: scaffold de Next.js)
 - `docs/` — documentación
   - `docs/database/` — esquema de la base de datos
 
 Archivos en la raíz: `AGENTS.md` (contexto compartido para IAs), `CLAUDE.md`, `README.md`, `.gitignore`.
 
-Carpeta del frontend: Pendiente (se agrega cuando exista).
-
 ## Arquitectura
 
 - Cliente-servidor de 3 niveles.
-- Backend: monolito modular en capas con inversión de dependencias, con 4 proyectos: `Api`, `Application`, `Domain`, `Infrastructure`.
-  - `Domain` no depende de nada.
+- Backend: monolito modular en capas con inversión de dependencias, en un solo proyecto con las capas como carpetas (`Presentation`, `Application`, `Domain`, `Infrastructure`).
+  - `Domain` no depende de nadie; `Application` solo de `Domain`; `Infrastructure` implementa las interfaces de `Application`; `Presentation` llama a `Application` (por convención).
   - Solo `Infrastructure` accede a la base de datos y a servicios externos.
   - El servidor de Next.js no accede a la base de datos.
 
@@ -51,8 +50,8 @@ Requisito: SDK de .NET 10 (probado con 10.0.401).
 
 ```bash
 cd backend
-dotnet build Breaku.sln
-dotnet run --project Breaku.Api --launch-profile http
+dotnet build Breaku.slnx
+dotnet run --project Breaku.csproj --launch-profile http
 ```
 
 La API queda en `http://localhost:5092`. Para comprobar que corre:

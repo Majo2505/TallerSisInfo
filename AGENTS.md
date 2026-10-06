@@ -23,9 +23,18 @@ Planificado para el **sprint 2** (NO en el sprint 1): SignalR y OpenAI (visión,
 ## Arquitectura
 
 - Cliente-servidor de 3 niveles.
-- Backend: monolito modular en capas con inversión de dependencias, con 4 proyectos: `Api`, `Application`, `Domain`, `Infrastructure`.
-  - `Domain` no depende de nada.
-  - Solo `Infrastructure` toca la BD y los servicios externos.
+- Backend: monolito modular en capas con inversión de dependencias, en **un solo proyecto** ASP.NET Core (`backend/Breaku.csproj`, .NET 10) con las capas como carpetas y namespaces `Breaku.<Capa>`:
+  - `backend/Presentation/` (`Breaku.Presentation`): controllers, incluido `GET /health`.
+  - `backend/Application/` (`Breaku.Application`): servicios, interfaces de repositorio, DTOs.
+  - `backend/Domain/` (`Breaku.Domain`): entidades.
+  - `backend/Infrastructure/` (`Breaku.Infrastructure`): `AppDbContext`, configuraciones de EF, repositorios; OpenAI en el sprint 2.
+  - `backend/Program.cs`: punto de entrada.
+- Reglas de dependencias (por convención, el compilador no las impone al ser un solo proyecto):
+  - `Domain` no depende de nadie.
+  - `Application` solo depende de `Domain`.
+  - `Infrastructure` implementa las interfaces de `Application`.
+  - `Presentation` llama a `Application`.
+  - Solo `Infrastructure` toca la BD y los servicios externos (OpenAI).
   - El servidor de Next.js no accede a la BD.
 - **NO** usar microservicios ni agregar componentes que no estén en este diseño.
 
