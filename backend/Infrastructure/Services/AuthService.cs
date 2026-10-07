@@ -24,10 +24,10 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
     {
-        var existeUsuario = await _context.Usuarios.AnyAsync(u => u.Email == request.Email);
-        if (existeUsuario)
+        var existe = await _context.Usuarios.AnyAsync(u => u.Email == request.Email);
+        if (existe)
         {
-            throw new InvalidOperationException("El correo ya se encuentra registrado.");
+            throw new InvalidOperationException("El correo electrónico ya está registrado.");
         }
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -37,11 +37,9 @@ public class AuthService : IAuthService
             Nombre = request.Nombre,
             Email = request.Email,
             PasswordHash = passwordHash,
-            Rol = "Estudiante", // Valor por defecto requerido
+            Rol = "Estudiante",
             Activo = true,
-            CorreoVerificado = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CorreoVerificado = true
         };
 
         _context.Usuarios.Add(usuario);
@@ -61,10 +59,9 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
     {
         var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
-
-        if (usuario == null || string.IsNullOrEmpty(usuario.PasswordHash) || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
+        if (usuario == null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
         {
-            throw new UnauthorizedAccessException("Credenciales inválidas");
+            throw new UnauthorizedAccessException("Credenciales inválidas.");
         }
 
         var token = GenerarJwtToken(usuario);
@@ -80,8 +77,10 @@ public class AuthService : IAuthService
 
     private string GenerarJwtToken(Usuario usuario)
     {
-        var secretKey = _configuration["JWT_SECRET"] ?? "TuClaveSecretaSuperSeguraParaJWT1234567890!";
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        var jwtSecret = _configuration["JWT_SECRET"] 
+            ?? throw new InvalidOperationException("Falta la configuración 'JWT_SECRET'.");
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
