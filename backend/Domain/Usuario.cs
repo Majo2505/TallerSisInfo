@@ -3,7 +3,7 @@ namespace Breaku.Domain;
 public class Usuario
 {
     public int Id { get; set; }
-    public string Correo { get; set; } = null!;
+    public string Email { get; set; } = string.Empty;
     public string? PasswordHash { get; set; }
     public string Nombre { get; set; } = null!;
     public string Rol { get; set; } = null!;

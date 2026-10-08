@@ -1,3 +1,5 @@
+import { obtenerToken } from "@/services/authService";
+
 export type Bloque = {
   id: number;
   materia: string;
@@ -11,19 +13,25 @@ export type BloqueInput = Omit<Bloque, "id" | "origen">;
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-// TODO: dónde se guarda el JWT sigue pendiente (Anexo D, punto 10). Cuando HU1 lo defina, solo cambia esta función.
+// Pendiente: dónde se guarda el JWT lo decide el equipo (Anexo D, punto 10). Por ahora lo guarda el login en memoria.
 function token(): string | null {
-  return typeof window === "undefined" ? null : localStorage.getItem("token");
+  return obtenerToken();
 }
 
 async function pedir<T>(ruta: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API}/api/horario${ruta}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token() ?? ""}`, ...init.headers },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API}/api/horario${ruta}`, {
+      ...init,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token() ?? ""}`, ...init.headers },
+    });
+  } catch {
+    throw new Error("No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
+  }
   if (res.status === 204) return undefined as T;
+  if (res.status === 401) throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.mensaje ?? `Error ${res.status}`);
+  if (!res.ok) throw new Error(data?.mensaje ?? `Ocurrió un error inesperado (${res.status}).`);
   return data as T;
 }
 
