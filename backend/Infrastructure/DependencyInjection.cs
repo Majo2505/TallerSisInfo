@@ -4,6 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using Breaku.Infrastructure.Persistence;
+using Breaku.Application.Horarios;
+using Breaku.Application.Puentes;
+ 
 
 namespace Breaku.Infrastructure;
 
@@ -27,6 +30,9 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, MySqlVersion));
 
         services.AddScoped<IDatabaseHealthCheck, DatabaseHealthCheck>();
+
+        services.AddScoped<IHorarioRepository, HorarioRepository>();
+        services.AddScoped<IPuenteRepository, PuenteRepository>();
 
         return services;
     }

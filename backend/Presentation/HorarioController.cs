@@ -6,17 +6,20 @@ using Microsoft.AspNetCore.Mvc;
 namespace Breaku.Api.Controllers;
 
 [ApiController]
-[Authorize]
-[Route("api/horario")]
+//[Authorize]
+[Route("api/horarios")]
 public class HorarioController : ControllerBase
 {
     private readonly HorarioService _service;
     public HorarioController(HorarioService service) => _service = service;
 
+    // TEMPORAL (desarrollo): usuario fijo hasta que HU1 entregue el JWT. Volver a [Authorize] y al claim del token.
+    private int UsuarioId = 1;
+
     // El usuario sale SIEMPRE del token (claim sub / NameIdentifier).
-    private int UsuarioId =>
-        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
-                  ?? throw new UnauthorizedAccessException());
+    // private int UsuarioId =>
+    //     int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
+    //               ?? throw new UnauthorizedAccessException());
 
     [HttpGet]
     public async Task<ActionResult<List<HorarioDto>>> Listar(CancellationToken ct)

@@ -27,6 +27,8 @@ builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
+builder.Services.AddScoped<IPuenteRepository, PuenteRepository>();
+builder.Services.AddScoped<PuenteService>();
 
 var app = builder.Build();
 
