@@ -1,0 +1,25 @@
+.pagina {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #f8f7ff;
+}
+
+.principal {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 24px 40px;
+}
+
+@media (min-width: 900px) {
+  .pagina {
+    flex-direction: row;
+  }
+
+  .principal {
+    align-items: center;
+    padding: 40px;
+  }
+}
