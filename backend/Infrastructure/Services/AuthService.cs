@@ -8,9 +8,7 @@ using Breaku.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-
 namespace Breaku.Infrastructure.Services;
-
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;

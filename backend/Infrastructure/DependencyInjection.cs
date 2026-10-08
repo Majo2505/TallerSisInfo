@@ -6,9 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
-
 namespace Breaku.Infrastructure;
-
 public static class DependencyInjection
 {
     private static readonly ServerVersion MySqlVersion = new MySqlServerVersion(new Version(8, 0, 46));

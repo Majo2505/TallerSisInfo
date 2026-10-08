@@ -1,9 +1,7 @@
 using Breaku.Application.Common.Interfaces;
 using Breaku.Application.DTOs.Auth;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Breaku.Presentation.Controllers;
-
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
