@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 declare const process: {
   env: {
     NEXT_PUBLIC_API_URL?: string;
@@ -86,14 +85,11 @@ export const authService = {
     return !!this.getToken();
   },
 };
-=======
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5092";
 
 export type UsuarioSesion = { id: number; nombre: string; correo: string };
 export type Sesion = { token: string; usuario: UsuarioSesion };
 
-// Pendiente (decide el equipo): dónde se guarda el JWT. Por ahora vive solo en memoria:
-// no persiste al recargar la página ni al escribir la URL a mano (hay que volver a iniciar sesión).
 let sesion: Sesion | null = null;
 const oyentes = new Set<() => void>();
 
@@ -158,7 +154,5 @@ async function autenticar(ruta: "login" | "register", cuerpo: object): Promise<S
 export const iniciarSesion = (correo: string, password: string) =>
   autenticar("login", { email: correo, password });
 
-// Pendiente: el contrato dice que no hay registro en el sprint 1, pero el backend ya lo implementa.
 export const registrarse = (nombre: string, correo: string, password: string) =>
   autenticar("register", { nombre, email: correo, password });
->>>>>>> 000ed75a925299e9c9cbfd531f5a9bc966e8f0c0
