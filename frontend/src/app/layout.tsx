@@ -1,5 +1,19 @@
 import type { Metadata } from "next";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+
+const fuenteTitulo = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  variable: "--fuente-titulo",
+  display: "swap",
+});
+
+const fuenteTexto = Inter({
+  subsets: ["latin"],
+  variable: "--fuente-texto",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "BREAKU",
@@ -8,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${fuenteTitulo.variable} ${fuenteTexto.variable}`}>
       <body>{children}</body>
     </html>
   );
