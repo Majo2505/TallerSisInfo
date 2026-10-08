@@ -1,22 +1,27 @@
+'use client';
+
 import React, { useState } from 'react';
 import './AuthPage.css';
+import { authService } from '@/services/authService';
 
-const API_URL = 'http://localhost:5000/api/auth';
+export const AuthPage: React.FC = () => {
+  const [isLogin, setIsLogin] = useState<boolean>(true);
 
-export const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [aceptarTerminos, setAceptarTerminos] = useState(false);
+  // Campos de formulario
+  const [nombre, setNombre] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [aceptarTerminos, setAceptarTerminos] = useState<boolean>(false);
 
+  // Feedback de UI
+  const [mensaje, setMensaje] = useState<{ tipo: 'error' | 'exito' | ''; texto: string }>({
+    tipo: '',
+    texto: '',
+  });
+  const [cargando, setCargando] = useState<boolean>(false);
 
-  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
-  const [cargando, setCargando] = useState(false);
-
-  const presionarAccesoRapido = (rol) => {
+  const presionarAccesoRapido = (rol: 'Estudiante' | 'Admin') => {
     if (rol === 'Estudiante') {
       setEmail('estudiante@universidad.edu');
       setPassword('Estudiante123!');
@@ -26,7 +31,7 @@ export const AuthPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMensaje({ tipo: '', texto: '' });
 
@@ -42,40 +47,22 @@ export const AuthPage = () => {
     }
 
     setCargando(true);
-    const endpoint = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
-    const body = isLogin 
-      ? { email, password }
-      : { nombre, email, password };
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Ocurrió un error en la solicitud.');
+      if (isLogin) {
+        await authService.login(email, password);
+        setMensaje({ tipo: 'exito', texto: '¡Inicio de sesión exitoso!' });
+      } else {
+        await authService.register(nombre, email, password);
+        setMensaje({ tipo: 'exito', texto: '¡Registro completado con éxito!' });
       }
 
-      // Guardar JWT y datos de sesión en localStorage
-      localStorage.setItem('jwtToken', data.token);
-      localStorage.setItem('userData', JSON.stringify(data));
-
-      setMensaje({
-        tipo: 'exito',
-        texto: isLogin ? '¡Inicio de sesión exitoso!' : '¡Registro completado con éxito!',
-      });
-
-      // Redireccionar al dashboard o vista principal
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1200);
-
     } catch (error) {
-      setMensaje({ tipo: 'error', texto: error.message });
+      const errMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
+      setMensaje({ tipo: 'error', texto: errMessage });
     } finally {
       setCargando(false);
     }
@@ -84,7 +71,7 @@ export const AuthPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        {/* Encabezado con Logo BreakU */}
+        {/* Encabezado Logo BreakU */}
         <div className="auth-header">
           <div className="logo-icon">
             <span>C</span>
@@ -95,32 +82,38 @@ export const AuthPage = () => {
           <p className="logo-subtitle">Tu tiempo libre, bien aprovechado.</p>
         </div>
 
-        {/* Selector de pestañas: Iniciar sesión / Registrarse */}
+        {/* Pestañas: Iniciar sesión / Registrarse */}
         <div className="auth-tabs">
           <button
             type="button"
             className={`tab-btn ${isLogin ? 'active' : ''}`}
-            onClick={() => { setIsLogin(true); setMensaje({ tipo: '', texto: '' }); }}
+            onClick={() => {
+              setIsLogin(true);
+              setMensaje({ tipo: '', texto: '' });
+            }}
           >
             Iniciar sesión
           </button>
           <button
             type="button"
             className={`tab-btn ${!isLogin ? 'active' : ''}`}
-            onClick={() => { setIsLogin(false); setMensaje({ tipo: '', texto: '' }); }}
+            onClick={() => {
+              setIsLogin(false);
+              setMensaje({ tipo: '', texto: '' });
+            }}
           >
             Registrarse
           </button>
         </div>
 
-        {/* Alertas de error / éxito */}
+        {/* Mensajes de feedback */}
         {mensaje.texto && (
           <div className={`alert-box ${mensaje.tipo}`}>
             {mensaje.texto}
           </div>
         )}
 
-        {/* Formulario principal */}
+        {/* Formulario */}
         <form onSubmit={handleSubmit} className="auth-form">
           {!isLogin && (
             <div className="form-group">
@@ -193,7 +186,7 @@ export const AuthPage = () => {
           </button>
         </form>
 
-        {/* Sección de Acceso rápido */}
+        {/* Acceso rápido */}
         <div className="quick-access-section">
           <div className="divider">
             <span>Acceso rápido</span>
@@ -217,7 +210,7 @@ export const AuthPage = () => {
           </div>
         </div>
 
-        {/* Pie de página */}
+        {/* Footer */}
         <p className="auth-footer-text">
           Acceso restringido a correos institucionales verificados · JWT
         </p>
