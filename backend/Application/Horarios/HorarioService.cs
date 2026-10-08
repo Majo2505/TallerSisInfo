@@ -1,5 +1,6 @@
 using Breaku.Domain;
 using Breaku.Domain.Rules;
+using Breaku.Application.Puentes;
 
 namespace Breaku.Application.Horarios;
 
@@ -7,7 +8,13 @@ namespace Breaku.Application.Horarios;
 public class HorarioService
 {
     private readonly IHorarioRepository _repo;
-    public HorarioService(IHorarioRepository repo) => _repo = repo;
+    private readonly PuenteService _puentes;
+
+    public HorarioService(IHorarioRepository repo, PuenteService puentes)
+    {
+        _repo = repo;
+        _puentes = puentes;
+    }
 
     public async Task<List<HorarioDto>> ListarAsync(int usuarioId, CancellationToken ct = default)
     {
@@ -30,6 +37,7 @@ public class HorarioService
         };
         await _repo.AgregarAsync(h, ct);
         await _repo.GuardarCambiosAsync(ct);
+        await _puentes.RecalcularAsync(usuarioId, ct);
         return ADto(h);
     }
 
@@ -44,6 +52,7 @@ public class HorarioService
         h.HoraInicio = ini; h.HoraFin = fin; h.Aula = LimpiarAula(req.Aula);
         h.UpdatedAt = DateTime.UtcNow;
         await _repo.GuardarCambiosAsync(ct);
+        await _puentes.RecalcularAsync(usuarioId, ct);
         return ADto(h);
     }
 
@@ -54,14 +63,18 @@ public class HorarioService
                 ?? throw new ReglaNegocioException("NO_ENCONTRADO", "El bloque no existe.");
         _repo.Eliminar(h);
         await _repo.GuardarCambiosAsync(ct);
+        await _puentes.RecalcularAsync(usuarioId, ct);
     }
 
     // ---------- helpers ----------
+    private static readonly string[] Formatos = { "HH:mm", "HH:mm:ss" };
+
     private static (TimeOnly, TimeOnly) ParsearYValidar(GuardarHorarioRequest req)
     {
-        if (!TimeOnly.TryParseExact(req.HoraInicio, "HH:mm", out var ini) ||
-            !TimeOnly.TryParseExact(req.HoraFin, "HH:mm", out var fin))
-            throw new ReglaNegocioException("VALIDACION", "Las horas deben tener formato HH:mm.");
+        // Se acepta HH:mm y HH:mm:ss; se responde siempre HH:mm:ss (contrato).
+        if (!TimeOnly.TryParseExact(req.HoraInicio, Formatos, out var ini) ||
+            !TimeOnly.TryParseExact(req.HoraFin, Formatos, out var fin))
+            throw new ReglaNegocioException("VALIDACION", "Las horas deben tener formato HH:mm o HH:mm:ss.");
 
         var error = ReglasHorario.ValidarBloque(req.Materia, req.DiaSemana, ini, fin);
         if (error is not null) throw new ReglaNegocioException("VALIDACION", error);
@@ -81,5 +94,5 @@ public class HorarioService
     private static string? LimpiarAula(string? a) => string.IsNullOrWhiteSpace(a) ? null : a.Trim();
 
     private static HorarioDto ADto(Horario h) =>
-        new(h.Id, h.Materia, h.DiaSemana, h.HoraInicio.ToString("HH:mm"), h.HoraFin.ToString("HH:mm"), h.Aula, h.Origen);
+        new(h.Id, h.Materia, h.DiaSemana, h.HoraInicio.ToString("HH:mm:ss"), h.HoraFin.ToString("HH:mm:ss"), h.Aula, h.Origen);
 }

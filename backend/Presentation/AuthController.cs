@@ -21,7 +21,7 @@ public class AuthController : ControllerBase
             var result = await _authService.RegisterAsync(request);
             return Ok(result);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
             return BadRequest(new { message = ex.Message });
         }
@@ -34,6 +34,10 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.LoginAsync(request);
             return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (UnauthorizedAccessException ex)
         {

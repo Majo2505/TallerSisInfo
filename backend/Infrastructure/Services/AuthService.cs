@@ -11,6 +11,8 @@ using Microsoft.IdentityModel.Tokens;
 namespace Breaku.Infrastructure.Services;
 public class AuthService : IAuthService
 {
+    private const string DominioInstitucional = "@ucb.edu.bo";
+
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
 
@@ -22,6 +24,8 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
     {
+        ValidarCorreoInstitucional(request.Email);
+
         var existe = await _context.Usuarios.AnyAsync(u => u.Email == request.Email);
         if (existe)
         {
@@ -35,7 +39,7 @@ public class AuthService : IAuthService
             Nombre = request.Nombre,
             Email = request.Email,
             PasswordHash = passwordHash,
-            Rol = "Estudiante",
+            Rol = "ESTUDIANTE",
             Activo = true,
             CorreoVerificado = true
         };
@@ -56,6 +60,8 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
     {
+        ValidarCorreoInstitucional(request.Email);
+
         var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
         if (usuario == null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
         {
@@ -71,6 +77,21 @@ public class AuthService : IAuthService
             Nombre = usuario.Nombre,
             Email = usuario.Email
         };
+    }
+
+    /// <summary>Solo se acepta usuario@ucb.edu.bo (HU1); cualquier otro dominio se rechaza.</summary>
+    private static void ValidarCorreoInstitucional(string? correo)
+    {
+        var valor = correo?.Trim() ?? string.Empty;
+        var usuario = valor.Length > DominioInstitucional.Length
+            ? valor[..^DominioInstitucional.Length]
+            : string.Empty;
+
+        if (usuario.Length == 0 || usuario.Contains('@')
+            || !valor.EndsWith(DominioInstitucional, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("Solo se permite el acceso con un correo institucional (@ucb.edu.bo)");
+        }
     }
 
     private string GenerarJwtToken(Usuario usuario)

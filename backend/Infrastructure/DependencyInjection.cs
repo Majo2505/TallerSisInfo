@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
+using Breaku.Application.Horarios;
+using Breaku.Application.Puentes;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
 {
@@ -27,6 +29,9 @@ public static class DependencyInjection
 
         services.AddScoped<IDatabaseHealthCheck, DatabaseHealthCheck>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddScoped<IHorarioRepository, HorarioRepository>();
+        services.AddScoped<IPuenteRepository, PuenteRepository>();
 
         return services;
     }
