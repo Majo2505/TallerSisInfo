@@ -41,6 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# generados por `next dev`; el contexto para IAs vive en el AGENTS.md de la raíz
+# archivos generados por `next dev`
 /AGENTS.md
 /CLAUDE.md
