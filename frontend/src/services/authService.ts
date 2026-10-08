@@ -55,8 +55,8 @@ export async function iniciarSesion(correo: string, password: string): Promise<S
   }
   const datos = await res.json().catch(() => null);
   if (!res.ok) {
-    // ProblemDetails (contrato): se muestra `detail`; si no viene, un mensaje genérico.
-    throw new ErrorAuth(datos?.detail ?? "No pudimos iniciar sesión. Inténtalo de nuevo en unos minutos.");
+    // Hoy el backend responde { message }; el contrato propone ProblemDetails ({ detail }). Se acepta cualquiera de los dos.
+    throw new ErrorAuth(datos?.detail ?? datos?.message ?? "No pudimos iniciar sesión. Inténtalo de nuevo en unos minutos.");
   }
 
   const r = datos as RespuestaLogin;

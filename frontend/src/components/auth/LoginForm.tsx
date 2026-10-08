@@ -8,6 +8,7 @@ import styles from "./LoginForm.module.css";
 
 const RUTA_DESTINO = "/horario";
 const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DOMINIO_INSTITUCIONAL = "@ucb.edu.bo";
 
 type Errores = { correo?: string; password?: string };
 
@@ -15,7 +16,8 @@ function validar(correo: string, password: string): Errores {
   const errores: Errores = {};
   if (!correo.trim()) errores.correo = "Ingresa tu correo institucional.";
   else if (!FORMATO_CORREO.test(correo.trim())) errores.correo = "Escribe un correo con formato válido.";
-  // Pendiente: validar el dominio @ucb.edu.bo cuando el contrato y el backend lo definan (HU1).
+  else if (!correo.trim().toLowerCase().endsWith(DOMINIO_INSTITUCIONAL))
+    errores.correo = "Solo se permite el acceso con un correo institucional (@ucb.edu.bo)";
   if (!password) errores.password = "Ingresa tu contraseña.";
   return errores;
 }
@@ -85,7 +87,7 @@ export default function LoginForm() {
             id="correo"
             type="email"
             autoComplete="username"
-            placeholder="usuario@universidad.edu"
+            placeholder="usuario@ucb.edu.bo"
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
             aria-invalid={errores.correo ? true : undefined}
