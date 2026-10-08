@@ -1,3 +1,5 @@
+import { obtenerToken } from "@/services/authService";
+
 export type Bloque = {
   id: number;
   materia: string;
@@ -11,9 +13,9 @@ export type BloqueInput = Omit<Bloque, "id" | "origen">;
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-// TODO: dónde se guarda el JWT sigue pendiente (Anexo D, punto 10). Cuando HU1 lo defina, solo cambia esta función.
+// Pendiente: dónde se guarda el JWT lo decide el equipo (Anexo D, punto 10). Por ahora lo guarda el login en memoria.
 function token(): string | null {
-  return typeof window === "undefined" ? null : localStorage.getItem("token");
+  return obtenerToken();
 }
 
 async function pedir<T>(ruta: string, init: RequestInit = {}): Promise<T> {
