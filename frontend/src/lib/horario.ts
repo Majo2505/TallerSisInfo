@@ -17,13 +17,19 @@ function token(): string | null {
 }
 
 async function pedir<T>(ruta: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API}/api/horario${ruta}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token() ?? ""}`, ...init.headers },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API}/api/horario${ruta}`, {
+      ...init,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token() ?? ""}`, ...init.headers },
+    });
+  } catch {
+    throw new Error("No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
+  }
   if (res.status === 204) return undefined as T;
+  if (res.status === 401) throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.mensaje ?? `Error ${res.status}`);
+  if (!res.ok) throw new Error(data?.mensaje ?? `Ocurrió un error inesperado (${res.status}).`);
   return data as T;
 }
 
