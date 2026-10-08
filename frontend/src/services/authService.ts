@@ -30,37 +30,45 @@ export function cerrarSesion() {
 /** Error con un mensaje listo para mostrar al usuario. */
 export class ErrorAuth extends Error {}
 
-type RespuestaLogin = { token: string; userId: number; nombre: string; email: string };
+type RespuestaAuth = { token: string; userId: number; nombre: string; email: string };
 
 /**
- * POST /api/auth/login. Hoy el backend recibe { email, password } y responde { token, userId, nombre, email }.
+ * Llama a POST /api/auth/{ruta} y guarda la sesión en memoria.
+ * Hoy el backend recibe { email, password } (y { nombre } al registrar) y responde { token, userId, nombre, email }.
  * Pendiente: el contrato (docs/api-contract.md) propone { correo, password } y una respuesta con `usuario`,
  * y errores en ProblemDetails. Cuando el backend se alinee, solo cambia este archivo.
  */
-export async function iniciarSesion(correo: string, password: string): Promise<Sesion> {
+async function autenticar(ruta: "login" | "register", cuerpo: object): Promise<Sesion> {
   let res: Response;
   try {
-    res = await fetch(`${API}/api/auth/login`, {
+    res = await fetch(`${API}/api/auth/${ruta}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: correo, password }),
+      body: JSON.stringify(cuerpo),
     });
   } catch {
     throw new ErrorAuth("No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
   }
 
-  if (res.status === 401) {
+  if (ruta === "login" && res.status === 401) {
     // Mismo mensaje para correo inexistente y contraseña incorrecta: no revela si el correo existe.
     throw new ErrorAuth("Correo o contraseña incorrectos");
   }
   const datos = await res.json().catch(() => null);
   if (!res.ok) {
     // Hoy el backend responde { message }; el contrato propone ProblemDetails ({ detail }). Se acepta cualquiera de los dos.
-    throw new ErrorAuth(datos?.detail ?? datos?.message ?? "No pudimos iniciar sesión. Inténtalo de nuevo en unos minutos.");
+    throw new ErrorAuth(datos?.detail ?? datos?.message ?? "No pudimos completar la solicitud. Inténtalo de nuevo en unos minutos.");
   }
 
-  const r = datos as RespuestaLogin;
+  const r = datos as RespuestaAuth;
   sesion = { token: r.token, usuario: { id: r.userId, nombre: r.nombre, correo: r.email } };
   avisar();
   return sesion;
 }
+
+export const iniciarSesion = (correo: string, password: string) =>
+  autenticar("login", { email: correo, password });
+
+// Pendiente: el contrato dice que no hay registro en el sprint 1, pero el backend ya lo implementa.
+export const registrarse = (nombre: string, correo: string, password: string) =>
+  autenticar("register", { nombre, email: correo, password });

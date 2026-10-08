@@ -38,11 +38,6 @@
   color: #6d28d9;
 }
 
-.pestana:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 .formulario {
   display: grid;
   gap: 16px;
@@ -139,6 +134,27 @@
   cursor: wait;
 }
 
+.terminos {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.terminos input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: #7c3aed;
+}
+
+.terminos label {
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #4b5168;
+}
+
 .pie {
   margin: 0;
   text-align: center;
@@ -146,6 +162,7 @@
   color: #6d5fb5;
 }
 
+.terminos input:focus-visible,
 .pestana:focus-visible,
 .pestanaActiva:focus-visible,
 .campo input:focus-visible,
