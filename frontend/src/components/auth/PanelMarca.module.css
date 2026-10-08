@@ -1,0 +1,136 @@
+.panel {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 20px 24px;
+  color: #fff;
+  background: linear-gradient(160deg, #7c3aed 0%, #4c1d95 100%);
+  font-family: var(--fuente-texto), system-ui, sans-serif;
+}
+
+.circulo1,
+.circulo2 {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.circulo1 {
+  width: 220px;
+  height: 220px;
+  top: -110px;
+  right: -60px;
+}
+
+.circulo2 {
+  display: none;
+}
+
+.marca {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nombre {
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.lema {
+  position: relative;
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: #e4d9ff;
+}
+
+.beneficios {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pie {
+  display: none;
+  margin: 0;
+  font-size: 0.75rem;
+  color: #d4c4fb;
+}
+
+@media (min-width: 900px) {
+  .panel {
+    width: 37%;
+    min-height: 100dvh;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .circulo1 {
+    width: 340px;
+    height: 340px;
+    top: -170px;
+    right: -120px;
+  }
+
+  .circulo2 {
+    display: block;
+    width: 240px;
+    height: 240px;
+    bottom: 40px;
+    left: -120px;
+  }
+
+  .beneficios {
+    position: relative;
+    display: grid;
+    gap: 22px;
+    margin-top: auto;
+  }
+
+  .beneficio {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .icono {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .beneficio strong {
+    font-size: 0.95rem;
+  }
+
+  .beneficio p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #e4d9ff;
+  }
+
+  .pie {
+    position: relative;
+    display: block;
+    margin-top: 80px;
+  }
+}
