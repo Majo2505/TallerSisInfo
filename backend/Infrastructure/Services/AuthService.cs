@@ -35,7 +35,7 @@ public class AuthService : IAuthService
             Nombre = request.Nombre,
             Email = request.Email,
             PasswordHash = passwordHash,
-            Rol = "Estudiante",
+            Rol = "ESTUDIANTE",
             Activo = true,
             CorreoVerificado = true
         };
