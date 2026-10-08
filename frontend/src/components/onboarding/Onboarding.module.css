@@ -1,0 +1,211 @@
+.pantalla {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--fondo);
+  transition: background-color 0.4s ease;
+  font-family: var(--fuente-texto), system-ui, sans-serif;
+  color: #1c2033;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 16px 24px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cabecera {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.saltar {
+  font: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--acento-texto);
+  background: transparent;
+  border: 0;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.saltar:hover {
+  text-decoration: underline;
+}
+
+.contenido {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  animation: entrada 0.45s ease both;
+}
+
+.icono {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--acento);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--acento) 40%, transparent);
+  transition: background-color 0.4s ease;
+}
+
+.titulo {
+  margin: 8px 0 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1c2033;
+}
+
+.texto {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #4b5168;
+}
+
+.nota {
+  margin: 4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--acento-texto);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(28, 32, 51, 0.06);
+}
+
+.nota svg {
+  flex-shrink: 0;
+}
+
+.pie {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.puntos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.punto,
+.puntoActivo {
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--acento);
+  cursor: pointer;
+  transition:
+    width 0.3s ease,
+    opacity 0.3s ease,
+    background-color 0.4s ease;
+}
+
+.punto {
+  width: 8px;
+  opacity: 0.3;
+}
+
+.puntoActivo {
+  width: 28px;
+}
+
+.boton {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--acento);
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 20px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--acento) 35%, transparent);
+  transition:
+    background-color 0.4s ease,
+    transform 0.15s ease;
+}
+
+.boton:hover {
+  transform: translateY(-1px);
+}
+
+.boton:active {
+  transform: translateY(0);
+}
+
+.saltar:focus-visible,
+.punto:focus-visible,
+.puntoActivo:focus-visible,
+.boton:focus-visible {
+  outline: 3px solid var(--acento-texto);
+  outline-offset: 3px;
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .contenedor {
+    padding-top: 32px;
+    padding-bottom: 48px;
+  }
+
+  .titulo {
+    font-size: 2.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pantalla,
+  .icono,
+  .punto,
+  .puntoActivo,
+  .boton {
+    transition: none;
+  }
+
+  .contenido {
+    animation: none;
+  }
+
+  .boton:hover {
+    transform: none;
+  }
+}
