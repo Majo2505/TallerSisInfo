@@ -2,7 +2,10 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bloque, BloqueInput, crearBloque, editarBloque, eliminarBloque, listarHorario } from "@/lib/horario";
+import { Puente, duracionMin, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
+import ResumenSemanal from "@/components/horario/ResumenSemanal";
+import PuentesDetectados from "@/components/puentes/puentesDetectados";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const PX_HORA = 56; // alto de una hora en la grilla
@@ -27,6 +30,8 @@ export default function HorarioPage() {
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
+  const [puentes, setPuentes] = useState<Puente[]>([]);
+  const [errorPuentes, setErrorPuentes] = useState("");
   const [modal, setModal] = useState<ModalState>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [intento, setIntento] = useState(0);
@@ -35,6 +40,7 @@ export default function HorarioPage() {
   const cargar = useCallback(() => {
     setCargando(true);
     setErrorCarga("");
+    setErrorPuentes("");
     setIntento((n) => n + 1);
   }, []);
 
@@ -43,14 +49,20 @@ export default function HorarioPage() {
     if (listo && !sesion) router.replace("/login");
   }, [listo, sesion, router]);
 
-  // Solo se pide el horario cuando ya hay una sesión restaurada (evita mandar un token vacío al refrescar).
+  // Solo se piden los datos cuando ya hay una sesión restaurada (evita mandar un token vacío al refrescar).
+  // Horario y puentes se piden juntos pero por separado: si falla uno, el otro se sigue mostrando.
+  // El backend recalcula los puentes al guardar un bloque, así que recargar tras guardar los deja al día.
   useEffect(() => {
     if (!listo || !sesion) return;
     let activo = true; // evita actualizar el estado si el componente ya se desmontó o llegó otra petición
-    listarHorario()
-      .then((lista) => { if (activo) setBloques(lista); })
-      .catch((e: Error) => { if (activo) setErrorCarga(e.message); })
-      .finally(() => { if (activo) setCargando(false); });
+    Promise.allSettled([listarHorario(), listarPuentes()]).then(([horario, listaPuentes]) => {
+      if (!activo) return;
+      if (horario.status === "fulfilled") setBloques(horario.value);
+      else setErrorCarga((horario.reason as Error).message);
+      if (listaPuentes.status === "fulfilled") setPuentes(listaPuentes.value);
+      else setErrorPuentes((listaPuentes.reason as Error).message);
+      setCargando(false);
+    });
     return () => { activo = false; };
   }, [listo, sesion, intento]);
 
@@ -75,6 +87,8 @@ export default function HorarioPage() {
     () => bloques.reduce((acc, b) => acc + (aMin(b.horaFin) - aMin(b.horaInicio)) / 60, 0),
     [bloques]
   );
+
+  const tiempoLibreMin = useMemo(() => puentes.reduce((acc, p) => acc + duracionMin(p), 0), [puentes]);
 
   const clickEnColumna = (e: React.MouseEvent<HTMLDivElement>, dia: number) => {
     if (e.target !== e.currentTarget) return;
@@ -118,66 +132,75 @@ export default function HorarioPage() {
         </div>
       )}
 
-      {cargando ? (
-        <div className="hz-skeleton" aria-busy="true" aria-label="Cargando horario" />
-      ) : (
-        <>
-          {bloques.length === 0 && !errorCarga && (
-            <div className="hz-vacio">
-              <strong>Aún no registraste clases</strong>
-              <span>Pulsa «Agregar clase» o haz clic sobre un día en la grilla.</span>
-            </div>
-          )}
-
-          <div className="hz-scroll">
-            <div className="hz-grid" style={{ ["--ph" as string]: `${PX_HORA}px` }}>
-              <div className="hz-corner" />
-              {[1, 2, 3, 4, 5, 6].map((d) => (
-                <div key={d} className="hz-dia-head">{DIAS[d]}</div>
-              ))}
-
-              <div className="hz-horas">
-                {horas.map((h) => (
-                  <div key={h} className="hz-hora">{pad(h)}:00</div>
-                ))}
-              </div>
-
-              {[1, 2, 3, 4, 5, 6].map((d) => (
-                <div
-                  key={d}
-                  className="hz-col"
-                  style={{ height: horas.length * PX_HORA }}
-                  onClick={(e) => clickEnColumna(e, d)}
-                >
-                  {bloques.filter((b) => b.diaSemana === d).map((b) => {
-                    const top = ((aMin(b.horaInicio) - desde * 60) / 60) * PX_HORA;
-                    const alto = ((aMin(b.horaFin) - aMin(b.horaInicio)) / 60) * PX_HORA;
-                    const m = matiz(b.materia);
-                    return (
-                      <button
-                        key={b.id}
-                        className="hz-bloque"
-                        style={{
-                          top, height: alto - 2,
-                          background: `hsl(${m} 70% 92%)`,
-                          borderLeftColor: `hsl(${m} 60% 42%)`,
-                          color: `hsl(${m} 55% 18%)`,
-                        }}
-                        onClick={() => setModal({ bloque: b })}
-                        aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${b.horaInicio} a ${b.horaFin}`}
-                      >
-                        <strong>{b.materia}</strong>
-                        <span>{b.horaInicio}–{b.horaFin}</span>
-                        {b.aula && alto > 60 && <span>{b.aula}</span>}
-                      </button>
-                    );
-                  })}
+      <div className="hz-layout">
+        <div className="hz-principal">
+          {cargando ? (
+            <div className="hz-skeleton" aria-busy="true" aria-label="Cargando horario" />
+          ) : (
+            <>
+              {bloques.length === 0 && !errorCarga && (
+                <div className="hz-vacio">
+                  <strong>Aún no registraste clases</strong>
+                  <span>Pulsa «Agregar clase» o haz clic sobre un día en la grilla.</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+              )}
+
+              <div className="hz-scroll">
+                <div className="hz-grid" style={{ ["--ph" as string]: `${PX_HORA}px` }}>
+                  <div className="hz-corner" />
+                  {[1, 2, 3, 4, 5, 6].map((d) => (
+                    <div key={d} className="hz-dia-head">{DIAS[d]}</div>
+                  ))}
+
+                  <div className="hz-horas">
+                    {horas.map((h) => (
+                      <div key={h} className="hz-hora">{pad(h)}:00</div>
+                    ))}
+                  </div>
+
+                  {[1, 2, 3, 4, 5, 6].map((d) => (
+                    <div
+                      key={d}
+                      className="hz-col"
+                      style={{ height: horas.length * PX_HORA }}
+                      onClick={(e) => clickEnColumna(e, d)}
+                    >
+                      {bloques.filter((b) => b.diaSemana === d).map((b) => {
+                        const top = ((aMin(b.horaInicio) - desde * 60) / 60) * PX_HORA;
+                        const alto = ((aMin(b.horaFin) - aMin(b.horaInicio)) / 60) * PX_HORA;
+                        const m = matiz(b.materia);
+                        return (
+                          <button
+                            key={b.id}
+                            className="hz-bloque"
+                            style={{
+                              top, height: alto - 2,
+                              background: `hsl(${m} 70% 92%)`,
+                              borderLeftColor: `hsl(${m} 60% 42%)`,
+                              color: `hsl(${m} 55% 18%)`,
+                            }}
+                            onClick={() => setModal({ bloque: b })}
+                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${b.horaInicio} a ${b.horaFin}`}
+                          >
+                            <strong>{b.materia}</strong>
+                            <span>{b.horaInicio}–{b.horaFin}</span>
+                            {b.aula && alto > 60 && <span>{b.aula}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <aside className="hz-lateral" aria-label="Puentes y resumen semanal">
+          <PuentesDetectados puentes={puentes} cargando={cargando} error={errorPuentes} onReintentar={cargar} />
+          <ResumenSemanal clases={bloques.length} puentes={puentes.length} tiempoLibreMin={tiempoLibreMin} cargando={cargando} />
+        </aside>
+      </div>
 
       {modal && <BloqueModal estado={modal} onClose={() => setModal(null)} onSaved={alGuardar} />}
       {toast && <div className={`hz-toast hz-toast-${toast.tipo}`} role="status">{toast.texto}</div>}

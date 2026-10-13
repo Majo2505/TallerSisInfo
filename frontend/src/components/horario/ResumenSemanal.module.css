@@ -1,0 +1,11 @@
+.panel { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(30, 40, 90, .08); }
+.titulo { margin: 0 0 14px; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: #1c2033; }
+
+.lista { margin: 0; display: grid; gap: 12px; }
+.fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.fila dt { color: #7a819c; font-size: .95rem; }
+.fila dd { margin: 0; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.25rem; font-weight: 800; }
+
+.clases { color: #7c3aed; }
+.puentes { color: #16a34a; }
+.libre { color: #f59e0b; }
