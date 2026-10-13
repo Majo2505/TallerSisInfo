@@ -1,100 +1,71 @@
-declare const process: {
-  env: {
-    NEXT_PUBLIC_API_URL?: string;
-  };
-};
-
-const API_URL =
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
-  'http://localhost:5000/api/auth';
-
-const TOKEN_KEY = 'jwtToken';
-const USER_KEY = 'userData';
-
-export interface AuthResponse {
-  token: string;
-  userId: number;
-  nombre: string;
-  email: string;
-}
-
-export const authService = {
-  async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'Credenciales inválidas.');
-    }
-
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(TOKEN_KEY, data.token);
-      sessionStorage.setItem(USER_KEY, JSON.stringify(data));
-    }
-
-    return data;
-  },
-
-  async register(nombre: string, email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'Error durante el registro.');
-    }
-
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(TOKEN_KEY, data.token);
-      sessionStorage.setItem(USER_KEY, JSON.stringify(data));
-    }
-
-    return data;
-  },
-
-  logout(): void {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem(TOKEN_KEY);
-      sessionStorage.removeItem(USER_KEY);
-    }
-  },
-
-  getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return sessionStorage.getItem(TOKEN_KEY);
-  },
-
-  getUser(): AuthResponse | null {
-    if (typeof window === 'undefined') return null;
-    const user = sessionStorage.getItem(USER_KEY);
-    try {
-      return user ? JSON.parse(user) : null;
-    } catch {
-      return null;
-    }
-  },
-
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  },
-};
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5092";
+import { API_URL } from "@/lib/config";
 
 export type UsuarioSesion = { id: number; nombre: string; correo: string };
 export type Sesion = { token: string; usuario: UsuarioSesion };
 
+/**
+ * La sesión se guarda en sessionStorage: sobrevive a un refresh (F5) y a navegar entre páginas,
+ * pero se borra al cerrar la pestaña. Si el equipo prefiere que persista entre pestañas/cierres del
+ * navegador, basta con cambiar `window.sessionStorage` por `window.localStorage` en este archivo.
+ */
+const CLAVE_SESION = "breaku.sesion";
+
+// Copia en memoria de la sesión. IMPORTANTE: `obtenerSesion` debe devolver SIEMPRE la misma referencia
+// mientras la sesión no cambie (lo exige useSyncExternalStore), por eso no se parsea el JSON en cada llamada.
 let sesion: Sesion | null = null;
+let cargada = false;
 const oyentes = new Set<() => void>();
 
 function avisar() {
   oyentes.forEach((oyente) => oyente());
+}
+
+/** Lee la fecha de expiración (claim `exp`) del JWT, en milisegundos. null si no se puede leer. */
+function expiracionMs(token: string): number | null {
+  try {
+    const payload = token.split(".")[1];
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const { exp } = JSON.parse(json) as { exp?: unknown };
+    return typeof exp === "number" ? exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function tokenVigente(token: string): boolean {
+  const exp = expiracionMs(token);
+  return exp === null || exp > Date.now();
+}
+
+function leerAlmacen(): Sesion | null {
+  try {
+    const crudo = window.sessionStorage.getItem(CLAVE_SESION);
+    if (!crudo) return null;
+    const guardada = JSON.parse(crudo) as Sesion;
+    if (!guardada?.token || !guardada?.usuario || !tokenVigente(guardada.token)) {
+      window.sessionStorage.removeItem(CLAVE_SESION);
+      return null;
+    }
+    return guardada;
+  } catch {
+    return null;
+  }
+}
+
+function escribirAlmacen(nueva: Sesion | null) {
+  try {
+    if (nueva) window.sessionStorage.setItem(CLAVE_SESION, JSON.stringify(nueva));
+    else window.sessionStorage.removeItem(CLAVE_SESION);
+  } catch {
+    // Almacenamiento no disponible (modo privado estricto, etc.): la sesión dura solo hasta el próximo refresh.
+  }
+}
+
+function establecerSesion(nueva: Sesion | null) {
+  sesion = nueva;
+  cargada = true;
+  escribirAlmacen(nueva);
+  avisar();
 }
 
 export function suscribirSesion(oyente: () => void): () => void {
@@ -104,12 +75,19 @@ export function suscribirSesion(oyente: () => void): () => void {
   };
 }
 
-export const obtenerSesion = (): Sesion | null => sesion;
-export const obtenerToken = (): string | null => sesion?.token ?? null;
+export function obtenerSesion(): Sesion | null {
+  // En el servidor no hay sessionStorage; en el cliente se restaura una sola vez al primer acceso.
+  if (!cargada && typeof window !== "undefined") {
+    sesion = leerAlmacen();
+    cargada = true;
+  }
+  return sesion;
+}
+
+export const obtenerToken = (): string | null => obtenerSesion()?.token ?? null;
 
 export function cerrarSesion() {
-  sesion = null;
-  avisar();
+  establecerSesion(null);
 }
 
 /** Error con un mensaje listo para mostrar al usuario. */
@@ -118,7 +96,7 @@ export class ErrorAuth extends Error {}
 type RespuestaAuth = { token: string; userId: number; nombre: string; email: string };
 
 /**
- * Llama a POST /api/auth/{ruta} y guarda la sesión en memoria.
+ * Llama a POST /api/auth/{ruta} y guarda la sesión.
  * Hoy el backend recibe { email, password } (y { nombre } al registrar) y responde { token, userId, nombre, email }.
  * Pendiente: el contrato (docs/api-contract.md) propone { correo, password } y una respuesta con `usuario`,
  * y errores en ProblemDetails. Cuando el backend se alinee, solo cambia este archivo.
@@ -126,7 +104,7 @@ type RespuestaAuth = { token: string; userId: number; nombre: string; email: str
 async function autenticar(ruta: "login" | "register", cuerpo: object): Promise<Sesion> {
   let res: Response;
   try {
-    res = await fetch(`${API}/api/auth/${ruta}`, {
+    res = await fetch(`${API_URL}/api/auth/${ruta}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cuerpo),
@@ -146,9 +124,9 @@ async function autenticar(ruta: "login" | "register", cuerpo: object): Promise<S
   }
 
   const r = datos as RespuestaAuth;
-  sesion = { token: r.token, usuario: { id: r.userId, nombre: r.nombre, correo: r.email } };
-  avisar();
-  return sesion;
+  const nueva: Sesion = { token: r.token, usuario: { id: r.userId, nombre: r.nombre, correo: r.email } };
+  establecerSesion(nueva);
+  return nueva;
 }
 
 export const iniciarSesion = (correo: string, password: string) =>
