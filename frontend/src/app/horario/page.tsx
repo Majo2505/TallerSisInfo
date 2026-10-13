@@ -1,6 +1,8 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bloque, BloqueInput, crearBloque, editarBloque, eliminarBloque, listarHorario } from "@/lib/horario";
+import { useSesion } from "@/lib/useSesion";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const PX_HORA = 56; // alto de una hora en la grilla
@@ -20,24 +22,37 @@ type ModalState = { bloque?: Bloque; base?: Partial<BloqueInput> } | null;
 type ToastState = { texto: string; tipo: "ok" | "error" } | null;
 
 export default function HorarioPage() {
+  const router = useRouter();
+  const { sesion, listo } = useSesion();
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
   const [modal, setModal] = useState<ModalState>(null);
   const [toast, setToast] = useState<ToastState>(null);
+  const [intento, setIntento] = useState(0);
 
-  const cargar = useCallback(async () => {
+  // Para reintentar o refrescar tras guardar: muestra el estado de carga y dispara una nueva petición.
+  const cargar = useCallback(() => {
     setCargando(true);
     setErrorCarga("");
-    try {
-      setBloques(await listarHorario());
-    } catch (e) {
-      setErrorCarga((e as Error).message);
-    } finally {
-      setCargando(false);
-    }
+    setIntento((n) => n + 1);
   }, []);
-  useEffect(() => { cargar(); }, [cargar]);
+
+  // Pantalla protegida: sin sesión (nunca inició, la cerró o el servidor devolvió 401) se va al login.
+  useEffect(() => {
+    if (listo && !sesion) router.replace("/login");
+  }, [listo, sesion, router]);
+
+  // Solo se pide el horario cuando ya hay una sesión restaurada (evita mandar un token vacío al refrescar).
+  useEffect(() => {
+    if (!listo || !sesion) return;
+    let activo = true; // evita actualizar el estado si el componente ya se desmontó o llegó otra petición
+    listarHorario()
+      .then((lista) => { if (activo) setBloques(lista); })
+      .catch((e: Error) => { if (activo) setErrorCarga(e.message); })
+      .finally(() => { if (activo) setCargando(false); });
+    return () => { activo = false; };
+  }, [listo, sesion, intento]);
 
   useEffect(() => {
     if (!toast) return;
@@ -73,6 +88,14 @@ export default function HorarioPage() {
     setToast({ texto, tipo: "ok" });
     cargar();
   };
+
+  if (!listo || !sesion) {
+    return (
+      <main className="hz">
+        <div className="hz-skeleton" aria-busy="true" aria-label="Verificando sesión" />
+      </main>
+    );
+  }
 
   return (
     <main className="hz">
