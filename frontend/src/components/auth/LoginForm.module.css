@@ -4,7 +4,7 @@
   display: grid;
   gap: 24px;
   font-family: var(--fuente-texto), system-ui, sans-serif;
-  color: #1c2033;
+  color: var(--texto);
 }
 
 .pestanas {
@@ -13,7 +13,7 @@
   gap: 4px;
   padding: 4px;
   border-radius: 16px;
-  background: #efebfd;
+  background: #e1e9f0;
 }
 
 .pestana,
@@ -28,14 +28,14 @@
 }
 
 .pestanaActiva {
-  background: #7c3aed;
+  background: var(--ucb-azul);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 12px rgba(17, 68, 109, 0.3);
 }
 
 .pestana {
   background: transparent;
-  color: #6d28d9;
+  color: var(--ucb-azul);
 }
 
 .formulario {
@@ -51,7 +51,7 @@
 .campo label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #3f4560;
+  color: var(--ucb-marino);
 }
 
 .campo input {
@@ -60,18 +60,18 @@
   box-sizing: border-box;
   min-height: 48px;
   padding: 0 14px;
-  border: 1px solid #e4e2f5;
+  border: 1px solid var(--borde);
   border-radius: 14px;
-  background: #fbfbfe;
-  color: #1c2033;
+  background: #f9fbfc;
+  color: var(--texto);
 }
 
 .campo input::placeholder {
-  color: #7d82a0;
+  color: var(--texto-tenue);
 }
 
 .campo input[aria-invalid="true"] {
-  border-color: #d92d20;
+  border-color: var(--error);
 }
 
 .conBoton {
@@ -92,23 +92,23 @@
   place-items: center;
   border: 0;
   background: transparent;
-  color: #6b6f8a;
+  color: var(--texto-suave);
   border-radius: 14px;
   cursor: pointer;
 }
 
 .errorCampo {
   font-size: 0.8rem;
-  color: #b42318;
+  color: var(--error);
 }
 
 .aviso {
   margin: 0;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #fdecea;
-  border: 1px solid #f0b8b3;
-  color: #8a1c13;
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
   font-size: 0.9rem;
 }
 
@@ -119,14 +119,15 @@
   min-height: 48px;
   border: 0;
   border-radius: 16px;
-  background: #7c3aed;
+  background: var(--ucb-azul);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.3);
+  border-bottom: 3px solid var(--ucb-amarillo);
+  box-shadow: 0 10px 24px rgba(17, 68, 109, 0.3);
 }
 
 .boton:hover:not(:disabled) {
-  background: #6d28d9;
+  background: var(--ucb-marino);
 }
 
 .boton:disabled {
@@ -145,21 +146,21 @@
   width: 20px;
   height: 20px;
   margin: 2px 0 0;
-  accent-color: #7c3aed;
+  accent-color: var(--ucb-azul);
 }
 
 .terminos label {
   font-size: 0.78rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #4b5168;
+  color: var(--texto-suave);
 }
 
 .pie {
   margin: 0;
   text-align: center;
   font-size: 0.75rem;
-  color: #6d5fb5;
+  color: var(--texto-suave);
 }
 
 .terminos input:focus-visible,
@@ -168,6 +169,6 @@
 .campo input:focus-visible,
 .ojo:focus-visible,
 .boton:focus-visible {
-  outline: 3px solid #5b21b6;
+  outline: 3px solid var(--ucb-celeste);
   outline-offset: 2px;
 }

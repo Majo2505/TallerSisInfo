@@ -1,9 +1,44 @@
+/* ============================================================
+   Tema UCB. Paleta tomada de ucb.edu.bo y del Sistema Académico Nacional.
+   Para ajustar colores de toda la app, basta con editar estas variables.
+   ============================================================ */
+:root {
+  /* Marca UCB */
+  --ucb-marino: #052845;        /* barra superior del Sistema Académico */
+  --ucb-azul: #11446d;          /* azul institucional (mapa de sedes) */
+  --ucb-azul-medio: #004775;
+  --ucb-celeste: #0088cc;       /* "UAC - UPPAE" */
+  --ucb-turquesa: #009dc1;
+  --ucb-amarillo: #fdd537;      /* "SEDE" y subrayados */
+  --ucb-amarillo-suave: #fff6d1;
+  --ucb-amarillo-oscuro: #8f6a00; /* amarillo apto para texto sobre blanco */
+
+  /* Superficies y texto */
+  --fondo-app: #e7e7e7;         /* gris de fondo del Sistema Académico */
+  --fondo-suave: #f4f5f6;
+  --superficie: #ffffff;
+  --texto: #0f2a43;
+  --texto-suave: #4a6178;
+  --texto-tenue: #5f7487;
+  --borde: #c5d0db;
+  --borde-suave: #e1e7ed;
+
+  /* Estados (se mantienen semánticos: rojo = error, verde azulado = éxito) */
+  --error-fondo: #fdecea;
+  --error-borde: #f0b8b3;
+  --error-texto: #8a1c13;
+  --error: #b42318;
+  --exito: #0f766e;
+
+  --sombra: rgba(5, 40, 69, 0.1);
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  font-family: var(--fuente-texto), system-ui, sans-serif;
   color-scheme: light;
-  background: #f6f7fb;
-  color: #1c2033;
+  background: var(--fondo-app);
+  color: var(--texto);
 }
 
 main {
@@ -13,61 +48,64 @@ main {
 /* ---------- Horario (HU2) ---------- */
 .hz { max-width: 1320px; margin: 0 auto; padding: 24px 16px 64px; }
 .hz-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-.hz-head h1 { margin: 0; font-size: 1.6rem; }
-.hz-sub { margin: 4px 0 0; color: #5d6480; font-size: .95rem; }
+.hz-head h1 { margin: 0; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--ucb-marino); display: inline-block; padding-bottom: 6px; border-bottom: 4px solid var(--ucb-amarillo); }
+.hz-sub { margin: 8px 0 0; color: var(--texto-suave); font-size: .95rem; }
 
 /* Horario a la izquierda; puentes detectados y resumen a la derecha. En pantallas angostas se apilan (lateral primero). */
 .hz-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
 .hz-principal { min-width: 0; }
 .hz-lateral { display: grid; gap: 16px; position: sticky; top: 16px; }
 
-.hz-btn { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #cfd3e3; background: #fff; color: #1c2033; cursor: pointer; }
-.hz-btn:hover:not(:disabled) { background: #eef0f8; }
+.hz-btn { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); font-weight: 500; cursor: pointer; }
+.hz-btn:hover:not(:disabled) { background: #eaf2f8; }
 .hz-btn:disabled { opacity: .6; cursor: not-allowed; }
-.hz-btn:focus-visible, .hz-bloque:focus-visible, .hz-campo input:focus-visible, .hz-campo select:focus-visible { outline: 3px solid #8aa4ff; outline-offset: 1px; }
-.hz-btn-primary { background: #3b5bdb; border-color: #3b5bdb; color: #fff; font-weight: 600; }
-.hz-btn-primary:hover:not(:disabled) { background: #3050c4; }
-.hz-btn-peligro { color: #b42318; border-color: #f0b8b3; }
-.hz-btn-peligro:hover:not(:disabled) { background: #fdecea; }
-.hz-btn-peligro-fuerte { background: #b42318; border-color: #b42318; color: #fff; font-weight: 600; }
+.hz-btn:focus-visible, .hz-bloque:focus-visible, .hz-campo input:focus-visible, .hz-campo select:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 1px; }
+.hz-btn-primary { background: var(--ucb-azul); border-color: var(--ucb-azul); color: #fff; font-weight: 700; }
+.hz-btn-primary:hover:not(:disabled) { background: var(--ucb-marino); }
+.hz-btn-peligro { color: var(--error); border-color: var(--error-borde); }
+.hz-btn-peligro:hover:not(:disabled) { background: var(--error-fondo); }
+.hz-btn-peligro-fuerte { background: var(--error); border-color: var(--error); color: #fff; font-weight: 600; }
 .hz-btn-peligro-fuerte:hover:not(:disabled) { background: #9a1d14; }
 
-.hz-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fdecea; color: #8a1c13; border: 1px solid #f0b8b3; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: .92rem; }
+.hz-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--error-fondo); color: var(--error-texto); border: 1px solid var(--error-borde); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: .92rem; }
 
-.hz-vacio { display: flex; flex-direction: column; gap: 4px; text-align: center; background: #fff; border: 1px dashed #c3c8dd; border-radius: 12px; padding: 20px; margin-bottom: 16px; color: #5d6480; }
-.hz-vacio strong { color: #1c2033; }
+.hz-vacio { display: flex; flex-direction: column; gap: 4px; text-align: center; background: var(--superficie); border: 1px dashed var(--borde); border-radius: 12px; padding: 20px; margin-bottom: 16px; color: var(--texto-suave); }
+.hz-vacio strong { color: var(--ucb-marino); }
 
-.hz-skeleton { height: 420px; border-radius: 12px; background: linear-gradient(90deg, #e9ebf4 25%, #f3f4fa 50%, #e9ebf4 75%); background-size: 200% 100%; animation: hz-shimmer 1.2s infinite; }
+.hz-skeleton { height: 420px; border-radius: 12px; background: linear-gradient(90deg, #d9dfe5 25%, #eef1f4 50%, #d9dfe5 75%); background-size: 200% 100%; animation: hz-shimmer 1.2s infinite; }
 @keyframes hz-shimmer { to { background-position: -200% 0; } }
 
-.hz-scroll { overflow-x: auto; background: #fff; border: 1px solid #e0e3ef; border-radius: 12px; }
+.hz-scroll { overflow-x: auto; background: var(--superficie); border: 1px solid var(--borde-suave); border-radius: 12px; box-shadow: 0 2px 12px var(--sombra); }
 .hz-grid { display: grid; grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); min-width: 56px; }
-.hz-corner, .hz-dia-head { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e0e3ef; padding: 10px 6px; text-align: center; font-weight: 600; font-size: .9rem; }
+/* Encabezado de días: barra azul marino con filo amarillo, como la barra del Sistema Académico */
+.hz-corner, .hz-dia-head { position: sticky; top: 0; background: var(--ucb-marino); color: #fff; border-bottom: 3px solid var(--ucb-amarillo); padding: 10px 6px; text-align: center; font-weight: 600; font-size: .9rem; }
 .hz-horas { position: relative; }
-.hz-hora { height: var(--ph); font-size: .72rem; color: #7a819c; text-align: right; padding-right: 8px; box-sizing: border-box; transform: translateY(-7px); }
-.hz-col { position: relative; border-left: 1px solid #eceef6; cursor: copy;
-  background-image: linear-gradient(to bottom, #eceef6 1px, transparent 1px); background-size: 100% var(--ph); }
-.hz-col:hover { background-color: #fafbff; }
+.hz-hora { height: var(--ph); font-size: .72rem; color: var(--texto-tenue); text-align: right; padding-right: 8px; box-sizing: border-box; transform: translateY(-7px); }
+/* La primera etiqueta no se sube, para que no quede tapada por el encabezado de días */
+.hz-hora:first-child { transform: none; }
+.hz-col { position: relative; border-left: 1px solid var(--borde-suave); cursor: copy;
+  background-image: linear-gradient(to bottom, var(--borde-suave) 1px, transparent 1px); background-size: 100% var(--ph); }
+.hz-col:hover { background-color: #f3f8fc; }
 
 .hz-bloque { position: absolute; left: 3px; right: 3px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; text-align: left; font: inherit; font-size: .78rem; line-height: 1.25; padding: 4px 6px; border: 0; border-left: 4px solid; border-radius: 6px; overflow: hidden; cursor: pointer; }
-.hz-bloque:hover { filter: brightness(.96); box-shadow: 0 2px 8px rgba(30, 40, 90, .15); }
+.hz-bloque:hover { filter: brightness(.96); box-shadow: 0 2px 8px rgba(5, 40, 69, .2); }
 .hz-bloque strong { font-size: .82rem; }
 
-.hz-overlay { position: fixed; inset: 0; background: rgba(20, 24, 45, .45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
-.hz-modal { background: #fff; width: 100%; max-width: 440px; max-height: 100%; overflow-y: auto; border-radius: 14px; padding: 20px; display: grid; gap: 14px; box-shadow: 0 20px 50px rgba(0, 0, 0, .25); }
-.hz-modal h2 { margin: 0; font-size: 1.2rem; }
+.hz-overlay { position: fixed; inset: 0; background: rgba(5, 40, 69, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+.hz-modal { background: var(--superficie); border-top: 6px solid var(--ucb-amarillo); color: var(--texto); width: 100%; max-width: 440px; max-height: 100%; overflow-y: auto; border-radius: 14px; padding: 20px; display: grid; gap: 14px; box-shadow: 0 20px 50px rgba(0, 0, 0, .25); }
+.hz-modal h2 { margin: 0; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.2rem; color: var(--ucb-marino); }
 .hz-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .hz-campo { display: grid; gap: 4px; font-size: .88rem; font-weight: 600; }
-.hz-campo em { font-weight: 400; color: #7a819c; font-style: normal; }
-.hz-campo input, .hz-campo select { font: inherit; font-weight: 400; padding: 9px 10px; border: 1px solid #cfd3e3; border-radius: 8px; background: #fff; }
-.hz-campo input[aria-invalid="true"] { border-color: #d92d20; }
-.hz-err { color: #b42318; font-weight: 400; }
+.hz-campo em { font-weight: 400; color: var(--texto-tenue); font-style: normal; }
+.hz-campo input, .hz-campo select { font: inherit; font-weight: 400; padding: 9px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--superficie); color: var(--texto); }
+.hz-campo input[aria-invalid="true"] { border-color: var(--error); }
+.hz-err { color: var(--error); font-weight: 400; }
 .hz-acciones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .hz-espacio { flex: 1; }
 
 .hz-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 10px 18px; border-radius: 999px; color: #fff; font-size: .92rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); z-index: 60; }
-.hz-toast-ok { background: #1f7a4d; }
-.hz-toast-error { background: #b42318; }
+.hz-toast-ok { background: var(--exito); }
+.hz-toast-error { background: var(--error); }
 
 @media (max-width: 1024px) {
   .hz-layout { grid-template-columns: 1fr; }
