@@ -4,7 +4,8 @@
   box-sizing: border-box;
   padding: 20px 24px;
   color: #fff;
-  background: linear-gradient(160deg, #7c3aed 0%, #4c1d95 100%);
+  background: linear-gradient(160deg, var(--ucb-azul) 0%, var(--ucb-marino) 100%);
+  border-bottom: 4px solid var(--ucb-amarillo);
   font-family: var(--fuente-texto), system-ui, sans-serif;
 }
 
@@ -53,7 +54,7 @@
   position: relative;
   margin: 6px 0 0;
   font-size: 0.9rem;
-  color: #e4d9ff;
+  color: #cfe6f5;
 }
 
 .beneficios {
@@ -67,11 +68,13 @@
   display: none;
   margin: 0;
   font-size: 0.75rem;
-  color: #d4c4fb;
+  color: #b9d6ea;
 }
 
 @media (min-width: 900px) {
   .panel {
+    border-bottom: 0;
+    border-right: 6px solid var(--ucb-amarillo);
     width: 37%;
     min-height: 100dvh;
     padding: 28px;
@@ -114,7 +117,8 @@
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.15);
+    color: var(--ucb-amarillo);
+    background: rgba(253, 213, 55, 0.14);
   }
 
   .beneficio strong {
@@ -125,7 +129,7 @@
     margin: 2px 0 0;
     font-size: 0.8rem;
     line-height: 1.5;
-    color: #e4d9ff;
+    color: #cfe6f5;
   }
 
   .pie {

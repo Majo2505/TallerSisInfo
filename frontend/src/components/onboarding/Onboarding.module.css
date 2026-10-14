@@ -5,7 +5,7 @@
   background: var(--fondo);
   transition: background-color 0.4s ease;
   font-family: var(--fuente-texto), system-ui, sans-serif;
-  color: #1c2033;
+  color: var(--texto);
 }
 
 .contenedor {
@@ -68,14 +68,14 @@
   font-size: 1.85rem;
   font-weight: 800;
   line-height: 1.2;
-  color: #1c2033;
+  color: var(--ucb-marino);
 }
 
 .texto {
   margin: 0;
   font-size: 1.05rem;
   line-height: 1.6;
-  color: #4b5168;
+  color: var(--texto-suave);
 }
 
 .nota {
@@ -90,7 +90,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   text-align: left;
-  box-shadow: 0 2px 8px rgba(28, 32, 51, 0.06);
+  box-shadow: 0 2px 8px rgba(5, 40, 69, 0.08);
 }
 
 .nota svg {

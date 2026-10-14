@@ -15,10 +15,20 @@ const aMin = (h: string) => {
   return a * 60 + b;
 };
 const pad = (n: number) => String(n).padStart(2, "0");
-const matiz = (s: string) => {
+
+// Colores de los bloques de clase (paleta UCB). Cada materia usa siempre el mismo color, según su nombre.
+const COLORES_BLOQUE = [
+  { fondo: "#dcebf7", borde: "#11446d", texto: "#0b2a44" }, // azul institucional
+  { fondo: "#d6eef9", borde: "#0088cc", texto: "#04405f" }, // celeste
+  { fondo: "#d3f0f5", borde: "#009dc1", texto: "#04434f" }, // turquesa
+  { fondo: "#fff3bf", borde: "#e0b400", texto: "#4a3b00" }, // amarillo
+  { fondo: "#e3e8ef", borde: "#052845", texto: "#052845" }, // azul marino
+  { fondo: "#e1eaf5", borde: "#2f6fb5", texto: "#0b2a5a" }, // azul medio
+];
+const colorBloque = (s: string) => {
   let h = 0;
-  for (const c of s.toLowerCase().trim()) h = (h * 31 + c.charCodeAt(0)) % 360;
-  return h;
+  for (const c of s.toLowerCase().trim()) h = (h * 31 + c.charCodeAt(0)) % COLORES_BLOQUE.length;
+  return COLORES_BLOQUE[h];
 };
 
 type ModalState = { bloque?: Bloque; base?: Partial<BloqueInput> } | null;
@@ -168,16 +178,16 @@ export default function HorarioPage() {
                       {bloques.filter((b) => b.diaSemana === d).map((b) => {
                         const top = ((aMin(b.horaInicio) - desde * 60) / 60) * PX_HORA;
                         const alto = ((aMin(b.horaFin) - aMin(b.horaInicio)) / 60) * PX_HORA;
-                        const m = matiz(b.materia);
+                        const color = colorBloque(b.materia);
                         return (
                           <button
                             key={b.id}
                             className="hz-bloque"
                             style={{
                               top, height: alto - 2,
-                              background: `hsl(${m} 70% 92%)`,
-                              borderLeftColor: `hsl(${m} 60% 42%)`,
-                              color: `hsl(${m} 55% 18%)`,
+                              background: color.fondo,
+                              borderLeftColor: color.borde,
+                              color: color.texto,
                             }}
                             onClick={() => setModal({ bloque: b })}
                             aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${b.horaInicio} a ${b.horaFin}`}

@@ -1,19 +1,21 @@
-.panel { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(30, 40, 90, .08); }
-.titulo { margin: 0 0 14px; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: #1c2033; }
+.panel { background: var(--superficie); border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px var(--sombra); }
+.titulo { margin: 0 0 14px; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--ucb-marino); }
+.titulo::after { content: ""; display: block; width: 36px; height: 3px; margin-top: 6px; background: var(--ucb-amarillo); border-radius: 2px; }
 
 .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.tarjeta { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 16px; padding: 12px 14px; }
+/* Los puentes se destacan en amarillo UCB sobre fondo suave, con texto azul marino para buen contraste */
+.tarjeta { background: var(--ucb-amarillo-suave); border: 1.5px solid var(--ucb-amarillo); border-radius: 16px; padding: 12px 14px; }
 .fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.nombre { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: #16a34a; }
-.insignia { background: #d1fae5; color: #15803d; font-weight: 700; font-size: .8rem; padding: 2px 12px; border-radius: 999px; white-space: nowrap; }
-.hora { margin: 6px 0 0; color: #16a34a; font-size: .95rem; }
+.nombre { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ucb-marino); }
+.insignia { background: var(--ucb-amarillo); color: var(--ucb-marino); font-weight: 700; font-size: .8rem; padding: 2px 12px; border-radius: 999px; white-space: nowrap; }
+.hora { margin: 6px 0 0; color: var(--ucb-azul); font-size: .95rem; font-weight: 500; }
 
-.vacio { margin: 0; color: #5d6480; font-size: .92rem; line-height: 1.45; }
+.vacio { margin: 0; color: var(--texto-suave); font-size: .92rem; line-height: 1.45; }
 
-.skeleton { height: 120px; border-radius: 16px; background: linear-gradient(90deg, #e9ebf4 25%, #f3f4fa 50%, #e9ebf4 75%); background-size: 200% 100%; animation: brillo 1.2s infinite; }
+.skeleton { height: 120px; border-radius: 16px; background: linear-gradient(90deg, #d9dfe5 25%, #eef1f4 50%, #d9dfe5 75%); background-size: 200% 100%; animation: brillo 1.2s infinite; }
 @keyframes brillo { to { background-position: -200% 0; } }
 
-.error { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fdecea; color: #8a1c13; border: 1px solid #f0b8b3; border-radius: 10px; padding: 10px 12px; font-size: .92rem; }
-.reintentar { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid #cfd3e3; background: #fff; color: #1c2033; cursor: pointer; }
-.reintentar:hover { background: #eef0f8; }
-.reintentar:focus-visible { outline: 3px solid #8aa4ff; outline-offset: 1px; }
+.error { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--error-fondo); color: var(--error-texto); border: 1px solid var(--error-borde); border-radius: 10px; padding: 10px 12px; font-size: .92rem; }
+.reintentar { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); cursor: pointer; }
+.reintentar:hover { background: #eaf2f8; }
+.reintentar:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 1px; }
