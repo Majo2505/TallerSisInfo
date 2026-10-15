@@ -1,0 +1,518 @@
+openapi: 3.0.3
+info:
+  title: BREAKU API
+  version: v1
+  description: |
+    API de **BREAKU**: detecta *puentes* (huecos libres de **45 minutos o más** entre dos clases del mismo día).
+
+    Este archivo es una copia estática de la documentación que el backend publica en `/swagger`
+    (documento vivo: `GET /swagger/v1/swagger.json`). Cubre autenticación (HU1), horario (HU2),
+    puentes (HU3) y health.
+
+    ### Cómo probar los endpoints protegidos
+    1. Ejecuta `POST /api/auth/login` (o `POST /api/auth/register`) con un correo `@ucb.edu.bo`.
+    2. Copia el valor de `token` de la respuesta.
+    3. Pulsa **Authorize**, pega el token (sin escribir `Bearer`) y confirma.
+    4. Ya puedes usar `/api/horario` y `/api/puentes`.
+
+    ### Convenciones
+    - JSON en `camelCase`. Mensajes de error en español.
+    - Horas de clase en formato 24 h. Se aceptan `HH:mm` y `HH:mm:ss`; la API responde siempre `HH:mm:ss`.
+    - `diaSemana`: 1 = lunes … 6 = sábado.
+    - El usuario siempre sale del token; nunca se envía en el cuerpo ni en la URL.
+    - Los errores de autenticación responden `{ "message": "..." }` y los de horarios `{ "codigo": "...", "mensaje": "..." }`.
+    - El token vence a las 24 horas; después los endpoints protegidos responden `401`.
+  contact:
+    name: Equipo BREAKU — SIS-227, UCB
+servers:
+  - url: http://localhost:5092
+    description: Desarrollo local (perfil `http` de launchSettings.json)
+tags:
+  - name: Auth
+    description: Registro e inicio de sesión (HU1). Ambos devuelven un token JWT.
+  - name: Horario
+    description: Horario académico del estudiante (HU2). Requiere JWT; solo opera sobre los bloques del usuario del token.
+  - name: Puentes
+    description: Puentes detectados (HU3). Requiere JWT. Solo consulta; se recalculan solos al cambiar el horario.
+  - name: Health
+    description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      operationId: registrar
+      summary: Crea una cuenta de estudiante y la deja con la sesión iniciada.
+      description: |
+        Solo se aceptan correos institucionales `usuario@ucb.edu.bo`, y el correo no puede estar ya registrado.
+        La cuenta se crea con rol `ESTUDIANTE` y la contraseña se guarda con hash BCrypt.
+        Como la respuesta ya incluye el token, no hace falta llamar a `login` después.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequestDto'
+      responses:
+        '200':
+          description: Cuenta creada. Devuelve el token JWT y los datos del usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
+        '400':
+          description: El correo no es `@ucb.edu.bo` o ya está registrado. El texto viene en `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMensajeDto'
+              examples:
+                correoNoInstitucional:
+                  summary: Correo fuera del dominio institucional
+                  value:
+                    message: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
+                correoYaRegistrado:
+                  summary: Correo ya registrado
+                  value:
+                    message: El correo electrónico ya está registrado.
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      operationId: iniciarSesion
+      summary: Inicia sesión con correo institucional y contraseña.
+      description: |
+        Orden de validación: primero el dominio del correo (`@ucb.edu.bo`) y luego las credenciales.
+        El token devuelto vence a las 24 horas; envíalo en el header `Authorization: Bearer {token}`.
+
+        Usuario de prueba de desarrollo (ver README): `dev.estudiante@ucb.edu.bo` / `Breaku-Dev-2026!`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestDto'
+      responses:
+        '200':
+          description: Credenciales correctas. Devuelve el token JWT y los datos del usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
+        '400':
+          description: El correo no es `@ucb.edu.bo`. El texto viene en `message`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMensajeDto'
+              example:
+                message: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
+        '401':
+          description: Correo no registrado o contraseña incorrecta (mismo mensaje en ambos casos).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMensajeDto'
+              example:
+                message: Credenciales inválidas.
+  /api/horario:
+    get:
+      tags: [Horario]
+      operationId: listarHorario
+      summary: Lista los bloques de clase del usuario.
+      description: Ordenados por día de la semana y luego por hora de inicio. Sin bloques devuelve una lista vacía (`[]`). No hay paginación.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Lista de bloques del usuario.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HorarioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+    post:
+      tags: [Horario]
+      operationId: crearBloque
+      summary: Crea un bloque de clase.
+      description: |
+        Reglas: materia obligatoria (máx. 100 caracteres), `diaSemana` de 1 a 6, horas en formato `HH:mm` o `HH:mm:ss`
+        y `horaFin` posterior a `horaInicio`. No puede solaparse con otro bloque del mismo día; dos bloques contiguos
+        (uno termina justo cuando empieza el otro) **no** se consideran solapados.
+
+        Efecto secundario: al guardar se recalculan automáticamente los puentes del usuario (ver `GET /api/puentes`).
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarHorarioRequest'
+      responses:
+        '201':
+          description: Bloque creado. Devuelve el bloque con su `id` y las horas en `HH:mm:ss`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HorarioDto'
+        '400':
+          $ref: '#/components/responses/DatosInvalidos'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '409':
+          $ref: '#/components/responses/Solapamiento'
+  /api/horario/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Identificador del bloque.
+        schema:
+          type: integer
+          format: int32
+        example: 12
+    put:
+      tags: [Horario]
+      operationId: editarBloque
+      summary: Reemplaza por completo un bloque de clase existente.
+      description: |
+        Es un `PUT` de reemplazo completo: se envían todos los campos, igual que en el alta. Aplican las mismas reglas
+        que en `POST`; el bloque que se edita no se compara consigo mismo al buscar solapamientos.
+        Si el bloque pertenece a otro usuario se responde igual que si no existiera (404).
+
+        Efecto secundario: se recalculan automáticamente los puentes del usuario.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarHorarioRequest'
+      responses:
+        '200':
+          description: Bloque actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HorarioDto'
+        '400':
+          $ref: '#/components/responses/DatosInvalidos'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/BloqueNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Solapamiento'
+    delete:
+      tags: [Horario]
+      operationId: eliminarBloque
+      summary: Elimina un bloque de clase.
+      description: |
+        Si el bloque pertenece a otro usuario se responde igual que si no existiera (404).
+        Efecto secundario: se recalculan automáticamente los puentes del usuario.
+      security:
+        - Bearer: []
+      responses:
+        '204':
+          description: Bloque eliminado (sin cuerpo).
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/BloqueNoEncontrado'
+  /api/puentes:
+    get:
+      tags: [Puentes]
+      operationId: listarPuentes
+      summary: Puentes detectados del usuario, ordenados por día y hora. Sin puentes, [].
+      description: |
+        Un puente es el hueco entre el fin de una clase y el inicio de la siguiente, el mismo día, de **45 minutos o más**
+        (45 exactos cuentan). El tramo antes de la primera clase y después de la última no es puente.
+        No hay endpoint para recalcular: ocurre dentro de `POST`, `PUT` y `DELETE` de `/api/horario`.
+        La duración no viene en la respuesta: se calcula como `horaFin − horaInicio`.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Lista de puentes del usuario (puede ser vacía).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PuenteDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+  /health:
+    get:
+      tags: [Health]
+      operationId: health
+      summary: Comprueba que la API está en marcha.
+      responses:
+        '200':
+          description: La API responde.
+  /health/db:
+    get:
+      tags: [Health]
+      operationId: healthDb
+      summary: Comprueba que la API puede conectarse a la base de datos MySQL.
+      responses:
+        '200':
+          description: Conexión a la base de datos correcta.
+        '503':
+          description: No se pudo conectar a la base de datos.
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido en `POST /api/auth/login` o `POST /api/auth/register`. Pégalo sin la palabra `Bearer`.
+  responses:
+    NoAutorizado:
+      description: Falta el token, es inválido o está vencido. Sin cuerpo.
+    BloqueNoEncontrado:
+      description: El bloque no existe o no pertenece al usuario (`codigo` = `NO_ENCONTRADO`).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorNegocioDto'
+          example:
+            codigo: NO_ENCONTRADO
+            mensaje: El bloque no existe.
+    Solapamiento:
+      description: Se solapa con otro bloque del mismo día (`codigo` = `SOLAPAMIENTO`); el mensaje indica con cuál.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorNegocioDto'
+          example:
+            codigo: SOLAPAMIENTO
+            mensaje: Se solapa con «Cálculo I» (08:00-09:30).
+    DatosInvalidos:
+      description: |
+        Datos inválidos. Hay dos formas de respuesta:
+        - Regla de negocio incumplida: `{ "codigo": "VALIDACION", "mensaje": "..." }` (`ErrorNegocioDto`).
+        - Cuerpo mal formado o con campos faltantes: `ValidationProblemDetails` estándar de ASP.NET.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ErrorNegocioDto'
+              - $ref: '#/components/schemas/ValidationProblemDetails'
+          examples:
+            horaFinInvalida:
+              summary: La hora de fin no es posterior a la de inicio
+              value:
+                codigo: VALIDACION
+                mensaje: La hora de fin debe ser posterior a la hora de inicio.
+            formatoDeHora:
+              summary: Hora con formato no admitido
+              value:
+                codigo: VALIDACION
+                mensaje: Las horas deben tener formato HH:mm o HH:mm:ss.
+            diaFueraDeRango:
+              summary: Día fuera de 1 a 6
+              value:
+                codigo: VALIDACION
+                mensaje: El día debe ir de 1 (lunes) a 6 (sábado).
+            materiaVacia:
+              summary: Materia vacía
+              value:
+                codigo: VALIDACION
+                mensaje: La materia es obligatoria.
+  schemas:
+    LoginRequestDto:
+      type: object
+      description: Credenciales para iniciar sesión.
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          description: Correo institucional. Solo se aceptan direcciones `usuario@ucb.edu.bo`.
+          example: dev.estudiante@ucb.edu.bo
+        password:
+          type: string
+          format: password
+          description: Contraseña de la cuenta.
+          example: Breaku-Dev-2026!
+    RegisterRequestDto:
+      type: object
+      description: Datos para crear una cuenta de estudiante.
+      required: [nombre, email, password]
+      properties:
+        nombre:
+          type: string
+          description: Nombre completo del estudiante.
+          example: Ana Pérez
+        email:
+          type: string
+          description: Correo institucional. Solo se aceptan direcciones `usuario@ucb.edu.bo` y no puede estar ya registrado.
+          example: ana.perez@ucb.edu.bo
+        password:
+          type: string
+          format: password
+          description: Contraseña de la cuenta. Se guarda con hash BCrypt.
+          example: MiClaveSegura-2026
+    AuthResponseDto:
+      type: object
+      description: Sesión iniciada. Token JWT y datos básicos del usuario.
+      properties:
+        token:
+          type: string
+          description: 'Token JWT (HS256, vigencia de 24 horas). Claims `sub` (id del usuario), `email` y `nombre`. Se envía en `Authorization: Bearer {token}`.'
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3In0.firma
+        userId:
+          type: integer
+          format: int32
+          description: Identificador del usuario.
+          example: 7
+        nombre:
+          type: string
+          description: Nombre completo del usuario.
+          example: Ana Pérez
+        email:
+          type: string
+          description: Correo institucional del usuario.
+          example: ana.perez@ucb.edu.bo
+    ErrorMensajeDto:
+      type: object
+      description: Error de autenticación (login y registro).
+      properties:
+        message:
+          type: string
+          description: Mensaje en español, listo para mostrar al usuario.
+          example: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
+    ErrorNegocioDto:
+      type: object
+      description: Error de negocio de horarios.
+      properties:
+        codigo:
+          type: string
+          enum: [VALIDACION, SOLAPAMIENTO, NO_ENCONTRADO]
+          description: '`VALIDACION` (400), `SOLAPAMIENTO` (409) o `NO_ENCONTRADO` (404).'
+          example: SOLAPAMIENTO
+        mensaje:
+          type: string
+          description: Mensaje en español, listo para mostrar al usuario.
+          example: Se solapa con «Cálculo I» (08:00-09:30).
+    ValidationProblemDetails:
+      type: object
+      description: Error de validación estándar de ASP.NET (cuerpo mal formado o campos faltantes).
+      properties:
+        type:
+          type: string
+          nullable: true
+          example: https://tools.ietf.org/html/rfc9110#section-15.5.1
+        title:
+          type: string
+          nullable: true
+          example: One or more validation errors occurred.
+        status:
+          type: integer
+          format: int32
+          nullable: true
+          example: 400
+        errors:
+          type: object
+          description: Campo → lista de mensajes.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            req: [El campo req es obligatorio.]
+    GuardarHorarioRequest:
+      type: object
+      description: Datos de un bloque de clase. Sirve para crear (POST) y para reemplazar (PUT) un bloque.
+      required: [materia, diaSemana, horaInicio, horaFin]
+      properties:
+        materia:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nombre de la materia. Obligatorio, hasta 100 caracteres (se recortan los espacios de los extremos).
+          example: Cálculo I
+        diaSemana:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 6
+          description: 'Día de la semana: 1 = lunes … 6 = sábado.'
+          example: 1
+        horaInicio:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
+          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`).
+          example: '08:00'
+        horaFin:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
+          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). Debe ser posterior a la hora de inicio.
+          example: '09:30'
+        aula:
+          type: string
+          nullable: true
+          maxLength: 30
+          description: Aula (opcional, hasta 30 caracteres). Si llega vacía se guarda como `null`.
+          example: A-101
+    HorarioDto:
+      type: object
+      description: Bloque de clase del estudiante.
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: Identificador del bloque.
+          example: 12
+        materia:
+          type: string
+          description: Nombre de la materia.
+          example: Cálculo I
+        diaSemana:
+          type: integer
+          format: int32
+          description: 'Día de la semana: 1 = lunes … 6 = sábado.'
+          example: 1
+        horaInicio:
+          type: string
+          description: Hora de inicio (`HH:mm:ss`, 24 h).
+          example: '08:00:00'
+        horaFin:
+          type: string
+          description: Hora de fin (`HH:mm:ss`, 24 h).
+          example: '09:30:00'
+        aula:
+          type: string
+          nullable: true
+          description: Aula, o `null` si no se indicó.
+          example: A-101
+        origen:
+          type: string
+          enum: [MANUAL, FOTO]
+          description: 'Cómo se cargó el bloque: `MANUAL` (hoy siempre) o `FOTO` (reservado). El cliente no lo envía.'
+          example: MANUAL
+    PuenteDto:
+      type: object
+      description: Puente detectado. Hueco libre de 45 minutos o más entre dos clases del mismo día.
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: Identificador del puente.
+          example: 5
+        diaSemana:
+          type: integer
+          format: int32
+          description: 'Día de la semana: 1 = lunes … 6 = sábado.'
+          example: 1
+        horaInicio:
+          type: string
+          description: Hora en que termina la clase anterior (`HH:mm:ss`, 24 h).
+          example: '09:30:00'
+        horaFin:
+          type: string
+          description: Hora en que empieza la clase siguiente (`HH:mm:ss`, 24 h).
+          example: '10:30:00'

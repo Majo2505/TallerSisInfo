@@ -19,6 +19,7 @@ Carpetas existentes hoy:
 - `backend/` — proyecto ASP.NET Core único (`Breaku.csproj`, solución `Breaku.slnx`) con las capas como carpetas: `Presentation/`, `Application/`, `Domain/`, `Infrastructure/`
 - `frontend/` — aplicación Next.js (TypeScript, App Router, `src/`)
 - `docs/` — documentación
+  - `docs/api/` — especificación OpenAPI de la API (`openapi.yaml`)
   - `docs/database/` — esquema de la base de datos
 
 Archivos en la raíz: `README.md`, `.gitignore`.
@@ -61,6 +62,26 @@ curl -i http://localhost:5092/health
 ```
 
 Debe responder `200 OK`.
+
+### Documentación de la API (Swagger / OpenAPI)
+
+La API se documenta con **OpenAPI 3** y se muestra con **Swagger UI** (paquete Swashbuckle.AspNetCore). Con el backend en marcha:
+
+| Qué | URL |
+|---|---|
+| Swagger UI (interactivo, con botón **Authorize**) | `http://localhost:5092/swagger` |
+| Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
+| Copia estática en YAML (para revisar sin correr el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
+
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`):
+
+1. En Swagger UI, abrí `POST /api/auth/login`, pulsá **Try it out** y enviá el usuario de prueba (ver más abajo) o uno que hayas registrado.
+2. Copiá el valor de `token` de la respuesta.
+3. Pulsá **Authorize**, pegá el token (sin escribir `Bearer`) y confirmá. El token se conserva al recargar la página.
+
+Swagger solo se publica en `Development` (el perfil `http` de `launchSettings.json` ya lo es). Para habilitarlo en otro entorno, definí `SWAGGER_ENABLED=true` en `backend/.env`.
+
+La documentación sale de los comentarios `///` de los controladores y DTOs (el proyecto genera `Breaku.xml` al compilar). **Al agregar o cambiar un endpoint**, actualizá sus comentarios y `docs/api/openapi.yaml` en el mismo PR. Para regenerar el YAML desde la API en marcha, exportá `/swagger/v1/swagger.json`.
 
 ### Base de datos
 

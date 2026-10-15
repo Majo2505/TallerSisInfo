@@ -3,6 +3,7 @@ using Breaku.Infrastructure;
 using Breaku.Application.Horarios;
 using Breaku.Infrastructure.Persistence;
 using Breaku.Application.Puentes;
+using Breaku.Presentation.Documentacion;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -53,6 +54,7 @@ builder.Services
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
+builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
@@ -62,6 +64,9 @@ builder.Services.AddScoped<PuenteService>();
 var app = builder.Build();
 
 app.UseCors(FrontendCorsPolicy);
+
+// Swagger UI en /swagger (solo Development, o SWAGGER_ENABLED=true).
+app.UseSwaggerDocumentation();
 
 app.UseAuthentication();
 app.UseAuthorization();

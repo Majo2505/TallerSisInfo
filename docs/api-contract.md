@@ -4,6 +4,20 @@
 
 Alcance: autenticación (HU1), horario (HU2) y puentes (HU3). Parte del issue #139 (ítem "Contrato de endpoints").
 
+> **Nota (octubre 2026):** este documento es el borrador v0.1 del sprint 1. La API **implementada** está documentada en [`docs/api/openapi.yaml`](api/openapi.yaml) y en `/swagger`; donde difieran, esa es la referencia vigente. Diferencias conocidas entre este borrador y el código:
+>
+> | Tema | Este borrador | Implementado |
+> |---|---|---|
+> | Ruta de horarios | `/api/horarios` | `/api/horario` |
+> | Login: cuerpo | `correo` | `email` |
+> | Login: respuesta | `{ token, usuario: { id, nombre, correo, rol } }` | `{ token, userId, nombre, email }` |
+> | Registro | Sin endpoint en el sprint 1 | Existe `POST /api/auth/register` |
+> | Formato de errores | `ProblemDetails` con `detail` | Auth: `{ "message" }`. Horarios: `{ "codigo", "mensaje" }` |
+> | Mensaje de login incorrecto (401) | «Correo o contraseña incorrectos» | «Credenciales inválidas.» (el frontend muestra el texto de #9 por su cuenta) |
+> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | Correo vacío: 400 con el mensaje de dominio institucional. Contraseña vacía: 401 |
+> | Login y `activo` | Exige `activo = 1` | No se verifica |
+> | JWT | Claims `sub` y `role`; 60 minutos | Claims `sub`, `email` y `nombre`; 24 horas |
+
 ## Leyenda
 
 Cada decisión del documento lleva una de estas marcas:

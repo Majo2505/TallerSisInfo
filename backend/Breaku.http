@@ -1,5 +1,72 @@
 @Breaku_HostAddress = http://localhost:5092
 
+### Estado del servicio (sin autenticación)
 GET {{Breaku_HostAddress}}/health
 
 ###
+GET {{Breaku_HostAddress}}/health/db
+
+### Registro de una cuenta nueva (correo @ucb.edu.bo)
+POST {{Breaku_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nombre": "Ana Pérez",
+  "email": "ana.perez@ucb.edu.bo",
+  "password": "MiClaveSegura-2026"
+}
+
+### Login con el usuario de prueba de desarrollo (ver README). Guarda el token para las peticiones siguientes.
+# @name login
+POST {{Breaku_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "dev.estudiante@ucb.edu.bo",
+  "password": "Breaku-Dev-2026!"
+}
+
+###
+@token = {{login.response.body.$.token}}
+
+### Listar el horario
+GET {{Breaku_HostAddress}}/api/horario
+Authorization: Bearer {{token}}
+
+### Crear un bloque de clase
+# @name crearBloque
+POST {{Breaku_HostAddress}}/api/horario
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "materia": "Cálculo I",
+  "diaSemana": 1,
+  "horaInicio": "08:00",
+  "horaFin": "09:30",
+  "aula": "A-101"
+}
+
+###
+@bloqueId = {{crearBloque.response.body.$.id}}
+
+### Editar el bloque (reemplazo completo)
+PUT {{Breaku_HostAddress}}/api/horario/{{bloqueId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "materia": "Cálculo I",
+  "diaSemana": 1,
+  "horaInicio": "08:00",
+  "horaFin": "10:00",
+  "aula": "A-102"
+}
+
+### Puentes detectados (se recalculan solos al cambiar el horario)
+GET {{Breaku_HostAddress}}/api/puentes
+Authorization: Bearer {{token}}
+
+### Eliminar el bloque
+DELETE {{Breaku_HostAddress}}/api/horario/{{bloqueId}}
+Authorization: Bearer {{token}}
