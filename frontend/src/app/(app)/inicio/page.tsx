@@ -90,12 +90,13 @@ export default function Inicio() {
   }, [bloques, foco, diaHoy]);
 
   const nombre = sesion?.usuario.nombre.split(" ")[0] ?? "";
-  const fecha = ahora.toLocaleDateString("es-BO", {
+  const fechaTexto = ahora.toLocaleDateString("es-BO", {
     weekday: "short",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  const fecha = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
 
   const minutosRestantes = activo ? aMin(activo.horaFin) - minutosAhora : 0;
   const usado = activo ? Math.round(((minutosAhora - aMin(activo.horaInicio)) / duracionMin(activo)) * 100) : 0;

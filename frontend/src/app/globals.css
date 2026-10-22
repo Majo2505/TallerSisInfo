@@ -50,7 +50,7 @@ main {
 .hz-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
 .hz-head h1 { margin: 0; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--ucb-marino); display: inline-block; padding-bottom: 6px; border-bottom: 4px solid var(--ucb-amarillo); }
 .hz-sub { margin: 8px 0 0; color: var(--texto-suave); font-size: .95rem; }
-.hz-head-acciones { display: flex; align-items: center; gap: 10px; width: 100%; }
+.hz-head-acciones { display: none; align-items: center; gap: 10px; width: 100%; }
 .hz-head-acciones .hz-btn-primary { flex: 1; }
 
 /* Horario a la izquierda; puentes detectados y resumen a la derecha. En pantallas angostas se apilan (lateral primero). */
@@ -120,6 +120,7 @@ main {
 }
 
 @media (min-width: 1025px) {
+  .hz-head-acciones { display: flex; }
   .hz-toast { bottom: 24px; }
   .hz-layout { grid-template-columns: minmax(0, 1fr) 320px; }
   .hz-lateral { position: sticky; top: 16px; }
