@@ -56,7 +56,9 @@ main {
 /* Horario a la izquierda; puentes detectados y resumen a la derecha. En pantallas angostas se apilan (lateral primero). */
 .hz-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .hz-principal { min-width: 0; }
-.hz-lateral { display: grid; gap: 16px; order: -1; }
+.hz-lateral { display: grid; gap: 16px; }
+.hz-vista-dia { display: block; }
+.hz-vista-grilla { display: none; }
 
 .hz-btn { font: inherit; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); font-weight: 500; cursor: pointer; }
 .hz-btn:hover:not(:disabled) { background: #eaf2f8; }
@@ -120,6 +122,8 @@ main {
 @media (min-width: 1025px) {
   .hz-toast { bottom: 24px; }
   .hz-layout { grid-template-columns: minmax(0, 1fr) 320px; }
-  .hz-lateral { position: sticky; top: 16px; order: 0; }
+  .hz-lateral { position: sticky; top: 16px; }
+  .hz-vista-dia { display: none; }
+  .hz-vista-grilla { display: block; }
   .hz-grid { grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); min-width: 56px; }
 }

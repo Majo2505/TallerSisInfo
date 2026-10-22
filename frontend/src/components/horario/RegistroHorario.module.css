@@ -1,0 +1,91 @@
+.tarjeta {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--superficie);
+  box-shadow: 0 2px 12px var(--sombra);
+}
+
+.titulo {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+
+.opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.foto,
+.manual {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 148px;
+  padding: 14px 8px;
+  border-radius: 16px;
+  border: 1px solid var(--borde);
+  background: var(--fondo-suave);
+  color: var(--ucb-marino);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.foto {
+  background: #e6f0f8;
+  border-color: #9fc3e0;
+}
+
+.foto strong,
+.manual strong {
+  font-size: 0.95rem;
+}
+
+.foto small,
+.manual small {
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.iconoFoto,
+.iconoManual {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+}
+
+.iconoFoto {
+  background: var(--ucb-azul);
+  color: #fff;
+}
+
+.iconoManual {
+  background: #dfe6ed;
+  color: var(--ucb-azul);
+}
+
+.recomendado {
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.foto:focus-visible,
+.manual:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}

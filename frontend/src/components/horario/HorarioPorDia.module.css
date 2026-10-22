@@ -1,0 +1,165 @@
+.contenedor {
+  display: grid;
+  gap: 12px;
+}
+
+.dias {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.dia,
+.diaActivo {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 60px;
+  padding: 6px 2px;
+  border-radius: 14px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.diaActivo {
+  background: var(--ucb-azul);
+  border-color: var(--ucb-azul);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(17, 68, 109, 0.3);
+}
+
+.conteos {
+  display: flex;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.clases,
+.huecos {
+  padding: 0 5px;
+  border-radius: 999px;
+  line-height: 16px;
+}
+
+.clases {
+  background: #dcebf7;
+  color: var(--ucb-azul);
+}
+
+.huecos {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+.tarjeta {
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--superficie);
+  box-shadow: 0 2px 12px var(--sombra);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 10px 16px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ucb-marino);
+}
+
+.agregar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #dcebf7;
+  color: var(--ucb-azul);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.clase {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 16px;
+  border: 0;
+  border-left: 4px solid;
+  border-bottom: 1px solid var(--borde-suave);
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clase strong {
+  font-size: 0.95rem;
+}
+
+.clase span {
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.puente {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 16px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.puente strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.puente small {
+  color: #6b5000;
+  font-size: 0.8rem;
+}
+
+.vacio {
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.dia:focus-visible,
+.diaActivo:focus-visible,
+.agregar:focus-visible,
+.clase:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: -3px;
+}
