@@ -20,8 +20,8 @@
 .pestanaActiva {
   font: inherit;
   font-weight: 700;
-  font-size: 0.9rem;
-  min-height: 44px;
+  font-size: 0.95rem;
+  min-height: 48px;
   border: 0;
   border-radius: 12px;
   cursor: pointer;
@@ -49,13 +49,14 @@
 }
 
 .campo label {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--ucb-marino);
 }
 
 .campo input {
   font: inherit;
+  font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
   min-height: 48px;
@@ -98,7 +99,7 @@
 }
 
 .errorCampo {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--error);
 }
 
@@ -143,14 +144,15 @@
 
 .terminos input {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  margin: 2px 0 0;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
   accent-color: var(--ucb-azul);
 }
 
 .terminos label {
-  font-size: 0.78rem;
+  min-height: 44px;
+  font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.5;
   color: var(--texto-suave);
@@ -159,7 +161,7 @@
 .pie {
   margin: 0;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--texto-suave);
 }
 
