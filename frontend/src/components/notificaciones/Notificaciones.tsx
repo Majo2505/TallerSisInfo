@@ -179,13 +179,13 @@ export default function Notificaciones({ recarga }: Props) {
             <span>Avisarme cuando empiece un puente</span>
           </label>
           {activas === false && (
-            <p className={estilos.nota}>No recibirás avisos, pero tus puentes se siguen detectando en tu horario.</p>
+            <p className={estilos.nota}>No vas a recibir avisos, pero tus puentes se siguen detectando en tu horario.</p>
           )}
 
           {error && <p className={estilos.error} role="alert">{error}</p>}
 
           {lista.length === 0 ? (
-            <p className={estilos.vacio}>Sin avisos por ahora. Te avisaremos en cuanto empiece uno de tus puentes.</p>
+            <p className={estilos.vacio}>Sin avisos por ahora. Te vamos a avisar apenas empiece uno de tus puentes.</p>
           ) : (
             <ul className={estilos.lista}>
               {lista.map((n) => (

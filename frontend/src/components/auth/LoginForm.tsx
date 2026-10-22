@@ -37,12 +37,12 @@ function validar(
 
   if (!datos.password) errores.password = "Ingresa tu contraseña.";
   else if (modo === "registro" && datos.password.length < LARGO_MINIMO_PASSWORD)
-    errores.password = `Tu contraseña debe tener al menos ${LARGO_MINIMO_PASSWORD} caracteres.`;
+    errores.password = `Tu contraseña tiene que tener al menos ${LARGO_MINIMO_PASSWORD} caracteres.`;
 
   if (modo === "registro") {
     if (!datos.confirmar) errores.confirmar = "Confirma tu contraseña.";
     else if (datos.confirmar !== datos.password) errores.confirmar = "Las contraseñas no coinciden.";
-    if (!datos.terminos) errores.terminos = "Debes aceptar los términos de uso.";
+    if (!datos.terminos) errores.terminos = "Tienes que aceptar los términos de uso.";
   }
   return errores;
 }
@@ -132,7 +132,7 @@ export default function LoginForm() {
       else await iniciarSesion(correo.trim(), password);
       router.replace(RUTA_DESTINO);
     } catch (e) {
-      setErrorServidor(e instanceof ErrorAuth ? e.message : "Ocurrió un error inesperado. Inténtalo de nuevo.");
+      setErrorServidor(e instanceof ErrorAuth ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
       setEnviando(false);
     }
   }
@@ -256,7 +256,7 @@ export default function LoginForm() {
           <button
             type="button"
             className={styles.olvido}
-            onClick={() => setAviso("Recuperar la contraseña estará disponible pronto.")}
+            onClick={() => setAviso("Recuperar la contraseña va a estar disponible pronto.")}
           >
             ¿Olvidaste tu contraseña?
           </button>

@@ -24,10 +24,10 @@ export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise
 
   if (res.status === 401) {
     cerrarSesion();
-    throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+    throw new Error("Se venció tu sesión. Inicia sesión de nuevo.");
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.mensaje ?? `Ocurrió un error inesperado (${res.status}).`);
+  if (!res.ok) throw new Error(data?.mensaje ?? `Hubo un error inesperado (${res.status}).`);
   return data as T;
 }
