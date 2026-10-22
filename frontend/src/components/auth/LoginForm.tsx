@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { ErrorAuth, iniciarSesion, obtenerSesion, registrarse, suscribirSesion } from "@/services/authService";
+import { IconoAjustes, IconoLibro } from "@/components/app/Iconos";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
 
-const RUTA_DESTINO = "/horario";
+const RUTA_DESTINO = "/inicio";
+const CORREO_DEMO_ESTUDIANTE = "dev.estudiante@ucb.edu.bo";
 const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DOMINIO_INSTITUCIONAL = "@ucb.edu.bo";
 // Pendiente: el backend no define reglas de contraseña; este mínimo es solo del formulario.
@@ -102,6 +104,7 @@ export default function LoginForm() {
   const [errores, setErrores] = useState<Errores>({});
   const [errorServidor, setErrorServidor] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState("");
 
   const esRegistro = modo === "registro";
 
@@ -114,6 +117,14 @@ export default function LoginForm() {
     setModo(nuevo);
     setErrores({});
     setErrorServidor("");
+    setAviso("");
+  }
+
+  function usarEstudiante() {
+    cambiarModo("login");
+    setCorreo(CORREO_DEMO_ESTUDIANTE);
+    setPassword("");
+    document.getElementById("password")?.focus();
   }
 
   async function alEnviar(evento: React.FormEvent) {
@@ -249,11 +260,38 @@ export default function LoginForm() {
           </>
         )}
 
-        {/* Pendiente (fuera de alcance, sin backend): "¿Olvidaste tu contraseña?" y el acceso rápido Estudiante / Admin del prototipo. */}
+        {!esRegistro && (
+          <button
+            type="button"
+            className={styles.olvido}
+            onClick={() => setAviso("Recuperar la contraseña estará disponible pronto.")}
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        )}
+
+        {aviso && (
+          <p className={styles.aviso} role="status">
+            {aviso}
+          </p>
+        )}
 
         <button type="submit" className={styles.boton} disabled={enviando}>
           {enviando ? "Ingresando…" : esRegistro ? "Crear cuenta" : "Iniciar sesión"}
         </button>
+
+        <div className={styles.divisor}>
+          <span>Acceso rápido</span>
+        </div>
+
+        <div className={styles.rapido}>
+          <button type="button" className={styles.estudiante} onClick={usarEstudiante}>
+            <IconoLibro tamano={18} /> Estudiante
+          </button>
+          <button type="button" className={styles.admin} disabled title="Próximamente">
+            <IconoAjustes tamano={18} /> Admin
+          </button>
+        </div>
 
         <p className={styles.pie}>Acceso restringido a correos institucionales verificados · JWT</p>
       </form>
