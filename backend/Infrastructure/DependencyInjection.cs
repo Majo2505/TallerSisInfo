@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using Breaku.Application.Horarios;
 using Breaku.Application.Puentes;
+using Breaku.Application.Notificaciones;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
 {
@@ -32,6 +33,9 @@ public static class DependencyInjection
 
         services.AddScoped<IHorarioRepository, HorarioRepository>();
         services.AddScoped<IPuenteRepository, PuenteRepository>();
+        services.AddScoped<INotificacionRepository, NotificacionRepository>();
+
+        services.AddHostedService<AvisoPuentesWorker>();
 
         return services;
     }

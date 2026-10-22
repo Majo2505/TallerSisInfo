@@ -3,6 +3,7 @@ using Breaku.Infrastructure;
 using Breaku.Application.Horarios;
 using Breaku.Infrastructure.Persistence;
 using Breaku.Application.Puentes;
+using Breaku.Application.Notificaciones;
 using Breaku.Presentation.Documentacion;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
 builder.Services.AddScoped<IPuenteRepository, PuenteRepository>();
 builder.Services.AddScoped<PuenteService>();
+builder.Services.AddScoped<NotificacionService>();
 
 var app = builder.Build();
 
