@@ -150,7 +150,7 @@ export default function HorarioPage() {
         <div className="hz-principal">
           <RegistroHorario
             onManual={() => setModal({})}
-            onFoto={() => setToast({ texto: "Subir una foto del horario estará disponible pronto.", tipo: "ok" })}
+            onFoto={() => setToast({ texto: "Subir una foto del horario va a estar disponible pronto.", tipo: "ok" })}
           />
           {cargando ? (
             <div className="hz-skeleton" aria-busy="true" aria-label="Cargando horario" />
@@ -158,7 +158,7 @@ export default function HorarioPage() {
             <>
               {bloques.length === 0 && !errorCarga && (
                 <div className="hz-vacio">
-                  <strong>Aún no registraste clases</strong>
+                  <strong>Todavía no registraste clases</strong>
                   <span>Pulsa «Agregar clase» o haz clic sobre un día en la grilla.</span>
                 </div>
               )}
@@ -279,7 +279,7 @@ function BloqueModal({ estado, onClose, onSaved }: {
     if (!form.horaInicio) e.horaInicio = "Indica la hora de inicio.";
     if (!form.horaFin) e.horaFin = "Indica la hora de fin.";
     if (form.horaInicio && form.horaFin && form.horaFin <= form.horaInicio)
-      e.horaFin = "Debe ser posterior a la hora de inicio.";
+      e.horaFin = "Tiene que ser posterior a la hora de inicio.";
     return e;
   };
 

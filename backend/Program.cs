@@ -23,7 +23,7 @@ var frontendOrigin = builder.Configuration["FRONTEND_ORIGIN"];
 if (string.IsNullOrWhiteSpace(frontendOrigin))
 {
     throw new InvalidOperationException(
-        "Falta la configuración 'FRONTEND_ORIGIN'. Definila en backend/.env (ver backend/.env.example).");
+        "Falta la configuración 'FRONTEND_ORIGIN'. Defínela en backend/.env (ver backend/.env.example).");
 }
 
 builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>
@@ -34,7 +34,7 @@ var jwtSecret = builder.Configuration["JWT_SECRET"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
 {
     throw new InvalidOperationException(
-        "Falta la configuración 'JWT_SECRET' o es demasiado corta (mínimo 32 caracteres). Definila en backend/.env (ver backend/.env.example).");
+        "Falta la configuración 'JWT_SECRET' o es demasiado corta (mínimo 32 caracteres). Defínela en backend/.env (ver backend/.env.example).");
 }
 
 builder.Services

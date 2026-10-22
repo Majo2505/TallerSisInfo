@@ -60,7 +60,7 @@ export default function Campus() {
         </div>
       )}
 
-      <p className={comun.nota}>Vista previa con lugares de ejemplo; el catálogo real llegará con el backend.</p>
+      <p className={comun.nota}>Vista previa con lugares de ejemplo; el catálogo de verdad llega con el backend.</p>
     </main>
   );
 }

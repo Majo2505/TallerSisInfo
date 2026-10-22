@@ -37,9 +37,9 @@ export default function Recomendaciones({ estadoInicial, minutosLibres }: Props)
         )}
 
         <header>
-          <h1 className={comun.titulo}>¿Cómo te sientes ahora mismo?</h1>
+          <h1 className={comun.titulo}>¿Cómo te sientes ahorita?</h1>
           <p className={comun.subtitulo}>
-            Te sugeriremos actividades que encajen con tu estado de ánimo y el tiempo que tienes.
+            Te vamos a sugerir actividades que encajen con tu estado de ánimo y el tiempo que tienes.
           </p>
         </header>
 
@@ -103,7 +103,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres }: Props)
       </div>
 
       <p className={comun.nota}>
-        Vista previa con lugares de ejemplo; las recomendaciones reales llegarán cuando exista el catálogo y el backend de IA.
+        Vista previa con lugares de ejemplo; las recomendaciones de verdad van a llegar cuando estén el catálogo y el backend de IA.
       </p>
     </main>
   );

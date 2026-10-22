@@ -175,7 +175,7 @@ export default function Inicio() {
             <p className={estilos.sinPuenteTexto}>
               {error
                 ? error
-                : "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y aparecerán aquí."}
+                : "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y van a aparecer aquí."}
             </p>
             <Link href="/horario" className={estilos.accionClara}>
               Ver mi horario
@@ -207,7 +207,7 @@ export default function Inicio() {
       </section>
 
       <section className={estilos.atajos} aria-label="Atajos">
-        <button type="button" className={estilos.atajo} onClick={() => aviso.mostrar("Los grupos rápidos estarán disponibles pronto.")}>
+        <button type="button" className={estilos.atajo} onClick={() => aviso.mostrar("Los grupos rápidos van a estar disponibles pronto.")}>
           <span className={estilos.atajoIcono}>
             <IconoPersonas tamano={22} />
           </span>
@@ -242,7 +242,7 @@ export default function Inicio() {
           ))}
         </div>
         <p className={comun.nota}>
-          <IconoDestello tamano={12} /> Vista previa con lugares de ejemplo; las sugerencias reales llegarán con el catálogo.
+          <IconoDestello tamano={12} /> Vista previa con lugares de ejemplo; las sugerencias de verdad llegan con el catálogo.
         </p>
       </section>
 

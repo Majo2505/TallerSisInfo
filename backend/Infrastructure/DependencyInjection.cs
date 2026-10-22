@@ -46,7 +46,7 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException(
-                $"Falta la configuración '{key}'. Definila en backend/.env (ver backend/.env.example).");
+                $"Falta la configuración '{key}'. Defínela en backend/.env (ver backend/.env.example).");
         }
 
         return value;

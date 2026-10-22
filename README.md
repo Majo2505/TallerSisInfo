@@ -47,7 +47,7 @@ Esquema completo (14 tablas): [`docs/database/schema.sql`](docs/database/schema.
 
 ### Backend
 
-Requisito: SDK de .NET 10 (probado con 10.0.401).
+Necesitas el SDK de .NET 10 (lo probamos con la 10.0.401).
 
 ```bash
 cd backend
@@ -55,39 +55,39 @@ dotnet build Breaku.slnx
 dotnet run --project Breaku.csproj --launch-profile http
 ```
 
-La API queda en `http://localhost:5092`. Para comprobar que corre:
+La API queda en `http://localhost:5092`. Para ver si está corriendo:
 
 ```bash
 curl -i http://localhost:5092/health
 ```
 
-Debe responder `200 OK`.
+Tiene que responder `200 OK`.
 
 ### Documentación de la API (Swagger / OpenAPI)
 
-La API se documenta con **OpenAPI 3** y se muestra con **Swagger UI** (paquete Swashbuckle.AspNetCore). Con el backend en marcha:
+La API está documentada con **OpenAPI 3** y se ve con **Swagger UI** (paquete Swashbuckle.AspNetCore). Con el backend corriendo:
 
 | Qué | URL |
 |---|---|
 | Swagger UI (interactivo, con botón **Authorize**) | `http://localhost:5092/swagger` |
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
-| Copia estática en YAML (para revisar sin correr el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
+| Copia estática en YAML (para mirarla sin levantar el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
 Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`):
 
-1. En Swagger UI, abrí `POST /api/auth/login`, pulsá **Try it out** y enviá el usuario de prueba (ver más abajo) o uno que hayas registrado.
-2. Copiá el valor de `token` de la respuesta.
-3. Pulsá **Authorize**, pegá el token (sin escribir `Bearer`) y confirmá. El token se conserva al recargar la página.
+1. En Swagger UI, abre `POST /api/auth/login`, pulsa **Try it out** y envía el usuario de prueba (mira más abajo) o uno que hayas registrado.
+2. Copia el valor de `token` de la respuesta.
+3. Pulsa **Authorize**, pega el token (sin escribir `Bearer`) y confirma. El token se queda guardado aunque recargues la página.
 
-Swagger solo se publica en `Development` (el perfil `http` de `launchSettings.json` ya lo es). Para habilitarlo en otro entorno, definí `SWAGGER_ENABLED=true` en `backend/.env`.
+Swagger solo aparece en `Development` (el perfil `http` de `launchSettings.json` ya lo es). Para activarlo en otro entorno, pon `SWAGGER_ENABLED=true` en `backend/.env`.
 
-La documentación sale de los comentarios `///` de los controladores y DTOs (el proyecto genera `Breaku.xml` al compilar). **Al agregar o cambiar un endpoint**, actualizá sus comentarios y `docs/api/openapi.yaml` en el mismo PR. Para regenerar el YAML desde la API en marcha, exportá `/swagger/v1/swagger.json`.
+La documentación sale de los comentarios `///` de los controladores y DTOs (el proyecto genera `Breaku.xml` al compilar). **Cuando agregues o cambies un endpoint**, actualiza sus comentarios y `docs/api/openapi.yaml` en el mismo PR. Para regenerar el YAML con la API corriendo, exporta `/swagger/v1/swagger.json`.
 
 ### Base de datos
 
-Requiere una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
+Necesitas una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Al actualizar:** si tu base se creó con una versión anterior de `schema.sql`, ejecutá en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no aplicaste (por ejemplo, `001-hu4-notificaciones.sql` para HU4), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL usada en el código es 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Pendiente: confirmar la versión del equipo.
+> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
@@ -95,11 +95,11 @@ La conexión se configura en `backend/.env` (no se sube al repositorio):
 cp backend/.env.example backend/.env
 ```
 
-Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
+Completa `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, más `FRONTEND_ORIGIN` (el origen del frontend que permite CORS; ejemplo: `http://localhost:3000`) y `JWT_SECRET` (una clave de 32 caracteres o más para firmar los tokens). No hay valores por defecto: si falta alguna, la API no arranca y te dice cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que puedes ejecutar desde cualquier carpeta.
 
-> **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca.
+> **Ojo al actualizar:** cada uno tiene que agregar `FRONTEND_ORIGIN` y `JWT_SECRET` a su `backend/.env` (mira `backend/.env.example`); sin esas claves la API no arranca.
 
-Para comprobar la conexión a MySQL con la API en marcha:
+Para ver si conecta a MySQL, con la API corriendo:
 
 ```bash
 curl -i http://localhost:5092/health/db
@@ -109,7 +109,7 @@ Responde `200 OK` si conecta y `503 Service Unavailable` si no.
 
 #### Usuario de prueba (solo desarrollo)
 
-> ⚠️ **SOLO para desarrollo local, nunca para producción.** La contraseña es pública en este repositorio.
+> **Ojo:** solo para desarrollo local, nunca para producción. La contraseña es pública en este repositorio.
 
 | Dato | Valor |
 |---|---|
@@ -118,7 +118,7 @@ Responde `200 OK` si conecta y `503 Service Unavailable` si no.
 
 El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta ese usuario (rol `ESTUDIANTE`, correo verificado, activo). Es idempotente: se puede ejecutar varias veces. **No incluye `USE`**: hay que ejecutarlo con tu base de datos ya seleccionada (el nombre es el de tu `DB_NAME`).
 
-**Opción 1: MySQL Workbench.** Abrí `docs/database/seed-dev.sql`, dejá tu base de datos como esquema por defecto (clic derecho sobre ella en el panel de esquemas → *Set as Default Schema*) y ejecutá el script.
+**Opción 1: MySQL Workbench.** Abre `docs/database/seed-dev.sql`, deja tu base de datos como esquema por defecto (clic derecho sobre ella en el panel de esquemas → *Set as Default Schema*) y ejecuta el script.
 
 **Opción 2: línea de comandos**, pasando el nombre de la base como parámetro:
 
@@ -126,13 +126,13 @@ El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta ese
 mysql -u <usuario> -p <nombre_de_la_base> < docs/database/seed-dev.sql
 ```
 
-En Windows, `mysql` puede no estar en el `PATH`; en ese caso usá la ruta completa a `mysql.exe` (carpeta `bin` de tu instalación de MySQL) o la opción 1.
+En Windows, `mysql` puede no estar en el `PATH`; en ese caso usa la ruta completa a `mysql.exe` (carpeta `bin` de tu instalación de MySQL) o la opción 1.
 
-Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
+Token de desarrollo: sácalo con `POST /api/auth/login` (en Swagger o con `curl`) usando el usuario de prueba.
 
 ### Frontend
 
-Requisitos: Node.js 20.9 o superior y npm (probado con Node 24.13.0 y npm 11.6.2).
+Necesitas Node.js 20.9 o superior y npm (lo probamos con Node 24.13.0 y npm 11.6.2).
 
 ```bash
 cd frontend
@@ -141,6 +141,6 @@ npm install
 npm run dev
 ```
 
-El frontend queda en `http://localhost:3000`. `NEXT_PUBLIC_API_URL` (en `frontend/.env.local`, no se sube al repositorio) es la URL base del backend; ejemplo: `http://localhost:5092`. Para que el navegador pueda llamar a la API, el backend debe tener `FRONTEND_ORIGIN=http://localhost:3000` en su `.env`.
+El frontend queda en `http://localhost:3000`. `NEXT_PUBLIC_API_URL` (en `frontend/.env.local`, no se sube al repositorio) es la URL base del backend; ejemplo: `http://localhost:5092`. Para que el navegador pueda llamar a la API, el backend tiene que tener `FRONTEND_ORIGIN=http://localhost:3000` en su `.env`.
 
-Build de producción: `npm run build`. Pendiente: estilos, librerías de UI y de estado (el stack no las define).
+Build de producción: `npm run build`. Falta definir librerías de UI y de estado (el stack todavía no las define).

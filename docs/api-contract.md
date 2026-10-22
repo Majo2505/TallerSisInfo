@@ -34,13 +34,13 @@ Responsables: **Amira** = HU1 (auth), **Maite** = HU2 (horarios), **Majo** = HU3
 ## Cómo usar este contrato
 
 **Para FE (Amira #29, Maite #32, Majo #35)**
-- Consumí solo los endpoints de este documento. Si necesitás otro, pedilo a la persona responsable del área: no lo inventes.
-- Mostrá al usuario el campo `detail` de los errores tal cual viene; los tres mensajes de login están definidos en #9.
+- Consume solo los endpoints de este documento. Si necesitas otro, pídelo a la persona responsable del área: no lo inventes.
+- Muestra al usuario el campo `detail` de los errores tal cual viene; los tres mensajes de login están definidos en #9.
 - Los campos marcados 🟡 o 🔴 pueden cambiar: no los dejes fijos en el código sin avisar.
 
 **Para BE (Amira #30, Maite #33, Majo #36)**
-- Implementá exactamente estas rutas, campos y códigos. Los DTOs no exponen entidades ni campos internos.
-- Si algo contradice este documento, consultá antes de cambiarlo y actualizá el contrato en el mismo PR.
+- Implementa exactamente estas rutas, campos y códigos. Los DTOs no exponen entidades ni campos internos.
+- Si algo contradice este documento, consulta antes de cambiarlo y actualiza el contrato en el mismo PR.
 
 **Cambios al contrato:** se hacen por PR a `main`, con revisión de la persona dueña del área.
 

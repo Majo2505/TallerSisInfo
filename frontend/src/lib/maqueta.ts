@@ -8,7 +8,7 @@ export type EstadoAnimo = "cansado" | "enfocado" | "energia" | "social";
 export const ESTADOS_ANIMO: { id: EstadoAnimo; nombre: string; descripcion: string }[] = [
   { id: "cansado", nombre: "Cansado", descripcion: "Necesito descansar o algo tranquilo" },
   { id: "enfocado", nombre: "Enfocado", descripcion: "Quiero aprovechar para estudiar" },
-  { id: "energia", nombre: "Energía", descripcion: "Me apetece algo activo o social" },
+  { id: "energia", nombre: "Energía", descripcion: "Quiero hacer algo activo o social" },
   { id: "social", nombre: "Social", descripcion: "Busco conectar con alguien" },
 ];
 
