@@ -1,0 +1,216 @@
+.comida {
+  background: linear-gradient(135deg, #fff1b8, #fdd537);
+  color: #6b5000;
+}
+
+.estudio {
+  background: linear-gradient(135deg, #cfe3f3, #7fb1d6);
+  color: var(--ucb-marino);
+}
+
+.descanso {
+  background: linear-gradient(135deg, #cdeef4, #5cc3d6);
+  color: #04434f;
+}
+
+.deporte {
+  background: linear-gradient(135deg, #c3e6f7, #3aa6dd);
+  color: #04405f;
+}
+
+.compacta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--superficie);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px var(--sombra);
+}
+
+.miniatura {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.datosCompactos {
+  flex: 1;
+  min-width: 0;
+}
+
+.nombre {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ucb-marino);
+}
+
+.meta {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.meta svg:not(:first-child) {
+  margin-left: 6px;
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8f6a00;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.completa {
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px var(--sombra);
+}
+
+.portada {
+  position: relative;
+  height: 128px;
+  display: grid;
+  place-items: center;
+}
+
+.categoria {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ucb-marino);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.puntuacion {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ucb-marino);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.cuerpo {
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.nombreGrande {
+  margin: 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ucb-marino);
+}
+
+.justificacion {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #e6f0f8;
+  color: var(--ucb-azul);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.justificacion svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fila .meta {
+  margin: 0;
+}
+
+.verificado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #d3f0f5;
+  color: #04434f;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.votos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.votoSi,
+.votoNo,
+.votoSiActivo,
+.votoNoActivo {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--fondo-suave);
+  color: var(--ucb-azul);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.votoNo {
+  color: var(--error);
+  border-color: var(--error-borde);
+  background: var(--error-fondo);
+}
+
+.votoSiActivo {
+  background: var(--ucb-azul);
+  border-color: var(--ucb-azul);
+  color: #fff;
+}
+
+.votoNoActivo {
+  background: var(--error);
+  border-color: var(--error);
+  color: #fff;
+}
+
+.votoSi:focus-visible,
+.votoNo:focus-visible,
+.votoSiActivo:focus-visible,
+.votoNoActivo:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}

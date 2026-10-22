@@ -1,0 +1,99 @@
+.pagina {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 16px 16px 24px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--ucb-marino);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+.etiqueta {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 2px 12px var(--sombra);
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  justify-self: start;
+}
+
+.volver:hover {
+  color: var(--ucb-azul);
+}
+
+.volver:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #dcebf7;
+  color: var(--ucb-azul);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.nota {
+  margin: 0;
+  text-align: center;
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+@media (min-width: 1025px) {
+  .pagina {
+    max-width: 960px;
+    padding: 24px 24px 40px;
+  }
+
+  .titulo {
+    font-size: 1.8rem;
+  }
+}
