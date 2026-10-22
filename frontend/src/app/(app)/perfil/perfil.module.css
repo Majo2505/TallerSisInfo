@@ -1,0 +1,258 @@
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--ucb-azul);
+  color: #fff;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  border-bottom: 4px solid var(--ucb-amarillo);
+}
+
+.datos {
+  min-width: 0;
+}
+
+.nombre {
+  margin: 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ucb-marino);
+  overflow-wrap: anywhere;
+}
+
+.correo {
+  margin: 2px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.verificado,
+.semestre {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.verificado {
+  background: #d3f0f5;
+  color: #04434f;
+}
+
+.semestre {
+  background: #dcebf7;
+  color: var(--ucb-azul);
+}
+
+.pestanas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  background: #e1e9f0;
+}
+
+.pestana,
+.pestanaActiva {
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ucb-azul);
+  cursor: pointer;
+}
+
+.pestanaActiva {
+  background: var(--ucb-azul);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(17, 68, 109, 0.3);
+}
+
+.formulario {
+  display: grid;
+  gap: 14px;
+}
+
+.seccion {
+  margin: 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--ucb-marino);
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ucb-marino);
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: #f9fbfc;
+  color: var(--texto);
+}
+
+.campo textarea {
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.campo input:disabled {
+  background: var(--fondo-suave);
+  color: var(--texto-tenue);
+}
+
+.campo small {
+  font-weight: 400;
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.primario,
+.secundario,
+.salir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primario {
+  border: 0;
+  background: var(--ucb-azul);
+  color: #fff;
+  border-bottom: 3px solid var(--ucb-amarillo);
+}
+
+.primario:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secundario {
+  border: 1px solid var(--ucb-azul);
+  background: transparent;
+  color: var(--ucb-azul);
+}
+
+.salir {
+  border: 1px solid var(--error-borde);
+  background: var(--error-fondo);
+  color: var(--error);
+}
+
+.interruptor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--fondo-suave);
+  cursor: pointer;
+}
+
+.interruptor strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--ucb-marino);
+}
+
+.interruptor small {
+  display: block;
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.interruptor input {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  accent-color: var(--ucb-azul);
+}
+
+.error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
+  font-size: 0.9rem;
+}
+
+.pestana:focus-visible,
+.pestanaActiva:focus-visible,
+.campo input:focus-visible,
+.campo select:focus-visible,
+.campo textarea:focus-visible,
+.primario:focus-visible,
+.secundario:focus-visible,
+.salir:focus-visible,
+.interruptor input:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .fila {
+    grid-template-columns: 1fr 1fr;
+  }
+}
