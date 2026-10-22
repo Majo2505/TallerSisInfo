@@ -73,7 +73,7 @@ La API se documenta con **OpenAPI 3** y se muestra con **Swagger UI** (paquete S
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
 | Copia estática en YAML (para revisar sin correr el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
-Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`):
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`):
 
 1. En Swagger UI, abrí `POST /api/auth/login`, pulsá **Try it out** y enviá el usuario de prueba (ver más abajo) o uno que hayas registrado.
 2. Copiá el valor de `token` de la respuesta.

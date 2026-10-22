@@ -10,6 +10,7 @@ public class Usuario
     public bool CorreoVerificado { get; set; }
     public bool ConsentimientoUbicacion { get; set; }
     public DateTime? FechaConsentimiento { get; set; }
+    public bool NotificacionesActivas { get; set; } = true;   // HU4: false = no se le envían avisos
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }

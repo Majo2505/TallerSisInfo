@@ -19,6 +19,7 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.CorreoVerificado).HasColumnName("correo_verificado");
         builder.Property(u => u.ConsentimientoUbicacion).HasColumnName("consentimiento_ubicacion");
         builder.Property(u => u.FechaConsentimiento).HasColumnName("fecha_consentimiento").HasColumnType("datetime(6)");
+        builder.Property(u => u.NotificacionesActivas).HasColumnName("notificaciones_activas");
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasColumnType("datetime(6)")
             .HasDefaultValueSql("(UTC_TIMESTAMP(6))");
         builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasColumnType("datetime(6)")

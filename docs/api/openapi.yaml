@@ -7,13 +7,13 @@ info:
 
     Este archivo es una copia estática de la documentación que el backend publica en `/swagger`
     (documento vivo: `GET /swagger/v1/swagger.json`). Cubre autenticación (HU1), horario (HU2),
-    puentes (HU3) y health.
+    puentes (HU3), notificaciones (HU4) y health.
 
     ### Cómo probar los endpoints protegidos
     1. Ejecuta `POST /api/auth/login` (o `POST /api/auth/register`) con un correo `@ucb.edu.bo`.
     2. Copia el valor de `token` de la respuesta.
     3. Pulsa **Authorize**, pega el token (sin escribir `Bearer`) y confirma.
-    4. Ya puedes usar `/api/horario` y `/api/puentes`.
+    4. Ya puedes usar `/api/horario`, `/api/puentes` y `/api/notificaciones`.
 
     ### Convenciones
     - JSON en `camelCase`. Mensajes de error en español.
@@ -34,6 +34,8 @@ tags:
     description: Horario académico del estudiante (HU2). Requiere JWT; solo opera sobre los bloques del usuario del token.
   - name: Puentes
     description: Puentes detectados (HU3). Requiere JWT. Solo consulta; se recalculan solos al cambiar el horario.
+  - name: Notificaciones
+    description: Avisos de puente disponible (HU4). Requiere JWT. El servidor crea el aviso al empezar cada puente.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -243,6 +245,102 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PuenteDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+  /api/notificaciones:
+    get:
+      tags: [Notificaciones]
+      operationId: listarNotificaciones
+      summary: Notificaciones activas del usuario, de la más reciente a la más antigua (máximo 20).
+      description: |
+        Cada aviso de puente se crea **al empezar el puente** (nunca antes, y a más tardar 1 minuto después) y
+        **una sola vez** por puente y día. Si el estudiante cambia su horario y el puente deja de existir, su aviso
+        deja de estar activo y ya no aparece aquí. Con las notificaciones desactivadas no se crean avisos.
+        No hay push en tiempo real todavía: el cliente debe consultar este endpoint periódicamente (por ejemplo, cada 30 s).
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Lista de notificaciones activas (puede ser vacía).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificacionDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+  /api/notificaciones/{id}/leida:
+    patch:
+      tags: [Notificaciones]
+      operationId: marcarNotificacionLeida
+      summary: Marca una notificación como leída.
+      description: Es idempotente. Si es de otro usuario se responde igual que si no existiera (404).
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador de la notificación.
+          schema:
+            type: integer
+            format: int64
+          example: 31
+      responses:
+        '204':
+          description: Notificación marcada como leída (sin cuerpo).
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La notificación no existe, no está activa o no pertenece al usuario (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: NO_ENCONTRADO
+                mensaje: La notificación no existe.
+  /api/notificaciones/configuracion:
+    get:
+      tags: [Notificaciones]
+      operationId: obtenerConfiguracionNotificaciones
+      summary: Indica si el usuario tiene activadas las notificaciones.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Preferencia actual. Por defecto, `true`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionNotificacionesDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+    put:
+      tags: [Notificaciones]
+      operationId: guardarConfiguracionNotificaciones
+      summary: Activa o desactiva las notificaciones del usuario.
+      description: Con `false` no se envía ningún aviso, pero los puentes se siguen detectando (ver `GET /api/puentes`).
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfiguracionNotificacionesDto'
+            example:
+              notificacionesActivas: false
+      responses:
+        '200':
+          description: Preferencia guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionNotificacionesDto'
+        '400':
+          description: Cuerpo mal formado o sin el campo (`ProblemDetails` estándar de ASP.NET).
         '401':
           $ref: '#/components/responses/NoAutorizado'
   /health:
@@ -516,3 +614,61 @@ components:
           type: string
           description: Hora en que empieza la clase siguiente (`HH:mm:ss`, 24 h).
           example: '10:30:00'
+    NotificacionDto:
+      type: object
+      description: Aviso para el estudiante. Hoy solo existe el tipo `PUENTE_DISPONIBLE` (HU4).
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador de la notificación.
+          example: 31
+        tipo:
+          type: string
+          enum: [PUENTE_DISPONIBLE, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA]
+          description: Tipo de aviso.
+          example: PUENTE_DISPONIBLE
+        mensaje:
+          type: string
+          description: Texto listo para mostrar al usuario.
+          example: ¡Puente disponible! Tienes 1 h 30 min libres, de 10:00 a 11:30.
+        fecha:
+          type: string
+          format: date
+          nullable: true
+          description: Día del puente (`yyyy-MM-dd`, hora de Bolivia). `null` si no es un aviso de puente.
+          example: '2026-10-22'
+        horaInicio:
+          type: string
+          nullable: true
+          description: Inicio del puente (`HH:mm:ss`). `null` si no es un aviso de puente.
+          example: '10:00:00'
+        horaFin:
+          type: string
+          nullable: true
+          description: Fin del puente (`HH:mm:ss`). `null` si no es un aviso de puente.
+          example: '11:30:00'
+        duracionMinutos:
+          type: integer
+          format: int32
+          nullable: true
+          description: Duración disponible del puente en minutos. `null` si no es un aviso de puente.
+          example: 90
+        leida:
+          type: boolean
+          description: Si el usuario ya la marcó como leída.
+          example: false
+        creadaEn:
+          type: string
+          format: date-time
+          description: Momento del envío (UTC).
+          example: '2026-10-22T14:00:04.512Z'
+    ConfiguracionNotificacionesDto:
+      type: object
+      description: Preferencia de avisos del usuario.
+      required: [notificacionesActivas]
+      properties:
+        notificacionesActivas:
+          type: boolean
+          description: '`true` = recibe avisos de puente. `false` = no recibe ninguno, aunque sus puentes se siguen detectando.'
+          example: true

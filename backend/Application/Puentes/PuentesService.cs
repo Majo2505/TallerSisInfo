@@ -1,4 +1,5 @@
 using Breaku.Application.Horarios;
+using Breaku.Application.Notificaciones;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
 
@@ -9,11 +10,13 @@ public class PuenteService
 {
     private readonly IHorarioRepository _horarios;
     private readonly IPuenteRepository _puentes;
+    private readonly NotificacionService _notificaciones;
 
-    public PuenteService(IHorarioRepository horarios, IPuenteRepository puentes)
+    public PuenteService(IHorarioRepository horarios, IPuenteRepository puentes, NotificacionService notificaciones)
     {
         _horarios = horarios;
         _puentes = puentes;
+        _notificaciones = notificaciones;
     }
 
     public async Task<List<PuenteDto>> ListarAsync(int usuarioId, CancellationToken ct = default)
@@ -25,12 +28,14 @@ public class PuenteService
     /// <summary>
     /// Recalcula y reemplaza los puentes del usuario. Debe llamarse DESPUÉS de guardar
     /// cualquier cambio de horario (POST, PUT y DELETE de /api/horarios). No hay endpoint público.
+    /// Además desactiva los avisos de puentes que dejaron de existir (HU4).
     /// </summary>
     public async Task RecalcularAsync(int usuarioId, CancellationToken ct = default)
     {
         var bloques = await _horarios.ListarPorUsuarioAsync(usuarioId, ct);
         var puentes = DetectarPuentes(usuarioId, bloques);
         await _puentes.ReemplazarAsync(usuarioId, puentes, ct);
+        await _notificaciones.DesactivarSinPuenteAsync(usuarioId, puentes, ct);
     }
 
     /// <summary>
