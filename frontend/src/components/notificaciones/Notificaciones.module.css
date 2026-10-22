@@ -29,7 +29,7 @@
 .enlace:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 1px; border-radius: 4px; }
 
 /* Aviso emergente: abajo a la derecha, para no tapar la cabecera (campana y «Agregar clase") */
-.emergente { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 70; display: flex; align-items: center; gap: 12px; box-sizing: border-box; padding: 14px 16px; border-radius: 16px; background: var(--ucb-marino); color: #fff; box-shadow: 0 12px 32px rgba(0, 0, 0, .25); animation: entrar .25s ease-out; }
+.emergente { position: fixed; left: 16px; right: 16px; bottom: 84px; z-index: 70; display: flex; align-items: center; gap: 12px; box-sizing: border-box; padding: 14px 16px; border-radius: 16px; background: var(--ucb-marino); color: #fff; box-shadow: 0 12px 32px rgba(0, 0, 0, .25); animation: entrar .25s ease-out; }
 .emergenteIcono { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--ucb-amarillo); color: var(--ucb-marino); }
 .emergenteTexto { display: grid; gap: 2px; flex: 1; min-width: 0; font-size: .92rem; line-height: 1.35; }
 .emergenteTexto strong { font-family: var(--fuente-titulo), system-ui, sans-serif; color: var(--ucb-amarillo); }
@@ -39,7 +39,11 @@
 @keyframes entrar { from { opacity: 0; transform: translateY(8px); } }
 
 @media (min-width: 640px) {
-  .emergente { left: auto; right: 24px; bottom: 24px; width: min(380px, calc(100vw - 32px)); }
+  .emergente { left: auto; right: 24px; width: min(380px, calc(100vw - 32px)); }
+}
+
+@media (min-width: 1025px) {
+  .emergente { bottom: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

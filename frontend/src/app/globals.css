@@ -105,7 +105,7 @@ main {
 .hz-acciones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hz-espacio { flex: 1; }
 
-.hz-toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); box-sizing: border-box; text-align: center; padding: 12px 18px; border-radius: 999px; color: #fff; font-size: .92rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); z-index: 60; }
+.hz-toast { position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); box-sizing: border-box; text-align: center; padding: 12px 18px; border-radius: 999px; color: #fff; font-size: .92rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); z-index: 60; }
 .hz-toast-ok { background: var(--exito); }
 .hz-toast-error { background: var(--error); }
 
@@ -115,10 +115,10 @@ main {
   .hz-head-acciones { width: auto; }
   .hz-head-acciones .hz-btn-primary { flex: none; }
   .hz-fila { grid-template-columns: 1fr 1fr; }
-  .hz-toast { bottom: 24px; }
 }
 
 @media (min-width: 1025px) {
+  .hz-toast { bottom: 24px; }
   .hz-layout { grid-template-columns: minmax(0, 1fr) 320px; }
   .hz-lateral { position: sticky; top: 16px; order: 0; }
   .hz-grid { grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); min-width: 56px; }
