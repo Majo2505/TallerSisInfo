@@ -13,7 +13,8 @@ CREATE TABLE usuario (
   correo_verificado         BOOLEAN      NOT NULL DEFAULT FALSE,
   consentimiento_ubicacion  BOOLEAN      NOT NULL DEFAULT FALSE,
   fecha_consentimiento      DATETIME(6)  NULL,
-  created_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  notificaciones_activas    BOOLEAN      NOT NULL DEFAULT TRUE,   -- HU4: FALSE = no se le envían avisos (los puentes se siguen detectando)
+  created_at               DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_by                INT          NULL,            -- quien hizo el último cambio (NULL = el propio usuario / sistema)
   activo                    BOOLEAN      NOT NULL DEFAULT TRUE,   -- borrado lógico: 1 = activa, 0 = dada de baja (quién/cuándo: historial_cambio)
@@ -208,18 +209,28 @@ CREATE TABLE participacion (
 ) ENGINE=InnoDB;
 
 CREATE TABLE notificacion (
-  id           BIGINT       NOT NULL AUTO_INCREMENT,
-  usuario_id   INT          NOT NULL,
-  tipo         VARCHAR(25)  NOT NULL,
-  comunidad_id INT          NULL,                         -- sin puente_id: el aviso de puente es texto (ver hallazgo)
-  mensaje      VARCHAR(200) NOT NULL,
-  leida        BOOLEAN      NOT NULL DEFAULT FALSE,
-  created_at   DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  id                  BIGINT       NOT NULL AUTO_INCREMENT,
+  usuario_id          INT          NOT NULL,
+  tipo                VARCHAR(25)  NOT NULL,
+  comunidad_id        INT          NULL,
+  -- HU4: copia del puente avisado (solo PUENTE_DISPONIBLE). Sin puente_id: los puentes se borran y
+  -- se reinsertan en cada cambio de horario, así que su id no es estable. Hora local de Bolivia, como puente.
+  puente_fecha        DATE         NULL,                  -- día concreto en que ocurre el puente
+  puente_hora_inicio  TIME         NULL,                  -- = puente.hora_inicio
+  puente_hora_fin     TIME         NULL,                  -- = puente.hora_fin; duración = fin - inicio
+  mensaje             VARCHAR(200) NOT NULL,
+  leida               BOOLEAN      NOT NULL DEFAULT FALSE,
+  activa              BOOLEAN      NOT NULL DEFAULT TRUE, -- HU4: FALSE si el puente dejó de existir al cambiar el horario
+  created_at          DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),   -- momento del envío
   PRIMARY KEY (id),
-  KEY ix_notif_usuario (usuario_id, leida, created_at),
+  CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),   -- HU4: un solo aviso por puente
+  KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
   CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
-  CONSTRAINT ck_notif_ref  CHECK ((tipo = 'PUENTE_DISPONIBLE' AND comunidad_id IS NULL)
-                               OR (tipo <> 'PUENTE_DISPONIBLE' AND comunidad_id IS NOT NULL)),
+  CONSTRAINT ck_notif_ref  CHECK ((tipo = 'PUENTE_DISPONIBLE' AND comunidad_id IS NULL
+                                   AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL)
+                               OR (tipo <> 'PUENTE_DISPONIBLE' AND comunidad_id IS NOT NULL
+                                   AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL)),
+  CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),   -- NULL en los otros tipos: pasa
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
   CONSTRAINT fk_notif_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id)
 ) ENGINE=InnoDB;

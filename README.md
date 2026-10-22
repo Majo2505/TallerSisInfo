@@ -85,7 +85,9 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 ### Base de datos
 
-Requiere una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones). La versión de MySQL usada en el código es 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Pendiente: confirmar la versión del equipo.
+Requiere una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
+
+> **Al actualizar:** si tu base se creó con una versión anterior de `schema.sql`, ejecutá en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no aplicaste (por ejemplo, `001-hu4-notificaciones.sql` para HU4), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL usada en el código es 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Pendiente: confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
