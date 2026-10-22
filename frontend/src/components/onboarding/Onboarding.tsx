@@ -1,13 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Flecha, Icono, Informacion } from "./Iconos";
 import styles from "./Onboarding.module.css";
 import { PASOS } from "./pasos";
 
 const CLAVE_VISTO = "breaku_onboarding_visto";
 const UMBRAL_SWIPE = 50; // píxeles mínimos para contar como deslizamiento
+
+function yaFueVisto(): boolean {
+  try {
+    return window.localStorage.getItem(CLAVE_VISTO) !== null;
+  } catch {
+    return false;
+  }
+}
+
+const sinSuscripcion = () => () => {};
 
 function marcarVisto() {
   try {
@@ -17,13 +27,25 @@ function marcarVisto() {
   }
 }
 
-export default function Onboarding() {
+type Props = {
+  /** Ignora la marca de "ya visto" (útil en desarrollo con ?onboarding=1). */
+  forzar?: boolean;
+};
+
+export default function Onboarding({ forzar = false }: Props) {
   const router = useRouter();
   const [indice, setIndice] = useState(0);
+  // null en el servidor y durante la hidratación: aún no se sabe si ya lo vio.
+  const visto = useSyncExternalStore<boolean | null>(sinSuscripcion, yaFueVisto, () => null);
+  const verificando = !forzar && (visto === null || visto);
   const inicioToque = useRef<number | null>(null);
 
   const paso = PASOS[indice];
   const esUltimo = indice === PASOS.length - 1;
+
+  useEffect(() => {
+    if (!forzar && visto) router.replace("/login");
+  }, [forzar, visto, router]);
 
   const terminar = useCallback(() => {
     marcarVisto();
@@ -43,13 +65,14 @@ export default function Onboarding() {
   }, []);
 
   useEffect(() => {
+    if (verificando) return;
     function alPresionarTecla(evento: KeyboardEvent) {
       if (evento.key === "ArrowRight") siguiente();
       if (evento.key === "ArrowLeft") anterior();
     }
     window.addEventListener("keydown", alPresionarTecla);
     return () => window.removeEventListener("keydown", alPresionarTecla);
-  }, [siguiente, anterior]);
+  }, [verificando, siguiente, anterior]);
 
   function alTocar(evento: React.TouchEvent) {
     inicioToque.current = evento.touches[0].clientX;
@@ -76,44 +99,46 @@ export default function Onboarding() {
       onTouchStart={alTocar}
       onTouchEnd={alSoltar}
     >
-      <main className={styles.contenedor}>
-        <header className={styles.cabecera}>
-          <button type="button" className={styles.saltar} onClick={terminar}>
-            Saltar
-          </button>
-        </header>
+      {!verificando && (
+        <main className={styles.contenedor}>
+          <header className={styles.cabecera}>
+            <button type="button" className={styles.saltar} onClick={terminar}>
+              Saltar
+            </button>
+          </header>
 
-        <section key={indice} className={styles.contenido} aria-live="polite">
-          <div className={styles.icono}>
-            <Icono nombre={paso.icono} />
-          </div>
-          <h1 className={styles.titulo}>{paso.titulo}</h1>
-          <p className={styles.texto}>{paso.texto}</p>
-          <p className={styles.nota}>
-            <Informacion />
-            <span>{paso.nota}</span>
-          </p>
-        </section>
+          <section key={indice} className={styles.contenido} aria-live="polite">
+            <div className={styles.icono}>
+              <Icono nombre={paso.icono} />
+            </div>
+            <h1 className={styles.titulo}>{paso.titulo}</h1>
+            <p className={styles.texto}>{paso.texto}</p>
+            <p className={styles.nota}>
+              <Informacion />
+              <span>{paso.nota}</span>
+            </p>
+          </section>
 
-        <footer className={styles.pie}>
-          <div className={styles.puntos}>
-            {PASOS.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                className={i === indice ? styles.puntoActivo : styles.punto}
-                aria-label={`Paso ${i + 1} de ${PASOS.length}`}
-                aria-current={i === indice ? "step" : undefined}
-                onClick={() => setIndice(i)}
-              />
-            ))}
-          </div>
-          <button type="button" className={styles.boton} onClick={siguiente}>
-            {paso.boton}
-            <Flecha />
-          </button>
-        </footer>
-      </main>
+          <footer className={styles.pie}>
+            <div className={styles.puntos}>
+              {PASOS.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={i === indice ? styles.puntoActivo : styles.punto}
+                  aria-label={`Paso ${i + 1} de ${PASOS.length}`}
+                  aria-current={i === indice ? "step" : undefined}
+                  onClick={() => setIndice(i)}
+                />
+              ))}
+            </div>
+            <button type="button" className={styles.boton} onClick={siguiente}>
+              {paso.boton}
+              <Flecha />
+            </button>
+          </footer>
+        </main>
+      )}
     </div>
   );
 }

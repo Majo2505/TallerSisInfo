@@ -29,7 +29,9 @@ export default function PanelMarca() {
         <div className={styles.logo}>
           <Logo tamano={22} />
         </div>
-        <span className={styles.nombre}>BreakU</span>
+        <span className={styles.nombre}>
+          Break<span className={styles.u}>U</span>
+        </span>
       </div>
       <p className={styles.lema}>Tu tiempo libre, bien aprovechado.</p>
 

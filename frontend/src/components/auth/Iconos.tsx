@@ -12,8 +12,8 @@ const base = {
 
 export function Logo({ tamano = 24 }: Props) {
   return (
-    <svg width={tamano} height={tamano} viewBox="0 0 24 24" {...base}>
-      <path d="M6 4h7a4 4 0 0 1 0 8H6zM6 12h8a4 4 0 0 1 0 8H6zM6 4v16" />
+    <svg width={tamano} height={tamano} viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden focusable={false}>
+      <path d="M6 4h7.4a3.9 3.9 0 0 1 2.9 6.5A4.3 4.3 0 0 1 14 20H6zM9 7v3h3.9a1.5 1.5 0 0 0 0-3zM9 13v4h4.2a2 2 0 0 0 0-4z" />
     </svg>
   );
 }

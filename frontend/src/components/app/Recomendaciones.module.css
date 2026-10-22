@@ -1,0 +1,113 @@
+.libres {
+  justify-self: start;
+}
+
+.estados {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.estado {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 168px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.estado strong {
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.1rem;
+}
+
+.estado span:last-child {
+  font-size: 0.85rem;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+
+.estadoIcono {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.estado_cansado {
+  background: #fff6d1;
+  border-color: #fdd537;
+  color: #6b5000;
+}
+
+.estado_enfocado {
+  background: #dcebf7;
+  border-color: #9fc3e0;
+  color: var(--ucb-azul);
+}
+
+.estado_energia {
+  background: #d3f0f5;
+  border-color: #8fd2df;
+  color: #04434f;
+}
+
+.estado_social {
+  background: #e1eaf5;
+  border-color: #a9bfdc;
+  color: #1f3f6e;
+}
+
+.estado:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.motor {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #e6f0f8;
+  border: 1px solid #b9d3e8;
+  color: var(--ucb-azul);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.motor svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lista {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .estados {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .lista {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

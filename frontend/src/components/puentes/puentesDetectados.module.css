@@ -16,6 +16,6 @@
 @keyframes brillo { to { background-position: -200% 0; } }
 
 .error { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--error-fondo); color: var(--error-texto); border: 1px solid var(--error-borde); border-radius: 10px; padding: 10px 12px; font-size: .92rem; }
-.reintentar { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); cursor: pointer; }
+.reintentar { font: inherit; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); cursor: pointer; }
 .reintentar:hover { background: #eaf2f8; }
 .reintentar:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 1px; }

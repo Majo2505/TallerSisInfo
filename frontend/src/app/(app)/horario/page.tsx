@@ -6,7 +6,8 @@ import { Puente, duracionMin, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import ResumenSemanal from "@/components/horario/ResumenSemanal";
 import PuentesDetectados from "@/components/puentes/puentesDetectados";
-import Notificaciones from "@/components/notificaciones/Notificaciones";
+import HorarioPorDia from "@/components/horario/HorarioPorDia";
+import RegistroHorario from "@/components/horario/RegistroHorario";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const PX_HORA = 56; // alto de una hora en la grilla
@@ -135,7 +136,6 @@ export default function HorarioPage() {
         </div>
         <div className="hz-head-acciones">
           <button className="hz-btn hz-btn-primary" onClick={() => setModal({})}>+ Agregar clase</button>
-          <Notificaciones recarga={intento} />
         </div>
       </header>
 
@@ -148,6 +148,10 @@ export default function HorarioPage() {
 
       <div className="hz-layout">
         <div className="hz-principal">
+          <RegistroHorario
+            onManual={() => setModal({})}
+            onFoto={() => setToast({ texto: "Subir una foto del horario estará disponible pronto.", tipo: "ok" })}
+          />
           {cargando ? (
             <div className="hz-skeleton" aria-busy="true" aria-label="Cargando horario" />
           ) : (
@@ -159,6 +163,17 @@ export default function HorarioPage() {
                 </div>
               )}
 
+              <div className="hz-vista-dia">
+                <HorarioPorDia
+                  bloques={bloques}
+                  puentes={puentes}
+                  colorDe={colorBloque}
+                  onAgregar={(dia) => setModal({ base: { diaSemana: dia, horaInicio: "08:00", horaFin: "09:30" } })}
+                  onEditar={(b) => setModal({ bloque: b })}
+                />
+              </div>
+
+              <div className="hz-vista-grilla">
               <div className="hz-scroll">
                 <div className="hz-grid" style={{ ["--ph" as string]: `${PX_HORA}px` }}>
                   <div className="hz-corner" />
@@ -205,6 +220,7 @@ export default function HorarioPage() {
                     </div>
                   ))}
                 </div>
+              </div>
               </div>
             </>
           )}
