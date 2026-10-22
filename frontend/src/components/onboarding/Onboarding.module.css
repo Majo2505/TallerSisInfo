@@ -26,11 +26,14 @@
 .saltar {
   font: inherit;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--acento-texto);
   background: transparent;
   border: 0;
-  padding: 10px 8px;
+  min-height: 44px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
   border-radius: 8px;
   cursor: pointer;
 }
@@ -68,68 +71,93 @@
   font-size: 1.85rem;
   font-weight: 800;
   line-height: 1.2;
+  letter-spacing: -0.01em;
   color: var(--ucb-marino);
 }
 
 .texto {
   margin: 0;
-  font-size: 1.05rem;
+  max-width: 20rem;
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--texto-suave);
 }
 
 .nota {
   margin: 4px 0 0;
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  background: #fff;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
   color: var(--acento-texto);
   font-size: 0.9rem;
   font-weight: 600;
-  text-align: left;
-  box-shadow: 0 2px 8px rgba(5, 40, 69, 0.08);
+  text-align: center;
 }
 
 .nota svg {
   flex-shrink: 0;
 }
 
+.nota span {
+  flex: 1;
+}
+
 .pie {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 8px;
 }
 
 .puntos {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
 }
 
 .punto,
 .puntoActivo {
-  height: 8px;
+  position: relative;
+  width: 24px;
+  height: 44px;
   padding: 0;
   border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.punto::before,
+.puntoActivo::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 8px;
   border-radius: 999px;
   background: var(--acento);
-  cursor: pointer;
+  transform: translate(-50%, -50%);
   transition:
     width 0.3s ease,
     opacity 0.3s ease,
     background-color 0.4s ease;
 }
 
-.punto {
+.punto::before {
   width: 8px;
   opacity: 0.3;
 }
 
 .puntoActivo {
+  width: 36px;
+}
+
+.puntoActivo::before {
   width: 28px;
 }
 
@@ -145,8 +173,9 @@
   color: #fff;
   background: var(--acento);
   border: 0;
-  border-radius: 18px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  min-height: 52px;
+  padding: 0 20px;
   cursor: pointer;
   box-shadow: 0 10px 24px color-mix(in srgb, var(--acento) 35%, transparent);
   transition:
@@ -195,8 +224,8 @@
 @media (prefers-reduced-motion: reduce) {
   .pantalla,
   .icono,
-  .punto,
-  .puntoActivo,
+  .punto::before,
+  .puntoActivo::before,
   .boton {
     transition: none;
   }

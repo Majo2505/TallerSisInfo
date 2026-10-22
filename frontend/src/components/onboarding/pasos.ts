@@ -16,7 +16,7 @@ export const PASOS: Paso[] = [
     titulo: "¿Qué es un puente?",
     texto:
       'Un "puente" es el tiempo libre que tienes entre dos clases. BREAKU lo detecta automáticamente y te ayuda a aprovecharlo al máximo.',
-    nota: "Mínimo 30 minutos para generar recomendaciones.",
+    nota: "Mínimo 45 minutos para generar recomendaciones.",
     boton: "Siguiente",
     icono: "rayo",
     fondo: "#E6F0F8",
