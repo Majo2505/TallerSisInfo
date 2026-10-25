@@ -14,14 +14,17 @@ CREATE TABLE usuario (
   consentimiento_ubicacion  BOOLEAN      NOT NULL DEFAULT FALSE,
   fecha_consentimiento      DATETIME(6)  NULL,
   notificaciones_activas    BOOLEAN      NOT NULL DEFAULT TRUE,   -- HU4: FALSE = no se le envían avisos (los puentes se siguen detectando)
-  created_at               DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  zona_actual_id            INT          NULL,
+  created_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_by                INT          NULL,            -- quien hizo el último cambio (NULL = el propio usuario / sistema)
   activo                    BOOLEAN      NOT NULL DEFAULT TRUE,   -- borrado lógico: 1 = activa, 0 = dada de baja (quién/cuándo: historial_cambio)
   PRIMARY KEY (id),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
   CONSTRAINT ck_usuario_rol    CHECK (rol IN ('ESTUDIANTE','ADMIN')),
-  CONSTRAINT ck_usuario_consentimiento CHECK (consentimiento_ubicacion = FALSE OR fecha_consentimiento IS NOT NULL),
+  CONSTRAINT ck_usuario_consentimiento CHECK (
+    consentimiento_ubicacion = FALSE OR (fecha_consentimiento IS NOT NULL AND zona_actual_id IS NOT NULL)
+  ),
   CONSTRAINT fk_usuario_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
@@ -44,6 +47,10 @@ CREATE TABLE zona (
   CONSTRAINT fk_zona_created_by FOREIGN KEY (created_by) REFERENCES usuario (id),
   CONSTRAINT fk_zona_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
+
+ALTER TABLE usuario
+  ADD KEY ix_usuario_zona_actual (zona_actual_id),
+  ADD CONSTRAINT fk_usuario_zona_actual FOREIGN KEY (zona_actual_id) REFERENCES zona (id);
 
 CREATE TABLE categoria (
   id          INT         NOT NULL AUTO_INCREMENT,

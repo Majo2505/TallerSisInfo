@@ -187,6 +187,9 @@ export default function Perfil() {
                 {errorAvisos}
               </p>
             )}
+            <Link href="/configuracion/ubicacion" className={estilos.secundario}>
+              <IconoAjustes tamano={18} /> Configurar campus y permiso de ubicación
+            </Link>
             <button type="button" className={estilos.salir} onClick={salir}>
               <IconoSalir tamano={18} /> Cerrar sesión
             </button>

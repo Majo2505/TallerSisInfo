@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Bloque, BloqueInput, crearBloque, editarBloque, eliminarBloque, listarHorario } from "@/lib/horario";
 import { Puente, duracionMin, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
@@ -135,6 +136,7 @@ export default function HorarioPage() {
           </p>
         </div>
         <div className="hz-head-acciones">
+          <Link className="hz-btn" href="/configuracion/ubicacion">Configurar campus</Link>
           <button className="hz-btn hz-btn-primary" onClick={() => setModal({})}>+ Agregar clase</button>
         </div>
       </header>

@@ -87,7 +87,7 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 Requiere una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Al actualizar:** si tu base se creó con una versión anterior de `schema.sql`, ejecutá en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no aplicaste (por ejemplo, `001-hu4-notificaciones.sql` para HU4), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL usada en el código es 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Pendiente: confirmar la versión del equipo.
+> **Al actualizar:** si tu base se creó con una versión anterior de `schema.sql`, ejecutá en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no aplicaste (por ejemplo, `001-hu4-notificaciones.sql` para HU4 y `002-hu5-ubicacion.sql` para HU5), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL usada en el código es 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Pendiente: confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
@@ -98,6 +98,8 @@ cp backend/.env.example backend/.env
 Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
 
 > **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca.
+
+La ubicación de HU5 utiliza el catálogo `zona` de `docs/database/schema.sql`. Antes de usar la selección de campus, el catálogo debe incluir las zonas oficiales con centro (`latitud`, `longitud`) y radio (`radio_max_m`) configurados por el equipo administrador. La plataforma no incluye coordenadas de campus inventadas. Una base existente debe aplicar `docs/database/migraciones/002-hu5-ubicacion.sql`; una base nueva ya incluye estos cambios en `schema.sql`.
 
 Para comprobar la conexión a MySQL con la API en marcha:
 
