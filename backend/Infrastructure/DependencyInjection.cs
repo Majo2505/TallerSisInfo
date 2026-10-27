@@ -11,6 +11,7 @@ using MySqlConnector;
 using Breaku.Application.Horarios;
 using Breaku.Application.Puentes;
 using Breaku.Application.Notificaciones;
+using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
 using Breaku.Application.Recomendaciones;
 namespace Breaku.Infrastructure;
@@ -40,8 +41,7 @@ public static class DependencyInjection
         services.AddScoped<INotificacionRepository, NotificacionRepository>();
         services.AddScoped<IRecomendacionRepository, RecomendacionRepository>();
 
-        // HU7. PROVISIONAL: se cambia por la búsqueda de HU6 cuando esté lista.
-        services.AddScoped<IRecuperadorLugares, RecuperadorLugaresProvisional>();
+        services.AddScoped<ILugarRepository, LugarRepository>();
         AddAsistenteIa(services, configuration);
 
         services.AddHostedService<AvisoPuentesWorker>();
