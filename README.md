@@ -4,23 +4,22 @@ Proyecto de la materia SIS-227 (UCB). Plataforma web que detecta "puentes" (huec
 
 ## Stack
 
-- Backend: C# con ASP.NET Core (.NET 10 LTS — propuesta, por confirmar)
+- Backend: C# con ASP.NET Core (.NET 10)
 - Acceso a datos: EF Core
 - Autenticación: JWT
 - Base de datos: MySQL 8.4 LTS (propuesta, por confirmar)
-- Frontend: Next.js + React con TypeScript (propuesta, por confirmar)
-- Planificado para el sprint 2: SignalR y OpenAI (visión, tool calling)
+- Frontend: Next.js 16 + React 19 con TypeScript
+- Asistente de IA (HU7): cualquier LLM con API compatible con OpenAI; para desarrollo, [Ollama](https://ollama.com) en local (gratis). Ver [Asistente de IA](#asistente-de-ia-hu7-opcional).
+- Planificado para el sprint 2: SignalR
 
 ## Estructura del repositorio
 
-Carpetas existentes hoy:
-
-- `.github/` — configuración de GitHub (incluye `agents/`)
 - `backend/` — proyecto ASP.NET Core único (`Breaku.csproj`, solución `Breaku.slnx`) con las capas como carpetas: `Presentation/`, `Application/`, `Domain/`, `Infrastructure/`
 - `frontend/` — aplicación Next.js (TypeScript, App Router, `src/`)
 - `docs/` — documentación
   - `docs/api/` — especificación OpenAPI de la API (`openapi.yaml`)
-  - `docs/database/` — esquema de la base de datos
+  - `docs/api-contract.md` — borrador del contrato de API del sprint 1 (la referencia vigente es `openapi.yaml`)
+  - `docs/database/` — esquema (`schema.sql`), migraciones (`migraciones/`) y datos de prueba (`seed-dev.sql`, `seed-dev-catalogo.sql`)
 
 Archivos en la raíz: `README.md`, `.gitignore`.
 
