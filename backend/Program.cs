@@ -1,3 +1,4 @@
+using Breaku.Application.Admin;
 using System.Text;
 using Breaku.Infrastructure;
 using Breaku.Application.Horarios;
@@ -66,6 +67,7 @@ builder.Services.AddScoped<PuenteService>();
 builder.Services.AddScoped<NotificacionService>();
 builder.Services.AddScoped<UbicacionService>();
 builder.Services.AddScoped<RecomendacionService>();
+builder.Services.AddScoped<AdminService>();
 
 var app = builder.Build();
 
