@@ -8,6 +8,7 @@ import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
 import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
+import { esAdmin } from "@/services/authService";
 import {
   IconoBrujula,
   IconoCalendario,
@@ -16,6 +17,7 @@ import {
   IconoPersona,
   IconoPersonas,
 } from "./Iconos";
+import ShellAdmin from "./ShellAdmin";
 import estilos from "./ShellApp.module.css";
 
 // Resorte del indicador de sección: llega rápido y se asienta con un rebote mínimo.
@@ -43,6 +45,9 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
   if (!listo || !sesion) {
     return <div className={estilos.app} aria-busy="true" />;
   }
+
+  // El administrador tiene su propia estructura (barra lateral con Inicio y Panel Admin).
+  if (esAdmin(sesion)) return <ShellAdmin sesion={sesion}>{children}</ShellAdmin>;
 
   const activa = (ruta: string) => pathname === ruta || pathname.startsWith(`${ruta}/`);
 
