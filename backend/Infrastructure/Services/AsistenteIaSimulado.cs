@@ -5,8 +5,8 @@ using Breaku.Domain.Rules;
 namespace Breaku.Infrastructure.Services;
 
 /// <summary>
-/// PROVISIONAL: asistente sin LLM para probar HU7 sin clave de OpenAI. Recomienda los primeros lugares del
-/// contexto con una explicación fija. Se reemplaza por el cliente de OpenAI cambiando el registro en DependencyInjection.
+/// Asistente sin LLM: se usa cuando no hay LLM_API_KEY (ver DependencyInjection). Recomienda los primeros lugares
+/// del contexto con una explicación fija, así HU7 se puede probar sin clave y sin costo.
 /// </summary>
 public class AsistenteIaSimulado : IAsistenteIa
 {
