@@ -1,0 +1,127 @@
+.tarjeta,
+.destacada {
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
+  transition: box-shadow 250ms var(--curva-salida);
+}
+
+/* La mejor opción: borde con degradado amarillo a azul y una sombra con más presencia. */
+.destacada {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--superficie), var(--superficie)) padding-box,
+    linear-gradient(135deg, var(--ucb-amarillo), var(--ucb-azul-medio)) border-box;
+  box-shadow: var(--sombra-2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tarjeta:hover,
+  .destacada:hover {
+    box-shadow: var(--sombra-3);
+  }
+}
+
+.portada {
+  position: relative;
+  padding: 10px 10px 0;
+}
+
+.portada > svg {
+  height: 96px;
+}
+
+.mejor {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+  font-size: 0.74rem;
+  font-weight: 800;
+  box-shadow: 0 6px 14px -6px rgba(5, 40, 69, 0.6);
+}
+
+.cuerpo {
+  display: grid;
+  gap: 12px;
+  padding: 14px 18px 18px;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.nombre {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ucb-marino);
+  overflow-wrap: anywhere;
+}
+
+.categoria {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fondo-suave);
+  color: var(--ucb-azul);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.explicacion {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f1f5fa;
+  color: var(--texto);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.explicacion svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.metricas {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metricas div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--borde-suave);
+}
+
+.metricas dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--texto-tenue);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.metricas dd {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--ucb-marino);
+  white-space: nowrap;
+}

@@ -6,9 +6,7 @@ export type Paso = {
   nota: string;
   boton: string;
   icono: NombreIcono;
-  fondo: string; // color de fondo de la pantalla
-  acento: string; // ícono, puntos, sombra y botón
-  acentoTexto: string; // variante más oscura para texto (contraste legible)
+  brillo: string; // color de la luz del ícono, sobre el azul marino
 };
 
 export const PASOS: Paso[] = [
@@ -19,41 +17,33 @@ export const PASOS: Paso[] = [
     nota: "Mínimo 45 minutos para generar recomendaciones.",
     boton: "Siguiente",
     icono: "rayo",
-    fondo: "#E6F0F8",
-    acento: "#11446D",
-    acentoTexto: "#11446D",
+    brillo: "#fdd537",
   },
   {
     titulo: "Tu horario, tu base",
     texto:
-      "Registra tu horario manualmente o sube una foto. Nuestra IA extrae las clases automáticamente para que las confirmes antes de guardar.",
+      "Registra tus clases una sola vez. Con eso BREAKU calcula tus puentes de toda la semana y te avisa cuando empieza cada uno.",
     nota: "Siempre tú decides qué se guarda.",
     boton: "Siguiente",
     icono: "calendario",
-    fondo: "#DCEFF9",
-    acento: "#006FA6",
-    acentoTexto: "#005F8F",
+    brillo: "#2f7fd1",
   },
   {
     titulo: "Recomendaciones verificadas",
     texto:
       "Cada lugar sugerido proviene de un catálogo curado y verificado. La IA solo puede recomendar lo que realmente existe en el campus.",
-    nota: "Sin alucinaciones. 100% respaldado por datos reales.",
+    nota: "Si no está en el catálogo, no te lo recomendamos.",
     boton: "Siguiente",
     icono: "escudo",
-    fondo: "#D8F0F4",
-    acento: "#00788F",
-    acentoTexto: "#00667A",
+    brillo: "#0e9fbe",
   },
   {
     titulo: "Tu ubicación, solo cuando importa",
     texto:
-      "Solo pedimos acceso a tu ubicación cuando estés generando una recomendación activa. Nunca la almacenamos ni la compartimos.",
+      "Te pedimos permiso antes de usar tu ubicación, y solo para sugerirte lugares cercanos. Si prefieres, eliges tu campus a mano. Nunca la compartimos.",
     nota: "Privacidad por diseño.",
     boton: "Empezar con BREAKU",
     icono: "ubicacion",
-    fondo: "#FFF0B3",
-    acento: "#052845",
-    acentoTexto: "#052845",
+    brillo: "#fdd537",
   },
 ];

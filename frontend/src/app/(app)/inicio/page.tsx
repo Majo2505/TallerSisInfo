@@ -2,20 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
-import comun from "@/components/app/Comun.module.css";
 import {
   IconoBrujula,
-  IconoCalendario,
-  IconoDestello,
   IconoFlechaDerecha,
   IconoLuna,
   IconoObjetivo,
   IconoPersonas,
+  IconoPin,
   IconoRayo,
+  IconoReloj,
 } from "@/components/app/Iconos";
-import TarjetaLugar from "@/components/app/TarjetaLugar";
+import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import ArteCategoria from "@/components/inicio/ArteCategoria";
+import HeroePuente from "@/components/inicio/HeroePuente";
 import { Bloque, listarHorario } from "@/lib/horario";
 import { ESTADOS_ANIMO, LUGARES } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
@@ -34,13 +36,19 @@ const aMin = (h: string) => {
   return a * 60 + b;
 };
 
-const RADIO = 34;
-const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
+const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+function saludoPara(hora: number) {
+  if (hora < 12) return "Buenos días";
+  if (hora < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
 
 export default function Inicio() {
   const router = useRouter();
   const { sesion } = useSesion();
   const aviso = useAviso();
+  const reducir = useReducedMotion();
   const [ahora, setAhora] = useState(() => new Date());
   const [puentes, setPuentes] = useState<Puente[]>([]);
   const [bloques, setBloques] = useState<Bloque[]>([]);
@@ -55,7 +63,7 @@ export default function Inicio() {
   useEffect(() => {
     if (!sesion) return;
     let activo = true;
-    Promise.allSettled([listarPuentes(), listarHorario()]).then(([p, h]) => {
+    void Promise.allSettled([listarPuentes(), listarHorario()]).then(([p, h]) => {
       if (!activo) return;
       if (p.status === "fulfilled") setPuentes(p.value);
       else setError((p.reason as Error).message);
@@ -82,171 +90,243 @@ export default function Inicio() {
 
   const foco = activo ?? proximo;
 
-  const siguienteClase = useMemo(() => {
-    if (!foco) return undefined;
-    return bloques
-      .filter((b) => b.diaSemana === diaHoy && aMin(b.horaInicio) >= aMin(foco.horaFin))
-      .sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio))[0];
-  }, [bloques, foco, diaHoy]);
+  const clasesHoy = useMemo(
+    () => bloques.filter((b) => b.diaSemana === diaHoy).sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio)),
+    [bloques, diaHoy],
+  );
+  const puentesHoy = useMemo(() => puentes.filter((p) => p.diaSemana === diaHoy), [puentes, diaHoy]);
+
+  const siguienteClase = foco ? clasesHoy.find((b) => aMin(b.horaInicio) >= aMin(foco.horaFin)) : undefined;
 
   const nombre = sesion?.usuario.nombre.split(" ")[0] ?? "";
-  const fechaTexto = ahora.toLocaleDateString("es-BO", {
-    weekday: "short",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const fechaTexto = ahora.toLocaleDateString("es-BO", { weekday: "long", day: "numeric", month: "long" });
   const fecha = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
 
   const minutosRestantes = activo ? aMin(activo.horaFin) - minutosAhora : 0;
   const usado = activo ? Math.round(((minutosAhora - aMin(activo.horaInicio)) / duracionMin(activo)) * 100) : 0;
-  const minutosParaIa = foco ? (activo ? minutosRestantes : duracionMin(foco)) : 0;
-  const rutaIa = minutosParaIa > 0 ? `/ia?min=${minutosParaIa}` : "/ia";
+  let minutosParaIa = 0;
+  if (activo) minutosParaIa = minutosRestantes;
+  else if (foco) minutosParaIa = duracionMin(foco);
+  // El puente va en la URL para que la IA pida recomendaciones de ese puente (HU7).
+  const rutaIa = foco && minutosParaIa > 0 ? `/ia?puente=${foco.id}&min=${minutosParaIa}` : "/ia";
+
+  // Línea del día: de la primera a la última hora con algo (clase o puente).
+  const tramos = [
+    ...clasesHoy.map((b) => ({ tipo: "clase" as const, id: `c${b.id}`, inicio: aMin(b.horaInicio), fin: aMin(b.horaFin), titulo: b.materia })),
+    ...puentesHoy.map((p) => ({ tipo: "puente" as const, id: `p${p.id}`, inicio: aMin(p.horaInicio), fin: aMin(p.horaFin), titulo: `Puente de ${duracionMin(p)} min` })),
+  ].sort((a, b) => a.inicio - b.inicio);
+  const desde = tramos.length ? Math.floor(Math.min(...tramos.map((t) => t.inicio)) / 60) * 60 : 0;
+  const hasta = tramos.length ? Math.ceil(Math.max(...tramos.map((t) => t.fin)) / 60) * 60 : 0;
+  const total = Math.max(hasta - desde, 60);
+  const posicion = (m: number) => `${((m - desde) / total) * 100}%`;
+  const ahoraVisible = tramos.length > 0 && minutosAhora >= desde && minutosAhora <= hasta;
 
   return (
-    <main className={comun.pagina}>
-      <header>
+    <Entrada as="main" className={estilos.pagina}>
+      <Pieza as="header" className={estilos.cabecera}>
         <p className={estilos.fecha}>{fecha}</p>
-        <h1 className={estilos.saludo}>
-          Hola, <span className={estilos.nombre}>{nombre}</span>
+        <h1 className={estilos.saludo} aria-label={`${saludoPara(ahora.getHours())}, ${nombre}`}>
+          {`${saludoPara(ahora.getHours())},`.split(" ").map((palabra, i) => (
+            <motion.span
+              key={palabra}
+              className={estilos.palabra}
+              aria-hidden="true"
+              initial={reducir ? false : { opacity: 0, y: 12, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: SALIDA, delay: 0.1 + i * 0.09 }}
+            >
+              {palabra}
+            </motion.span>
+          ))}
+          <span className={estilos.nombre} aria-hidden="true">
+            <motion.span
+              className={estilos.resaltador}
+              initial={reducir ? false : { scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.7, ease: SALIDA, delay: 0.55 }}
+            />
+            <motion.span
+              className={estilos.palabra}
+              initial={reducir ? false : { opacity: 0, y: 12, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: SALIDA, delay: 0.3 }}
+            >
+              {nombre}
+            </motion.span>
+          </span>
         </h1>
-      </header>
+      </Pieza>
 
-      <section className={estilos.puente} aria-label="Tu puente">
+      {/* El puente: la única superficie azul marino de la pantalla. */}
+      <Pieza as="section" className={estilos.marcoHeroe}>
         {foco ? (
-          <>
-            <div className={estilos.puenteCuerpo}>
-              <div className={estilos.puenteDatos}>
-                <span className={estilos.insignia}>
-                  <span className={estilos.punto} aria-hidden="true" />
-                  {activo ? "Puente activo" : "Próximo puente"}
-                </span>
-                <p className={estilos.minutos}>
-                  {activo ? minutosRestantes : duracionMin(foco)}
-                  <span> min</span>
-                </p>
-                <p className={estilos.rango}>
-                  {hhmm(foco.horaInicio)} – {hhmm(foco.horaFin)}
-                  {!activo && ` · empieza en ${aMin(foco.horaInicio) - minutosAhora} min`}
-                </p>
-                {siguienteClase && (
-                  <p className={estilos.proxima}>
-                    <IconoCalendario tamano={16} />
-                    <span>
-                      Próxima: {siguienteClase.materia}
-                      <small>
-                        {hhmm(siguienteClase.horaInicio)}
-                        {siguienteClase.aula ? ` · ${siguienteClase.aula}` : ""}
-                      </small>
-                    </span>
-                  </p>
-                )}
-              </div>
-              {activo && (
-                <div className={estilos.anillo} role="img" aria-label={`${usado}% del puente usado`}>
-                  <svg viewBox="0 0 80 80" width="96" height="96" aria-hidden="true">
-                    <circle cx="40" cy="40" r={RADIO} className={estilos.pista} />
-                    <circle
-                      cx="40"
-                      cy="40"
-                      r={RADIO}
-                      className={estilos.progreso}
-                      strokeDasharray={CIRCUNFERENCIA}
-                      strokeDashoffset={CIRCUNFERENCIA * (1 - usado / 100)}
-                      transform="rotate(-90 40 40)"
-                    />
-                  </svg>
-                  <span className={estilos.anilloTexto}>
-                    <small>usado</small>
-                    {usado}%
-                  </span>
-                </div>
-              )}
-            </div>
-            <Link href={rutaIa} className={estilos.accion}>
-              ¿Qué hago con mi tiempo? <IconoFlechaDerecha tamano={18} />
-            </Link>
-          </>
+          <HeroePuente
+            activo={!!activo}
+            minutos={activo ? minutosRestantes : duracionMin(foco)}
+            rango={`${hhmm(foco.horaInicio)} – ${hhmm(foco.horaFin)}`}
+            empiezaEn={activo ? undefined : aMin(foco.horaInicio) - minutosAhora}
+            usado={usado}
+            siguiente={siguienteClase ? { materia: siguienteClase.materia, aula: siguienteClase.aula } : undefined}
+            rutaIa={rutaIa}
+          />
         ) : (
-          <div className={estilos.sinPuente}>
-            <p className={estilos.sinPuenteTitulo}>
-              {cargando ? "Buscando tus puentes…" : "No tienes puentes por ahora"}
+          <div className={estilos.heroeVacio}>
+            <p className={estilos.vacioTitulo}>{cargando ? "Buscando tus puentes…" : "Hoy no te quedan puentes"}</p>
+            <p className={estilos.vacioTexto}>
+              {error ||
+                "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y aparecerán aquí."}
             </p>
-            <p className={estilos.sinPuenteTexto}>
-              {error
-                ? error
-                : "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y aparecerán aquí."}
-            </p>
-            <Link href="/horario" className={estilos.accionClara}>
-              Ver mi horario
-            </Link>
+            <MotionLink href="/horario" className={estilos.accionVacio} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
+              Ver mi horario <IconoFlechaDerecha tamano={18} />
+            </MotionLink>
           </div>
         )}
-      </section>
+      </Pieza>
 
-      <section aria-labelledby="como-te-sientes">
-        <h2 id="como-te-sientes" className={comun.etiqueta}>
-          ¿Cómo te sientes?
-        </h2>
+      <div className={estilos.columnaIzquierda}>
+      {tramos.length > 0 && (
+        <Pieza as="section" className={estilos.tarjeta}>
+          <div className={estilos.encabezado}>
+            <h2 className={estilos.subtitulo}>Tu día</h2>
+            <Link href="/horario" className={estilos.verTodo}>
+              Horario completo <IconoFlechaDerecha tamano={14} />
+            </Link>
+          </div>
+
+          <div className={estilos.linea}>
+            {tramos.map((t, i) => (
+              <motion.span
+                key={t.id}
+                className={t.tipo === "clase" ? estilos.tramoClase : estilos.tramoPuente}
+                style={{ left: posicion(t.inicio), width: `${((t.fin - t.inicio) / total) * 100}%` }}
+                tabIndex={0}
+                aria-label={`${t.titulo}, de ${aHora(t.inicio)} a ${aHora(t.fin)}`}
+                initial={reducir ? false : { scaleX: 0, opacity: 0 }}
+                animate={{ scaleX: 1, opacity: 1 }}
+                transition={{ duration: 0.6, ease: SALIDA, delay: 0.35 + i * 0.06 }}
+              >
+                <span className={estilos.globo} aria-hidden="true">
+                  <strong>{t.titulo}</strong>
+                  {aHora(t.inicio)} – {aHora(t.fin)}
+                </span>
+              </motion.span>
+            ))}
+            {ahoraVisible && (
+              <span className={estilos.ahora} style={{ left: posicion(minutosAhora) }} aria-hidden="true">
+                <span className={estilos.ahoraPunto} />
+              </span>
+            )}
+          </div>
+          <div className={estilos.horas} aria-hidden="true">
+            <span>{aHora(desde)}</span>
+            <span>{aHora(hasta)}</span>
+          </div>
+
+          <ul className={estilos.leyenda}>
+            <li>
+              <span className={estilos.muestraClase} /> {clasesHoy.length} {clasesHoy.length === 1 ? "clase" : "clases"}
+            </li>
+            <li>
+              <span className={estilos.muestraPuente} /> {puentesHoy.length} {puentesHoy.length === 1 ? "puente" : "puentes"}
+            </li>
+          </ul>
+        </Pieza>
+      )}
+
+      <Pieza as="section" className={estilos.zonaSugerencias}>
+        <div className={estilos.encabezado}>
+          <h2 className={estilos.subtitulo}>Sugerencias rápidas</h2>
+          <Link href="/campus" className={estilos.verTodo}>
+            Ver campus <IconoFlechaDerecha tamano={14} />
+          </Link>
+        </div>
+        <div className={estilos.carrusel}>
+          {LUGARES.map((l) => (
+            <motion.article
+              key={l.id}
+              className={`${estilos.lugar} lugar-arte`}
+              whileHover={reducir ? undefined : { y: -4 }}
+              transition={RESORTE_TOQUE}
+            >
+              <ArteCategoria categoria={l.categoria} />
+              <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
+              <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
+              <p className={estilos.lugarMeta}>
+                <span>
+                  <IconoPin tamano={14} /> {l.distanciaM} m
+                </span>
+                <span>
+                  <IconoReloj tamano={14} /> {l.minutos} min
+                </span>
+              </p>
+            </motion.article>
+          ))}
+        </div>
+        <p className={estilos.nota}>Lugares de ejemplo; las recomendaciones reales salen del catálogo según tu puente.</p>
+      </Pieza>
+
+      </div>
+
+      <div className={estilos.columnaDerecha}>
+      <Pieza as="section" className={estilos.zonaAnimo}>
+        <h2 className={estilos.subtitulo}>¿Cómo te sientes?</h2>
         <div className={estilos.estados}>
           {ESTADOS_ANIMO.map((e) => {
             const Icono = ICONO_ESTADO[e.id];
             return (
-              <button
+              <motion.button
                 key={e.id}
                 type="button"
                 className={`${estilos.estado} ${estilos[`estado_${e.id}`]}`}
                 onClick={() => router.push(`${rutaIa}${rutaIa.includes("?") ? "&" : "?"}estado=${e.id}`)}
+                onPointerMove={seguirPuntero}
+                whileHover={reducir ? undefined : { y: -3 }}
+                whileTap={{ scale: 0.96 }}
+                transition={RESORTE_TOQUE}
               >
-                <Icono tamano={22} />
-                {e.nombre}
-              </button>
+                <span className={estilos.estadoIcono}>
+                  <Icono tamano={20} />
+                </span>
+                <span className={estilos.estadoTexto}>
+                  <strong>{e.nombre}</strong>
+                  <small>{e.descripcion}</small>
+                </span>
+              </motion.button>
             );
           })}
         </div>
-      </section>
+      </Pieza>
 
-      <section className={estilos.atajos} aria-label="Atajos">
-        <button type="button" className={estilos.atajo} onClick={() => aviso.mostrar("Los grupos rápidos estarán disponibles pronto.")}>
+      <Pieza as="section" className={estilos.atajos}>
+        <motion.button
+          type="button"
+          className={estilos.atajo}
+          onClick={() => aviso.mostrar("Los grupos rápidos estarán disponibles pronto.")}
+          whileTap={{ scale: 0.97 }}
+          transition={RESORTE_TOQUE}
+        >
           <span className={estilos.atajoIcono}>
-            <IconoPersonas tamano={22} />
+            <IconoPersonas tamano={20} />
           </span>
           <span>
             <strong>Grupo rápido</strong>
-            <small>Escríbelo</small>
+            <small>Pronto</small>
           </span>
-        </button>
-        <Link href="/campus" className={estilos.atajo}>
-          <span className={estilos.atajoIconoAlt}>
-            <IconoBrujula tamano={22} />
+        </motion.button>
+        <MotionLink href="/campus" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
+          <span className={estilos.atajoIcono}>
+            <IconoBrujula tamano={20} />
           </span>
           <span>
             <strong>Descubrir</strong>
-            <small>Campus</small>
+            <small>El campus</small>
           </span>
-        </Link>
-      </section>
+        </MotionLink>
+      </Pieza>
 
-      <section aria-labelledby="sugerencias">
-        <div className={estilos.encabezado}>
-          <h2 id="sugerencias" className={comun.etiqueta}>
-            Sugerencias rápidas
-          </h2>
-          <Link href="/campus" className={estilos.verTodas}>
-            Ver todas <IconoFlechaDerecha tamano={16} />
-          </Link>
-        </div>
-        <div className={estilos.lista}>
-          {LUGARES.slice(0, 2).map((l) => (
-            <TarjetaLugar key={l.id} lugar={l} variante="compacta" />
-          ))}
-        </div>
-        <p className={comun.nota}>
-          <IconoDestello tamano={12} /> Vista previa con lugares de ejemplo; las sugerencias reales llegarán con el catálogo.
-        </p>
-      </section>
+      </div>
 
       <AvisoFlotante texto={aviso.texto} />
-    </main>
+    </Entrada>
   );
 }

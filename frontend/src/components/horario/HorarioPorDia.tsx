@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { IconoMas, IconoRayo } from "@/components/app/Iconos";
+import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { Bloque } from "@/lib/horario";
 import { Puente, duracionMin, hhmm } from "@/lib/puentes";
 import estilos from "./HorarioPorDia.module.css";
@@ -29,6 +31,7 @@ function diaInicial(): number {
 }
 
 export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, onEditar }: Props) {
+  const reducir = useReducedMotion();
   const [dia, setDia] = useState(diaInicial);
 
   const elementos = useMemo<Elemento[]>(() => {
@@ -41,6 +44,11 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
     return [...clases, ...huecos].sort((a, b) => a.inicio.localeCompare(b.inicio));
   }, [bloques, puentes, dia]);
 
+  const item = {
+    oculto: { opacity: 0, y: 10, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.35, ease: SALIDA } },
+  };
+
   return (
     <section className={estilos.contenedor} aria-label="Horario por día">
       <div className={estilos.dias} role="tablist" aria-label="Días de la semana">
@@ -48,7 +56,7 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
           const clases = bloques.filter((b) => b.diaSemana === d).length;
           const huecos = puentes.filter((p) => p.diaSemana === d).length;
           return (
-            <button
+            <motion.button
               key={d}
               type="button"
               role="tab"
@@ -56,60 +64,106 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
               aria-label={`${DIAS[d]}: ${clases} clases y ${huecos} puentes`}
               className={dia === d ? estilos.diaActivo : estilos.dia}
               onClick={() => setDia(d)}
+              whileTap={{ scale: 0.94 }}
+              transition={RESORTE_TOQUE}
             >
-              {CORTOS[d]}
-              <span className={estilos.conteos}>
-                <span className={estilos.clases}>{clases}c</span>
-                <span className={estilos.huecos}>{huecos}p</span>
+              {dia === d && (
+                <motion.span
+                  layoutId="dia-horario"
+                  className={estilos.pastilla}
+                  transition={reducir ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
+                />
+              )}
+              <span className={estilos.textoDia}>{CORTOS[d]}</span>
+              <span className={estilos.puntos} aria-hidden="true">
+                {Array.from({ length: Math.min(clases, 4) }, (_, i) => (
+                  <i key={`c${i}`} className={estilos.puntoClase} />
+                ))}
+                {Array.from({ length: Math.min(huecos, 2) }, (_, i) => (
+                  <i key={`p${i}`} className={estilos.puntoPuente} />
+                ))}
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
 
       <div className={estilos.tarjeta}>
         <header className={estilos.cabecera}>
-          <h3 className={estilos.titulo}>{DIAS[dia]}</h3>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.h3
+              key={dia}
+              className={estilos.titulo}
+              initial={reducir ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: SALIDA }}
+            >
+              {DIAS[dia]}
+            </motion.h3>
+          </AnimatePresence>
           <button type="button" className={estilos.agregar} onClick={() => onAgregar(dia)}>
-            <IconoMas tamano={16} /> Agregar clase
+            <IconoMas tamano={16} /> Agregar
           </button>
         </header>
 
-        {elementos.length === 0 ? (
-          <p className={estilos.vacio}>No tienes clases este día.</p>
-        ) : (
-          <ul className={estilos.lista}>
-            {elementos.map((el) =>
-              el.tipo === "clase" ? (
-                <li key={`c${el.bloque.id}`}>
-                  <button
-                    type="button"
-                    className={estilos.clase}
-                    style={{ borderLeftColor: colorDe(el.bloque.materia).borde }}
-                    onClick={() => onEditar(el.bloque)}
-                    aria-label={`Editar ${el.bloque.materia}, de ${hhmm(el.bloque.horaInicio)} a ${hhmm(el.bloque.horaFin)}`}
-                  >
-                    <strong>{el.bloque.materia}</strong>
-                    <span>
-                      {el.bloque.aula ? `${el.bloque.aula} · ` : ""}
-                      {hhmm(el.bloque.horaInicio)}–{hhmm(el.bloque.horaFin)}
+        <AnimatePresence mode="wait" initial={false}>
+          {elementos.length === 0 ? (
+            <motion.p
+              key={`vacio-${dia}`}
+              className={estilos.vacio}
+              initial={reducir ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              No tienes clases este día.
+            </motion.p>
+          ) : (
+            <motion.ul
+              key={`lista-${dia}`}
+              className={estilos.lista}
+              initial={reducir ? false : "oculto"}
+              animate="visible"
+              exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              variants={{ oculto: {}, visible: { transition: { staggerChildren: 0.05 } } }}
+            >
+              {elementos.map((el) =>
+                el.tipo === "clase" ? (
+                  <motion.li key={`c${el.bloque.id}`} variants={item}>
+                    <button
+                      type="button"
+                      className={estilos.clase}
+                      style={{ ["--acento" as string]: colorDe(el.bloque.materia).borde }}
+                      onClick={() => onEditar(el.bloque)}
+                      aria-label={`Editar ${el.bloque.materia}, de ${hhmm(el.bloque.horaInicio)} a ${hhmm(el.bloque.horaFin)}`}
+                    >
+                      <span className={estilos.hora}>
+                        {hhmm(el.bloque.horaInicio)}
+                        <small>{hhmm(el.bloque.horaFin)}</small>
+                      </span>
+                      <span className={estilos.datosClase}>
+                        <strong>{el.bloque.materia}</strong>
+                        {el.bloque.aula && <span>{el.bloque.aula}</span>}
+                      </span>
+                    </button>
+                  </motion.li>
+                ) : (
+                  <motion.li key={`p${el.puente.id}`} className={estilos.puente} variants={item}>
+                    <span className={estilos.iconoPuente}>
+                      <IconoRayo tamano={16} />
                     </span>
-                  </button>
-                </li>
-              ) : (
-                <li key={`p${el.puente.id}`} className={estilos.puente}>
-                  <IconoRayo tamano={16} />
-                  <span>
-                    <strong>Puente libre · {duracionMin(el.puente)} min</strong>
-                    <small>
-                      {hhmm(el.puente.horaInicio)} – {hhmm(el.puente.horaFin)}
-                    </small>
-                  </span>
-                </li>
-              ),
-            )}
-          </ul>
-        )}
+                    <span>
+                      <strong>Puente libre · {duracionMin(el.puente)} min</strong>
+                      <small>
+                        {hhmm(el.puente.horaInicio)} – {hhmm(el.puente.horaFin)}
+                      </small>
+                    </span>
+                  </motion.li>
+                ),
+              )}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );

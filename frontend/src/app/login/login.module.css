@@ -2,7 +2,7 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--fondo-suave);
+  background: var(--fondo-app);
 }
 
 .principal {
@@ -10,7 +10,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 28px 24px 40px;
+  padding: 28px 22px 40px;
 }
 
 @media (min-width: 900px) {
@@ -20,6 +20,6 @@
 
   .principal {
     align-items: center;
-    padding: 40px;
+    padding: 48px;
   }
 }

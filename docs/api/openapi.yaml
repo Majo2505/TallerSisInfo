@@ -7,13 +7,13 @@ info:
 
     Este archivo es una copia estática de la documentación que el backend publica en `/swagger`
     (documento vivo: `GET /swagger/v1/swagger.json`). Cubre autenticación (HU1), horario (HU2),
-    puentes (HU3), notificaciones (HU4), ubicación (HU5) y health.
+    puentes (HU3), notificaciones (HU4), ubicación (HU5), recomendaciones con asistente RAG (HU7) y health.
 
     ### Cómo probar los endpoints protegidos
     1. Ejecuta `POST /api/auth/login` (o `POST /api/auth/register`) con un correo `@ucb.edu.bo`.
     2. Copia el valor de `token` de la respuesta.
     3. Pulsa **Authorize**, pega el token (sin escribir `Bearer`) y confirma.
-    4. Ya puedes usar `/api/horario`, `/api/puentes`, `/api/notificaciones` y `/api/ubicacion`.
+    4. Ya puedes usar `/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/ubicacion` y `/api/recomendaciones`.
 
     ### Convenciones
     - JSON en `camelCase`. Mensajes de error en español.
@@ -38,6 +38,8 @@ tags:
     description: Avisos de puente disponible (HU4). Requiere JWT. El servidor crea el aviso al empezar cada puente.
   - name: Ubicación
     description: Consentimiento y selección del campus actual (HU5). Las coordenadas se usan solo para resolver la zona y no se almacenan.
+  - name: Recomendaciones
+    description: Recomendación inteligente con asistente RAG de contexto estricto (HU7). Requiere JWT. Solo recomienda lugares reales del catálogo.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -471,6 +473,107 @@ paths:
           description: Conexión a la base de datos correcta.
         '503':
           description: No se pudo conectar a la base de datos.
+  /api/recomendaciones:
+    post:
+      tags: [Recomendaciones]
+      operationId: recomendar
+      summary: Pide al asistente recomendaciones para un puente del usuario.
+      description: |
+        El asistente **solo** recibe los lugares del catálogo que cumplen tiempo, cercanía y zona (búsqueda de HU6),
+        y el sistema descarta cualquier lugar o dato que no salga de ese contexto. Distancia, tiempo y categoría
+        salen del catálogo; del asistente solo sale `explicacion`. Cada consulta queda en el log de auditoría con los
+        lugares del catálogo que la respaldan.
+
+        Si no hay lugares viables, no se llama al asistente y se responde `200` con `estado` = `SIN_RESULTADOS`
+        y el mensaje «No encontramos opciones cercanas para este tiempo disponible.».
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudRecomendacionDto'
+            example:
+              puenteId: 5
+              entrada: Estoy cansado, quiero algo tranquilo
+      responses:
+        '200':
+          description: Recomendaciones (`OK`) o mensaje de que no hay opciones (`SIN_RESULTADOS`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaRecomendacionDto'
+              examples:
+                conRecomendaciones:
+                  summary: Hay lugares viables
+                  value:
+                    consultaId: 42
+                    estado: OK
+                    mensaje: null
+                    recomendaciones:
+                      - id: 87
+                        lugarId: 2
+                        nombre: Biblioteca Central
+                        categoria: Estudio
+                        distanciaM: 200
+                        tiempoTrasladoMin: 6
+                        duracionEstimadaMin: 30
+                        explicacion: Ideal para repasar en silencio antes de tu próxima clase.
+                sinResultados:
+                  summary: Ningún lugar cumple tiempo, cercanía y seguridad
+                  value:
+                    consultaId: 43
+                    estado: SIN_RESULTADOS
+                    mensaje: No encontramos opciones cercanas para este tiempo disponible.
+                    recomendaciones: []
+        '400':
+          description: La preferencia supera los 300 caracteres (`codigo` = `VALIDACION`) o el cuerpo está mal formado (`ProblemDetails` estándar de ASP.NET).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: VALIDACION
+                mensaje: La preferencia puede tener como máximo 300 caracteres.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: El puente no existe o no pertenece al usuario (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: NO_ENCONTRADO
+                mensaje: El puente no existe.
+        '503':
+          description: El asistente no respondió (`codigo` = `ASISTENTE_NO_DISPONIBLE`). La consulta queda registrada como `ERROR`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: ASISTENTE_NO_DISPONIBLE
+                mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+  /health:
+    get:
+      tags: [Health]
+      operationId: health
+      summary: Comprueba que la API está en marcha.
+      responses:
+        '200':
+          description: La API responde.
+  /health/db:
+    get:
+      tags: [Health]
+      operationId: healthDb
+      summary: Comprueba que la API puede conectarse a la base de datos MySQL.
+      responses:
+        '200':
+          description: Conexión a la base de datos correcta.
+        '503':
+          description: No se pudo conectar a la base de datos.
 components:
   securitySchemes:
     Bearer:
@@ -595,12 +698,12 @@ components:
           example: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
     ErrorNegocioDto:
       type: object
-      description: Error de negocio de horarios.
+      description: Error de negocio (horarios, notificaciones y recomendaciones).
       properties:
         codigo:
           type: string
-          enum: [VALIDACION, SOLAPAMIENTO, NO_ENCONTRADO]
-          description: '`VALIDACION` (400), `SOLAPAMIENTO` (409) o `NO_ENCONTRADO` (404).'
+          enum: [VALIDACION, SOLAPAMIENTO, NO_ENCONTRADO, ASISTENTE_NO_DISPONIBLE]
+          description: '`VALIDACION` (400), `SOLAPAMIENTO` (409), `NO_ENCONTRADO` (404) o `ASISTENTE_NO_DISPONIBLE` (503).'
           example: SOLAPAMIENTO
         mensaje:
           type: string
@@ -782,6 +885,87 @@ components:
           type: boolean
           description: '`true` = recibe avisos de puente. `false` = no recibe ninguno, aunque sus puentes se siguen detectando.'
           example: true
+    SolicitudRecomendacionDto:
+      type: object
+      description: Pedido de recomendación para un puente del usuario.
+      required: [puenteId]
+      properties:
+        puenteId:
+          type: integer
+          format: int32
+          description: Puente del usuario para el que se busca qué hacer (ver `GET /api/puentes`).
+          example: 5
+        entrada:
+          type: string
+          nullable: true
+          maxLength: 300
+          description: Preferencia libre del estudiante (opcional).
+          example: Estoy cansado, quiero algo tranquilo
+    RespuestaRecomendacionDto:
+      type: object
+      description: Resultado de la consulta al asistente.
+      properties:
+        consultaId:
+          type: integer
+          format: int64
+          description: Identificador del registro de auditoría de esta consulta.
+          example: 42
+        estado:
+          type: string
+          enum: [OK, SIN_RESULTADOS]
+          description: '`OK` = hay recomendaciones. `SIN_RESULTADOS` = no hay; se muestra `mensaje`.'
+          example: OK
+        mensaje:
+          type: string
+          nullable: true
+          description: Texto para mostrar cuando no hay recomendaciones. `null` si las hay.
+          example: No encontramos opciones cercanas para este tiempo disponible.
+        recomendaciones:
+          type: array
+          description: De la más a la menos adecuada (máximo 3). Vacía si `estado` = `SIN_RESULTADOS`.
+          items:
+            $ref: '#/components/schemas/RecomendacionDto'
+    RecomendacionDto:
+      type: object
+      description: Una recomendación. Todos los datos salen del catálogo; del asistente solo sale `explicacion`.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador de la recomendación.
+          example: 87
+        lugarId:
+          type: integer
+          format: int32
+          description: Lugar del catálogo que respalda la recomendación.
+          example: 2
+        nombre:
+          type: string
+          description: Nombre del lugar, tal como está en el catálogo.
+          example: Biblioteca Central
+        categoria:
+          type: string
+          description: Categoría del lugar.
+          example: Estudio
+        distanciaM:
+          type: integer
+          format: int32
+          description: Distancia desde la zona del estudiante, en metros.
+          example: 200
+        tiempoTrasladoMin:
+          type: integer
+          format: int32
+          description: Tiempo de traslado de ida y vuelta, en minutos.
+          example: 6
+        duracionEstimadaMin:
+          type: integer
+          format: int32
+          description: Tiempo estimado de la actividad en el lugar, en minutos.
+          example: 30
+        explicacion:
+          type: string
+          description: Por qué encaja, redactado por el asistente.
+          example: Ideal para repasar en silencio antes de tu próxima clase.
     ZonaDto:
       type: object
       required: [id, nombre]

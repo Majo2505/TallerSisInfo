@@ -4,23 +4,22 @@ Proyecto de la materia SIS-227 (UCB). Plataforma web que detecta "puentes" (huec
 
 ## Stack
 
-- Backend: C# con ASP.NET Core (.NET 10 LTS — propuesta, por confirmar)
+- Backend: C# con ASP.NET Core (.NET 10)
 - Acceso a datos: EF Core
 - Autenticación: JWT
 - Base de datos: MySQL 8.4 LTS (propuesta, por confirmar)
-- Frontend: Next.js + React con TypeScript (propuesta, por confirmar)
-- Planificado para el sprint 2: SignalR y OpenAI (visión, tool calling)
+- Frontend: Next.js 16 + React 19 con TypeScript
+- Asistente de IA (HU7): cualquier LLM con API compatible con OpenAI; para desarrollo, [Ollama](https://ollama.com) en local (gratis). Ver [Asistente de IA](#asistente-de-ia-hu7-opcional).
+- Planificado para el sprint 2: SignalR
 
 ## Estructura del repositorio
 
-Carpetas existentes hoy:
-
-- `.github/` — configuración de GitHub (incluye `agents/`)
 - `backend/` — proyecto ASP.NET Core único (`Breaku.csproj`, solución `Breaku.slnx`) con las capas como carpetas: `Presentation/`, `Application/`, `Domain/`, `Infrastructure/`
 - `frontend/` — aplicación Next.js (TypeScript, App Router, `src/`)
 - `docs/` — documentación
   - `docs/api/` — especificación OpenAPI de la API (`openapi.yaml`)
-  - `docs/database/` — esquema de la base de datos
+  - `docs/api-contract.md` — borrador del contrato de API del sprint 1 (la referencia vigente es `openapi.yaml`)
+  - `docs/database/` — esquema (`schema.sql`), migraciones (`migraciones/`) y datos de prueba (`seed-dev.sql`, `seed-dev-catalogo.sql`)
 
 Archivos en la raíz: `README.md`, `.gitignore`.
 
@@ -51,9 +50,10 @@ Requisito: SDK de .NET 10 (probado con 10.0.401).
 
 ```bash
 cd backend
-dotnet build Breaku.slnx
-dotnet run --project Breaku.csproj --launch-profile http
+dotnet run
 ```
+
+`dotnet run` compila y usa el primer perfil de `Properties/launchSettings.json` (`http`, entorno `Development`). Desde la raíz del repositorio, usá `dotnet run --project backend`. Para detenerla: **Ctrl + C**. Al cambiar `backend/.env` hay que reiniciarla, porque se lee solo al arrancar.
 
 La API queda en `http://localhost:5092`. Para comprobar que corre:
 
@@ -73,7 +73,7 @@ La API se documenta con **OpenAPI 3** y se muestra con **Swagger UI** (paquete S
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
 | Copia estática en YAML (para revisar sin correr el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
-Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`):
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones`):
 
 1. En Swagger UI, abrí `POST /api/auth/login`, pulsá **Try it out** y enviá el usuario de prueba (ver más abajo) o uno que hayas registrado.
 2. Copiá el valor de `token` de la respuesta.
@@ -130,7 +130,66 @@ mysql -u <usuario> -p <nombre_de_la_base> < docs/database/seed-dev.sql
 
 En Windows, `mysql` puede no estar en el `PATH`; en ese caso usá la ruta completa a `mysql.exe` (carpeta `bin` de tu instalación de MySQL) o la opción 1.
 
-Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
+Token de desarrollo: se obtiene con `POST /api/auth/login` usando ese usuario (campo `token` de la respuesta) y dura 24 horas. En Swagger, pegalo en **Authorize** (ver [Documentación de la API](#documentación-de-la-api-swagger--openapi)).
+
+#### Catálogo de prueba (solo desarrollo)
+
+[`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (`POST /api/recomendaciones`, HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
+
+Para probarlo: registrá un horario con un hueco de 45 minutos o más, tomá el `id` del puente en `GET /api/puentes` y enviá `{ "puenteId": <id> }` a `POST /api/recomendaciones`.
+
+> **Provisional (HU7):** por ahora la búsqueda en el catálogo usa la primera zona registrada (`RecuperadorLugaresProvisional`). Se reemplaza por la búsqueda de HU6 en `backend/Infrastructure/DependencyInjection.cs`.
+
+### Asistente de IA (HU7, opcional)
+
+Las recomendaciones de `POST /api/recomendaciones` las redacta un LLM, que solo puede elegir entre los lugares recuperados del catálogo. **Es opcional:** sin configurarlo, la API arranca igual y usa un asistente simulado, sin LLM, que también recomienda solo lugares del catálogo (con explicaciones genéricas).
+
+#### Con Ollama (recomendado para desarrollo)
+
+Gratis, sin límite de consultas y sin enviar datos fuera de tu computadora.
+
+1. Instalá Ollama desde [ollama.com/download](https://ollama.com/download) o con `winget install Ollama.Ollama`. Queda corriendo en segundo plano en `http://localhost:11434` y arranca solo al prender la PC.
+2. Descargá el modelo (unos 2 GB, una sola vez):
+
+   ```bash
+   ollama pull qwen2.5:3b
+   ```
+
+   Para comprobar que responde: `ollama run qwen2.5:3b "hola"`. Alternativa si recomienda poco: `llama3.2:3b`.
+3. Agregá a `backend/.env`:
+
+   ```bash
+   LLM_API_KEY=ollama
+   LLM_BASE_URL=http://localhost:11434/v1/
+   LLM_MODEL=qwen2.5:3b
+   LLM_TIMEOUT_SECONDS=90
+   ```
+
+   Ollama no usa clave, pero `LLM_API_KEY` es lo que activa el LLM: basta cualquier texto.
+4. Reiniciá el backend. En `log_auditoria_rag.modelo` debería aparecer `qwen2.5:3b` en vez de `simulado`.
+
+Sin tarjeta gráfica dedicada el modelo corre en el procesador: cada recomendación tarda entre 10 y 40 segundos, y la primera más, porque carga el modelo en memoria. Por eso `LLM_TIMEOUT_SECONDS=90`.
+
+Para cerrar Ollama: ícono de la llama junto al reloj → **Quit Ollama**, o `Get-Process ollama* | Stop-Process` en PowerShell. Con Ollama cerrado (y el LLM configurado), `POST /api/recomendaciones` responde `503` con `codigo` = `ASISTENTE_NO_DISPONIBLE`.
+
+#### Variables y otros proveedores
+
+| Variable | Obligatoria | Qué es |
+|---|---|---|
+| `LLM_API_KEY` | No | Activa el LLM. Sin ella se usa el asistente simulado |
+| `LLM_BASE_URL` | Si hay `LLM_API_KEY` | URL base de la API del proveedor |
+| `LLM_MODEL` | Si hay `LLM_API_KEY` | Nombre del modelo en ese proveedor |
+| `LLM_TIMEOUT_SECONDS` | No (por defecto 20) | Segundos de espera al LLM antes de responder `503` |
+
+Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
+
+| Proveedor | `LLM_BASE_URL` | Ejemplo de `LLM_MODEL` | Costo |
+|---|---|---|---|
+| Ollama | `http://localhost:11434/v1/` | `qwen2.5:3b` | Gratis |
+| Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` | Gratis, con límite de consultas |
+| OpenAI | `https://api.openai.com/v1/` | `gpt-4o-mini` | Pago |
+
+Las claves de Gemini u OpenAI son personales: van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
 
 ### Frontend
 
@@ -145,4 +204,6 @@ npm run dev
 
 El frontend queda en `http://localhost:3000`. `NEXT_PUBLIC_API_URL` (en `frontend/.env.local`, no se sube al repositorio) es la URL base del backend; ejemplo: `http://localhost:5092`. Para que el navegador pueda llamar a la API, el backend debe tener `FRONTEND_ORIGIN=http://localhost:3000` en su `.env`.
 
-Build de producción: `npm run build`. Pendiente: estilos, librerías de UI y de estado (el stack no las define).
+Build de producción: `npm run build`. Linter: `npm run lint`.
+
+Estilos con CSS Modules (`*.module.css` junto a cada componente) y variables de color y tipografía en `src/app/globals.css`. No se usan librerías de UI ni de estado.
