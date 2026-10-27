@@ -73,7 +73,7 @@ La API se documenta con **OpenAPI 3** y se muestra con **Swagger UI** (paquete S
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
 | Copia estática en YAML (para revisar sin correr el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
-Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`):
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones`):
 
 1. En Swagger UI, abrí `POST /api/auth/login`, pulsá **Try it out** y enviá el usuario de prueba (ver más abajo) o uno que hayas registrado.
 2. Copiá el valor de `token` de la respuesta.
@@ -132,7 +132,11 @@ Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
 
 #### Catálogo de prueba (solo desarrollo)
 
-[`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (HU6 y HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
+[`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (`POST /api/recomendaciones`, HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
+
+Para probarlo: registrá un horario con un hueco de 45 minutos o más, tomá el `id` del puente en `GET /api/puentes` y enviá `{ "puenteId": <id> }` a `POST /api/recomendaciones`.
+
+> **Provisional (HU7):** por ahora la búsqueda en el catálogo usa la primera zona registrada, y el asistente es un simulador sin LLM (`AsistenteIaSimulado`). Se reemplazan por la búsqueda de HU6 y por el cliente de OpenAI en `backend/Infrastructure/DependencyInjection.cs`.
 
 ### Frontend
 

@@ -9,6 +9,7 @@ using MySqlConnector;
 using Breaku.Application.Horarios;
 using Breaku.Application.Puentes;
 using Breaku.Application.Notificaciones;
+using Breaku.Application.Recomendaciones;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
 {
@@ -34,6 +35,11 @@ public static class DependencyInjection
         services.AddScoped<IHorarioRepository, HorarioRepository>();
         services.AddScoped<IPuenteRepository, PuenteRepository>();
         services.AddScoped<INotificacionRepository, NotificacionRepository>();
+        services.AddScoped<IRecomendacionRepository, RecomendacionRepository>();
+
+        // HU7. PROVISIONALES: se cambian por la búsqueda de HU6 y por el cliente de OpenAI cuando estén listos.
+        services.AddScoped<IRecuperadorLugares, RecuperadorLugaresProvisional>();
+        services.AddScoped<IAsistenteIa, AsistenteIaSimulado>();
 
         services.AddHostedService<AvisoPuentesWorker>();
 
