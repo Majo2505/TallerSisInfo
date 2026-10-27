@@ -101,7 +101,8 @@ export default function Inicio() {
   const minutosRestantes = activo ? aMin(activo.horaFin) - minutosAhora : 0;
   const usado = activo ? Math.round(((minutosAhora - aMin(activo.horaInicio)) / duracionMin(activo)) * 100) : 0;
   const minutosParaIa = foco ? (activo ? minutosRestantes : duracionMin(foco)) : 0;
-  const rutaIa = minutosParaIa > 0 ? `/ia?min=${minutosParaIa}` : "/ia";
+  // El puente va en la URL para que la IA pida recomendaciones de ese puente (HU7).
+  const rutaIa = foco && minutosParaIa > 0 ? `/ia?puente=${foco.id}&min=${minutosParaIa}` : "/ia";
 
   return (
     <main className={comun.pagina}>

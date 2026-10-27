@@ -102,6 +102,46 @@
   gap: 16px;
 }
 
+.selector {
+  display: grid;
+  gap: 6px;
+  color: var(--ucb-marino);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.selector select {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-weight: 500;
+}
+
+.selector select:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 20px 16px;
+  border-radius: 16px;
+  background: var(--fondo-suave);
+  border: 1px dashed var(--borde);
+  color: var(--texto-suave);
+  text-align: center;
+  line-height: 1.45;
+}
+
+.vacio a {
+  color: var(--ucb-azul);
+  font-weight: 700;
+}
+
 @media (min-width: 640px) {
   .estados {
     grid-template-columns: repeat(4, 1fr);
