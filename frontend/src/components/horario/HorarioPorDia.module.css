@@ -3,66 +3,89 @@
   gap: 12px;
 }
 
+/* Días: pastilla azul marino que se desliza; puntos azules por clase y amarillos por puente. */
 .dias {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  padding: 5px;
+  border-radius: 20px;
+  background: var(--fondo-suave);
 }
 
 .dia,
 .diaActivo {
+  position: relative;
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 4px;
+  gap: 6px;
   min-height: 60px;
   padding: 6px 2px;
-  border-radius: 14px;
-  border: 1px solid var(--borde);
-  background: var(--superficie);
-  color: var(--ucb-marino);
+  border: 0;
+  border-radius: 15px;
+  background: none;
+  color: var(--texto-suave);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
+  transition: color 200ms ease;
 }
 
 .diaActivo {
-  background: var(--ucb-azul);
-  border-color: var(--ucb-azul);
   color: #fff;
-  box-shadow: 0 6px 14px rgba(17, 68, 109, 0.3);
+  font-weight: 800;
 }
 
-.conteos {
+.pastilla {
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  background: var(--ucb-marino);
+  box-shadow: 0 10px 20px -12px rgba(5, 40, 69, 0.9);
+}
+
+.textoDia,
+.puntos {
+  position: relative;
+}
+
+.puntos {
   display: flex;
   gap: 3px;
-  font-size: 0.68rem;
-  font-weight: 700;
+  min-height: 6px;
 }
 
-.clases,
-.huecos {
-  padding: 0 5px;
-  border-radius: 999px;
-  line-height: 16px;
+.puntoClase,
+.puntoPuente {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
-.clases {
-  background: #dcebf7;
-  color: var(--ucb-azul);
+.puntoClase {
+  background: var(--ucb-azul-medio);
 }
 
-.huecos {
+.diaActivo .puntoClase {
+  background: #8fc0ef;
+}
+
+.puntoPuente {
+  background: #e0b400;
+}
+
+.diaActivo .puntoPuente {
   background: var(--ucb-amarillo);
-  color: var(--ucb-marino);
 }
 
 .tarjeta {
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: 24px;
   background: var(--superficie);
-  box-shadow: 0 2px 12px var(--sombra);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
 }
 
 .cabecera {
@@ -70,15 +93,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px 10px 16px;
+  padding: 12px 12px 12px 18px;
   border-bottom: 1px solid var(--borde-suave);
 }
 
 .titulo {
   margin: 0;
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--ucb-marino);
 }
 
@@ -87,44 +110,92 @@
   align-items: center;
   gap: 4px;
   min-height: 44px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 0;
   border-radius: 999px;
-  background: #dcebf7;
-  color: var(--ucb-azul);
+  background: var(--fondo-suave);
+  color: var(--ucb-marino);
   font: inherit;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
+}
+
+.agregar:active {
+  transform: scale(0.95);
 }
 
 .lista {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
 }
 
+/* Clase: hora a la izquierda y un punto del color de la materia. */
 .clase {
   display: grid;
-  gap: 2px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  min-height: 60px;
-  padding: 10px 16px;
+  min-height: 64px;
+  padding: 10px 12px;
   border: 0;
-  border-left: 4px solid;
-  border-bottom: 1px solid var(--borde-suave);
-  background: var(--superficie);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--acento) 7%, var(--superficie));
   color: var(--ucb-marino);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
 }
 
-.clase strong {
-  font-size: 0.95rem;
+.clase:active {
+  transform: scale(0.98);
 }
 
-.clase span {
+.hora {
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.hora small {
+  color: var(--texto-tenue);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.datosClase {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.datosClase strong {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.datosClase strong::before {
+  content: "";
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acento);
+  transform: translateY(-1px);
+}
+
+.datosClase > span {
   color: var(--texto-suave);
   font-size: 0.85rem;
 }
@@ -132,16 +203,30 @@
 .puente {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 8px 16px;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1.5px dashed #e8c94a;
   background: var(--ucb-amarillo-suave);
   color: var(--ucb-amarillo-oscuro);
 }
 
+.iconoPuente {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
 .puente strong {
   display: block;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 800;
 }
 
 .puente small {
@@ -151,7 +236,7 @@
 
 .vacio {
   margin: 0;
-  padding: 24px 16px;
+  padding: 28px 16px;
   text-align: center;
   color: var(--texto-suave);
 }
@@ -161,5 +246,11 @@
 .agregar:focus-visible,
 .clase:focus-visible {
   outline: 3px solid var(--ucb-celeste);
-  outline-offset: -3px;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dia:hover {
+    color: var(--ucb-marino);
+  }
 }
