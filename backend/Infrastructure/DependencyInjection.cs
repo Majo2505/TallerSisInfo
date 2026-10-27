@@ -13,6 +13,7 @@ using Breaku.Application.Puentes;
 using Breaku.Application.Notificaciones;
 using Breaku.Application.Ubicacion;
 using Breaku.Application.Recomendaciones;
+using Breaku.Application.Admin;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
 {
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IPuenteRepository, PuenteRepository>();
         services.AddScoped<INotificacionRepository, NotificacionRepository>();
         services.AddScoped<IRecomendacionRepository, RecomendacionRepository>();
+        services.AddScoped<IAdminRepository, AdminRepository>();
 
         // HU7. PROVISIONAL: se cambia por la búsqueda de HU6 cuando esté lista.
         services.AddScoped<IRecuperadorLugares, RecuperadorLugaresProvisional>();
