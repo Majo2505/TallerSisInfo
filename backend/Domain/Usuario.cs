@@ -11,6 +11,8 @@ public class Usuario
     public bool ConsentimientoUbicacion { get; set; }
     public DateTime? FechaConsentimiento { get; set; }
     public bool NotificacionesActivas { get; set; } = true;   // HU4: false = no se le envían avisos
+    public int? ZonaActualId { get; set; }
+    public Zona? ZonaActual { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }

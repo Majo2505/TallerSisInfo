@@ -2,7 +2,8 @@
 
 **Borrador v0.1 — Sprint 1**
 
-Alcance: autenticación (HU1), horario (HU2) y puentes (HU3). Parte del issue #139 (ítem "Contrato de endpoints").
+Alcance documentado: autenticación (HU1), horario (HU2), puentes (HU3) y ubicación (HU5).
+Parte del issue #139 (ítem "Contrato de endpoints").
 
 > **Nota (octubre 2026):** este documento es el borrador v0.1 del sprint 1. La API **implementada** está documentada en [`docs/api/openapi.yaml`](api/openapi.yaml) y en `/swagger`; donde difieran, esa es la referencia vigente. Diferencias conocidas entre este borrador y el código:
 >
@@ -326,7 +327,75 @@ Eliminación de un bloque (#10).
 | `GET /health` | No | `200`, sin cuerpo | ✅ Definido (existe en el backend) |
 | `GET /health/db` | No | `200` si conecta a MySQL; `503` si no. Sin cuerpo | ✅ Definido (existe en el backend) |
 
-## 6. Resumen de decisiones por responsable
+## 6. Ubicación (HU5)
+
+Todos los endpoints requieren JWT. El usuario siempre se obtiene del claim `sub`.
+Las coordenadas se envían una sola vez al backend para encontrar la zona más cercana
+dentro de su `radio_max_m`; no se guardan ni se devuelven. Solo se persiste el campus
+seleccionado y, cuando corresponde, la fecha y el consentimiento explícito.
+
+### `GET /api/ubicacion/zonas`
+
+Lista de zonas disponibles para selección manual. Respuesta `200`:
+
+```json
+[{ "id": 1, "nombre": "Campus central" }]
+```
+
+### `GET /api/ubicacion`
+
+Estado de consentimiento y zona activa del estudiante. Respuesta `200`:
+
+```json
+{
+  "consentimientoActivo": false,
+  "zonaActual": { "id": 1, "nombre": "Campus central" }
+}
+```
+
+`zonaActual` es `null` cuando todavía no se seleccionó un campus.
+
+### `PUT /api/ubicacion`
+
+Se llama después de informar el uso y obtener una aceptación explícita en la UI,
+y después de que el navegador autorice la geolocalización. Busca la zona más cercana
+que cubra las coordenadas y guarda únicamente su id, el consentimiento y la fecha.
+
+Request:
+
+```json
+{ "latitud": -16.5, "longitud": -68.15 }
+```
+
+Respuesta `200`: el mismo formato de `GET /api/ubicacion`. Coordenadas fuera de rango
+dan `400`; si no hay zona configurada que cubra el punto, da `422`.
+
+### `PUT /api/ubicacion/zona`
+
+Selección manual de un campus. No solicita ni registra coordenadas; guarda la zona
+elegida y deja el consentimiento de geolocalización desactivado.
+
+Request:
+
+```json
+{ "zonaId": 1 }
+```
+
+Respuesta `200`: el mismo formato de `GET /api/ubicacion`. Un id inexistente da `404`.
+
+### `DELETE /api/ubicacion`
+
+Revoca el consentimiento de la aplicación y elimina la zona vinculada al usuario.
+Respuesta `204`, sin cuerpo. La autorización del navegador se administra por separado
+desde la configuración del navegador.
+
+## 7. Resumen de decisiones por responsable
+
+| Responsable | Tema | Valor por defecto | Estado |
+|---|---|---|---|
+| HU5 | Ubicación precisa | Solo se transmite durante la resolución de zona; no se persiste | ✅ Definido |
+| HU5 | Consentimiento | Desactivado inicialmente; selección manual no concede permiso GPS | ✅ Definido |
+| HU5 | Catálogo | Lo administra la base de datos en `zona`; sin zonas activas no puede resolverse la ubicación | ✅ Definido |
 
 | Responsable | Tema | Valor por defecto | Estado |
 |---|---|---|---|

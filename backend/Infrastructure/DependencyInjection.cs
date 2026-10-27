@@ -11,6 +11,7 @@ using MySqlConnector;
 using Breaku.Application.Horarios;
 using Breaku.Application.Puentes;
 using Breaku.Application.Notificaciones;
+using Breaku.Application.Ubicacion;
 using Breaku.Application.Recomendaciones;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
@@ -44,6 +45,7 @@ public static class DependencyInjection
         AddAsistenteIa(services, configuration);
 
         services.AddHostedService<AvisoPuentesWorker>();
+        services.AddScoped<IUbicacionRepository, UbicacionRepository>();
 
         return services;
     }
