@@ -334,6 +334,9 @@ Las coordenadas se envían una sola vez al backend para encontrar la zona más c
 dentro de su `radio_max_m`; no se guardan ni se devuelven. Solo se persiste el campus
 seleccionado y, cuando corresponde, la fecha y el consentimiento explícito.
 
+Los errores usan el mismo formato que horarios y recomendaciones: `{ "codigo": "NO_ENCONTRADO", "mensaje": "..." }`
+(`NO_ENCONTRADO` con 404 y `FUERA_DE_ZONA` con 422).
+
 ### `GET /api/ubicacion/zonas`
 
 Lista de zonas disponibles para selección manual. Respuesta `200`:
