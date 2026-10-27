@@ -73,7 +73,7 @@ La API está documentada con **OpenAPI 3** y se ve con **Swagger UI** (paquete S
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
 | Copia estática en YAML (para mirarla sin levantar el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
-Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones`):
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones` y, con el administrador de prueba, `/api/admin/*`):
 
 1. En Swagger UI, abre `POST /api/auth/login`, pulsa **Try it out** y envía el usuario de prueba (mira más abajo) o uno que hayas registrado.
 2. Copia el valor de `token` de la respuesta.
@@ -115,10 +115,12 @@ Responde `200 OK` si conecta y `503 Service Unavailable` si no.
 
 | Dato | Valor |
 |---|---|
-| Correo | `dev.estudiante@ucb.edu.bo` |
-| Contraseña | `Breaku-Dev-2026!` |
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Estudiante | `dev.estudiante@ucb.edu.bo` | `Breaku-Dev-2026!` |
+| Administrador | `dev.admin@ucb.edu.bo` | `Breaku-Admin-2026!` |
 
-El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta ese usuario (rol `ESTUDIANTE`, correo verificado, activo). Es idempotente: se puede ejecutar varias veces. **No incluye `USE`**: hay que ejecutarlo con tu base de datos ya seleccionada (el nombre es el de tu `DB_NAME`).
+El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta esos dos usuarios (roles `ESTUDIANTE` y `ADMIN`, correo verificado, activos). El administrador entra al panel de administración del campus. Es idempotente: se puede ejecutar varias veces. **No incluye `USE`**: hay que ejecutarlo con tu base de datos ya seleccionada (el nombre es el de tu `DB_NAME`).
 
 **Opción 1: MySQL Workbench.** Abre `docs/database/seed-dev.sql`, deja tu base de datos como esquema por defecto (clic derecho sobre ella en el panel de esquemas → *Set as Default Schema*) y ejecuta el script.
 
