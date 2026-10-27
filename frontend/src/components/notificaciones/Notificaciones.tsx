@@ -1,5 +1,8 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
+import { SALIDA } from "@/components/app/Movimiento";
 import {
   INTERVALO_CONSULTA_MS,
   Notificacion,
@@ -44,6 +47,8 @@ function cuando(n: Notificacion): string {
   return `${etiquetaDia} · ${hhmm(n.horaInicio)} – ${hhmm(n.horaFin)}`;
 }
 
+const sinSuscripcion = () => () => {};
+
 type Props = {
   /** Cambia cada vez que se guarda el horario: se vuelve a consultar para retirar avisos de puentes que ya no existen. */
   recarga: number;
@@ -63,6 +68,9 @@ export default function Notificaciones({ recarga }: Props) {
   const [error, setError] = useState("");
   const yaMostradas = useRef(new Set<number>()); // para no repetir el aviso emergente
   const contenedor = useRef<HTMLDivElement>(null);
+  const reducir = useReducedMotion();
+  const campana = useAnimationControls();
+  const enCliente = useSyncExternalStore(sinSuscripcion, () => true, () => false);
 
   const consultar = useCallback(async (sigueActivo: () => boolean) => {
     try {
@@ -150,33 +158,71 @@ export default function Notificaciones({ recarga }: Props) {
 
   const noLeidas = lista.filter((n) => !n.leida).length;
 
+  // La campana se balancea cuando llega un aviso nuevo.
+  useEffect(() => {
+    if (emergente && !reducir) void campana.start({ rotate: [0, -16, 13, -9, 6, 0], transition: { duration: 0.7 } });
+  }, [emergente, reducir, campana]);
+
   return (
     <div className={estilos.contenedor} ref={contenedor}>
-      <button
+      <motion.button
         type="button"
         className={estilos.campana}
         aria-expanded={abierto}
         aria-controls="notificaciones-panel"
         aria-label={noLeidas ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
         onClick={() => setAbierto((a) => !a)}
+        animate={campana}
+        whileTap={{ scale: 0.92 }}
       >
         <IconoCampana />
-        {noLeidas > 0 && <span className={estilos.contador} aria-hidden="true">{noLeidas > 9 ? "9+" : noLeidas}</span>}
-      </button>
+        <AnimatePresence>
+          {noLeidas > 0 && (
+            <motion.span
+              key="contador"
+              className={estilos.contador}
+              aria-hidden="true"
+              initial={reducir ? false : { scale: 0.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 22 }}
+            >
+              {noLeidas > 9 ? "9+" : noLeidas}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
 
+      <AnimatePresence>
       {abierto && (
-        <section id="notificaciones-panel" className={estilos.panel} aria-labelledby="notificaciones-titulo">
+        <motion.section
+          id="notificaciones-panel"
+          className={estilos.panel}
+          aria-labelledby="notificaciones-titulo"
+          initial={reducir ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={reducir ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -6, transition: { duration: 0.15 } }}
+          transition={{ type: "spring", stiffness: 480, damping: 34 }}
+        >
           <h2 id="notificaciones-titulo" className={estilos.titulo}>Notificaciones</h2>
 
           <label className={estilos.preferencia}>
+            <span>Avisarme cuando empiece un puente</span>
             <input
               type="checkbox"
               role="switch"
+              className={estilos.oculto}
               checked={activas ?? false}
               disabled={activas === null || guardandoConfig}
               onChange={cambiarPreferencia}
             />
-            <span>Avisarme cuando empiece un puente</span>
+            <span className={activas ? estilos.rielActivo : estilos.riel} aria-hidden="true">
+              <motion.span
+                className={estilos.perilla}
+                animate={{ x: activas ? 20 : 0 }}
+                transition={reducir ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 30 }}
+              />
+            </span>
           </label>
           {activas === false && (
             <p className={estilos.nota}>No vas a recibir avisos, pero tus puentes se siguen detectando en tu horario.</p>
@@ -187,9 +233,22 @@ export default function Notificaciones({ recarga }: Props) {
           {lista.length === 0 ? (
             <p className={estilos.vacio}>Sin avisos por ahora. Te vamos a avisar apenas empiece uno de tus puentes.</p>
           ) : (
-            <ul className={estilos.lista}>
+            <motion.ul
+              className={estilos.lista}
+              initial={reducir ? false : "oculto"}
+              animate="visible"
+              variants={{ oculto: {}, visible: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } } }}
+            >
               {lista.map((n) => (
-                <li key={n.id} className={n.leida ? estilos.item : `${estilos.item} ${estilos.nueva}`}>
+                <motion.li
+                  key={n.id}
+                  layout={!reducir}
+                  className={n.leida ? estilos.item : `${estilos.item} ${estilos.nueva}`}
+                  variants={{
+                    oculto: { opacity: 0, y: 8 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: SALIDA } },
+                  }}
+                >
                   <p className={estilos.mensaje}>{n.mensaje}</p>
                   <div className={estilos.pie}>
                     <span>{cuando(n)}</span>
@@ -199,15 +258,28 @@ export default function Notificaciones({ recarga }: Props) {
                       </button>
                     )}
                   </div>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
           )}
-        </section>
+        </motion.section>
       )}
+      </AnimatePresence>
 
-      {emergente && (
-        <div className={estilos.emergente} role="alert">
+      {/* En un portal: la barra superior usa backdrop-filter y atraparía al aviso fijo dentro de ella. */}
+      {enCliente &&
+        createPortal(
+          <AnimatePresence>
+            {emergente && (
+        <motion.div
+          key={emergente.id}
+          className={estilos.emergente}
+          role="alert"
+          initial={reducir ? { opacity: 0 } : { opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={reducir ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 380, damping: 28 }}
+        >
           <span className={estilos.emergenteIcono}><IconoRayo /></span>
           <div className={estilos.emergenteTexto}>
             <strong>¡Puente disponible!</strong>
@@ -220,8 +292,11 @@ export default function Notificaciones({ recarga }: Props) {
             )}
           </div>
           <button type="button" className={estilos.entendido} onClick={() => leer(emergente.id)}>Entendido</button>
-        </div>
-      )}
+        </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
     </div>
   );
 }

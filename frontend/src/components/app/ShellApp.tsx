@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { useEffect } from "react";
 import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
+import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
 import {
   IconoBrujula,
@@ -15,6 +17,9 @@ import {
 } from "./Iconos";
 import estilos from "./ShellApp.module.css";
 
+// Resorte del indicador de sección: llega rápido y se asienta con un rebote mínimo.
+const RESORTE = { type: "spring", bounce: 0.18, duration: 0.45 } as const;
+
 const SECCIONES = [
   { ruta: "/inicio", nombre: "Inicio", Icono: IconoInicio },
   { ruta: "/horario", nombre: "Horario", Icono: IconoCalendario },
@@ -22,13 +27,6 @@ const SECCIONES = [
   { ruta: "/campus", nombre: "Campus", Icono: IconoBrujula },
   { ruta: "/perfil", nombre: "Perfil", Icono: IconoPersona },
 ];
-
-function iniciales(nombre: string): string {
-  const partes = nombre.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  const letras = partes.length === 1 ? partes[0].slice(0, 2) : partes[0][0] + partes[1][0];
-  return letras.toUpperCase();
-}
 
 export default function ShellApp({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -65,7 +63,8 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
               className={activa(ruta) ? estilos.enlaceActivo : estilos.enlace}
               aria-current={activa(ruta) ? "page" : undefined}
             >
-              {nombre}
+              {activa(ruta) && <motion.span layoutId="indicador-escritorio" className={estilos.indicador} transition={RESORTE} />}
+              <span className={estilos.textoEnlace}>{nombre}</span>
             </Link>
           ))}
         </nav>
@@ -89,6 +88,7 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
             aria-current={activa(ruta) ? "page" : undefined}
           >
             <span className={estilos.icono}>
+              {activa(ruta) && <motion.span layoutId="indicador-movil" className={estilos.pastilla} transition={RESORTE} />}
               <Icono tamano={22} />
             </span>
             {nombre}

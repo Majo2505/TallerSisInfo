@@ -1,12 +1,15 @@
-.panel { background: var(--superficie); border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px var(--sombra); }
-.titulo { margin: 0 0 14px; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--ucb-marino); }
-.titulo::after { content: ""; display: block; width: 36px; height: 3px; margin-top: 6px; background: var(--ucb-amarillo); border-radius: 2px; }
+.panel { background: var(--superficie); border: 1px solid var(--borde-suave); border-radius: 24px; padding: 20px; box-shadow: var(--sombra-1); }
+.titulo { margin: 0 0 14px; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ucb-marino); }
 
-.lista { margin: 0; display: grid; gap: 12px; }
-.fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.lista { margin: 0; display: grid; gap: 4px; }
+.fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 12px; border-radius: 14px; transition: background-color 200ms ease; }
 .fila dt { color: var(--texto-suave); font-size: .95rem; }
-.fila dd { margin: 0; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.25rem; font-weight: 800; }
+.fila dd { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
-.clases { color: var(--ucb-azul); }
-.puentes { color: var(--ucb-celeste); }
+.clases { color: var(--ucb-marino); }
+.puentes { color: var(--ucb-azul-medio); }
 .libre { color: var(--ucb-amarillo-oscuro); }
+
+@media (hover: hover) and (pointer: fine) {
+  .fila:hover { background: var(--fondo-suave); }
+}
