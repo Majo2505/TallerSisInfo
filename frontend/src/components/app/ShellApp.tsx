@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { useEffect } from "react";
 import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
@@ -15,6 +16,9 @@ import {
   IconoPersona,
 } from "./Iconos";
 import estilos from "./ShellApp.module.css";
+
+// Resorte del indicador de sección: llega rápido y se asienta con un rebote mínimo.
+const RESORTE = { type: "spring", bounce: 0.18, duration: 0.45 } as const;
 
 const SECCIONES = [
   { ruta: "/inicio", nombre: "Inicio", Icono: IconoInicio },
@@ -59,7 +63,8 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
               className={activa(ruta) ? estilos.enlaceActivo : estilos.enlace}
               aria-current={activa(ruta) ? "page" : undefined}
             >
-              {nombre}
+              {activa(ruta) && <motion.span layoutId="indicador-escritorio" className={estilos.indicador} transition={RESORTE} />}
+              <span className={estilos.textoEnlace}>{nombre}</span>
             </Link>
           ))}
         </nav>
@@ -83,6 +88,7 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
             aria-current={activa(ruta) ? "page" : undefined}
           >
             <span className={estilos.icono}>
+              {activa(ruta) && <motion.span layoutId="indicador-movil" className={estilos.pastilla} transition={RESORTE} />}
               <Icono tamano={22} />
             </span>
             {nombre}
