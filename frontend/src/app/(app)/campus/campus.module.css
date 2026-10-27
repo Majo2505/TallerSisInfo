@@ -1,24 +1,113 @@
+.pagina {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px 16px 120px;
+  display: grid;
+  gap: 22px;
+}
+
+.pagina > * {
+  min-width: 0;
+}
+
+/* Portada azul marino con fondo vivo y el contador de lugares que gira. */
+.portada {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  gap: 8px;
+  padding: 26px 22px;
+  border-radius: 28px;
+  background: var(--ucb-marino);
+  color: #fff;
+  box-shadow: var(--sombra-3);
+}
+
+.etiqueta {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.etiqueta svg {
+  color: var(--ucb-amarillo);
+}
+
+.titulo {
+  margin: 6px 0 0;
+  max-width: 16ch;
+  font-size: clamp(2rem, 6.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.bajada {
+  margin: 0;
+  max-width: 44ch;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+.cuenta {
+  margin: 10px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+}
+
+.cuentaNumero {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ucb-amarillo);
+  letter-spacing: -0.04em;
+}
+
+.controles {
+  display: grid;
+  gap: 12px;
+}
+
 .buscador {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 48px;
-  padding: 0 14px;
-  border-radius: 14px;
-  border: 1px solid var(--borde);
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1.5px solid var(--borde);
   background: var(--superficie);
   color: var(--texto-tenue);
+  cursor: text;
+  transition:
+    border-color 200ms ease,
+    box-shadow 250ms var(--curva-salida);
 }
 
 .buscador:focus-within {
-  outline: 3px solid var(--ucb-celeste);
-  outline-offset: 1px;
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+  color: var(--ucb-azul-medio);
 }
 
 .buscador input {
   flex: 1;
   min-width: 0;
-  min-height: 44px;
+  min-height: 48px;
   border: 0;
   background: transparent;
   color: var(--texto);
@@ -27,55 +116,134 @@
   outline: none;
 }
 
+/* Filtros: la pastilla azul marino se desliza a la categoría elegida. */
 .filtros {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  margin: 0 -16px;
+  padding: 2px 16px 6px;
+  scrollbar-width: none;
+}
+
+.filtros::-webkit-scrollbar {
+  display: none;
 }
 
 .filtro,
 .filtroActivo {
+  position: relative;
   flex-shrink: 0;
   min-height: 44px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 999px;
-  border: 1px solid var(--borde);
+  border: 1px solid var(--borde-suave);
   background: var(--superficie);
-  color: var(--ucb-azul);
+  color: var(--texto-suave);
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  transition: color 200ms ease;
 }
 
 .filtroActivo {
-  background: var(--ucb-azul);
-  border-color: var(--ucb-azul);
   color: #fff;
+  border-color: transparent;
 }
 
-.filtro:focus-visible,
-.filtroActivo:focus-visible {
-  outline: 3px solid var(--ucb-celeste);
-  outline-offset: 2px;
+.pastilla {
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  background: var(--ucb-marino);
+  box-shadow: 0 8px 18px -10px rgba(5, 40, 69, 0.8);
+}
+
+.textoFiltro {
+  position: relative;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .filtro:hover {
+    color: var(--ucb-marino);
+    border-color: var(--borde);
+  }
 }
 
 .lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 14px;
+}
+
+.lista > li {
+  min-width: 0;
 }
 
 .vacio {
-  margin: 0;
-  padding: 24px 16px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 32px 20px;
+  border-radius: 24px;
+  border: 1.5px dashed var(--borde);
   text-align: center;
-  border-radius: 16px;
-  background: var(--superficie);
   color: var(--texto-suave);
 }
 
-@media (min-width: 640px) {
-  .lista {
-    grid-template-columns: repeat(2, 1fr);
+.vacio p {
+  margin: 0;
+}
+
+.vacioIcono {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--fondo-suave);
+  color: var(--ucb-azul-medio);
+}
+
+.limpiar {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ucb-marino);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
+}
+
+.limpiar:active {
+  transform: scale(0.96);
+}
+
+.nota {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 720px) {
+  .pagina {
+    padding-top: 32px;
+  }
+  .portada {
+    padding: 36px 40px;
+  }
+  .controles {
+    grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+    align-items: center;
+  }
+  .filtros {
+    margin: 0;
+    padding: 2px 0 6px;
   }
 }
