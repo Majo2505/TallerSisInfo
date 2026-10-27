@@ -14,6 +14,7 @@ import {
   IconoDestello,
   IconoInicio,
   IconoPersona,
+  IconoPersonas,
 } from "./Iconos";
 import estilos from "./ShellApp.module.css";
 
@@ -26,6 +27,7 @@ const SECCIONES = [
   { ruta: "/horario", nombre: "Horario", corto: "Horario", Icono: IconoCalendario },
   { ruta: "/recomendaciones", nombre: "Recomendaciones", corto: "Para ti", Icono: IconoDestello },
   { ruta: "/campus", nombre: "Campus", corto: "Campus", Icono: IconoBrujula },
+  { ruta: "/comunidades", nombre: "Comunidades", corto: "Grupos", Icono: IconoPersonas },
   { ruta: "/perfil", nombre: "Perfil", corto: "Perfil", Icono: IconoPersona },
 ];
 

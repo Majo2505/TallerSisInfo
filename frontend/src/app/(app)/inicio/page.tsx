@@ -321,21 +321,15 @@ export default function Inicio() {
       </Pieza>
 
       <Pieza as="section" className={estilos.atajos}>
-        <motion.button
-          type="button"
-          className={estilos.atajo}
-          onClick={() => aviso.mostrar("Los grupos rápidos van a estar disponibles pronto.")}
-          whileTap={{ scale: 0.97 }}
-          transition={RESORTE_TOQUE}
-        >
+        <MotionLink href="/comunidades" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
           <span className={estilos.atajoIcono}>
             <IconoPersonas tamano={20} />
           </span>
           <span>
             <strong>Grupo rápido</strong>
-            <small>Pronto</small>
+            <small>Crea o únete a uno</small>
           </span>
-        </motion.button>
+        </MotionLink>
         <MotionLink href="/campus" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
           <span className={estilos.atajoIcono}>
             <IconoBrujula tamano={20} />
