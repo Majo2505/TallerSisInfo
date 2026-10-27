@@ -73,7 +73,7 @@ La API se documenta con **OpenAPI 3** y se muestra con **Swagger UI** (paquete S
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
 | Copia estática en YAML (para revisar sin correr el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
-Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`):
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones`):
 
 1. En Swagger UI, abrí `POST /api/auth/login`, pulsá **Try it out** y enviá el usuario de prueba (ver más abajo) o uno que hayas registrado.
 2. Copiá el valor de `token` de la respuesta.
@@ -96,6 +96,24 @@ cp backend/.env.example backend/.env
 ```
 
 Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
+
+**Asistente de IA (HU7, opcional).** Con `LLM_API_KEY` las recomendaciones las redacta un LLM, y entonces `LLM_BASE_URL` y `LLM_MODEL` también son obligatorios. Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
+
+| Proveedor | `LLM_BASE_URL` | Costo |
+|---|---|---|
+| Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | Gratis, con límite de consultas |
+| Ollama (local; `LLM_API_KEY` puede ser cualquier texto, p. ej. `ollama`) | `http://localhost:11434/v1/` | Gratis |
+| OpenAI | `https://api.openai.com/v1/` | Pago |
+
+`LLM_MODEL` es el nombre del modelo en ese proveedor (ejemplo para Gemini: `gemini-2.5-flash`). `LLM_TIMEOUT_SECONDS` (opcional, por defecto 20) es cuánto se espera al LLM antes de responder `503`.
+
+Para usar **Ollama** (gratis, sin límites, y nada sale de tu computadora):
+
+1. Instalalo desde [ollama.com/download](https://ollama.com/download) o con `winget install Ollama.Ollama`. Queda corriendo en segundo plano en `http://localhost:11434`.
+2. Descargá un modelo chico (unos 2 GB): `ollama pull qwen2.5:3b`. Alternativa: `llama3.2:3b`.
+3. En `backend/.env`: `LLM_API_KEY=ollama`, `LLM_BASE_URL=http://localhost:11434/v1/`, `LLM_MODEL=qwen2.5:3b` y `LLM_TIMEOUT_SECONDS=90` (sin tarjeta gráfica dedicada el modelo corre en el procesador y tarda más; la primera consulta, además, carga el modelo en memoria).
+
+Sin clave, la API arranca igual y usa un asistente simulado sin LLM, que también recomienda solo lugares del catálogo. La clave es personal: nunca la subas al repositorio.
 
 > **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca.
 
@@ -132,7 +150,11 @@ Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
 
 #### Catálogo de prueba (solo desarrollo)
 
-[`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (HU6 y HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
+[`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (`POST /api/recomendaciones`, HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
+
+Para probarlo: registrá un horario con un hueco de 45 minutos o más, tomá el `id` del puente en `GET /api/puentes` y enviá `{ "puenteId": <id> }` a `POST /api/recomendaciones`.
+
+> **Provisional (HU7):** por ahora la búsqueda en el catálogo usa la primera zona registrada (`RecuperadorLugaresProvisional`). Se reemplaza por la búsqueda de HU6 en `backend/Infrastructure/DependencyInjection.cs`. Sin `LLM_API_KEY`, el campo `modelo` del log queda como `simulado`.
 
 ### Frontend
 
