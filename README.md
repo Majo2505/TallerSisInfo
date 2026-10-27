@@ -128,7 +128,7 @@ mysql -u <usuario> -p <nombre_de_la_base> < docs/database/seed-dev.sql
 
 En Windows, `mysql` puede no estar en el `PATH`; en ese caso usá la ruta completa a `mysql.exe` (carpeta `bin` de tu instalación de MySQL) o la opción 1.
 
-Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
+Token de desarrollo: se obtiene con `POST /api/auth/login` usando ese usuario (campo `token` de la respuesta) y dura 24 horas. En Swagger, pegalo en **Authorize** (ver [Documentación de la API](#documentación-de-la-api-swagger--openapi)).
 
 #### Catálogo de prueba (solo desarrollo)
 
@@ -202,4 +202,6 @@ npm run dev
 
 El frontend queda en `http://localhost:3000`. `NEXT_PUBLIC_API_URL` (en `frontend/.env.local`, no se sube al repositorio) es la URL base del backend; ejemplo: `http://localhost:5092`. Para que el navegador pueda llamar a la API, el backend debe tener `FRONTEND_ORIGIN=http://localhost:3000` en su `.env`.
 
-Build de producción: `npm run build`. Pendiente: estilos, librerías de UI y de estado (el stack no las define).
+Build de producción: `npm run build`. Linter: `npm run lint`.
+
+Estilos con CSS Modules (`*.module.css` junto a cada componente) y variables de color y tipografía en `src/app/globals.css`. No se usan librerías de UI ni de estado.
