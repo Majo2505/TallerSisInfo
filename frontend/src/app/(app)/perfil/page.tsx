@@ -154,7 +154,7 @@ export default function Perfil() {
                 className={estilos.formulario}
                 onSubmit={(e) => {
                   e.preventDefault();
-                  aviso.mostrar("Guardar el perfil estará disponible pronto.");
+                  aviso.mostrar("Guardar el perfil va a estar disponible pronto.");
                 }}
               >
                 <h2 className={estilos.seccion}>Información personal</h2>
@@ -254,7 +254,7 @@ export default function Perfil() {
                   Confirmar nueva contraseña
                   <input type="password" disabled autoComplete="new-password" />
                 </label>
-                <p className={estilos.nota}>Cambiar la contraseña estará disponible pronto.</p>
+                <p className={estilos.nota}>Cambiar la contraseña va a estar disponible pronto.</p>
                 <button type="submit" className={estilos.primario} disabled>
                   Cambiar contraseña
                 </button>
@@ -266,7 +266,7 @@ export default function Perfil() {
                 className={estilos.formulario}
                 onSubmit={(e) => {
                   e.preventDefault();
-                  aviso.mostrar("El envío de reportes estará disponible pronto.");
+                  aviso.mostrar("Enviar reportes va a estar disponible pronto.");
                 }}
               >
                 <h2 className={estilos.seccion}>Reportar un problema</h2>

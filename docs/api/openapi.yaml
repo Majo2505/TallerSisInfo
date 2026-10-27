@@ -490,7 +490,7 @@ components:
               summary: La hora de fin no es posterior a la de inicio
               value:
                 codigo: VALIDACION
-                mensaje: La hora de fin debe ser posterior a la hora de inicio.
+                mensaje: La hora de fin tiene que ser posterior a la hora de inicio.
             formatoDeHora:
               summary: Hora con formato no admitido
               value:

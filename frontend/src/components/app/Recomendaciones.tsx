@@ -96,7 +96,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
               <IconoRayo tamano={14} /> <Odometro valor={minutos} /> min libres
             </span>
           )}
-          <h1 className={estilos.titulo}>¿Cómo te sientes ahora mismo?</h1>
+          <h1 className={estilos.titulo}>¿Cómo te sientes ahorita?</h1>
           <p className={estilos.bajada}>Elige tu ánimo y te sugerimos lugares del campus que caben en tu puente.</p>
         </Pieza>
 
