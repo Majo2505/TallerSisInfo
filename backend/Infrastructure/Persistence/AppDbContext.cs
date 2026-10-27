@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Zona> Zonas => Set<Zona>();
+    public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Lugar> Lugares => Set<Lugar>();
     public DbSet<Horario> Horarios => Set<Horario>();
     public DbSet<Puente> Puentes => Set<Puente>();
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
