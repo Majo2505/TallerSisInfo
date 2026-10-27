@@ -1,7 +1,8 @@
 .contenedor { position: relative; flex-shrink: 0; }
 
-.campana { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); cursor: pointer; }
-.campana:hover { background: #eaf2f8; }
+.campana { position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--borde-suave); background: var(--superficie); color: var(--ucb-marino); cursor: pointer; box-shadow: var(--sombra-1); transition: transform 200ms var(--curva-salida), box-shadow 200ms ease; }
+.campana:active { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) { .campana:hover { box-shadow: var(--sombra-2); } }
 .campana:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 1px; }
 .contador { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--ucb-amarillo); color: var(--ucb-marino); font-size: .72rem; font-weight: 700; line-height: 20px; text-align: center; border: 2px solid var(--superficie); }
 

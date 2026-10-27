@@ -21,7 +21,7 @@
   --superficie: #ffffff;
   --texto: #0b1f33;
   --texto-suave: #4b5d70;
-  --texto-tenue: #66788b;
+  --texto-tenue: #5a6c7f;
   --borde: #d6dde6;
   --borde-suave: #e8ecf2;
 
@@ -170,4 +170,9 @@ main {
   .hz-vista-dia { display: none; }
   .hz-vista-grilla { display: block; }
   .hz-grid { grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); min-width: 56px; }
+}
+
+/* Cifras de ancho fijo para minutos y horas que cambian. */
+.cifras {
+  font-variant-numeric: tabular-nums;
 }
