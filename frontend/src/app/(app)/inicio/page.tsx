@@ -174,7 +174,7 @@ export default function Inicio() {
             <p className={estilos.vacioTitulo}>{cargando ? "Buscando tus puentes…" : "Hoy no te quedan puentes"}</p>
             <p className={estilos.vacioTexto}>
               {error ||
-                "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y aparecerán aquí."}
+                "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y van a aparecer aquí."}
             </p>
             <MotionLink href="/horario" className={estilos.accionVacio} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
               Ver mi horario <IconoFlechaDerecha tamano={18} />
@@ -301,7 +301,7 @@ export default function Inicio() {
         <motion.button
           type="button"
           className={estilos.atajo}
-          onClick={() => aviso.mostrar("Los grupos rápidos estarán disponibles pronto.")}
+          onClick={() => aviso.mostrar("Los grupos rápidos van a estar disponibles pronto.")}
           whileTap={{ scale: 0.97 }}
           transition={RESORTE_TOQUE}
         >

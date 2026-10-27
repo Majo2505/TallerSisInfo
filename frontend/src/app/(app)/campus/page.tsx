@@ -122,7 +122,7 @@ export default function Campus() {
       </Pieza>
 
       <Pieza>
-        <p className={estilos.nota}>Vista previa con lugares de ejemplo; el catálogo real llegará con el backend.</p>
+        <p className={estilos.nota}>Vista previa con lugares de ejemplo; el catálogo de verdad llega con el backend.</p>
       </Pieza>
     </Entrada>
   );

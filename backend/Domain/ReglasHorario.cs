@@ -9,7 +9,7 @@ public static class ReglasHorario
         if (string.IsNullOrWhiteSpace(materia)) return "La materia es obligatoria.";
         if (materia.Trim().Length > 100) return "La materia no puede superar 100 caracteres.";
         if (diaSemana < 1 || diaSemana > 6) return "El día debe ir de 1 (lunes) a 6 (sábado).";
-        if (fin <= inicio) return "La hora de fin debe ser posterior a la hora de inicio.";
+        if (fin <= inicio) return "La hora de fin tiene que ser posterior a la hora de inicio.";
         return null;
     }
 

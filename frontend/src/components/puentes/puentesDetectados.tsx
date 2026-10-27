@@ -36,7 +36,7 @@ export default function PuentesDetectados({ puentes, cargando, error, onReintent
 
       {!cargando && !error && puentes.length === 0 && (
         <p className={estilos.vacio}>
-          Aún no hay puentes. Un puente es un hueco libre de 45 min o más entre dos clases del mismo día; se detecta solo cuando registras tu horario.
+          Todavía no hay puentes. Un puente es un hueco libre de 45 min o más entre dos clases del mismo día; se detecta solo cuando registras tu horario.
         </p>
       )}
 
