@@ -5,13 +5,15 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { Flecha, Icono, Informacion } from "./Iconos";
 import styles from "./Onboarding.module.css";
 import { PASOS } from "./pasos";
+import { useSesion } from "@/lib/useSesion";
 
+// Se recuerda solo durante la pestaña: cada visita nueva sin sesión vuelve a mostrar el onboarding.
 const CLAVE_VISTO = "breaku_onboarding_visto";
 const UMBRAL_SWIPE = 50; // píxeles mínimos para contar como deslizamiento
 
 function yaFueVisto(): boolean {
   try {
-    return window.localStorage.getItem(CLAVE_VISTO) !== null;
+    return window.sessionStorage.getItem(CLAVE_VISTO) !== null;
   } catch {
     return false;
   }
@@ -21,9 +23,9 @@ const sinSuscripcion = () => () => {};
 
 function marcarVisto() {
   try {
-    window.localStorage.setItem(CLAVE_VISTO, "1");
+    window.sessionStorage.setItem(CLAVE_VISTO, "1");
   } catch {
-    // Sin localStorage (modo privado, etc.): se mostrará de nuevo la próxima vez.
+    // Sin sessionStorage (modo privado estricto): se mostrará de nuevo al volver a "/".
   }
 }
 
@@ -37,15 +39,19 @@ export default function Onboarding({ forzar = false }: Props) {
   const [indice, setIndice] = useState(0);
   // null en el servidor y durante la hidratación: aún no se sabe si ya lo vio.
   const visto = useSyncExternalStore<boolean | null>(sinSuscripcion, yaFueVisto, () => null);
-  const verificando = !forzar && (visto === null || visto);
+  const { sesion, listo } = useSesion();
+  // Con la sesión abierta no hace falta el onboarding: se va directo a Inicio.
+  const verificando = !listo || !!sesion || (!forzar && (visto === null || visto));
   const inicioToque = useRef<number | null>(null);
 
   const paso = PASOS[indice];
   const esUltimo = indice === PASOS.length - 1;
 
   useEffect(() => {
-    if (!forzar && visto) router.replace("/login");
-  }, [forzar, visto, router]);
+    if (!listo) return;
+    if (sesion) router.replace("/inicio");
+    else if (!forzar && visto) router.replace("/login");
+  }, [listo, sesion, forzar, visto, router]);
 
   const terminar = useCallback(() => {
     marcarVisto();
