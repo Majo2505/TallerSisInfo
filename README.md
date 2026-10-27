@@ -97,24 +97,6 @@ cp backend/.env.example backend/.env
 
 Completá `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, y `FRONTEND_ORIGIN` (origen del frontend permitido por CORS; ejemplo: `http://localhost:3000`). No hay valores por defecto: si falta alguna clave, la API no arranca y indica cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que se puede ejecutar desde cualquier carpeta.
 
-**Asistente de IA (HU7, opcional).** Con `LLM_API_KEY` las recomendaciones las redacta un LLM, y entonces `LLM_BASE_URL` y `LLM_MODEL` también son obligatorios. Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
-
-| Proveedor | `LLM_BASE_URL` | Costo |
-|---|---|---|
-| Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | Gratis, con límite de consultas |
-| Ollama (local; `LLM_API_KEY` puede ser cualquier texto, p. ej. `ollama`) | `http://localhost:11434/v1/` | Gratis |
-| OpenAI | `https://api.openai.com/v1/` | Pago |
-
-`LLM_MODEL` es el nombre del modelo en ese proveedor (ejemplo para Gemini: `gemini-2.5-flash`). `LLM_TIMEOUT_SECONDS` (opcional, por defecto 20) es cuánto se espera al LLM antes de responder `503`.
-
-Para usar **Ollama** (gratis, sin límites, y nada sale de tu computadora):
-
-1. Instalalo desde [ollama.com/download](https://ollama.com/download) o con `winget install Ollama.Ollama`. Queda corriendo en segundo plano en `http://localhost:11434`.
-2. Descargá un modelo chico (unos 2 GB): `ollama pull qwen2.5:3b`. Alternativa: `llama3.2:3b`.
-3. En `backend/.env`: `LLM_API_KEY=ollama`, `LLM_BASE_URL=http://localhost:11434/v1/`, `LLM_MODEL=qwen2.5:3b` y `LLM_TIMEOUT_SECONDS=90` (sin tarjeta gráfica dedicada el modelo corre en el procesador y tarda más; la primera consulta, además, carga el modelo en memoria).
-
-Sin clave, la API arranca igual y usa un asistente simulado sin LLM, que también recomienda solo lugares del catálogo. La clave es personal: nunca la subas al repositorio.
-
 > **Al actualizar:** cada integrante debe agregar `FRONTEND_ORIGIN` a su `backend/.env` (ver `backend/.env.example`); sin esa clave la API no arranca.
 
 Para comprobar la conexión a MySQL con la API en marcha:
@@ -154,7 +136,58 @@ Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
 
 Para probarlo: registrá un horario con un hueco de 45 minutos o más, tomá el `id` del puente en `GET /api/puentes` y enviá `{ "puenteId": <id> }` a `POST /api/recomendaciones`.
 
-> **Provisional (HU7):** por ahora la búsqueda en el catálogo usa la primera zona registrada (`RecuperadorLugaresProvisional`). Se reemplaza por la búsqueda de HU6 en `backend/Infrastructure/DependencyInjection.cs`. Sin `LLM_API_KEY`, el campo `modelo` del log queda como `simulado`.
+> **Provisional (HU7):** por ahora la búsqueda en el catálogo usa la primera zona registrada (`RecuperadorLugaresProvisional`). Se reemplaza por la búsqueda de HU6 en `backend/Infrastructure/DependencyInjection.cs`.
+
+### Asistente de IA (HU7, opcional)
+
+Las recomendaciones de `POST /api/recomendaciones` las redacta un LLM, que solo puede elegir entre los lugares recuperados del catálogo. **Es opcional:** sin configurarlo, la API arranca igual y usa un asistente simulado, sin LLM, que también recomienda solo lugares del catálogo (con explicaciones genéricas).
+
+#### Con Ollama (recomendado para desarrollo)
+
+Gratis, sin límite de consultas y sin enviar datos fuera de tu computadora.
+
+1. Instalá Ollama desde [ollama.com/download](https://ollama.com/download) o con `winget install Ollama.Ollama`. Queda corriendo en segundo plano en `http://localhost:11434` y arranca solo al prender la PC.
+2. Descargá el modelo (unos 2 GB, una sola vez):
+
+   ```bash
+   ollama pull qwen2.5:3b
+   ```
+
+   Para comprobar que responde: `ollama run qwen2.5:3b "hola"`. Alternativa si recomienda poco: `llama3.2:3b`.
+3. Agregá a `backend/.env`:
+
+   ```bash
+   LLM_API_KEY=ollama
+   LLM_BASE_URL=http://localhost:11434/v1/
+   LLM_MODEL=qwen2.5:3b
+   LLM_TIMEOUT_SECONDS=90
+   ```
+
+   Ollama no usa clave, pero `LLM_API_KEY` es lo que activa el LLM: basta cualquier texto.
+4. Reiniciá el backend. En `log_auditoria_rag.modelo` debería aparecer `qwen2.5:3b` en vez de `simulado`.
+
+Sin tarjeta gráfica dedicada el modelo corre en el procesador: cada recomendación tarda entre 10 y 40 segundos, y la primera más, porque carga el modelo en memoria. Por eso `LLM_TIMEOUT_SECONDS=90`.
+
+Para cerrar Ollama: ícono de la llama junto al reloj → **Quit Ollama**, o `Get-Process ollama* | Stop-Process` en PowerShell. Con Ollama cerrado (y el LLM configurado), `POST /api/recomendaciones` responde `503` con `codigo` = `ASISTENTE_NO_DISPONIBLE`.
+
+#### Variables y otros proveedores
+
+| Variable | Obligatoria | Qué es |
+|---|---|---|
+| `LLM_API_KEY` | No | Activa el LLM. Sin ella se usa el asistente simulado |
+| `LLM_BASE_URL` | Si hay `LLM_API_KEY` | URL base de la API del proveedor |
+| `LLM_MODEL` | Si hay `LLM_API_KEY` | Nombre del modelo en ese proveedor |
+| `LLM_TIMEOUT_SECONDS` | No (por defecto 20) | Segundos de espera al LLM antes de responder `503` |
+
+Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
+
+| Proveedor | `LLM_BASE_URL` | Ejemplo de `LLM_MODEL` | Costo |
+|---|---|---|---|
+| Ollama | `http://localhost:11434/v1/` | `qwen2.5:3b` | Gratis |
+| Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` | Gratis, con límite de consultas |
+| OpenAI | `https://api.openai.com/v1/` | `gpt-4o-mini` | Pago |
+
+Las claves de Gemini u OpenAI son personales: van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
 
 ### Frontend
 
