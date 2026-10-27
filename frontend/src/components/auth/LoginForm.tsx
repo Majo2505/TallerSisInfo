@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { RESORTE_TOQUE } from "@/components/app/Movimiento";
 import { ErrorAuth, iniciarSesion, obtenerSesion, registrarse, suscribirSesion } from "@/services/authService";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
@@ -137,6 +139,10 @@ export default function LoginForm() {
     }
   }
 
+  const reducir = useReducedMotion();
+  let textoBoton = esRegistro ? "Crear cuenta" : "Iniciar sesión";
+  if (enviando) textoBoton = "Ingresando…";
+
   return (
     <div className={styles.contenedor}>
       <div className={styles.pestanas} role="tablist" aria-label="Acceso">
@@ -147,7 +153,8 @@ export default function LoginForm() {
           className={!esRegistro ? styles.pestanaActiva : styles.pestana}
           onClick={() => cambiarModo("login")}
         >
-          Iniciar sesión
+          {!esRegistro && <motion.span layoutId="pestana-acceso" className={styles.pastilla} transition={RESORTE_TOQUE} />}
+          <span className={styles.textoPestana}>Iniciar sesión</span>
         </button>
         <button
           type="button"
@@ -156,15 +163,24 @@ export default function LoginForm() {
           className={esRegistro ? styles.pestanaActiva : styles.pestana}
           onClick={() => cambiarModo("registro")}
         >
-          Registrarse
+          {esRegistro && <motion.span layoutId="pestana-acceso" className={styles.pastilla} transition={RESORTE_TOQUE} />}
+          <span className={styles.textoPestana}>Registrarse</span>
         </button>
       </div>
 
       <form className={styles.formulario} onSubmit={alEnviar} noValidate>
         {errorServidor && (
-          <p className={styles.aviso} role="alert">
+          // El error "tiembla" al aparecer: se nota sin tener que leerlo primero.
+          <motion.p
+            key={errorServidor}
+            className={styles.aviso}
+            role="alert"
+            initial={reducir ? false : { x: 0 }}
+            animate={{ x: [0, -8, 8, -5, 5, 0] }}
+            transition={{ duration: 0.42 }}
+          >
             {errorServidor}
-          </p>
+          </motion.p>
         )}
 
         {esRegistro && (
@@ -268,9 +284,16 @@ export default function LoginForm() {
           </p>
         )}
 
-        <button type="submit" className={styles.boton} disabled={enviando}>
-          {enviando ? "Ingresando…" : esRegistro ? "Crear cuenta" : "Iniciar sesión"}
-        </button>
+        <motion.button
+          type="submit"
+          className={styles.boton}
+          disabled={enviando}
+          whileTap={enviando ? undefined : { scale: 0.97 }}
+          transition={RESORTE_TOQUE}
+        >
+          {enviando && <span className={styles.girando} aria-hidden="true" />}
+          {textoBoton}
+        </motion.button>
 
         <p className={styles.pie}>Solo con tu correo institucional @ucb.edu.bo</p>
       </form>
