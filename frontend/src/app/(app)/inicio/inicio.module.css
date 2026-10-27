@@ -9,6 +9,33 @@
   align-content: start;
 }
 
+/* En celular las dos columnas se disuelven en la grilla y el orden queda: día, ánimos, sugerencias, atajos. */
+.columnaIzquierda,
+.columnaDerecha {
+  display: contents;
+}
+
+.tarjeta {
+  order: 1;
+}
+
+.zonaAnimo {
+  order: 2;
+}
+
+.zonaSugerencias {
+  order: 3;
+}
+
+.atajos {
+  order: 4;
+}
+
+.columnaIzquierda > *,
+.columnaDerecha > * {
+  min-width: 0;
+}
+
 /* Sin esto, el carrusel ensancha la página entera en el celular. */
 .pagina > * {
   min-width: 0;
@@ -37,280 +64,56 @@
   color: var(--ucb-marino);
 }
 
-.saludo span {
-  color: var(--ucb-azul-medio);
+
+/* ---------- Saludo animado ---------- */
+.palabra {
+  display: inline-block;
+  margin-right: 0.26em;
 }
 
-/* ---------- Héroe del puente (la única superficie azul marino) ---------- */
-.heroe {
+.nombre {
   position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: 28px;
-  padding: 24px 22px 22px;
-  color: #fff;
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgba(47, 127, 209, 0.35) 0%, transparent 55%),
-    linear-gradient(160deg, var(--ucb-marino-2) 0%, var(--ucb-marino) 62%);
-  box-shadow: var(--sombra-3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-/* Resplandor amarillo que respira detrás de los datos. */
-.brillo {
-  position: absolute;
-  z-index: -1;
-  width: 320px;
-  height: 320px;
-  right: -110px;
-  bottom: -170px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(253, 213, 55, 0.32) 0%, rgba(253, 213, 55, 0) 65%);
-  filter: blur(6px);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .brillo {
-    animation: respirar 7s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes respirar {
-  from {
-    transform: translate(0, 0) scale(1);
-  }
-  to {
-    transform: translate(-40px, -24px) scale(1.15);
-  }
-}
-
-.heroeCuerpo {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px 16px;
-  align-items: center;
-}
-
-.heroeDatos {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.estadoPuente {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.latido,
-.puntoQuieto {
-  position: relative;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ucb-amarillo);
-}
-
-.puntoQuieto {
-  background: rgba(255, 255, 255, 0.6);
-}
-
-/* El punto late como un "en vivo". */
-.latido::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--ucb-amarillo);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .latido::after {
-    animation: latir 1.8s var(--curva-salida) infinite;
-  }
-}
-
-@keyframes latir {
-  from {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  to {
-    transform: scale(3);
-    opacity: 0;
-  }
-}
-
-.minutos {
-  margin: 4px 0 0;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: clamp(3.4rem, 15vw, 4.6rem);
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.05em;
-}
-
-.unidad {
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.rango {
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.82);
-  font-variant-numeric: tabular-nums;
-}
-
-.falta {
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(253, 213, 55, 0.16);
-  color: var(--ucb-amarillo);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.siguiente {
-  margin: 2px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.92rem;
-  color: rgba(255, 255, 255, 0.78);
-}
-
-.siguiente strong {
-  color: #fff;
-}
-
-.anillo {
-  position: relative;
-  width: 92px;
-  height: 92px;
-  flex-shrink: 0;
-  align-self: start;
-}
-
-.anillo svg {
-  width: 100%;
-  height: 100%;
-}
-
-.pista {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.12);
-  stroke-width: 7;
-}
-
-.progreso {
-  fill: none;
-  stroke: var(--ucb-amarillo);
-  stroke-width: 7;
-  stroke-linecap: round;
-}
-
-.anilloTexto {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  font-weight: 800;
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.anilloTexto small {
-  margin-top: 3px;
-  font-size: 0.66rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
-}
-
-/* Acción principal: amarilla, con un brillo que la cruza al pasar el mouse. */
-.accion {
-  grid-column: 1 / -1;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 56px;
-  padding: 0 8px 0 20px;
-  border-radius: 16px;
-  background: var(--ucb-amarillo);
+  display: inline-block;
   color: var(--ucb-marino);
-  font-weight: 800;
-  font-size: 1.02rem;
-  text-decoration: none;
-  box-shadow: 0 10px 24px -10px rgba(253, 213, 55, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.accion::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
-  transform: translateX(-120%);
-  transition: transform 700ms var(--curva-salida);
-}
-
-.accionFlecha {
+.nombre .palabra {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--ucb-marino);
-  color: var(--ucb-amarillo);
-  transition: transform 300ms var(--curva-salida);
+  margin-right: 0;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .accion:hover::before {
-    transform: translateX(120%);
-  }
+/* Trazo de resaltador amarillo que se pinta de izquierda a derecha bajo el nombre. */
+.resaltador {
+  position: absolute;
+  left: -0.12em;
+  right: -0.14em;
+  bottom: 0.06em;
+  height: 0.42em;
+  border-radius: 0.2em 0.35em 0.25em 0.4em;
+  background: var(--ucb-amarillo);
+  transform-origin: left center;
+  transform: rotate(-1.2deg);
+}
 
-  .accion:hover .accionFlecha {
-    transform: translateX(3px);
-  }
+/* ---------- Marco del héroe ---------- */
+.marcoHeroe {
+  perspective: 1200px;
 }
 
 .heroeVacio {
   display: grid;
   gap: 10px;
   justify-items: start;
-}
-
-.heroeVacio .accion {
-  justify-self: stretch;
-  margin-top: 6px;
+  padding: 26px 22px;
+  border-radius: 28px;
+  color: #fff;
+  background: radial-gradient(120% 120% at 100% 0%, rgba(47, 127, 209, 0.4), transparent 60%), var(--ucb-marino);
+  box-shadow: var(--sombra-3);
 }
 
 .vacioTitulo {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -318,8 +121,22 @@
 .vacioTexto {
   margin: 0;
   max-width: 46ch;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1.5;
+}
+
+.accionVacio {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  margin-top: 6px;
+  padding: 0 20px;
+  border-radius: 14px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 /* ---------- Tarjetas blancas ---------- */
@@ -388,15 +205,33 @@
   bottom: 4px;
   border-radius: 7px;
   transform-origin: left center;
+  cursor: default;
+  outline-offset: 3px;
 }
 
 .tramoClase {
   background: linear-gradient(180deg, #2a5f92, var(--ucb-azul));
 }
 
+/* Los puentes llevan rayas que corren: tiempo libre "en marcha". */
 .tramoPuente {
-  background: var(--ucb-amarillo);
+  background:
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.45) 0 6px, transparent 6px 12px),
+    var(--ucb-amarillo);
+  background-size: 17px 17px, auto;
   box-shadow: 0 0 0 1px rgba(122, 92, 0, 0.12) inset;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tramoPuente {
+    animation: correr 1.2s linear infinite;
+  }
+}
+
+@keyframes correr {
+  to {
+    background-position: 17px 0, 0 0;
+  }
 }
 
 .ahora {
@@ -407,6 +242,7 @@
   margin-left: -1px;
   border-radius: 1px;
   background: var(--ucb-marino);
+  pointer-events: none; /* deja pasar el mouse al tramo de abajo */
 }
 
 .ahoraPunto {
@@ -480,6 +316,8 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
   transition: box-shadow 250ms var(--curva-salida), border-color 250ms ease;
 }
 
@@ -569,7 +407,7 @@
   display: grid;
   align-content: start;
   gap: 8px;
-  padding: 16px;
+  padding: 10px 10px 16px;
   border-radius: 20px;
   background: var(--superficie);
   border: 1px solid var(--borde-suave);
@@ -696,38 +534,15 @@
   }
 
   .cabecera,
-  .heroe {
+  .marcoHeroe {
     grid-column: 1 / -1;
   }
 
-  .tarjeta,
-  .atajos {
-    align-self: start;
-  }
-
-  .heroe {
-    padding: 36px 40px 34px;
-  }
-
-  .heroeCuerpo {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: end;
-  }
-
-  .accion {
-    grid-column: auto;
-    align-self: end;
-    min-width: 290px;
-  }
-
-  .anillo {
-    width: 120px;
-    height: 120px;
-    align-self: center;
-  }
-
-  .minutos {
-    font-size: 5.6rem;
+  .columnaIzquierda,
+  .columnaDerecha {
+    display: grid;
+    gap: 28px;
+    align-content: start;
   }
 
   .estados {
@@ -737,4 +552,82 @@
   .carrusel {
     grid-auto-columns: minmax(200px, 45%);
   }
+}
+
+.globo {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  min-width: max-content;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ucb-marino);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--sombra-2);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px) scale(0.96);
+  transform-origin: bottom center;
+  transition: opacity 150ms ease, transform 180ms var(--curva-salida);
+}
+
+.globo strong {
+  color: #fff;
+  font-weight: 800;
+}
+
+.globo::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-top-color: var(--ucb-marino);
+}
+
+.tramoClase:focus-visible .globo,
+.tramoPuente:focus-visible .globo {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tramoClase:hover .globo,
+  .tramoPuente:hover .globo {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* ---------- Ánimos: brillo que sigue al cursor ---------- */
+.estado::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(180px circle at var(--mx, 50%) var(--my, 50%), rgba(253, 213, 55, 0.22), transparent 70%);
+  transition: opacity 250ms ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .estado:hover::before {
+    opacity: 1;
+  }
+}
+
+.estado > * {
+  position: relative;
+}
+
+/* ---------- Sugerencias: la ilustración va arriba ---------- */
+.lugar > :not(svg) {
+  margin-inline: 6px;
 }

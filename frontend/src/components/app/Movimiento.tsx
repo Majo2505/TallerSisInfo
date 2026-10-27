@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useEffect } from "react";
+import estilos from "./Movimiento.module.css";
 
 /** Curva de salida fuerte (la misma que --curva-salida en globals.css). */
 export const SALIDA = [0.23, 1, 0.32, 1] as const;
@@ -61,3 +62,48 @@ export function NumeroAnimado({ valor, duracion = 1.1 }: { valor: number; duraci
 
 /** Link de Next con física de presión. */
 export const MotionLink = motion.create(Link);
+
+const DIGITOS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+/** Una rueda del odómetro: la tira 0-9 gira con resorte hasta el dígito. */
+function Rueda({ digito }: { digito: number }) {
+  const reducir = useReducedMotion();
+  return (
+    <span className={estilos.rueda} aria-hidden="true">
+      <motion.span
+        className={estilos.tira}
+        initial={{ y: reducir ? `${-digito * 10}%` : "0%" }}
+        animate={{ y: `${-digito * 10}%` }}
+        transition={{ type: "spring", stiffness: 70, damping: 16, mass: 1.1 }}
+      >
+        {DIGITOS.map((n) => (
+          <span key={n}>{n}</span>
+        ))}
+      </motion.span>
+    </span>
+  );
+}
+
+/** Número como contador mecánico: cada dígito gira hasta su valor. */
+export function Odometro({ valor }: { valor: number }) {
+  const digitos = String(Math.max(0, Math.round(valor))).split("");
+  return (
+    <span className={estilos.odometro} aria-label={String(valor)} role="img">
+      {digitos.map((d, i) => (
+        // La clave cuenta desde la derecha: las unidades siguen siendo la misma rueda aunque cambie la cantidad de dígitos.
+        <Rueda key={digitos.length - i} digito={Number(d)} />
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Escribe la posición del mouse dentro del elemento en --mx / --my (0 a 100 %), para luces que siguen al cursor.
+ * Solo con mouse: en pantallas táctiles no hace nada. Escribe directo en el estilo, sin re-renderizar.
+ */
+export function seguirPuntero(evento: React.PointerEvent<HTMLElement>) {
+  if (evento.pointerType !== "mouse") return;
+  const caja = evento.currentTarget.getBoundingClientRect();
+  evento.currentTarget.style.setProperty("--mx", `${((evento.clientX - caja.left) / caja.width) * 100}%`);
+  evento.currentTarget.style.setProperty("--my", `${((evento.clientY - caja.top) / caja.height) * 100}%`);
+}

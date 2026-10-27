@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import {
   IconoBrujula,
-  IconoCalendario,
   IconoFlechaDerecha,
   IconoLuna,
   IconoObjetivo,
@@ -16,7 +15,9 @@ import {
   IconoRayo,
   IconoReloj,
 } from "@/components/app/Iconos";
-import { Entrada, MotionLink, NumeroAnimado, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
+import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import ArteCategoria from "@/components/inicio/ArteCategoria";
+import HeroePuente from "@/components/inicio/HeroePuente";
 import { Bloque, listarHorario } from "@/lib/horario";
 import { ESTADOS_ANIMO, LUGARES } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
@@ -36,9 +37,6 @@ const aMin = (h: string) => {
 };
 
 const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-
-const RADIO = 30;
-const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
 
 function saludoPara(hora: number) {
   if (hora < 12) return "Buenos días";
@@ -127,81 +125,50 @@ export default function Inicio() {
     <Entrada as="main" className={estilos.pagina}>
       <Pieza as="header" className={estilos.cabecera}>
         <p className={estilos.fecha}>{fecha}</p>
-        <h1 className={estilos.saludo}>
-          {saludoPara(ahora.getHours())}, <span>{nombre}</span>
+        <h1 className={estilos.saludo} aria-label={`${saludoPara(ahora.getHours())}, ${nombre}`}>
+          {`${saludoPara(ahora.getHours())},`.split(" ").map((palabra, i) => (
+            <motion.span
+              key={palabra}
+              className={estilos.palabra}
+              aria-hidden="true"
+              initial={reducir ? false : { opacity: 0, y: 12, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: SALIDA, delay: 0.1 + i * 0.09 }}
+            >
+              {palabra}
+            </motion.span>
+          ))}
+          <span className={estilos.nombre} aria-hidden="true">
+            <motion.span
+              className={estilos.resaltador}
+              initial={reducir ? false : { scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.7, ease: SALIDA, delay: 0.55 }}
+            />
+            <motion.span
+              className={estilos.palabra}
+              initial={reducir ? false : { opacity: 0, y: 12, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: SALIDA, delay: 0.3 }}
+            >
+              {nombre}
+            </motion.span>
+          </span>
         </h1>
       </Pieza>
 
       {/* El puente: la única superficie azul marino de la pantalla. */}
-      <Pieza as="section" className={estilos.heroe}>
-        <div className={estilos.brillo} aria-hidden="true" />
+      <Pieza as="section" className={estilos.marcoHeroe}>
         {foco ? (
-          <div className={estilos.heroeCuerpo}>
-            <div className={estilos.heroeDatos}>
-              <span className={estilos.estadoPuente}>
-                <span className={activo ? estilos.latido : estilos.puntoQuieto} aria-hidden="true" />
-                {activo ? "Puente activo" : "Próximo puente"}
-              </span>
-
-              <p className={estilos.minutos}>
-                <NumeroAnimado valor={activo ? minutosRestantes : duracionMin(foco)} />
-                <span className={estilos.unidad}>min libres</span>
-              </p>
-
-              <p className={estilos.rango}>
-                {hhmm(foco.horaInicio)} – {hhmm(foco.horaFin)}
-                {!activo && <span className={estilos.falta}>empieza en {aMin(foco.horaInicio) - minutosAhora} min</span>}
-              </p>
-
-              {siguienteClase && (
-                <p className={estilos.siguiente}>
-                  <IconoCalendario tamano={16} />
-                  <span>
-                    Después: <strong>{siguienteClase.materia}</strong>
-                    {siguienteClase.aula ? `, ${siguienteClase.aula}` : ""}
-                  </span>
-                </p>
-              )}
-            </div>
-
-            {activo && (
-              <div className={estilos.anillo} role="img" aria-label={`${usado}% del puente usado`}>
-                <svg viewBox="0 0 72 72" aria-hidden="true">
-                  <circle cx="36" cy="36" r={RADIO} className={estilos.pista} />
-                  <motion.circle
-                    cx="36"
-                    cy="36"
-                    r={RADIO}
-                    className={estilos.progreso}
-                    strokeDasharray={CIRCUNFERENCIA}
-                    initial={{ strokeDashoffset: reducir ? CIRCUNFERENCIA * (1 - usado / 100) : CIRCUNFERENCIA }}
-                    animate={{ strokeDashoffset: CIRCUNFERENCIA * (1 - usado / 100) }}
-                    transition={{ duration: 1.2, ease: SALIDA, delay: 0.2 }}
-                    transform="rotate(-90 36 36)"
-                  />
-                </svg>
-                <span className={estilos.anilloTexto}>
-                  <span>
-                    <NumeroAnimado valor={usado} />%
-                  </span>
-                  <small>usado</small>
-                </span>
-              </div>
-            )}
-
-            <MotionLink
-              href={rutaIa}
-              className={estilos.accion}
-              whileHover={reducir ? undefined : { y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              transition={RESORTE_TOQUE}
-            >
-              <span>¿Qué hago con mi tiempo?</span>
-              <span className={estilos.accionFlecha}>
-                <IconoFlechaDerecha tamano={18} />
-              </span>
-            </MotionLink>
-          </div>
+          <HeroePuente
+            activo={!!activo}
+            minutos={activo ? minutosRestantes : duracionMin(foco)}
+            rango={`${hhmm(foco.horaInicio)} – ${hhmm(foco.horaFin)}`}
+            empiezaEn={activo ? undefined : aMin(foco.horaInicio) - minutosAhora}
+            usado={usado}
+            siguiente={siguienteClase ? { materia: siguienteClase.materia, aula: siguienteClase.aula } : undefined}
+            rutaIa={rutaIa}
+          />
         ) : (
           <div className={estilos.heroeVacio}>
             <p className={estilos.vacioTitulo}>{cargando ? "Buscando tus puentes…" : "Hoy no te quedan puentes"}</p>
@@ -209,16 +176,14 @@ export default function Inicio() {
               {error ||
                 "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y aparecerán aquí."}
             </p>
-            <MotionLink href="/horario" className={estilos.accion} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
-              <span>Ver mi horario</span>
-              <span className={estilos.accionFlecha}>
-                <IconoFlechaDerecha tamano={18} />
-              </span>
+            <MotionLink href="/horario" className={estilos.accionVacio} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
+              Ver mi horario <IconoFlechaDerecha tamano={18} />
             </MotionLink>
           </div>
         )}
       </Pieza>
 
+      <div className={estilos.columnaIzquierda}>
       {tramos.length > 0 && (
         <Pieza as="section" className={estilos.tarjeta}>
           <div className={estilos.encabezado}>
@@ -234,11 +199,17 @@ export default function Inicio() {
                 key={t.id}
                 className={t.tipo === "clase" ? estilos.tramoClase : estilos.tramoPuente}
                 style={{ left: posicion(t.inicio), width: `${((t.fin - t.inicio) / total) * 100}%` }}
-                title={`${t.titulo}, de ${aHora(t.inicio)} a ${aHora(t.fin)}`}
+                tabIndex={0}
+                aria-label={`${t.titulo}, de ${aHora(t.inicio)} a ${aHora(t.fin)}`}
                 initial={reducir ? false : { scaleX: 0, opacity: 0 }}
                 animate={{ scaleX: 1, opacity: 1 }}
                 transition={{ duration: 0.6, ease: SALIDA, delay: 0.35 + i * 0.06 }}
-              />
+              >
+                <span className={estilos.globo} aria-hidden="true">
+                  <strong>{t.titulo}</strong>
+                  {aHora(t.inicio)} – {aHora(t.fin)}
+                </span>
+              </motion.span>
             ))}
             {ahoraVisible && (
               <span className={estilos.ahora} style={{ left: posicion(minutosAhora) }} aria-hidden="true">
@@ -262,7 +233,42 @@ export default function Inicio() {
         </Pieza>
       )}
 
-      <Pieza as="section">
+      <Pieza as="section" className={estilos.zonaSugerencias}>
+        <div className={estilos.encabezado}>
+          <h2 className={estilos.subtitulo}>Sugerencias rápidas</h2>
+          <Link href="/campus" className={estilos.verTodo}>
+            Ver campus <IconoFlechaDerecha tamano={14} />
+          </Link>
+        </div>
+        <div className={estilos.carrusel}>
+          {LUGARES.map((l) => (
+            <motion.article
+              key={l.id}
+              className={`${estilos.lugar} lugar-arte`}
+              whileHover={reducir ? undefined : { y: -4 }}
+              transition={RESORTE_TOQUE}
+            >
+              <ArteCategoria categoria={l.categoria} />
+              <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
+              <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
+              <p className={estilos.lugarMeta}>
+                <span>
+                  <IconoPin tamano={14} /> {l.distanciaM} m
+                </span>
+                <span>
+                  <IconoReloj tamano={14} /> {l.minutos} min
+                </span>
+              </p>
+            </motion.article>
+          ))}
+        </div>
+        <p className={estilos.nota}>Lugares de ejemplo; las recomendaciones reales salen del catálogo según tu puente.</p>
+      </Pieza>
+
+      </div>
+
+      <div className={estilos.columnaDerecha}>
+      <Pieza as="section" className={estilos.zonaAnimo}>
         <h2 className={estilos.subtitulo}>¿Cómo te sientes?</h2>
         <div className={estilos.estados}>
           {ESTADOS_ANIMO.map((e) => {
@@ -273,6 +279,7 @@ export default function Inicio() {
                 type="button"
                 className={`${estilos.estado} ${estilos[`estado_${e.id}`]}`}
                 onClick={() => router.push(`${rutaIa}${rutaIa.includes("?") ? "&" : "?"}estado=${e.id}`)}
+                onPointerMove={seguirPuntero}
                 whileHover={reducir ? undefined : { y: -3 }}
                 whileTap={{ scale: 0.96 }}
                 transition={RESORTE_TOQUE}
@@ -288,37 +295,6 @@ export default function Inicio() {
             );
           })}
         </div>
-      </Pieza>
-
-      <Pieza as="section">
-        <div className={estilos.encabezado}>
-          <h2 className={estilos.subtitulo}>Sugerencias rápidas</h2>
-          <Link href="/campus" className={estilos.verTodo}>
-            Ver campus <IconoFlechaDerecha tamano={14} />
-          </Link>
-        </div>
-        <div className={estilos.carrusel}>
-          {LUGARES.map((l) => (
-            <motion.article
-              key={l.id}
-              className={estilos.lugar}
-              whileHover={reducir ? undefined : { y: -4 }}
-              transition={RESORTE_TOQUE}
-            >
-              <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
-              <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
-              <p className={estilos.lugarMeta}>
-                <span>
-                  <IconoPin tamano={14} /> {l.distanciaM} m
-                </span>
-                <span>
-                  <IconoReloj tamano={14} /> {l.minutos} min
-                </span>
-              </p>
-            </motion.article>
-          ))}
-        </div>
-        <p className={estilos.nota}>Lugares de ejemplo; las recomendaciones reales salen del catálogo según tu puente.</p>
       </Pieza>
 
       <Pieza as="section" className={estilos.atajos}>
@@ -347,6 +323,8 @@ export default function Inicio() {
           </span>
         </MotionLink>
       </Pieza>
+
+      </div>
 
       <AvisoFlotante texto={aviso.texto} />
     </Entrada>
