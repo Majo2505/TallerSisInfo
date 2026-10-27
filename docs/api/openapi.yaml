@@ -7,13 +7,13 @@ info:
 
     Este archivo es una copia estática de la documentación que el backend publica en `/swagger`
     (documento vivo: `GET /swagger/v1/swagger.json`). Cubre autenticación (HU1), horario (HU2),
-    puentes (HU3), notificaciones (HU4), ubicación (HU5), recomendaciones con asistente RAG (HU7) y health.
+    puentes (HU3), notificaciones (HU4), ubicación (HU5), lugares viables (HU6), recomendaciones con asistente RAG (HU7) y health.
 
     ### Cómo probar los endpoints protegidos
     1. Ejecuta `POST /api/auth/login` (o `POST /api/auth/register`) con un correo `@ucb.edu.bo`.
     2. Copia el valor de `token` de la respuesta.
     3. Pulsa **Authorize**, pega el token (sin escribir `Bearer`) y confirma.
-    4. Ya puedes usar `/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/ubicacion` y `/api/recomendaciones`.
+    4. Ya puedes usar `/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/ubicacion`, `/api/lugares` y `/api/recomendaciones`.
 
     ### Convenciones
     - JSON en `camelCase`. Mensajes de error en español.
@@ -38,6 +38,8 @@ tags:
     description: Avisos de puente disponible (HU4). Requiere JWT. El servidor crea el aviso al empezar cada puente.
   - name: Ubicación
     description: Consentimiento y selección del campus actual (HU5). Las coordenadas se usan solo para resolver la zona y no se almacenan.
+  - name: Lugares
+    description: Lugares del catálogo viables para un puente según tiempo, cercanía y zona verificada (HU6). Requiere JWT. Solo muestra lugares aprobados por el administrador.
   - name: Recomendaciones
     description: Recomendación inteligente con asistente RAG de contexto estricto (HU7). Requiere JWT. Solo recomienda lugares reales del catálogo.
   - name: Health
@@ -473,6 +475,89 @@ paths:
           description: Conexión a la base de datos correcta.
         '503':
           description: No se pudo conectar a la base de datos.
+  /api/lugares/viables:
+    get:
+      tags: [Lugares]
+      operationId: buscarLugaresViables
+      summary: Lista los lugares del catálogo viables para un puente del estudiante.
+      description: |
+        Un lugar es viable si cumple las tres condiciones:
+
+        1. Está en estado `ACTIVO` (verificado y aprobado por el administrador).
+        2. Queda dentro del radio de la zona (campus) del estudiante, definida en HU5.
+        3. El traslado de ida y vuelta (caminando, unos 80 m por minuto) más la actividad no supera la duración del puente.
+
+        Los lugares salen ordenados del más cercano al más lejano. Si el estudiante todavía no eligió su campus se responde `200`
+        con `estado` = `SIN_ZONA`; si ningún lugar cumple, `estado` = `SIN_RESULTADOS` y el mensaje
+        «No encontramos opciones cercanas para este tiempo disponible.».
+      security:
+        - Bearer: []
+      parameters:
+        - name: puenteId
+          in: query
+          required: true
+          description: Id de un puente del propio estudiante (`GET /api/puentes`).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          example: 5
+      responses:
+        '200':
+          description: Resultado de la búsqueda (`OK`, `SIN_RESULTADOS` o `SIN_ZONA`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoBusquedaLugaresDto'
+              examples:
+                conLugares:
+                  summary: Hay lugares viables
+                  value:
+                    estado: OK
+                    mensaje: null
+                    zona: { id: 1, nombre: Campus UCB La Paz }
+                    radioAplicadoM: 800
+                    minutosDisponibles: 120
+                    lugares:
+                      - lugarId: 2
+                        nombre: Biblioteca Central
+                        categoria: Estudio
+                        descripcion: Salas silenciosas y computadoras para estudiar.
+                        distanciaM: 55
+                        tiempoTrasladoMin: 2
+                        duracionEstimadaMin: 45
+                sinResultados:
+                  summary: Ningún lugar cumple tiempo, cercanía y verificación
+                  value:
+                    estado: SIN_RESULTADOS
+                    mensaje: No encontramos opciones cercanas para este tiempo disponible.
+                    zona: { id: 1, nombre: Campus UCB La Paz }
+                    radioAplicadoM: 800
+                    minutosDisponibles: 45
+                    lugares: []
+                sinZona:
+                  summary: Falta elegir el campus
+                  value:
+                    estado: SIN_ZONA
+                    mensaje: Elige tu campus para ver lugares cercanos.
+                    zona: null
+                    radioAplicadoM: null
+                    minutosDisponibles: 120
+                    lugares: []
+        '400':
+          description: Falta `puenteId` o no es un número positivo (`codigo` = `VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: El puente no existe o no pertenece al usuario (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/recomendaciones:
     post:
       tags: [Recomendaciones]
@@ -1015,3 +1100,67 @@ components:
           format: int32
           minimum: 1
           example: 1
+    LugarViableDto:
+      type: object
+      required: [lugarId, nombre, categoria, distanciaM, tiempoTrasladoMin, duracionEstimadaMin]
+      properties:
+        lugarId:
+          type: integer
+          format: int32
+          example: 2
+        nombre:
+          type: string
+          example: Biblioteca Central
+        categoria:
+          type: string
+          example: Estudio
+        descripcion:
+          type: string
+          nullable: true
+          example: Salas silenciosas y computadoras para estudiar.
+        distanciaM:
+          type: integer
+          format: int32
+          description: Distancia en línea recta desde el campus, en metros.
+          example: 120
+        tiempoTrasladoMin:
+          type: integer
+          format: int32
+          description: Minutos de traslado caminando, de ida y vuelta.
+          example: 3
+        duracionEstimadaMin:
+          type: integer
+          format: int32
+          description: Minutos que lleva la actividad en el lugar.
+          example: 45
+    ResultadoBusquedaLugaresDto:
+      type: object
+      required: [estado, minutosDisponibles, lugares]
+      properties:
+        estado:
+          type: string
+          enum: [OK, SIN_RESULTADOS, SIN_ZONA]
+          example: OK
+        mensaje:
+          type: string
+          nullable: true
+          description: Texto para mostrar cuando el estado no es `OK`.
+        zona:
+          allOf:
+            - $ref: '#/components/schemas/ZonaDto'
+          nullable: true
+          description: Campus usado como origen; `null` con `SIN_ZONA`.
+        radioAplicadoM:
+          type: integer
+          format: int32
+          nullable: true
+          example: 800
+        minutosDisponibles:
+          type: integer
+          format: int32
+          description: Duración del puente consultado, en minutos.
+          example: 110
+        lugares:
+          type: array
+          items:
+            $ref: '#/components/schemas/LugarViableDto'
