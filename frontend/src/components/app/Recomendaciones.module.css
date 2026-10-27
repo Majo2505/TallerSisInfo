@@ -1,4 +1,5 @@
 .pagina {
+  box-sizing: border-box;
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
@@ -112,110 +113,6 @@
   outline: none;
   border-color: var(--ucb-celeste);
   box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
-}
-
-/* Ánimos: cuatro tarjetas con un brillo de su color que sigue al mouse. */
-.estados {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.estado {
-  --tinte: var(--ucb-celeste);
-  --fondo-icono: #e7f0fb;
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  align-content: start;
-  justify-items: start;
-  gap: 6px;
-  min-height: 150px;
-  padding: 18px;
-  border: 1px solid var(--borde-suave);
-  border-radius: 22px;
-  background: var(--superficie);
-  box-shadow: var(--sombra-1);
-  color: var(--texto);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    box-shadow 250ms var(--curva-salida),
-    border-color 200ms ease;
-}
-
-.estado::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    220px circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--tinte) 14%, transparent),
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 250ms ease;
-  pointer-events: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .estado:hover {
-    border-color: color-mix(in srgb, var(--tinte) 40%, var(--borde-suave));
-    box-shadow: var(--sombra-2);
-  }
-  .estado:hover::before {
-    opacity: 1;
-  }
-  .estado:hover .estadoIcono {
-    transform: rotate(-8deg) scale(1.08);
-  }
-}
-
-.estado_cansado {
-  --tinte: #5b4bb7;
-  --fondo-icono: #eeebfa;
-}
-
-.estado_enfocado {
-  --tinte: var(--ucb-azul-medio);
-  --fondo-icono: #e5eef7;
-}
-
-.estado_energia {
-  --tinte: var(--ucb-amarillo-oscuro);
-  --fondo-icono: var(--ucb-amarillo-suave);
-}
-
-.estado_social {
-  --tinte: #086a7f;
-  --fondo-icono: #e2f3f6;
-}
-
-.estadoIcono {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 6px;
-  border-radius: 16px;
-  background: var(--fondo-icono);
-  color: var(--tinte);
-  transition: transform 300ms var(--curva-salida);
-}
-
-.estado strong {
-  position: relative;
-  font-size: 1.12rem;
-  font-weight: 800;
-  color: var(--ucb-marino);
-}
-
-.estadoTexto {
-  position: relative;
-  color: var(--texto-suave);
-  font-size: 0.9rem;
-  line-height: 1.4;
 }
 
 /* Resumen: tarjeta azul marino con fondo vivo. */
@@ -422,13 +319,6 @@
 @media (min-width: 720px) {
   .pagina {
     padding-top: 32px;
-  }
-  .estados {
-    gap: 16px;
-  }
-  .estado {
-    min-height: 170px;
-    padding: 22px;
   }
   .resumen {
     padding: 30px 32px;

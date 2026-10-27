@@ -1,0 +1,392 @@
+.grilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Tarjeta: el color de cada ánimo llega por --tinte y --fondo-escena. */
+.tarjeta {
+  --tinte: var(--ucb-celeste);
+  --fondo-escena: #e7f0fb;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 6px;
+  min-height: 168px;
+  padding: 18px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 24px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow 250ms var(--curva-salida),
+    border-color 200ms ease;
+}
+
+.cansado {
+  --tinte: #5b4bb7;
+  --fondo-escena: #eeebfa;
+}
+
+.enfocado {
+  --tinte: var(--ucb-azul-medio);
+  --fondo-escena: #e5eef7;
+}
+
+.energia {
+  --tinte: var(--ucb-amarillo-oscuro);
+  --fondo-escena: var(--ucb-amarillo-suave);
+}
+
+.social {
+  --tinte: #086a7f;
+  --fondo-escena: #e2f3f6;
+}
+
+/* Brillo del color del ánimo que sigue al mouse. */
+.tarjeta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    240px circle at var(--mx, 50%) var(--my, 30%),
+    color-mix(in srgb, var(--tinte) 16%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+}
+
+.tarjeta[data-elegido] {
+  border-color: color-mix(in srgb, var(--tinte) 55%, transparent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tinte) 16%, transparent),
+    var(--sombra-3);
+}
+
+.tarjeta[data-elegido]::before {
+  opacity: 1;
+}
+
+.tarjeta:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 3px;
+}
+
+/* Onda que nace desde el punto tocado al elegir. */
+.onda {
+  position: absolute;
+  z-index: -1;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+  background: var(--tinte);
+  pointer-events: none;
+}
+
+.escena {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 8px;
+  border-radius: 20px;
+  background: var(--fondo-escena);
+  color: var(--tinte);
+  animation: aparecer 650ms var(--curva-salida) both;
+  animation-delay: calc(250ms + var(--i, 0) * 80ms);
+}
+
+.svg {
+  width: 46px;
+  height: 46px;
+  overflow: visible;
+}
+
+.svg * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.nombre {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ucb-marino);
+}
+
+.texto {
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* ---------- Cansado: la luna se mece, las estrellas titilan y salen las zetas ---------- */
+.luna {
+  fill: var(--tinte);
+  transform-origin: 40% 50%;
+}
+
+.estrella {
+  fill: var(--tinte);
+  opacity: 0.35;
+}
+
+.zeta {
+  fill: var(--tinte);
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0;
+}
+
+/* ---------- Enfocado: el dardo da en el blanco y los anillos acusan el golpe ---------- */
+.anillo,
+.ondaBlanco {
+  fill: none;
+  stroke: var(--tinte);
+  stroke-width: 3;
+}
+
+.anilloMedio {
+  stroke-width: 2.5;
+}
+
+.centro {
+  fill: var(--tinte);
+}
+
+.ondaBlanco {
+  stroke-width: 2;
+  opacity: 0;
+}
+
+.dardo path {
+  fill: none;
+  stroke: var(--ucb-marino);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.dardo .plumas {
+  stroke: var(--ucb-amarillo);
+  stroke-width: 2.5;
+}
+
+.dardo {
+  transform-origin: 0% 100%;
+}
+
+/* ---------- Energía: el rayo se carga y suelta chispas ---------- */
+.rayo {
+  fill: var(--ucb-amarillo);
+  stroke: var(--tinte);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.chispa {
+  fill: none;
+  stroke: var(--tinte);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.chispas {
+  opacity: 0;
+}
+
+/* ---------- Social: las personas se acercan y aparece un corazón ---------- */
+.personaIzq,
+.personaDer {
+  fill: none;
+  stroke: var(--tinte);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.personaIzq {
+  transform-origin: 50% 100%;
+}
+
+.personaDer {
+  transform-origin: 50% 100%;
+}
+
+.corazon {
+  fill: #e0457b;
+  opacity: 0;
+}
+
+/* Disparadores de las escenas */
+@media (hover: hover) and (pointer: fine) {
+  .tarjeta:hover {
+    border-color: color-mix(in srgb, var(--tinte) 40%, var(--borde-suave));
+    box-shadow: var(--sombra-2);
+  }
+
+  .tarjeta:hover::before {
+    opacity: 1;
+  }
+
+  :global(.animo-escena):hover .luna { animation: mecer 2s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .estrella { animation: titilar 1.4s ease infinite; }
+  :global(.animo-escena):hover .e2 { animation-delay: 350ms; }
+  :global(.animo-escena):hover .e3 { animation-delay: 700ms; }
+  :global(.animo-escena):hover .zeta { animation: zetas 1.8s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .z2 { animation-delay: 300ms; }
+  :global(.animo-escena):hover .z3 { animation-delay: 600ms; }
+
+  :global(.animo-escena):hover .dardo { animation: dardo 1.6s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .blanco { animation: impacto 1.6s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .ondaBlanco { animation: ondaBlanco 1.6s var(--curva-salida) infinite; }
+
+  :global(.animo-escena):hover .rayo { animation: cargar 1.2s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .chispas { animation: chispas 1.2s var(--curva-salida) infinite; }
+
+  :global(.animo-escena):hover .personaIzq { animation: acercarIzq 1.8s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .personaDer { animation: acercarDer 1.8s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .corazon { animation: corazon 1.8s var(--curva-salida) infinite; }
+}
+
+/* En pantallas táctiles no hay hover: cada escena se reproduce una vez al entrar. */
+@media (hover: none) {
+  .luna { animation: mecer 2s var(--curva-movimiento) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .zeta { animation: zetas 1.8s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .z2 { animation-delay: calc(1200ms + var(--i, 0) * 150ms); }
+  .z3 { animation-delay: calc(1500ms + var(--i, 0) * 150ms); }
+  .dardo { animation: dardo 1.6s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .blanco { animation: impacto 1.6s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .ondaBlanco { animation: ondaBlanco 1.6s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .rayo { animation: cargar 1.2s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .chispas { animation: chispas 1.2s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .personaIzq { animation: acercarIzq 1.8s var(--curva-movimiento) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .personaDer { animation: acercarDer 1.8s var(--curva-movimiento) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .corazon { animation: corazon 1.8s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+}
+
+/* La elegida y la enfocada con teclado también muestran su escena. */
+.tarjeta[data-elegido] .luna,
+.tarjeta:focus-visible .luna { animation: mecer 2s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .zeta,
+.tarjeta:focus-visible .zeta { animation: zetas 1.8s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .dardo,
+.tarjeta:focus-visible .dardo { animation: dardo 1.6s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .blanco,
+.tarjeta:focus-visible .blanco { animation: impacto 1.6s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .ondaBlanco,
+.tarjeta:focus-visible .ondaBlanco { animation: ondaBlanco 1.6s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .rayo,
+.tarjeta:focus-visible .rayo { animation: cargar 1.2s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .chispas,
+.tarjeta:focus-visible .chispas { animation: chispas 1.2s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .personaIzq,
+.tarjeta:focus-visible .personaIzq { animation: acercarIzq 1.8s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .personaDer,
+.tarjeta:focus-visible .personaDer { animation: acercarDer 1.8s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .corazon,
+.tarjeta:focus-visible .corazon { animation: corazon 1.8s var(--curva-salida) infinite; }
+
+@keyframes aparecer {
+  0% { opacity: 0; transform: scale(0.6) rotate(-18deg); }
+  60% { opacity: 1; transform: scale(1.08) rotate(4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes mecer {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-14deg); }
+  70% { transform: rotate(8deg); }
+}
+
+@keyframes titilar {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.6); }
+}
+
+@keyframes zetas {
+  0% { opacity: 0; transform: translate(0, 4px) scale(0.6); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(6px, -12px) scale(1.15); }
+}
+
+@keyframes dardo {
+  0% { opacity: 0; transform: translate(18px, -18px); }
+  30% { opacity: 1; transform: translate(0, 0); }
+  38% { transform: translate(-1px, 1px) rotate(-4deg); }
+  48%, 85% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+
+@keyframes impacto {
+  0%, 30% { transform: scale(1); }
+  38% { transform: scale(0.9); }
+  52% { transform: scale(1.04); }
+  64%, 100% { transform: scale(1); }
+}
+
+@keyframes ondaBlanco {
+  0%, 32% { opacity: 0; transform: scale(0.6); }
+  36% { opacity: 0.6; }
+  80%, 100% { opacity: 0; transform: scale(1.35); }
+}
+
+@keyframes cargar {
+  0%, 100% { transform: scale(1); filter: none; }
+  12% { transform: scale(0.88) rotate(-4deg); }
+  26% { transform: scale(1.14) rotate(3deg); filter: drop-shadow(0 0 6px rgba(253, 213, 55, 0.9)); }
+  40% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(253, 213, 55, 0.6)); }
+}
+
+@keyframes chispas {
+  0%, 18% { opacity: 0; transform: scale(0.7); }
+  30% { opacity: 1; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(1.3); }
+}
+
+@keyframes acercarIzq {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  35%, 70% { transform: translateX(3px) rotate(7deg); }
+}
+
+@keyframes acercarDer {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  35%, 70% { transform: translateX(-3px) rotate(-7deg); }
+}
+
+@keyframes corazon {
+  0%, 28% { opacity: 0; transform: translateY(6px) scale(0.5); }
+  44% { opacity: 1; transform: translateY(-2px) scale(1.15); }
+  56% { transform: translateY(-2px) scale(1); }
+  85% { opacity: 1; transform: translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.9); }
+}
+
+@media (min-width: 720px) {
+  .grilla {
+    gap: 16px;
+  }
+  .tarjeta {
+    min-height: 186px;
+    padding: 22px;
+  }
+}
+
+/* Con movimiento reducido: sin escenas ni balanceos; la tarjeta solo cambia de color al elegir. */
+@media (prefers-reduced-motion: reduce) {
+  .escena,
+  .svg *,
+  .tarjeta:hover .svg *,
+  .tarjeta[data-elegido] .svg *,
+  .tarjeta:focus-visible .svg * {
+    animation: none !important;
+  }
+}

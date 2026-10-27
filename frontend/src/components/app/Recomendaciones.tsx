@@ -9,8 +9,9 @@ import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendacio
 import { useSesion } from "@/lib/useSesion";
 import FondoVivo from "./FondoVivo";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
-import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "./Movimiento";
+import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import estilos from "./Recomendaciones.module.css";
+import SelectorAnimo from "./SelectorAnimo";
 import TarjetaRecomendacion from "./TarjetaRecomendacion";
 
 const ICONO_ESTADO = {
@@ -122,28 +123,8 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
             </p>
           </Pieza>
         ) : (
-          <Pieza className={estilos.estados}>
-            {ESTADOS_ANIMO.map((e) => {
-              const Icono = ICONO_ESTADO[e.id];
-              return (
-                <motion.button
-                  key={e.id}
-                  type="button"
-                  className={`${estilos.estado} ${estilos[`estado_${e.id}`]}`}
-                  onClick={() => setEstado(e.id)}
-                  onPointerMove={seguirPuntero}
-                  whileHover={reducir ? undefined : { y: -4 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={RESORTE_TOQUE}
-                >
-                  <span className={estilos.estadoIcono}>
-                    <Icono tamano={24} />
-                  </span>
-                  <strong>{e.nombre}</strong>
-                  <span className={estilos.estadoTexto}>{e.descripcion}</span>
-                </motion.button>
-              );
-            })}
+          <Pieza>
+            <SelectorAnimo onElegir={setEstado} />
           </Pieza>
         )}
       </Entrada>
