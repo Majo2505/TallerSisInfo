@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ESTADOS_ANIMO, EstadoAnimo } from "@/lib/maqueta";
 import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
 import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendaciones";
 import { useSesion } from "@/lib/useSesion";
-import comun from "./Comun.module.css";
+import FondoVivo from "./FondoVivo";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
+import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "./Movimiento";
 import estilos from "./Recomendaciones.module.css";
 import TarjetaRecomendacion from "./TarjetaRecomendacion";
 
@@ -41,6 +43,7 @@ type Props = {
 
 export default function Recomendaciones({ estadoInicial, minutosLibres, puenteInicial }: Props) {
   const { sesion } = useSesion();
+  const reducir = useReducedMotion();
   const [estado, setEstado] = useState<EstadoAnimo | null>(estadoInicial ?? null);
   const [puentes, setPuentes] = useState<Puente[] | null>(null);
   const [puenteId, setPuenteId] = useState<number | undefined>(puenteInicial);
@@ -80,63 +83,70 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
 
   if (!estado) {
     return (
-      <main className={comun.pagina}>
-        <Link href="/inicio" className={comun.volver}>
-          <IconoFlechaIzquierda tamano={18} /> Volver
-        </Link>
+      <Entrada as="main" className={estilos.pagina}>
+        <Pieza>
+          <Link href="/inicio" className={estilos.volver}>
+            <IconoFlechaIzquierda tamano={18} /> Volver
+          </Link>
+        </Pieza>
 
-        {minutos && (
-          <span className={`${comun.chip} ${estilos.libres}`}>
-            <IconoRayo tamano={14} /> {minutos} min libres
-          </span>
-        )}
-
-        <header>
-          <h1 className={comun.titulo}>¿Cómo te sientes ahora mismo?</h1>
-          <p className={comun.subtitulo}>
-            Te sugeriremos lugares del campus que encajen con tu estado de ánimo y el tiempo que tienes.
-          </p>
-        </header>
+        <Pieza as="header" className={estilos.cabecera}>
+          {minutos && (
+            <span className={estilos.libres}>
+              <IconoRayo tamano={14} /> <Odometro valor={minutos} /> min libres
+            </span>
+          )}
+          <h1 className={estilos.titulo}>¿Cómo te sientes ahora mismo?</h1>
+          <p className={estilos.bajada}>Elige tu ánimo y te sugerimos lugares del campus que caben en tu puente.</p>
+        </Pieza>
 
         {puentes && puentes.length > 1 && (
-          <label className={estilos.selector}>
-            <span>Puente</span>
-            <select value={puenteId ?? ""} onChange={(e) => setPuenteId(Number(e.target.value))}>
-              {puentes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {DIAS[p.diaSemana]} · {hhmm(p.horaInicio)} – {hhmm(p.horaFin)} ({duracionMin(p)} min)
-                </option>
-              ))}
-            </select>
-          </label>
+          <Pieza>
+            <label className={estilos.selector}>
+              <span>Para qué puente</span>
+              <select value={puenteId ?? ""} onChange={(e) => setPuenteId(Number(e.target.value))}>
+                {puentes.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {`${DIAS[p.diaSemana]}, de ${hhmm(p.horaInicio)} a ${hhmm(p.horaFin)} (${duracionMin(p)} min)`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </Pieza>
         )}
 
         {puentes && puentes.length === 0 ? (
-          <p className={estilos.vacio}>
-            Todavía no tienes puentes. <Link href="/horario">Registra tu horario</Link> para recibir recomendaciones.
-          </p>
+          <Pieza>
+            <p className={estilos.vacio}>
+              Todavía no tienes puentes. <Link href="/horario">Registra tu horario</Link> para recibir recomendaciones.
+            </p>
+          </Pieza>
         ) : (
-          <div className={estilos.estados}>
+          <Pieza className={estilos.estados}>
             {ESTADOS_ANIMO.map((e) => {
               const Icono = ICONO_ESTADO[e.id];
               return (
-                <button
+                <motion.button
                   key={e.id}
                   type="button"
                   className={`${estilos.estado} ${estilos[`estado_${e.id}`]}`}
                   onClick={() => setEstado(e.id)}
+                  onPointerMove={seguirPuntero}
+                  whileHover={reducir ? undefined : { y: -4 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={RESORTE_TOQUE}
                 >
                   <span className={estilos.estadoIcono}>
-                    <Icono tamano={22} />
+                    <Icono tamano={24} />
                   </span>
                   <strong>{e.nombre}</strong>
-                  <span>{e.descripcion}</span>
-                </button>
+                  <span className={estilos.estadoTexto}>{e.descripcion}</span>
+                </motion.button>
               );
             })}
-          </div>
+          </Pieza>
         )}
-      </main>
+      </Entrada>
     );
   }
 
@@ -146,43 +156,49 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
   const cargando = !respuesta && !error && !sinPuente;
 
   return (
-    <main className={comun.pagina}>
-      <button type="button" className={comun.volver} onClick={() => setEstado(null)}>
-        <IconoFlechaIzquierda tamano={18} /> Volver
-      </button>
+    <Entrada as="main" className={estilos.pagina}>
+      <Pieza>
+        <button type="button" className={estilos.volver} onClick={() => setEstado(null)}>
+          <IconoFlechaIzquierda tamano={18} /> Cambiar ánimo
+        </button>
+      </Pieza>
 
-      <header className={estilos.cabecera}>
-        <div>
-          <h1 className={comun.titulo}>Recomendaciones</h1>
-          <p className={comun.subtitulo}>
-            {puente
-              ? `Para tu puente del ${DIAS[puente.diaSemana].toLowerCase()} de ${hhmm(puente.horaInicio)} a ${hhmm(puente.horaFin)}`
-              : "Basadas en cómo te sientes"}
-          </p>
-        </div>
-        <span className={comun.chip}>
-          <Icono tamano={14} /> {actual.nombre}
+      <Pieza as="header" className={estilos.resumen}>
+        <FondoVivo />
+        <span className={estilos.resumenAnimo}>
+          <Icono tamano={16} /> {actual.nombre}
         </span>
-      </header>
+        <h1 className={estilos.resumenTitulo}>Para tu puente</h1>
+        <p className={estilos.resumenDetalle}>
+          {puente
+            ? `${DIAS[puente.diaSemana]}, de ${hhmm(puente.horaInicio)} a ${hhmm(puente.horaFin)}`
+            : "Basadas en cómo te sientes"}
+        </p>
+      </Pieza>
 
       {error && (
-        <div className="hz-banner" role="alert">
-          <span>{error}</span>
-          <button type="button" className="hz-btn" onClick={() => setIntento((n) => n + 1)}>
+        <motion.div
+          key={`${error}-${intento}`}
+          className={estilos.error}
+          role="alert"
+          initial={reducir ? false : { x: 0 }}
+          animate={{ x: [0, -8, 8, -5, 5, 0] }}
+          transition={{ duration: 0.42 }}
+        >
+          <p>{error}</p>
+          <motion.button
+            type="button"
+            className={estilos.reintentar}
+            onClick={() => setIntento((n) => n + 1)}
+            whileTap={{ scale: 0.95 }}
+            transition={RESORTE_TOQUE}
+          >
             Reintentar
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
 
-      {cargando && (
-        <p className={estilos.motor} role="status">
-          <IconoDestello tamano={16} />
-          <span>
-            <strong>Buscando en el catálogo…</strong> El asistente solo elige entre lugares verificados. Puede tardar
-            hasta un minuto.
-          </span>
-        </p>
-      )}
+      {cargando && <Pensando />}
 
       {sinPuente && (
         <p className={estilos.vacio}>
@@ -190,26 +206,85 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
         </p>
       )}
 
-      {respuesta?.estado === "SIN_RESULTADOS" && <p className={estilos.vacio}>{respuesta.mensaje}</p>}
+      {respuesta?.estado === "SIN_RESULTADOS" && (
+        <motion.div className={estilos.sinResultados} initial={reducir ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <span className={estilos.sinResultadosIcono} aria-hidden="true">
+            <IconoDestello tamano={26} />
+          </span>
+          <p>{respuesta.mensaje}</p>
+          <button type="button" className={estilos.volverAnimo} onClick={() => setEstado(null)}>
+            Probar con otro ánimo
+          </button>
+        </motion.div>
+      )}
 
       {respuesta?.estado === "OK" && (
         <>
-          <p className={estilos.motor}>
-            <IconoDestello tamano={16} />
-            <span>
-              <strong>Motor RAG</strong> · {respuesta.recomendaciones.length}{" "}
-              {respuesta.recomendaciones.length === 1 ? "lugar" : "lugares"} del catálogo verificado · Cada sugerencia
-              está respaldada por un registro del catálogo
-            </span>
-          </p>
-
-          <div className={estilos.lista}>
-            {respuesta.recomendaciones.map((r) => (
-              <TarjetaRecomendacion key={r.id} recomendacion={r} />
+          <motion.ol
+            className={estilos.lista}
+            initial={reducir ? false : "oculto"}
+            animate="visible"
+            variants={{ oculto: {}, visible: { transition: { staggerChildren: 0.09 } } }}
+          >
+            {respuesta.recomendaciones.map((r, i) => (
+              <motion.li
+                key={r.id}
+                variants={{
+                  oculto: { opacity: 0, y: 24, scale: 0.98, filter: "blur(6px)" },
+                  visible: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", transition: { duration: 0.6, ease: SALIDA } },
+                }}
+              >
+                <TarjetaRecomendacion recomendacion={r} destacada={i === 0} />
+              </motion.li>
             ))}
-          </div>
+          </motion.ol>
+          <p className={estilos.nota}>
+            <IconoDestello tamano={14} /> Solo lugares verificados del catálogo del campus. Las distancias y los tiempos salen del catálogo, no del asistente.
+          </p>
         </>
       )}
-    </main>
+    </Entrada>
+  );
+}
+
+const MENSAJES_PENSANDO = [
+  "Revisando el catálogo del campus…",
+  "Midiendo distancias desde tu zona…",
+  "Descartando lo que no cabe en tu puente…",
+  "Eligiendo lo que va con tu ánimo…",
+];
+
+/** Mientras el asistente piensa (puede tardar hasta un minuto): una tarjeta viva con mensajes que rotan. */
+function Pensando() {
+  const reducir = useReducedMotion();
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % MENSAJES_PENSANDO.length), 1800);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className={estilos.pensando} role="status">
+      <FondoVivo />
+      <span className={estilos.orbes} aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </span>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.p
+          key={i}
+          className={estilos.pensandoTexto}
+          initial={reducir ? false : { opacity: 0, y: 10, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
+          transition={{ duration: 0.35, ease: SALIDA }}
+        >
+          {MENSAJES_PENSANDO[i]}
+        </motion.p>
+      </AnimatePresence>
+      <p className={estilos.pensandoNota}>Puede tardar hasta un minuto.</p>
+    </div>
   );
 }
