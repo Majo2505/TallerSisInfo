@@ -50,9 +50,10 @@ Requisito: SDK de .NET 10 (probado con 10.0.401).
 
 ```bash
 cd backend
-dotnet build Breaku.slnx
-dotnet run --project Breaku.csproj --launch-profile http
+dotnet run
 ```
+
+`dotnet run` compila y usa el primer perfil de `Properties/launchSettings.json` (`http`, entorno `Development`). Desde la raíz del repositorio, usá `dotnet run --project backend`. Para detenerla: **Ctrl + C**. Al cambiar `backend/.env` hay que reiniciarla, porque se lee solo al arrancar.
 
 La API queda en `http://localhost:5092`. Para comprobar que corre:
 
