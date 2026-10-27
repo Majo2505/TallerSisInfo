@@ -130,6 +130,10 @@ En Windows, `mysql` puede no estar en el `PATH`; en ese caso usá la ruta comple
 
 Token de desarrollo: **Pendiente** (depende del JWT de HU1, Amira).
 
+#### Catálogo de prueba (solo desarrollo)
+
+[`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (HU6 y HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
+
 ### Frontend
 
 Requisitos: Node.js 20.9 o superior y npm (probado con Node 24.13.0 y npm 11.6.2).
