@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "motion/react";
+import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCalendario, IconoFlechaDerecha } from "@/components/app/Iconos";
 import { MotionLink, Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import estilos from "./HeroePuente.module.css";
@@ -50,14 +51,7 @@ export default function HeroePuente({ activo, minutos, rango, empiezaEn, usado, 
       onPointerLeave={soltar}
       style={{ rotateX: girarX, rotateY: girarY, transformPerspective: 1200 }}
     >
-      {/* Fondo vivo: tres luces que flotan, grano y un foco que sigue al mouse. */}
-      <div className={estilos.fondo} aria-hidden="true">
-        <span className={estilos.luzAzul} />
-        <span className={estilos.luzCeleste} />
-        <span className={estilos.luzAmarilla} />
-        <span className={estilos.foco} />
-        <span className={estilos.grano} />
-      </div>
+      <FondoVivo />
 
       <div className={estilos.cuerpo}>
         <div className={estilos.datos}>

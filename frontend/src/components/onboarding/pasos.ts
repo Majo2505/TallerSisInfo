@@ -6,9 +6,7 @@ export type Paso = {
   nota: string;
   boton: string;
   icono: NombreIcono;
-  fondo: string; // color de fondo de la pantalla
-  acento: string; // ícono, puntos, sombra y botón
-  acentoTexto: string; // variante más oscura para texto (contraste legible)
+  brillo: string; // color de la luz del ícono, sobre el azul marino
 };
 
 export const PASOS: Paso[] = [
@@ -19,9 +17,7 @@ export const PASOS: Paso[] = [
     nota: "Mínimo 45 minutos para generar recomendaciones.",
     boton: "Siguiente",
     icono: "rayo",
-    fondo: "#E6F0F8",
-    acento: "#11446D",
-    acentoTexto: "#11446D",
+    brillo: "#fdd537",
   },
   {
     titulo: "Tu horario, tu base",
@@ -30,9 +26,7 @@ export const PASOS: Paso[] = [
     nota: "Siempre tú decides qué se guarda.",
     boton: "Siguiente",
     icono: "calendario",
-    fondo: "#DCEFF9",
-    acento: "#006FA6",
-    acentoTexto: "#005F8F",
+    brillo: "#2f7fd1",
   },
   {
     titulo: "Recomendaciones verificadas",
@@ -41,9 +35,7 @@ export const PASOS: Paso[] = [
     nota: "Si no está en el catálogo, no te lo recomendamos.",
     boton: "Siguiente",
     icono: "escudo",
-    fondo: "#D8F0F4",
-    acento: "#00788F",
-    acentoTexto: "#00667A",
+    brillo: "#0e9fbe",
   },
   {
     titulo: "Tu ubicación, solo cuando importa",
@@ -52,8 +44,6 @@ export const PASOS: Paso[] = [
     nota: "Privacidad por diseño.",
     boton: "Empezar con BREAKU",
     icono: "ubicacion",
-    fondo: "#FFF0B3",
-    acento: "#052845",
-    acentoTexto: "#052845",
+    brillo: "#fdd537",
   },
 ];
