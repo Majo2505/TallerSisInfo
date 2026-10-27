@@ -101,45 +101,6 @@
   perspective: 1200px;
 }
 
-.heroeVacio {
-  display: grid;
-  gap: 10px;
-  justify-items: start;
-  padding: 26px 22px;
-  border-radius: 28px;
-  color: #fff;
-  background: radial-gradient(120% 120% at 100% 0%, rgba(47, 127, 209, 0.4), transparent 60%), var(--ucb-marino);
-  box-shadow: var(--sombra-3);
-}
-
-.vacioTitulo {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.vacioTexto {
-  margin: 0;
-  max-width: 46ch;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.5;
-}
-
-.accionVacio {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  margin-top: 6px;
-  padding: 0 20px;
-  border-radius: 14px;
-  background: var(--ucb-amarillo);
-  color: var(--ucb-marino);
-  font-weight: 800;
-  text-decoration: none;
-}
-
 /* ---------- Tarjetas blancas ---------- */
 .tarjeta {
   padding: 18px;

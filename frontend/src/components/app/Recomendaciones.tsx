@@ -11,6 +11,7 @@ import FondoVivo from "./FondoVivo";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import estilos from "./Recomendaciones.module.css";
+import ChatRecomendaciones from "./ChatRecomendaciones";
 import SelectorAnimo from "./SelectorAnimo";
 import TarjetaRecomendacion from "./TarjetaRecomendacion";
 
@@ -46,6 +47,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
   const { sesion } = useSesion();
   const reducir = useReducedMotion();
   const [estado, setEstado] = useState<EstadoAnimo | null>(estadoInicial ?? null);
+  const [modo, setModo] = useState<"animo" | "chat">("animo");
   const [puentes, setPuentes] = useState<Puente[] | null>(null);
   const [puenteId, setPuenteId] = useState<number | undefined>(puenteInicial);
   const [respuesta, setRespuesta] = useState<RespuestaRecomendacion | null>(null);
@@ -97,8 +99,45 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
               <IconoRayo tamano={14} /> <Odometro valor={minutos} /> min libres
             </span>
           )}
-          <h1 className={estilos.titulo}>¿Cómo te sientes ahorita?</h1>
-          <p className={estilos.bajada}>Elige tu ánimo y te sugerimos lugares del campus que caben en tu puente.</p>
+          <h1 className={estilos.titulo}>{modo === "animo" ? "¿Cómo te sientes ahorita?" : "¿Qué te gustaría hacer?"}</h1>
+          <p className={estilos.bajada}>
+            {modo === "animo"
+              ? "Elige tu ánimo y te sugerimos lugares del campus que caben en tu puente."
+              : "Escríbelo como se lo dirías a un amigo y te recomiendo lugares del campus para tu puente."}
+          </p>
+        </Pieza>
+
+        <Pieza>
+          <div className={estilos.modos} role="tablist" aria-label="Cómo quieres pedir recomendaciones">
+            {(
+              [
+                ["animo", "Por cómo me siento"],
+                ["chat", "Escríbele a la IA"],
+              ] as const
+            ).map(([id, etiqueta]) => (
+              <motion.button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={modo === id}
+                className={modo === id ? estilos.modoActivo : estilos.modo}
+                onClick={() => setModo(id)}
+                whileTap={{ scale: 0.96 }}
+                transition={RESORTE_TOQUE}
+              >
+                {modo === id && (
+                  <motion.span
+                    layoutId="modo-recomendaciones"
+                    className={estilos.modoPastilla}
+                    transition={reducir ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className={estilos.modoTexto}>
+                  {id === "animo" ? <IconoLuna tamano={16} /> : <IconoDestello tamano={16} />} {etiqueta}
+                </span>
+              </motion.button>
+            ))}
+          </div>
         </Pieza>
 
         {puentes && puentes.length > 1 && (
@@ -124,7 +163,17 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
           </Pieza>
         ) : (
           <Pieza>
-            <SelectorAnimo onElegir={setEstado} />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={modo}
+                initial={reducir ? false : { opacity: 0, y: 12, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={reducir ? undefined : { opacity: 0, y: -8, filter: "blur(4px)" }}
+                transition={{ duration: 0.25, ease: SALIDA }}
+              >
+                {modo === "animo" ? <SelectorAnimo onElegir={setEstado} /> : <ChatRecomendaciones puente={puente} />}
+              </motion.div>
+            </AnimatePresence>
           </Pieza>
         )}
       </Entrada>
