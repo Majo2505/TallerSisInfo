@@ -9,8 +9,8 @@ const BENEFICIOS = [
   },
   {
     icono: <Candado />,
-    titulo: "Lugares verificados · Sin alucinaciones",
-    texto: "Motor RAG con catálogo curado. 100% respaldado por datos reales.",
+    titulo: "Lugares que existen de verdad",
+    texto: "Solo te sugerimos lugares del catálogo del campus, revisados por la universidad.",
   },
   {
     icono: <Personas />,

@@ -26,7 +26,7 @@ export const PASOS: Paso[] = [
   {
     titulo: "Tu horario, tu base",
     texto:
-      "Registra tu horario manualmente o sube una foto. Nuestra IA extrae las clases automáticamente para que las confirmes antes de guardar.",
+      "Registra tus clases una sola vez. Con eso BREAKU calcula tus puentes de toda la semana y te avisa cuando empieza cada uno.",
     nota: "Siempre tú decides qué se guarda.",
     boton: "Siguiente",
     icono: "calendario",
@@ -38,7 +38,7 @@ export const PASOS: Paso[] = [
     titulo: "Recomendaciones verificadas",
     texto:
       "Cada lugar sugerido proviene de un catálogo curado y verificado. La IA solo puede recomendar lo que realmente existe en el campus.",
-    nota: "Sin alucinaciones. 100% respaldado por datos reales.",
+    nota: "Si no está en el catálogo, no te lo recomendamos.",
     boton: "Siguiente",
     icono: "escudo",
     fondo: "#D8F0F4",
@@ -48,7 +48,7 @@ export const PASOS: Paso[] = [
   {
     titulo: "Tu ubicación, solo cuando importa",
     texto:
-      "Solo pedimos acceso a tu ubicación cuando estés generando una recomendación activa. Nunca la almacenamos ni la compartimos.",
+      "Te pedimos permiso antes de usar tu ubicación, y solo para sugerirte lugares cercanos. Si prefieres, eliges tu campus a mano. Nunca la compartimos.",
     nota: "Privacidad por diseño.",
     boton: "Empezar con BREAKU",
     icono: "ubicacion",

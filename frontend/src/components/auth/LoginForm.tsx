@@ -272,7 +272,7 @@ export default function LoginForm() {
           {enviando ? "Ingresando…" : esRegistro ? "Crear cuenta" : "Iniciar sesión"}
         </button>
 
-        <p className={styles.pie}>Acceso restringido a correos institucionales verificados · JWT</p>
+        <p className={styles.pie}>Solo con tu correo institucional @ucb.edu.bo</p>
       </form>
     </div>
   );

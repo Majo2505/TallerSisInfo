@@ -17,6 +17,7 @@ import {
 import { guardarConfiguracion, obtenerConfiguracion } from "@/lib/notificaciones";
 import { CARRERAS, SEMESTRES } from "@/lib/maqueta";
 import { cerrarSesion } from "@/services/authService";
+import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./perfil.module.css";
 
@@ -28,12 +29,6 @@ const PESTANAS: { id: Pestana; nombre: string; Icono: typeof IconoPersona }[] = 
   { id: "seguridad", nombre: "Seguridad", Icono: IconoCandado },
   { id: "reportar", nombre: "Reportar", Icono: IconoBandera },
 ];
-
-function iniciales(nombre: string): string {
-  const partes = nombre.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  return (partes.length === 1 ? partes[0].slice(0, 2) : partes[0][0] + partes[1][0]).toUpperCase();
-}
 
 export default function Perfil() {
   const router = useRouter();
@@ -136,7 +131,7 @@ export default function Perfil() {
             <label className={estilos.campo}>
               Correo institucional
               <input value={usuario?.correo ?? ""} disabled readOnly />
-              <small>El correo no puede modificarse · Verificado con JWT</small>
+              <small>Tu correo institucional está verificado y no se puede cambiar.</small>
             </label>
             <div className={estilos.fila}>
               <label className={estilos.campo}>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
+import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
 import {
   IconoBrujula,
@@ -22,13 +23,6 @@ const SECCIONES = [
   { ruta: "/campus", nombre: "Campus", Icono: IconoBrujula },
   { ruta: "/perfil", nombre: "Perfil", Icono: IconoPersona },
 ];
-
-function iniciales(nombre: string): string {
-  const partes = nombre.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  const letras = partes.length === 1 ? partes[0].slice(0, 2) : partes[0][0] + partes[1][0];
-  return letras.toUpperCase();
-}
 
 export default function ShellApp({ children }: { children: React.ReactNode }) {
   const router = useRouter();

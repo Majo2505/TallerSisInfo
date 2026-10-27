@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bloque, BloqueInput, crearBloque, editarBloque, eliminarBloque, listarHorario } from "@/lib/horario";
-import { Puente, duracionMin, listarPuentes } from "@/lib/puentes";
+import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import ResumenSemanal from "@/components/horario/ResumenSemanal";
 import PuentesDetectados from "@/components/puentes/puentesDetectados";
@@ -209,10 +209,10 @@ export default function HorarioPage() {
                               color: color.texto,
                             }}
                             onClick={() => setModal({ bloque: b })}
-                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${b.horaInicio} a ${b.horaFin}`}
+                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${hhmm(b.horaInicio)} a ${hhmm(b.horaFin)}`}
                           >
                             <strong>{b.materia}</strong>
-                            <span>{b.horaInicio}–{b.horaFin}</span>
+                            <span>{hhmm(b.horaInicio)}–{hhmm(b.horaFin)}</span>
                             {b.aula && alto > 60 && <span>{b.aula}</span>}
                           </button>
                         );
