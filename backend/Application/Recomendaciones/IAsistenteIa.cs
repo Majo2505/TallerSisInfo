@@ -1,8 +1,8 @@
 namespace Breaku.Application.Recomendaciones;
 
 /// <summary>
-/// Puerto: el modelo de lenguaje que redacta las recomendaciones. Lo implementa Infrastructure
-/// (hoy <c>AsistenteIaSimulado</c>; después, el cliente de OpenAI).
+/// Puerto: el modelo de lenguaje que redacta las recomendaciones. Lo implementa Infrastructure:
+/// <c>AsistenteLlm</c> (Ollama u otro proveedor compatible) si hay LLM_API_KEY; si no, <c>AsistenteIaSimulado</c>.
 /// </summary>
 public interface IAsistenteIa
 {

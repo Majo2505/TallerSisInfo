@@ -64,7 +64,7 @@ public static class DependencyInjection
         var urlBase = Required(configuration, "LLM_BASE_URL");
         if (!Uri.TryCreate(urlBase.TrimEnd('/') + "/", UriKind.Absolute, out var uri))
         {
-            throw new InvalidOperationException("La configuración 'LLM_BASE_URL' debe ser una URL absoluta (ejemplo: https://api.openai.com/v1/).");
+            throw new InvalidOperationException("La configuración 'LLM_BASE_URL' debe ser una URL absoluta (ejemplo para Ollama: http://localhost:11434/v1/).");
         }
 
         var modelo = Required(configuration, "LLM_MODEL");
