@@ -1,36 +1,55 @@
 /* ============================================================
-   Tema UCB. Paleta tomada de ucb.edu.bo y del Sistema Académico Nacional.
-   Para ajustar colores de toda la app, basta con editar estas variables.
+   Tema UCB. El azul marino y el amarillo son la identidad: el marino da peso en pocas zonas
+   (la tarjeta del puente, el texto fuerte) y el amarillo es la chispa (acción principal, lo activo).
+   Todo lo demás son neutros fríos y finos.
    ============================================================ */
 :root {
   /* Marca UCB */
-  --ucb-marino: #052845;        /* barra superior del Sistema Académico */
-  --ucb-azul: #11446d;          /* azul institucional (mapa de sedes) */
-  --ucb-azul-medio: #004775;
-  --ucb-celeste: #0088cc;       /* "UAC - UPPAE" */
-  --ucb-turquesa: #009dc1;
-  --ucb-amarillo: #fdd537;      /* "SEDE" y subrayados */
-  --ucb-amarillo-suave: #fff6d1;
-  --ucb-amarillo-oscuro: #8f6a00; /* amarillo apto para texto sobre blanco */
+  --ucb-marino: #052845;
+  --ucb-marino-2: #0b3a63;      /* para degradados sobre el marino */
+  --ucb-azul: #11446d;
+  --ucb-azul-medio: #1d5c91;
+  --ucb-celeste: #2f7fd1;       /* foco y enlaces */
+  --ucb-turquesa: #0e9fbe;
+  --ucb-amarillo: #fdd537;
+  --ucb-amarillo-suave: #fff7d6;
+  --ucb-amarillo-oscuro: #7a5c00; /* amarillo apto para texto sobre blanco */
 
   /* Superficies y texto */
-  --fondo-app: #e7e7e7;         /* gris de fondo del Sistema Académico */
-  --fondo-suave: #f4f5f6;
+  --fondo-app: #f6f7fb;
+  --fondo-suave: #eef1f6;
   --superficie: #ffffff;
-  --texto: #0f2a43;
-  --texto-suave: #4a6178;
-  --texto-tenue: #5f7487;
-  --borde: #c5d0db;
-  --borde-suave: #e1e7ed;
+  --texto: #0b1f33;
+  --texto-suave: #4b5d70;
+  --texto-tenue: #66788b;
+  --borde: #d6dde6;
+  --borde-suave: #e8ecf2;
 
-  /* Estados (se mantienen semánticos: rojo = error, verde azulado = éxito) */
+  /* Estados */
   --error-fondo: #fdecea;
   --error-borde: #f0b8b3;
   --error-texto: #8a1c13;
   --error: #b42318;
   --exito: #0f766e;
 
-  --sombra: rgba(5, 40, 69, 0.1);
+  /* Profundidad: sombras en capas, siempre del tono del marino. */
+  --sombra: rgba(5, 40, 69, 0.08);
+  --sombra-1: 0 1px 2px rgba(5, 40, 69, 0.06), 0 1px 1px rgba(5, 40, 69, 0.04);
+  --sombra-2: 0 1px 2px rgba(5, 40, 69, 0.05), 0 8px 24px -6px rgba(5, 40, 69, 0.12);
+  --sombra-3: 0 2px 4px rgba(5, 40, 69, 0.06), 0 24px 48px -12px rgba(5, 40, 69, 0.28);
+
+  /* Curvas de animación (las de los componentes de Motion usan las mismas). */
+  --curva-salida: cubic-bezier(0.23, 1, 0.32, 1);
+  --curva-movimiento: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --fuente-titulo: var(--fuente);
+  --fuente-texto: var(--fuente);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: #c3ccd8 transparent;
 }
 
 body {
@@ -39,6 +58,30 @@ body {
   color-scheme: light;
   background: var(--fondo-app);
   color: var(--texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+/* Controles: responden al instante y no se seleccionan al mantener presionado. */
+button,
+[role="button"],
+[role="tab"] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+a {
+  touch-action: manipulation;
 }
 
 main {
