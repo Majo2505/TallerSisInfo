@@ -2,45 +2,158 @@
   display: block;
   width: 100%;
   height: 72px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--fondo-suave);
 }
 
+/* Fondos de color propio por categoría. */
 .comida {
-  background: #fffaf0;
+  background: linear-gradient(135deg, #ffe680, #fdd537);
 }
 
 .estudio {
-  background: #eef3f9;
+  background: linear-gradient(135deg, #1d5c91, #052845);
 }
 
 .descanso {
-  background: #eaf7f9;
+  background: linear-gradient(135deg, #12a3a8, #086a7f);
 }
 
 .deporte {
-  background: #eaf1fb;
+  background: linear-gradient(135deg, #4b97e3, #1d5c91);
 }
 
-.a1,
-.a2,
-.a3 {
+.arte * {
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 500ms var(--curva-salida);
 }
 
-/* Al pasar el mouse por la tarjeta (el padre usa la clase global "lugar-arte"), cada forma se mueve distinto. */
+/* Comida: vapor que sube y dona que gira */
+.vapor {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+/* Estudio: la página gira sobre el lomo del libro */
+.pagina {
+  transform-box: view-box;
+  transform-origin: 60px 36px;
+}
+
+.brillo {
+  fill: var(--ucb-amarillo);
+  opacity: 0.7;
+}
+
+/* Descanso: la planta se mece desde la maceta */
+.planta {
+  transform-box: view-box;
+  transform-origin: 60px 46px;
+}
+
+/* Deporte: la pelota rebota y su sombra respira */
+.pelota {
+  transform-box: view-box;
+  transform-origin: 66px 54px;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  :global(.lugar-arte):hover .a1 {
-    transform: translate(-4px, -3px) rotate(-6deg);
-  }
+  :global(.lugar-arte):hover .vapor { animation: vapor 1.6s var(--curva-salida) infinite; }
+  :global(.lugar-arte):hover .v2 { animation-delay: 250ms; }
+  :global(.lugar-arte):hover .v3 { animation-delay: 500ms; }
+  :global(.lugar-arte):hover .dona { animation: girar 3s linear infinite; }
 
-  :global(.lugar-arte):hover .a2 {
-    transform: translate(4px, 2px) scale(1.08);
-  }
+  :global(.lugar-arte):hover .pagina { animation: pasarPagina 2s var(--curva-movimiento) infinite; }
+  :global(.lugar-arte):hover .brillo { animation: titilar 1.4s ease infinite; }
+  :global(.lugar-arte):hover .b2 { animation-delay: 300ms; }
+  :global(.lugar-arte):hover .b3 { animation-delay: 600ms; }
 
-  :global(.lugar-arte):hover .a3 {
-    transform: translate(3px, -5px) rotate(12deg);
+  :global(.lugar-arte):hover .planta { animation: mecerse 2.2s var(--curva-movimiento) infinite; }
+  :global(.lugar-arte):hover .nube { animation: flotar 2.2s var(--curva-movimiento) infinite; }
+  :global(.lugar-arte):hover .sol { animation: latir 2.2s ease infinite; }
+
+  :global(.lugar-arte):hover .pelota { animation: rebotar 0.9s infinite; }
+  :global(.lugar-arte):hover .sombra { animation: sombra 0.9s infinite; }
+  :global(.lugar-arte):hover .velocidad { animation: velocidad 0.9s linear infinite; }
+}
+
+/* Sin hover (pantallas táctiles): las escenas viven solas, más lentas. */
+@media (hover: none) {
+  .vapor { animation: vapor 2.4s var(--curva-salida) infinite; }
+  .v2 { animation-delay: 400ms; }
+  .v3 { animation-delay: 800ms; }
+  .pagina { animation: pasarPagina 3.2s var(--curva-movimiento) infinite; }
+  .brillo { animation: titilar 2s ease infinite; }
+  .b2 { animation-delay: 500ms; }
+  .b3 { animation-delay: 1s; }
+  .planta { animation: mecerse 3.2s var(--curva-movimiento) infinite; }
+  .nube { animation: flotar 3.2s var(--curva-movimiento) infinite; }
+  .pelota { animation: rebotar 1.3s infinite; }
+  .sombra { animation: sombra 1.3s infinite; }
+}
+
+@keyframes vapor {
+  0% { opacity: 0; transform: translateY(6px); }
+  40% { opacity: 0.95; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pasarPagina {
+  0%, 10% { transform: scaleX(1); opacity: 1; }
+  50%, 80% { transform: scaleX(-1); opacity: 1; }
+  90% { transform: scaleX(-1); opacity: 0; }
+  91% { transform: scaleX(1); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes titilar {
+  0%, 100% { opacity: 0.4; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.25) rotate(45deg); }
+}
+
+@keyframes mecerse {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(6deg); }
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+}
+
+@keyframes latir {
+  0%, 100% { transform: scale(1); filter: none; }
+  50% { transform: scale(1.12); filter: drop-shadow(0 0 4px rgba(253, 213, 55, 0.9)); }
+}
+
+/* Subida con freno y caída con aceleración, como una pelota real; se aplasta al tocar el piso. */
+@keyframes rebotar {
+  0% { transform: translateY(0) scale(1.14, 0.86); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  12% { transform: translateY(-2px) scale(0.94, 1.06); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+  50% { transform: translateY(-20px) scale(1, 1); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  100% { transform: translateY(0) scale(1.14, 0.86); }
+}
+
+@keyframes sombra {
+  0%, 100% { transform: scale(1.1); opacity: 0.4; }
+  50% { transform: scale(0.55); opacity: 0.15; }
+}
+
+@keyframes velocidad {
+  0% { transform: translateX(4px); opacity: 0.2; }
+  50% { opacity: 0.9; }
+  100% { transform: translateX(-6px); opacity: 0.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arte * {
+    animation: none !important;
   }
 }
