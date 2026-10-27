@@ -1,0 +1,459 @@
+.pagina {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 20px 16px 120px;
+  display: grid;
+  gap: 20px;
+}
+
+.pagina > * {
+  min-width: 0;
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--ucb-marino);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-tenue);
+  font-weight: 600;
+}
+
+.actualizar {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--borde);
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
+  font-weight: 600;
+}
+
+/* Cifras del campus */
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: 12px;
+}
+
+.cifra {
+  --tono: var(--ucb-azul-medio);
+  --tono-suave: #e8f0f9;
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
+}
+
+.cifraLugares { --tono: #5b4bb7; --tono-suave: #eeebfa; }
+.cifraEstudiantes { --tono: var(--ucb-azul-medio); --tono-suave: #e5eef7; }
+.cifraComunidades { --tono: #086a7f; --tono-suave: #e2f3f6; }
+.cifraRag { --tono: var(--ucb-marino); --tono-suave: #e8edf3; }
+.cifraReportes { --tono: var(--ucb-amarillo-oscuro); --tono-suave: var(--ucb-amarillo-suave); }
+
+.cifraIcono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 6px;
+  border-radius: 13px;
+  background: var(--tono-suave);
+  color: var(--tono);
+}
+
+.cifraValor {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--tono);
+}
+
+.cifraEtiqueta {
+  color: var(--texto-suave);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.cifraExtra {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+/* Pestañas */
+.pestanas {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 5px;
+  border-radius: 18px;
+  background: var(--fondo-suave);
+  scrollbar-width: none;
+}
+
+.pestana,
+.pestanaActiva {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--texto-tenue);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pestanaActiva {
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+.pastilla {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+}
+
+.textoPestana {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.conteo {
+  margin: 0 0 12px;
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+/* Catálogo: tabla en laptop, tarjetas en celular. */
+.tabla {
+  display: grid;
+  gap: 10px;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+}
+
+.fila > [data-etiqueta] {
+  color: var(--texto-suave);
+  font-size: 0.88rem;
+}
+
+.fila > [data-etiqueta]::before {
+  content: attr(data-etiqueta) ": ";
+  color: var(--texto-tenue);
+}
+
+.encabezado {
+  display: none;
+}
+
+.nombreLugar {
+  color: var(--ucb-marino);
+  overflow-wrap: anywhere;
+}
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.estado_ACTIVO,
+.consulta_OK { background: #e3f6ea; color: #17704a; }
+.estado_EN_REVISION,
+.consulta_SIN_RESULTADOS { background: var(--ucb-amarillo-suave); color: var(--ucb-amarillo-oscuro); }
+.estado_INACTIVO { background: var(--fondo-suave); color: var(--texto-tenue); }
+.consulta_RECHAZADO_SEGURIDAD,
+.consulta_ERROR { background: var(--error-fondo); color: var(--error-texto); }
+
+.accionesFila {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aprobar,
+.desactivar {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
+}
+
+.aprobar { border: 0; background: var(--ucb-marino); color: #ffffff; }
+.desactivar { border: 1.5px solid var(--error-borde); background: var(--superficie); color: var(--error); }
+.aprobar:active, .desactivar:active { transform: scale(0.95); }
+.aprobar:disabled, .desactivar:disabled { opacity: 0.5; cursor: progress; }
+
+/* Reportes */
+.listaReportes,
+.listaConsultas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.reporte,
+.consulta {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+}
+
+.reporte .estado { justify-self: start; }
+.reporte strong { color: var(--ucb-marino); }
+.reporte p { margin: 0; color: var(--texto-suave); }
+.reporte small { color: var(--texto-tenue); }
+
+.vacio {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 40px 16px;
+  border-radius: 22px;
+  border: 1.5px dashed var(--borde);
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.vacio strong { color: var(--ucb-marino); }
+
+.vacioIcono {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+  border-radius: 16px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+}
+
+/* Métricas */
+.metricas {
+  display: grid;
+  gap: 14px;
+}
+
+.tarjetaMetrica {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
+}
+
+.tarjetaMetrica h2 {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.grande {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ucb-marino);
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.grande small {
+  color: var(--texto-tenue);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.ayuda {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+}
+
+.barraFila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 1.4fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.barraFila small { color: var(--texto-tenue); }
+.barraFila strong { color: var(--ucb-marino); font-variant-numeric: tabular-nums; }
+
+.barraPista {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--fondo-suave);
+}
+
+.barra {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transform-origin: left center;
+}
+
+.barraOk { background: #1f9d5a; }
+.barraSin { background: #e0b400; }
+.barraRechazo { background: #b45309; }
+.barraError { background: var(--error); }
+.barraTop { background: linear-gradient(90deg, var(--ucb-azul-medio), var(--ucb-marino)); }
+
+/* Auditoría RAG */
+.consultaCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.consultaCabecera small { color: var(--texto-tenue); }
+
+.entrada {
+  margin: 0;
+  color: var(--ucb-marino);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.consultaDatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: var(--texto-suave);
+  font-size: 0.84rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pestana:hover { color: var(--ucb-marino); }
+  .actualizar:hover { box-shadow: var(--sombra-2); }
+}
+
+@media (min-width: 900px) {
+  .metricas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ancha {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Laptop: el catálogo como tabla de verdad. */
+@media (min-width: 1025px) {
+  .pagina {
+    padding: 32px clamp(16px, 3vw, 48px) 56px;
+  }
+  .cifras {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .tabla {
+    gap: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid var(--borde-suave);
+    background: var(--superficie);
+    box-shadow: var(--sombra-1);
+  }
+  .fila {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.4fr);
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid var(--borde-suave);
+    transition: background-color 200ms ease;
+  }
+  .fila:last-child { border-bottom: 0; }
+  .fila:nth-child(odd):not(.encabezado) { background: #fbfcfe; }
+  .encabezado {
+    display: grid;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    color: var(--texto-tenue);
+    font-size: 0.82rem;
+    font-weight: 700;
+    background: var(--superficie);
+  }
+  .fila > [data-etiqueta]::before { content: none; }
+  .accionesFila { grid-column: auto; }
+}
+
+@media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+  .fila:not(.encabezado):hover { background: #f4f8fc; }
+}
