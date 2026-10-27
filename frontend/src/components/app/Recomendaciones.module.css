@@ -341,3 +341,56 @@
     align-items: start;
   }
 }
+
+/* Selector de modo: por ánimo o escribiendo al asistente; la pastilla blanca se desliza. */
+.modos {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 460px);
+  padding: 5px;
+  border-radius: 18px;
+  background: var(--fondo-suave);
+}
+
+.modo,
+.modoActivo {
+  position: relative;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--texto-tenue);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.modoActivo {
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+.modoPastilla {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+}
+
+.modoTexto {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .modo:hover {
+    color: var(--ucb-marino);
+  }
+}
