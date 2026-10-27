@@ -527,8 +527,8 @@
 /* ---------- Pantalla grande ---------- */
 @media (min-width: 900px) {
   .pagina {
-    max-width: 1120px;
-    padding: 36px 32px 56px;
+    max-width: 1680px;
+    padding: 36px clamp(16px, 3vw, 48px) 56px;
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     column-gap: 28px;
     row-gap: 28px;

@@ -89,7 +89,8 @@ main {
 }
 
 /* ---------- Horario (HU2) ---------- */
-.hz { max-width: 1320px; margin: 0 auto; padding: 20px 16px 120px; }
+.hz { max-width: 1680px; margin: 0 auto; padding: 20px 16px 120px; }
+@media (min-width: 1025px) { .hz { padding-left: clamp(16px, 3vw, 48px); padding-right: clamp(16px, 3vw, 48px); } }
 
 /* Portada azul marino viva con las cifras de la semana. */
 .hz-head { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 18px; margin-bottom: 20px; padding: 24px 22px; border-radius: 28px; background: var(--ucb-marino); color: #fff; box-shadow: var(--sombra-3); }
