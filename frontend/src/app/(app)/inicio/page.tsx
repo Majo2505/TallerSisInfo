@@ -135,7 +135,7 @@ export default function Inicio() {
   if (activo) minutosParaIa = minutosRestantes;
   else if (foco) minutosParaIa = duracionMin(foco);
   // El puente va en la URL para que la IA pida recomendaciones de ese puente (HU7).
-  const rutaIa = foco && minutosParaIa > 0 ? `/ia?puente=${foco.id}&min=${minutosParaIa}` : "/ia";
+  const rutaIa = foco && minutosParaIa > 0 ? `/recomendaciones?puente=${foco.id}&min=${minutosParaIa}` : "/recomendaciones";
 
   // Línea del día: de la primera a la última hora con algo (clase o puente).
   const tramos = [
@@ -201,7 +201,7 @@ export default function Inicio() {
             cargando={cargando}
             error={error}
             proximo={otroDia ? { ...otroDia.datos } : undefined}
-            rutaIa={otroDia ? `/ia?puente=${otroDia.puente.id}&min=${otroDia.datos.minutos}` : "/ia"}
+            rutaIa={otroDia ? `/recomendaciones?puente=${otroDia.puente.id}&min=${otroDia.datos.minutos}` : "/recomendaciones"}
           />
         )}
       </Pieza>
