@@ -264,3 +264,56 @@
   color: var(--texto-tenue);
   font-size: 0.84rem;
 }
+
+/* Acceso de administración: tarjeta azul marino en lugar de las pestañas. */
+.accesoAdmin {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #fff;
+}
+
+.accesoAdmin strong {
+  display: block;
+  font-weight: 800;
+}
+
+.accesoAdmin small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.85rem;
+}
+
+.escudo {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+.cambiarAcceso {
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--ucb-azul-medio);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cambiarAcceso:hover {
+    background: var(--fondo-suave);
+  }
+}
