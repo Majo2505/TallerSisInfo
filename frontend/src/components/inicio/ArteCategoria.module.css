@@ -1,0 +1,46 @@
+.arte {
+  display: block;
+  width: 100%;
+  height: 72px;
+  border-radius: 14px;
+  background: var(--fondo-suave);
+}
+
+.comida {
+  background: #fffaf0;
+}
+
+.estudio {
+  background: #eef3f9;
+}
+
+.descanso {
+  background: #eaf7f9;
+}
+
+.deporte {
+  background: #eaf1fb;
+}
+
+.a1,
+.a2,
+.a3 {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 500ms var(--curva-salida);
+}
+
+/* Al pasar el mouse por la tarjeta (el padre usa la clase global "lugar-arte"), cada forma se mueve distinto. */
+@media (hover: hover) and (pointer: fine) {
+  :global(.lugar-arte):hover .a1 {
+    transform: translate(-4px, -3px) rotate(-6deg);
+  }
+
+  :global(.lugar-arte):hover .a2 {
+    transform: translate(4px, 2px) scale(1.08);
+  }
+
+  :global(.lugar-arte):hover .a3 {
+    transform: translate(3px, -5px) rotate(12deg);
+  }
+}

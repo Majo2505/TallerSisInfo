@@ -18,8 +18,8 @@ export default function RegistroHorario({ onManual, onFoto }: Props) {
             <IconoCamara tamano={24} />
           </span>
           <strong>Foto del horario</strong>
-          <small>La IA lo lee por ti</small>
-          <span className={estilos.recomendado}>Recomendado</span>
+          <small>Muy pronto</small>
+          <span className={estilos.recomendado}>Pronto</span>
         </button>
         <button type="button" className={estilos.manual} onClick={onManual}>
           <span className={estilos.iconoManual}>

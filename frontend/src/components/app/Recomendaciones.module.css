@@ -1,153 +1,442 @@
+.pagina {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 120px;
+  display: grid;
+  gap: 22px;
+}
+
+.pagina > * {
+  min-width: 0;
+}
+
+.volver,
+.volverAnimo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 160ms var(--curva-salida),
+    box-shadow 200ms ease;
+}
+
+.volver:active,
+.volverAnimo:active {
+  transform: scale(0.96);
+}
+
+.volver svg {
+  transition: transform 200ms var(--curva-salida);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .volver:hover,
+  .volverAnimo:hover {
+    box-shadow: var(--sombra-2);
+  }
+  .volver:hover svg {
+    transform: translateX(-3px);
+  }
+}
+
+/* Cabecera de la elección de ánimo */
+.cabecera {
+  display: grid;
+  gap: 10px;
+}
+
 .libres {
   justify-self: start;
-}
-
-.estados {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.estado {
-  display: grid;
-  align-content: start;
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-  min-height: 168px;
-  padding: 16px;
-  border-radius: 20px;
-  border: 1px solid transparent;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-weight: 800;
+  font-size: 0.88rem;
 }
 
-.estado strong {
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.1rem;
-}
-
-.estado span:last-child {
-  font-size: 0.85rem;
-  line-height: 1.35;
-  opacity: 0.9;
-}
-
-.estadoIcono {
-  width: 44px;
-  height: 44px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.6);
-}
-
-.estado_cansado {
-  background: #fff6d1;
-  border-color: #fdd537;
-  color: #6b5000;
-}
-
-.estado_enfocado {
-  background: #dcebf7;
-  border-color: #9fc3e0;
-  color: var(--ucb-azul);
-}
-
-.estado_energia {
-  background: #d3f0f5;
-  border-color: #8fd2df;
-  color: #04434f;
-}
-
-.estado_social {
-  background: #e1eaf5;
-  border-color: #a9bfdc;
-  color: #1f3f6e;
-}
-
-.estado:focus-visible {
-  outline: 3px solid var(--ucb-celeste);
-  outline-offset: 2px;
-}
-
-.cabecera {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.motor {
+.titulo {
   margin: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: #e6f0f8;
-  border: 1px solid #b9d3e8;
-  color: var(--ucb-azul);
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--ucb-marino);
+  text-wrap: balance;
 }
 
-.motor svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.lista {
-  display: grid;
-  gap: 16px;
+.bajada {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--texto-suave);
+  font-size: 1.02rem;
+  line-height: 1.55;
 }
 
 .selector {
   display: grid;
   gap: 6px;
-  color: var(--ucb-marino);
+  font-weight: 700;
   font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--ucb-marino);
 }
 
 .selector select {
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 12px;
-  border: 1px solid var(--borde);
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
   background: var(--superficie);
-  color: var(--ucb-marino);
+  color: var(--texto);
   font: inherit;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
-.selector select:focus-visible {
-  outline: 3px solid var(--ucb-celeste);
-  outline-offset: 2px;
+.selector select:focus {
+  outline: none;
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+}
+
+/* Ánimos: cuatro tarjetas con un brillo de su color que sigue al mouse. */
+.estados {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.estado {
+  --tinte: var(--ucb-celeste);
+  --fondo-icono: #e7f0fb;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 6px;
+  min-height: 150px;
+  padding: 18px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 22px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow 250ms var(--curva-salida),
+    border-color 200ms ease;
+}
+
+.estado::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    220px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--tinte) 14%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .estado:hover {
+    border-color: color-mix(in srgb, var(--tinte) 40%, var(--borde-suave));
+    box-shadow: var(--sombra-2);
+  }
+  .estado:hover::before {
+    opacity: 1;
+  }
+  .estado:hover .estadoIcono {
+    transform: rotate(-8deg) scale(1.08);
+  }
+}
+
+.estado_cansado {
+  --tinte: #5b4bb7;
+  --fondo-icono: #eeebfa;
+}
+
+.estado_enfocado {
+  --tinte: var(--ucb-azul-medio);
+  --fondo-icono: #e5eef7;
+}
+
+.estado_energia {
+  --tinte: var(--ucb-amarillo-oscuro);
+  --fondo-icono: var(--ucb-amarillo-suave);
+}
+
+.estado_social {
+  --tinte: #086a7f;
+  --fondo-icono: #e2f3f6;
+}
+
+.estadoIcono {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  background: var(--fondo-icono);
+  color: var(--tinte);
+  transition: transform 300ms var(--curva-salida);
+}
+
+.estado strong {
+  position: relative;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--ucb-marino);
+}
+
+.estadoTexto {
+  position: relative;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Resumen: tarjeta azul marino con fondo vivo. */
+.resumen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  gap: 6px;
+  padding: 24px;
+  border-radius: 26px;
+  background: var(--ucb-marino);
+  color: #fff;
+  box-shadow: var(--sombra-3);
+}
+
+.resumenAnimo {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.resumenTitulo {
+  margin: 0;
+  font-size: clamp(1.7rem, 5vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.resumenDetalle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 600;
+}
+
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
+  font-weight: 600;
+}
+
+.error p {
+  margin: 0;
+  flex: 1 1 220px;
+}
+
+.reintentar {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--error);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Espera: el asistente piensa. */
+.pensando {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 36px 20px;
+  border-radius: 26px;
+  background: var(--ucb-marino);
+  color: #fff;
+  text-align: center;
+}
+
+.orbes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.orbes span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ucb-amarillo);
+  animation: saltar 1.1s var(--curva-movimiento) infinite;
+}
+
+.orbes span:nth-child(2) {
+  background: #8fc0ef;
+  animation-delay: 0.15s;
+}
+
+.orbes span:nth-child(3) {
+  background: #fff;
+  animation-delay: 0.3s;
+}
+
+@keyframes saltar {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.7;
+  }
+  40% {
+    transform: translateY(-10px) scale(1.1);
+    opacity: 1;
+  }
+}
+
+.pensandoTexto {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.pensandoNota {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.88rem;
 }
 
 .vacio {
   margin: 0;
-  padding: 20px 16px;
-  border-radius: 16px;
-  background: var(--fondo-suave);
-  border: 1px dashed var(--borde);
+  padding: 18px;
+  border-radius: 18px;
+  border: 1.5px dashed var(--borde);
   color: var(--texto-suave);
-  text-align: center;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .vacio a {
-  color: var(--ucb-azul);
-  font-weight: 700;
+  color: var(--ucb-azul-medio);
+  font-weight: 800;
 }
 
-@media (min-width: 640px) {
-  .estados {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.sinResultados {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 30px 20px;
+  border-radius: 24px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  text-align: center;
+}
 
-  .lista {
-    grid-template-columns: repeat(2, 1fr);
+.sinResultados p {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.sinResultadosIcono {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 16px;
+}
+
+.nota {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.nota svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+@media (min-width: 720px) {
+  .pagina {
+    padding-top: 32px;
+  }
+  .estados {
+    gap: 16px;
+  }
+  .estado {
+    min-height: 170px;
+    padding: 22px;
+  }
+  .resumen {
+    padding: 30px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbes span {
+    animation: none;
   }
 }

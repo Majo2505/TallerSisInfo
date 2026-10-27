@@ -1,21 +1,34 @@
-.panel { background: var(--superficie); border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px var(--sombra); }
-.titulo { margin: 0 0 14px; font-family: var(--fuente-titulo), system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--ucb-marino); }
-.titulo::after { content: ""; display: block; width: 36px; height: 3px; margin-top: 6px; background: var(--ucb-amarillo); border-radius: 2px; }
+.panel { background: var(--superficie); border: 1px solid var(--borde-suave); border-radius: 24px; padding: 20px; box-shadow: var(--sombra-1); }
+.titulo { margin: 0 0 14px; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ucb-marino); }
 
-.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-/* Los puentes se destacan en amarillo UCB sobre fondo suave, con texto azul marino para buen contraste */
-.tarjeta { background: var(--ucb-amarillo-suave); border: 1.5px solid var(--ucb-amarillo); border-radius: 16px; padding: 12px 14px; }
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+/* Cada puente entra escalonado; el rayo se ilumina al pasar el mouse. */
+.tarjeta { position: relative; overflow: hidden; background: var(--ucb-amarillo-suave); border: 1.5px dashed #e8c94a; border-radius: 18px; padding: 12px 14px; animation: entrar 500ms var(--curva-salida) both; transition: transform 250ms var(--curva-salida), box-shadow 250ms var(--curva-salida); }
+.tarjeta:nth-child(2) { animation-delay: 70ms; }
+.tarjeta:nth-child(3) { animation-delay: 140ms; }
+.tarjeta:nth-child(n + 4) { animation-delay: 210ms; }
+@keyframes entrar { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
 .fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.nombre { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ucb-marino); }
-.insignia { background: var(--ucb-amarillo); color: var(--ucb-marino); font-weight: 700; font-size: .8rem; padding: 2px 12px; border-radius: 999px; white-space: nowrap; }
-.hora { margin: 6px 0 0; color: var(--ucb-azul); font-size: .95rem; font-weight: 500; }
+.nombre { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--ucb-marino); }
+.nombre svg { box-sizing: content-box; padding: 6px; border-radius: 10px; background: var(--ucb-amarillo); transition: transform 300ms var(--curva-salida); }
+.insignia { background: var(--ucb-marino); color: var(--ucb-amarillo); font-weight: 800; font-size: .8rem; padding: 3px 12px; border-radius: 999px; white-space: nowrap; }
+.hora { margin: 8px 0 0; color: var(--ucb-azul); font-size: .95rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.vacio { margin: 0; color: var(--texto-suave); font-size: .92rem; line-height: 1.45; }
+.vacio { margin: 0; color: var(--texto-suave); font-size: .92rem; line-height: 1.5; }
 
-.skeleton { height: 120px; border-radius: 16px; background: linear-gradient(90deg, #d9dfe5 25%, #eef1f4 50%, #d9dfe5 75%); background-size: 200% 100%; animation: brillo 1.2s infinite; }
+.skeleton { height: 120px; border-radius: 18px; background: linear-gradient(90deg, #e3e8ef 25%, #f1f4f8 50%, #e3e8ef 75%); background-size: 200% 100%; animation: brillo 1.2s infinite; }
 @keyframes brillo { to { background-position: -200% 0; } }
 
-.error { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--error-fondo); color: var(--error-texto); border: 1px solid var(--error-borde); border-radius: 10px; padding: 10px 12px; font-size: .92rem; }
-.reintentar { font: inherit; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie); color: var(--ucb-azul); cursor: pointer; }
-.reintentar:hover { background: #eaf2f8; }
-.reintentar:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 1px; }
+.error { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: var(--error-fondo); color: var(--error-texto); border: 1px solid var(--error-borde); border-radius: 14px; padding: 10px 12px; font-size: .92rem; font-weight: 600; }
+.reintentar { font: inherit; font-weight: 800; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--error); color: #fff; cursor: pointer; transition: transform 160ms var(--curva-salida); }
+.reintentar:active { transform: scale(0.96); }
+.reintentar:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 2px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -14px rgba(122, 92, 0, 0.5); }
+  .tarjeta:hover .nombre svg { transform: rotate(-12deg) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta, .skeleton { animation: none; }
+}

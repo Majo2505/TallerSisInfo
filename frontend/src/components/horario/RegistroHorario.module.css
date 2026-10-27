@@ -1,9 +1,9 @@
 .tarjeta {
-  margin-bottom: 16px;
   padding: 16px;
-  border-radius: 20px;
+  border-radius: 24px;
   background: var(--superficie);
-  box-shadow: 0 2px 12px var(--sombra);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
 }
 
 .titulo {
@@ -29,18 +29,43 @@
   gap: 4px;
   min-height: 148px;
   padding: 14px 8px;
-  border-radius: 16px;
-  border: 1px solid var(--borde);
+  border-radius: 18px;
+  border: 1px solid var(--borde-suave);
   background: var(--fondo-suave);
   color: var(--ucb-marino);
   font: inherit;
   text-align: center;
   cursor: pointer;
+  transition:
+    transform 160ms var(--curva-salida),
+    box-shadow 250ms var(--curva-salida),
+    border-color 200ms ease;
+}
+
+.foto:active,
+.manual:active {
+  transform: scale(0.97);
+}
+
+.foto svg,
+.manual svg {
+  transition: transform 300ms var(--curva-salida);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .foto:hover,
+  .manual:hover {
+    border-color: var(--borde);
+    box-shadow: var(--sombra-2);
+  }
+  .foto:hover svg,
+  .manual:hover svg {
+    transform: rotate(-10deg) scale(1.1);
+  }
 }
 
 .foto {
-  background: #e6f0f8;
-  border-color: #9fc3e0;
+  background: var(--fondo-suave);
 }
 
 .foto strong,
@@ -65,13 +90,14 @@
 }
 
 .iconoFoto {
-  background: var(--ucb-azul);
-  color: #fff;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
 }
 
 .iconoManual {
-  background: #dfe6ed;
-  color: var(--ucb-azul);
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  box-shadow: var(--sombra-1);
 }
 
 .recomendado {

@@ -1,8 +1,12 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import FondoVivo from "@/components/app/FondoVivo";
+import { IconoCalendario, IconoCheck, IconoMas } from "@/components/app/Iconos";
+import { Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import { Bloque, BloqueInput, crearBloque, editarBloque, eliminarBloque, listarHorario } from "@/lib/horario";
-import { Puente, duracionMin, listarPuentes } from "@/lib/puentes";
+import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import ResumenSemanal from "@/components/horario/ResumenSemanal";
 import PuentesDetectados from "@/components/puentes/puentesDetectados";
@@ -47,6 +51,14 @@ export default function HorarioPage() {
   const [modal, setModal] = useState<ModalState>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [intento, setIntento] = useState(0);
+  const reducir = useReducedMotion();
+  const [ahora, setAhora] = useState(() => new Date());
+
+  // El marcador de "ahora" avanza solo, una vez por minuto.
+  useEffect(() => {
+    const t = setInterval(() => setAhora(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   // Para reintentar o refrescar tras guardar: muestra el estado de carga y dispara una nueva petición.
   const cargar = useCallback(() => {
@@ -102,6 +114,10 @@ export default function HorarioPage() {
 
   const tiempoLibreMin = useMemo(() => puentes.reduce((acc, p) => acc + duracionMin(p), 0), [puentes]);
 
+  const hoy = ahora.getDay();
+  const minutoAhora = ahora.getHours() * 60 + ahora.getMinutes();
+  const ahoraVisible = minutoAhora >= desde * 60 && minutoAhora < hasta * 60;
+
   const clickEnColumna = (e: React.MouseEvent<HTMLDivElement>, dia: number) => {
     if (e.target !== e.currentTarget) return;
     const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
@@ -125,19 +141,49 @@ export default function HorarioPage() {
 
   return (
     <main className="hz">
-      <header className="hz-head">
+      <motion.header
+        className="hz-head"
+        onPointerMove={seguirPuntero}
+        initial={reducir ? false : { opacity: 0, y: 16, filter: "blur(4px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.6, ease: SALIDA }}
+      >
+        <FondoVivo />
         <div>
           <h1>Mi horario académico</h1>
           <p className="hz-sub">
             {bloques.length === 0
               ? "Registra tus clases para que BREAKU detecte tus puentes."
-              : `${bloques.length} ${bloques.length === 1 ? "clase" : "clases"} · ${totalHoras.toLocaleString("es", { maximumFractionDigits: 1 })} h por semana`}
+              : `${totalHoras.toLocaleString("es", { maximumFractionDigits: 1 })} h de clase por semana. Toca una clase para editarla.`}
           </p>
         </div>
         <div className="hz-head-acciones">
-          <button className="hz-btn hz-btn-primary" onClick={() => setModal({})}>+ Agregar clase</button>
+          <motion.button
+            type="button"
+            className="hz-agregar"
+            onClick={() => setModal({})}
+            whileTap={{ scale: 0.96 }}
+            transition={RESORTE_TOQUE}
+          >
+            <IconoMas tamano={18} />
+            <span>Agregar clase</span>
+          </motion.button>
         </div>
-      </header>
+        <dl className="hz-cifras">
+          <div className="hz-cifra">
+            <dt>{bloques.length === 1 ? "clase" : "clases"}</dt>
+            <dd><Odometro valor={bloques.length} /></dd>
+          </div>
+          <div className="hz-cifra">
+            <dt>{puentes.length === 1 ? "puente" : "puentes"}</dt>
+            <dd><Odometro valor={puentes.length} /></dd>
+          </div>
+          <div className="hz-cifra hz-cifra-libre">
+            <dt>min libres</dt>
+            <dd><Odometro valor={tiempoLibreMin} /></dd>
+          </div>
+        </dl>
+      </motion.header>
 
       {errorCarga && (
         <div className="hz-banner" role="alert">
@@ -178,7 +224,9 @@ export default function HorarioPage() {
                 <div className="hz-grid" style={{ ["--ph" as string]: `${PX_HORA}px` }}>
                   <div className="hz-corner" />
                   {[1, 2, 3, 4, 5, 6].map((d) => (
-                    <div key={d} className="hz-dia-head">{DIAS[d]}</div>
+                    <div key={d} className={d === hoy ? "hz-dia-head hz-dia-hoy" : "hz-dia-head"}>
+                      <span>{DIAS[d]}</span>
+                    </div>
                   ))}
 
                   <div className="hz-horas">
@@ -190,31 +238,43 @@ export default function HorarioPage() {
                   {[1, 2, 3, 4, 5, 6].map((d) => (
                     <div
                       key={d}
-                      className="hz-col"
+                      className={d === hoy ? "hz-col hz-col-hoy" : "hz-col"}
                       style={{ height: horas.length * PX_HORA }}
                       onClick={(e) => clickEnColumna(e, d)}
                     >
-                      {bloques.filter((b) => b.diaSemana === d).map((b) => {
+                      {d === hoy && ahoraVisible && (
+                        <div
+                          className="hz-ahora"
+                          style={{ top: ((minutoAhora - desde * 60) / 60) * PX_HORA }}
+                          aria-hidden="true"
+                        />
+                      )}
+                      {bloques.filter((b) => b.diaSemana === d).map((b, i) => {
                         const top = ((aMin(b.horaInicio) - desde * 60) / 60) * PX_HORA;
                         const alto = ((aMin(b.horaFin) - aMin(b.horaInicio)) / 60) * PX_HORA;
                         const color = colorBloque(b.materia);
                         return (
-                          <button
+                          <motion.button
                             key={b.id}
                             className="hz-bloque"
                             style={{
                               top, height: alto - 2,
                               background: color.fondo,
-                              borderLeftColor: color.borde,
                               color: color.texto,
+                              ["--acento" as string]: color.borde,
                             }}
                             onClick={() => setModal({ bloque: b })}
-                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${b.horaInicio} a ${b.horaFin}`}
+                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${hhmm(b.horaInicio)} a ${hhmm(b.horaFin)}`}
+                            initial={reducir ? false : { opacity: 0, scale: 0.92, y: 8 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.45, ease: SALIDA, delay: 0.05 * d + 0.06 * i }}
+                            whileHover={reducir ? undefined : { y: -2 }}
+                            whileTap={{ scale: 0.97 }}
                           >
                             <strong>{b.materia}</strong>
-                            <span>{b.horaInicio}–{b.horaFin}</span>
-                            {b.aula && alto > 60 && <span>{b.aula}</span>}
-                          </button>
+                            <span>{hhmm(b.horaInicio)}–{hhmm(b.horaFin)}</span>
+                            {b.aula && alto > 100 && <span>{b.aula}</span>}
+                          </motion.button>
                         );
                       })}
                     </div>
@@ -232,8 +292,25 @@ export default function HorarioPage() {
         </aside>
       </div>
 
-      {modal && <BloqueModal estado={modal} onClose={() => setModal(null)} onSaved={alGuardar} />}
-      {toast && <div className={`hz-toast hz-toast-${toast.tipo}`} role="status">{toast.texto}</div>}
+      <AnimatePresence>
+        {modal && <BloqueModal estado={modal} onClose={() => setModal(null)} onSaved={alGuardar} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key={toast.texto}
+            className={`hz-toast hz-toast-${toast.tipo}`}
+            role="status"
+            initial={reducir ? false : { opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 420, damping: 30 }}
+          >
+            {toast.tipo === "ok" && <IconoCheck tamano={16} />}
+            {toast.texto}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
@@ -247,6 +324,7 @@ function BloqueModal({ estado, onClose, onSaved }: {
   onClose: () => void;
   onSaved: (msg: string) => void;
 }) {
+  const reducir = useReducedMotion();
   const editando = estado.bloque;
   const [form, setForm] = useState<BloqueInput>({
     materia: editando?.materia ?? "",
@@ -315,9 +393,30 @@ function BloqueModal({ estado, onClose, onSaved }: {
   };
 
   return (
-    <div className="hz-overlay" onMouseDown={(e) => e.target === e.currentTarget && !guardando && onClose()}>
-      <form className="hz-modal" role="dialog" aria-modal="true" aria-labelledby="hz-titulo" onSubmit={guardar} noValidate>
-        <h2 id="hz-titulo">{editando ? "Editar clase" : "Agregar clase"}</h2>
+    <motion.div
+      className="hz-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && !guardando && onClose()}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <motion.form
+        className="hz-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hz-titulo"
+        onSubmit={guardar}
+        noValidate
+        initial={reducir ? false : { opacity: 0, scale: 0.95, y: 24 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={reducir ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 12 }}
+        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+      >
+        <div className="hz-modal-cabecera">
+          <span className="hz-modal-icono" aria-hidden="true"><IconoCalendario tamano={22} /></span>
+          <h2 id="hz-titulo">{editando ? "Editar clase" : "Agregar clase"}</h2>
+        </div>
 
         <label className="hz-campo">
           <span>Materia</span>
@@ -379,7 +478,7 @@ function BloqueModal({ estado, onClose, onSaved }: {
             {guardando && !confirmando ? "Guardando…" : editando ? "Guardar cambios" : "Agregar"}
           </button>
         </div>
-      </form>
-    </div>
+      </motion.form>
+    </motion.div>
   );
 }

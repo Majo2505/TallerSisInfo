@@ -1,136 +1,209 @@
+.pagina {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 120px;
+  display: grid;
+  gap: 18px;
+}
+
+.pagina > * {
+  min-width: 0;
+}
+
+/* Cabecera azul marino viva con el avatar amarillo que entra con resorte. */
 .cabecera {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
+  padding: 26px 22px;
+  border-radius: 28px;
+  background: var(--ucb-marino);
+  color: #fff;
+  box-shadow: var(--sombra-3);
 }
 
 .avatar {
   flex-shrink: 0;
-  position: relative;
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
   display: grid;
   place-items: center;
-  background: var(--ucb-azul);
-  color: #fff;
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.5rem;
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-size: 1.6rem;
   font-weight: 800;
-  border-bottom: 4px solid var(--ucb-amarillo);
+  letter-spacing: -0.02em;
+  box-shadow:
+    0 0 0 6px rgba(253, 213, 55, 0.16),
+    0 14px 28px -12px rgba(0, 0, 0, 0.6);
 }
 
 .datos {
   min-width: 0;
+  display: grid;
+  gap: 4px;
 }
 
 .nombre {
   margin: 0;
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.15rem;
+  font-size: clamp(1.4rem, 5vw, 1.9rem);
   font-weight: 800;
-  color: var(--ucb-marino);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   overflow-wrap: anywhere;
 }
 
 .correo {
-  margin: 2px 0 0;
-  color: var(--texto-suave);
-  font-size: 0.9rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
   overflow-wrap: anywhere;
 }
 
 .insignias {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-top: 8px;
 }
 
 .verificado,
-.semestre {
+.insignia {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  min-height: 26px;
-  padding: 0 10px;
+  gap: 5px;
+  padding: 5px 10px;
   border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .verificado {
-  background: #d3f0f5;
-  color: #04434f;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
 }
 
-.semestre {
-  background: #dcebf7;
-  color: var(--ucb-azul);
+.insignia {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
 }
 
+/* Pestañas: pastilla blanca que se desliza. */
 .pestanas {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 4px;
-  border-radius: 16px;
-  background: #e1e9f0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 5px;
+  border-radius: 18px;
+  background: var(--fondo-suave);
 }
 
 .pestana,
 .pestanaActiva {
-  min-height: 48px;
+  position: relative;
+  min-height: 52px;
+  padding: 0 4px;
   border: 0;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  color: var(--ucb-azul);
+  border-radius: 14px;
+  background: none;
+  color: var(--texto-tenue);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: color 200ms ease;
 }
 
 .pestanaActiva {
-  background: var(--ucb-azul);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(17, 68, 109, 0.3);
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+.pastilla {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+}
+
+.pastilla::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 16px;
+  height: 3px;
+  margin-left: -8px;
+  border-radius: 3px;
+  background: var(--ucb-amarillo);
+}
+
+.textoPestana {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pestana:hover {
+    color: var(--ucb-marino);
+  }
+}
+
+.panel {
+  padding: 22px 18px;
+  border-radius: 24px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
 }
 
 .formulario {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .seccion {
   margin: 0;
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--ucb-marino);
 }
 
 .campo {
   display: grid;
-  gap: 6px;
+  gap: 7px;
+  font-weight: 700;
   font-size: 0.9rem;
-  font-weight: 600;
   color: var(--ucb-marino);
 }
 
 .campo input,
 .campo select,
 .campo textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--texto);
   font: inherit;
   font-size: 1rem;
-  font-weight: 400;
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 48px;
-  padding: 0 14px;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  background: #f9fbfc;
-  color: var(--texto);
+  font-weight: 500;
+  transition:
+    border-color 200ms ease,
+    box-shadow 250ms var(--curva-salida);
 }
 
 .campo textarea {
@@ -138,21 +211,34 @@
   resize: vertical;
 }
 
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+}
+
 .campo input:disabled {
   background: var(--fondo-suave);
-  color: var(--texto-tenue);
+  color: var(--texto-suave);
 }
 
 .campo small {
-  font-weight: 400;
   color: var(--texto-tenue);
-  font-size: 0.8rem;
+  font-weight: 500;
+  font-size: 0.82rem;
 }
 
 .fila {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.acciones {
+  display: grid;
+  gap: 10px;
 }
 
 .primario,
@@ -162,97 +248,187 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 48px;
+  min-height: 52px;
   padding: 0 20px;
-  border-radius: 14px;
+  border-radius: 16px;
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
   text-decoration: none;
   cursor: pointer;
+  transition:
+    transform 160ms var(--curva-salida),
+    box-shadow 200ms ease,
+    background-color 200ms ease;
+}
+
+.primario:active:not(:disabled),
+.secundario:active,
+.salir:active {
+  transform: scale(0.97);
 }
 
 .primario {
   border: 0;
-  background: var(--ucb-azul);
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
   color: #fff;
-  border-bottom: 3px solid var(--ucb-amarillo);
+  box-shadow: 0 14px 30px -16px rgba(5, 40, 69, 0.8);
 }
 
 .primario:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .secundario {
-  border: 1px solid var(--ucb-azul);
-  background: transparent;
-  color: var(--ucb-azul);
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  color: var(--ucb-marino);
 }
 
 .salir {
-  border: 1px solid var(--error-borde);
-  background: var(--error-fondo);
+  border: 1.5px solid var(--error-borde);
+  background: var(--superficie);
   color: var(--error);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .primario:hover:not(:disabled) {
+    box-shadow: 0 18px 34px -14px rgba(5, 40, 69, 0.85);
+  }
+  .secundario:hover {
+    box-shadow: var(--sombra-2);
+  }
+  .salir:hover {
+    background: var(--error-fondo);
+  }
+}
+
+/* Interruptor con perilla que salta con resorte. */
 .interruptor {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 56px;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: 16px;
+  border-radius: 18px;
   background: var(--fondo-suave);
   cursor: pointer;
 }
 
-.interruptor strong {
-  display: block;
-  font-size: 0.95rem;
-  color: var(--ucb-marino);
+.interruptorTexto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
-.interruptor small {
-  display: block;
-  margin-top: 2px;
+.interruptorTexto strong {
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+.interruptorTexto small {
   color: var(--texto-suave);
   font-size: 0.85rem;
   line-height: 1.4;
 }
 
-.interruptor input {
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.riel,
+.rielActivo {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  accent-color: var(--ucb-azul);
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 30px;
+  padding: 3px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #b9c4d1;
+  transition: background-color 220ms ease;
 }
 
-.error {
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--error-fondo);
-  border: 1px solid var(--error-borde);
-  color: var(--error-texto);
-  font-size: 0.9rem;
+.rielActivo {
+  background: var(--ucb-marino);
 }
 
-.pestana:focus-visible,
-.pestanaActiva:focus-visible,
-.campo input:focus-visible,
-.campo select:focus-visible,
-.campo textarea:focus-visible,
-.primario:focus-visible,
-.secundario:focus-visible,
-.salir:focus-visible,
-.interruptor input:focus-visible {
+.perilla {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(5, 40, 69, 0.3);
+}
+
+.rielActivo .perilla {
+  background: var(--ucb-amarillo);
+}
+
+.oculto:focus-visible + .riel,
+.oculto:focus-visible + .rielActivo {
   outline: 3px solid var(--ucb-celeste);
   outline-offset: 2px;
 }
 
-@media (min-width: 640px) {
-  .fila {
-    grid-template-columns: 1fr 1fr;
+.oculto:disabled + .riel,
+.oculto:disabled + .rielActivo {
+  opacity: 0.6;
+}
+
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
+  font-weight: 600;
+}
+
+.nota {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.86rem;
+}
+
+@media (min-width: 720px) {
+  .pagina {
+    padding-top: 32px;
+  }
+  .cabecera {
+    padding: 34px 36px;
+    gap: 24px;
+  }
+  .avatar {
+    width: 92px;
+    height: 92px;
+    font-size: 2rem;
+    border-radius: 28px;
+  }
+  .pestana,
+  .pestanaActiva {
+    font-size: 0.88rem;
+  }
+  .textoPestana {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+  }
+  .pastilla::after {
+    bottom: 4px;
+  }
+  .panel {
+    padding: 28px;
+  }
+  .acciones {
+    grid-template-columns: auto auto;
+    justify-content: start;
   }
 }

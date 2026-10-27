@@ -1,0 +1,295 @@
+.heroe {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 28px;
+  padding: 24px 22px 22px;
+  color: #fff;
+  background: var(--ucb-marino);
+  box-shadow: var(--sombra-3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  will-change: transform;
+}
+
+/* ---------- Contenido ---------- */
+.cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px 16px;
+  align-items: center;
+}
+
+.datos {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.estado {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.latido,
+.puntoQuieto {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ucb-amarillo);
+}
+
+.puntoQuieto {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.latido::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ucb-amarillo);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .latido::after {
+    animation: latir 1.8s var(--curva-salida) infinite;
+  }
+}
+
+@keyframes latir {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.minutos {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: clamp(3.6rem, 16vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.unidad {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.rango {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.falta {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(253, 213, 55, 0.18);
+  color: var(--ucb-amarillo);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.siguiente {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.siguiente strong {
+  color: #fff;
+}
+
+/* ---------- Anillo con punto en órbita ---------- */
+.anillo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  align-self: start;
+}
+
+.anillo svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.pista {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 6;
+}
+
+.progreso {
+  fill: none;
+  stroke: var(--ucb-amarillo);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.halo {
+  fill: rgba(253, 213, 55, 0.3);
+}
+
+.orbita {
+  fill: #fff6c9;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .halo {
+    animation: halo 2s ease-in-out infinite alternate;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+}
+
+@keyframes halo {
+  to {
+    transform: scale(1.6);
+    opacity: 0.4;
+  }
+}
+
+.anilloTexto {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.anilloTexto small {
+  margin-top: 3px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ---------- Acción principal ---------- */
+.accion {
+  grid-column: 1 / -1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 8px 0 20px;
+  border-radius: 16px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-weight: 800;
+  font-size: 1.02rem;
+  text-decoration: none;
+  box-shadow: 0 12px 28px -12px rgba(253, 213, 55, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.accion::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 700ms var(--curva-salida);
+}
+
+/* Sin mouse, el destello cruza solo cada tanto para invitar a tocar. */
+@media (hover: none) and (prefers-reduced-motion: no-preference) {
+  .accion::before {
+    animation: destello 4.5s var(--curva-salida) 1.5s infinite;
+  }
+}
+
+@keyframes destello {
+  0%,
+  70% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.accionFlecha {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+  transition: transform 300ms var(--curva-salida);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .accion:hover::before {
+    transform: translateX(120%);
+  }
+
+  .accion:hover .accionFlecha {
+    transform: translateX(3px) rotate(-6deg);
+  }
+}
+
+@media (min-width: 900px) {
+  .heroe {
+    padding: 36px 40px 34px;
+  }
+
+  .cuerpo {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: end;
+  }
+
+  .accion {
+    grid-column: auto;
+    align-self: end;
+    min-width: 290px;
+  }
+
+  .anillo {
+    width: 124px;
+    height: 124px;
+    align-self: center;
+  }
+
+  .minutos {
+    font-size: 5.8rem;
+  }
+}

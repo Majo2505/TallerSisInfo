@@ -1,45 +1,68 @@
-import { Recomendacion } from "@/lib/recomendaciones";
-import { IconoCheck, IconoDestello, IconoLibro, IconoLuna, IconoObjetivo, IconoPin, IconoRayo, IconoReloj } from "./Iconos";
-import estilos from "./TarjetaLugar.module.css";
+"use client";
 
-// Mismo aspecto que TarjetaLugar. La categoría llega como texto del catálogo: si es nueva, se usa el estilo de Estudio.
-const ESTILO_CATEGORIA: Record<string, { Icono: typeof IconoLibro; clase: string }> = {
-  comida: { Icono: IconoLuna, clase: estilos.comida },
-  estudio: { Icono: IconoLibro, clase: estilos.estudio },
-  descanso: { Icono: IconoObjetivo, clase: estilos.descanso },
-  deporte: { Icono: IconoRayo, clase: estilos.deporte },
-};
+import { motion, useReducedMotion } from "motion/react";
+import ArteCategoria from "@/components/inicio/ArteCategoria";
+import { Recomendacion } from "@/lib/recomendaciones";
+import { IconoCheck, IconoDestello, IconoPin, IconoReloj } from "./Iconos";
+import { NumeroAnimado, RESORTE_TOQUE } from "./Movimiento";
+import estilos from "./TarjetaRecomendacion.module.css";
 
 type Props = {
   recomendacion: Recomendacion;
+  /** La primera es la mejor opción según el asistente. */
+  destacada?: boolean;
 };
 
-/** Tarjeta de una recomendación del asistente (HU7), con sus métricas a la vista. */
-export default function TarjetaRecomendacion({ recomendacion: r }: Props) {
-  const { Icono, clase } = ESTILO_CATEGORIA[r.categoria.toLowerCase()] ?? { Icono: IconoPin, clase: estilos.estudio };
-
+/** Una recomendación del asistente (HU7) con sus métricas a la vista (HU8). Las cifras salen del catálogo. */
+export default function TarjetaRecomendacion({ recomendacion: r, destacada = false }: Props) {
+  const reducir = useReducedMotion();
   return (
-    <article className={estilos.completa}>
-      <div className={`${estilos.portada} ${clase}`}>
-        <span className={estilos.categoria}>{r.categoria}</span>
-        <Icono tamano={44} />
+    <motion.article
+      className={`${destacada ? estilos.destacada : estilos.tarjeta} lugar-arte`}
+      whileHover={reducir ? undefined : { y: -4 }}
+      transition={RESORTE_TOQUE}
+    >
+      <div className={estilos.portada}>
+        <ArteCategoria categoria={r.categoria} />
+        {destacada && <span className={estilos.mejor}>Mejor opción</span>}
       </div>
+
       <div className={estilos.cuerpo}>
-        <h3 className={estilos.nombreGrande}>{r.nombre}</h3>
-        <p className={estilos.justificacion}>
+        <div className={estilos.cabecera}>
+          <h3 className={estilos.nombre}>{r.nombre}</h3>
+          <span className={estilos.categoria}>{r.categoria}</span>
+        </div>
+
+        <p className={estilos.explicacion}>
           <IconoDestello tamano={16} />
           <span>{r.explicacion}</span>
         </p>
-        <div className={estilos.fila}>
-          <p className={estilos.meta}>
-            <IconoPin tamano={14} /> {r.distanciaM} m
-            <IconoReloj tamano={14} /> {r.tiempoTrasladoMin} min ida y vuelta · {r.duracionEstimadaMin} min de actividad
-          </p>
-          <span className={estilos.verificado}>
-            <IconoCheck tamano={14} /> Verificado
-          </span>
-        </div>
+
+        <dl className={estilos.metricas}>
+          <div>
+            <dt>
+              <IconoPin tamano={14} /> Distancia
+            </dt>
+            <dd>
+              <NumeroAnimado valor={r.distanciaM} /> m
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <IconoReloj tamano={14} /> Ida y vuelta
+            </dt>
+            <dd>{r.tiempoTrasladoMin > 0 ? <><NumeroAnimado valor={r.tiempoTrasladoMin} /> min</> : "<1 min"}</dd>
+          </div>
+          <div>
+            <dt>
+              <IconoCheck tamano={14} /> Actividad
+            </dt>
+            <dd>
+              <NumeroAnimado valor={r.duracionEstimadaMin} /> min
+            </dd>
+          </div>
+        </dl>
       </div>
-    </article>
+    </motion.article>
   );
 }

@@ -1,56 +1,39 @@
+/* Panel de marca: azul marino con fondo vivo. En celular es una franja; en laptop, media pantalla. */
 .panel {
   position: relative;
   overflow: hidden;
-  box-sizing: border-box;
-  padding: 20px 24px;
+  isolation: isolate;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: max(22px, env(safe-area-inset-top)) 24px 28px;
+  border-radius: 0 0 28px 28px;
+  background: var(--ucb-marino);
   color: #fff;
-  background: linear-gradient(160deg, var(--ucb-azul) 0%, var(--ucb-marino) 100%);
-  border-bottom: 4px solid var(--ucb-amarillo);
-  font-family: var(--fuente-texto), system-ui, sans-serif;
-}
-
-.circulo1,
-.circulo2 {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  pointer-events: none;
-}
-
-.circulo1 {
-  width: 220px;
-  height: 220px;
-  top: -110px;
-  right: -60px;
-}
-
-.circulo2 {
-  display: none;
 }
 
 .marca {
-  position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: var(--ucb-celeste);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  box-shadow: 0 8px 20px -8px rgba(253, 213, 55, 0.7);
 }
 
 .nombre {
   font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
 }
 
 .u {
@@ -58,90 +41,188 @@
 }
 
 .lema {
-  position: relative;
   margin: 6px 0 0;
-  font-size: 0.9rem;
-  color: #cfe6f5;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: clamp(1.6rem, 6vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
-.beneficios {
+.resaltado {
+  position: relative;
+  display: inline-block;
+  color: var(--ucb-marino);
+}
+
+.trazo {
+  position: absolute;
+  inset: 0.12em -0.14em 0.02em;
+  border-radius: 0.25em 0.4em 0.3em 0.45em;
+  background: var(--ucb-amarillo);
+  transform-origin: left center;
+  transform: rotate(-1deg);
+}
+
+.resaltadoTexto {
+  position: relative;
+}
+
+/* En celular solo marca y lema. */
+.demo,
+.beneficios,
+.pie {
   display: none;
+}
+
+/* ---------- Mini tarjeta de ejemplo (laptop) ---------- */
+.demo {
+  position: relative;
+  width: min(360px, 100%);
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo {
+    animation: flotar 6s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes flotar {
+  from {
+    transform: translateY(0) rotate(-2deg);
+  }
+  to {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+.demoEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.demoPunto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ucb-amarillo);
+  box-shadow: 0 0 10px var(--ucb-amarillo);
+}
+
+.demoMinutos {
+  margin: 8px 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 3.2rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.demoMinutos > span:last-child {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.demoSiguiente {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.demoBoton {
+  display: block;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+/* ---------- Beneficios ---------- */
+.beneficios {
   list-style: none;
   margin: 0;
   padding: 0;
+  gap: 14px;
+}
+
+.beneficio {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.icono {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--ucb-amarillo);
+}
+
+.beneficio strong {
+  display: block;
+  font-size: 0.98rem;
+}
+
+.beneficio p {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .pie {
-  display: none;
   margin: 0;
-  font-size: 0.75rem;
-  color: #b9d6ea;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 @media (min-width: 900px) {
   .panel {
-    border-bottom: 0;
-    border-right: 6px solid var(--ucb-amarillo);
-    width: 37%;
+    flex: 0 0 min(50%, 640px);
+    box-sizing: border-box;
     min-height: 100dvh;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
+    border-radius: 0 32px 32px 0;
+    padding: 48px clamp(36px, 5vw, 72px);
+    gap: 28px;
+    grid-template-rows: auto auto 1fr auto auto;
   }
 
-  .circulo1 {
-    width: 340px;
-    height: 340px;
-    top: -170px;
-    right: -120px;
+  .lema {
+    font-size: clamp(2.4rem, 3.6vw, 3.4rem);
   }
 
-  .circulo2 {
+  .demo {
     display: block;
-    width: 240px;
-    height: 240px;
-    bottom: 40px;
-    left: -120px;
+    align-self: center;
   }
 
   .beneficios {
-    position: relative;
     display: grid;
-    gap: 22px;
-    margin-top: auto;
-  }
-
-  .beneficio {
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
-  .icono {
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    color: var(--ucb-amarillo);
-    background: rgba(253, 213, 55, 0.14);
-  }
-
-  .beneficio strong {
-    font-size: 0.95rem;
-  }
-
-  .beneficio p {
-    margin: 2px 0 0;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    color: #cfe6f5;
   }
 
   .pie {
-    position: relative;
     display: block;
-    margin-top: 80px;
   }
 }

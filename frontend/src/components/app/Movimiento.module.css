@@ -1,0 +1,25 @@
+/* Odómetro: cada dígito es una ventana de 1em que muestra una tira vertical 0-9. */
+.odometro {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+
+.rueda {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  /* Bordes difuminados arriba y abajo: el dígito "entra" desde la sombra, como en un contador real. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+}
+
+.tira {
+  display: flex;
+  flex-direction: column;
+}
+
+.tira span {
+  display: block;
+  height: 1em;
+}
