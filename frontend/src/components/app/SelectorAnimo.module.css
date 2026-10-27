@@ -4,19 +4,19 @@
   gap: 12px;
 }
 
-/* Tarjeta: el color de cada ánimo llega por --tinte y --fondo-escena. */
+/* Tarjeta: el color de cada ánimo llega por --tinte, --fondo-escena y --ropa. */
 .tarjeta {
   --tinte: var(--ucb-celeste);
   --fondo-escena: #e7f0fb;
+  --ropa: var(--ucb-azul-medio);
   position: relative;
   overflow: hidden;
   isolation: isolate;
   display: grid;
   align-content: start;
   justify-items: start;
-  gap: 6px;
-  min-height: 168px;
-  padding: 18px;
+  gap: 4px;
+  padding: 8px 8px 16px;
   border: 1px solid var(--borde-suave);
   border-radius: 24px;
   background: var(--superficie);
@@ -33,21 +33,25 @@
 .cansado {
   --tinte: #5b4bb7;
   --fondo-escena: #eeebfa;
+  --ropa: #6f60cf;
 }
 
 .enfocado {
   --tinte: var(--ucb-azul-medio);
   --fondo-escena: #e5eef7;
+  --ropa: var(--ucb-azul-medio);
 }
 
 .energia {
   --tinte: var(--ucb-amarillo-oscuro);
   --fondo-escena: var(--ucb-amarillo-suave);
+  --ropa: #e98a15;
 }
 
 .social {
   --tinte: #086a7f;
   --fondo-escena: #e2f3f6;
+  --ropa: #0e8a94;
 }
 
 /* Brillo del color del ánimo que sigue al mouse. */
@@ -57,8 +61,8 @@
   inset: 0;
   z-index: -1;
   background: radial-gradient(
-    240px circle at var(--mx, 50%) var(--my, 30%),
-    color-mix(in srgb, var(--tinte) 16%, transparent),
+    260px circle at var(--mx, 50%) var(--my, 30%),
+    color-mix(in srgb, var(--tinte) 14%, transparent),
     transparent 70%
   );
   opacity: 0;
@@ -93,28 +97,35 @@
   pointer-events: none;
 }
 
+/* Franja ilustrada con el personaje. */
 .escena {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
+  display: block;
+  width: 100%;
+  height: 112px;
   margin-bottom: 8px;
-  border-radius: 20px;
-  background: var(--fondo-escena);
-  color: var(--tinte);
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 50% 110%, color-mix(in srgb, var(--tinte) 14%, transparent), transparent 60%),
+    var(--fondo-escena);
   animation: aparecer 650ms var(--curva-salida) both;
-  animation-delay: calc(250ms + var(--i, 0) * 80ms);
+  animation-delay: calc(200ms + var(--i, 0) * 80ms);
 }
 
 .svg {
-  width: 46px;
-  height: 46px;
-  overflow: visible;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .svg * {
   transform-box: fill-box;
   transform-origin: center;
+}
+
+.nombre,
+.texto {
+  padding: 0 10px;
 }
 
 .nombre {
@@ -130,103 +141,65 @@
   line-height: 1.4;
 }
 
-/* ---------- Cansado: la luna se mece, las estrellas titilan y salen las zetas ---------- */
-.luna {
-  fill: var(--tinte);
-  transform-origin: 40% 50%;
-}
+/* ---------- Piezas comunes de los personajes ---------- */
+.piel { fill: #f6c9a4; }
+.pelo { fill: var(--ucb-marino); }
+.peloB { fill: #7a3e1d; }
+.tinta { fill: var(--ucb-marino); }
+.linea { fill: none; stroke: var(--ucb-marino); stroke-width: 1.4; stroke-linecap: round; }
+.lineaTinte { fill: none; stroke: var(--tinte); stroke-width: 2.4; stroke-linecap: round; }
+.ropa { fill: var(--ropa); }
+.ropaB { fill: var(--ucb-amarillo); }
+.ropaC { fill: var(--ucb-celeste); }
+.mueble { fill: var(--ucb-marino); }
+.taza { fill: #ffffff; }
+.acento { fill: var(--ucb-amarillo); }
+.decoTinte { fill: var(--tinte); opacity: 0.45; }
 
-.estrella {
-  fill: var(--tinte);
-  opacity: 0.35;
-}
+/* Cansado */
+.cabeceo { transform-origin: 50% 100%; }
+.bostezo { fill: var(--ucb-marino); }
+.estrella { fill: var(--tinte); opacity: 0.4; }
+.zeta { fill: var(--tinte); font-size: 9px; font-weight: 800; opacity: 0; }
 
-.zeta {
-  fill: var(--tinte);
-  font-size: 11px;
-  font-weight: 800;
-  opacity: 0;
-}
+/* Enfocado */
+.luz { fill: var(--ucb-amarillo); opacity: 0.22; }
+.lampara { fill: none; stroke: var(--ucb-marino); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.pantalla { fill: var(--ucb-amarillo); }
+.auricular { fill: none; stroke: var(--ucb-marino); stroke-width: 2.6; }
+.foco { transform-origin: 50% 100%; opacity: 0.5; }
+.manoIzq,
+.manoDer { fill: #f6c9a4; }
 
-/* ---------- Enfocado: el dardo da en el blanco y los anillos acusan el golpe ---------- */
-.anillo,
-.ondaBlanco {
-  fill: none;
-  stroke: var(--tinte);
-  stroke-width: 3;
-}
+/* Energía */
+.suelo { fill: none; stroke: var(--tinte); stroke-width: 1.5; stroke-dasharray: 3 5; opacity: 0.4; }
+.sombra { fill: var(--ucb-marino); opacity: 0.2; }
+.pierna { fill: none; stroke: var(--ucb-marino); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.brazo { fill: none; stroke: #f6c9a4; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.torso { fill: none; stroke: var(--ropa); stroke-width: 9; stroke-linecap: round; }
+.vincha { fill: none; stroke: var(--ucb-amarillo); stroke-width: 2.2; stroke-linecap: round; }
+.gota { fill: #8fc0ef; opacity: 0; }
+/* Cada extremidad gira desde su articulación (hombro o cadera). */
+.piernaDelante,
+.brazoDelante { transform-origin: 0% 0%; }
+.piernaAtras,
+.brazoAtras { transform-origin: 100% 0%; }
 
-.anilloMedio {
-  stroke-width: 2.5;
-}
+/* Social */
+.burbuja { fill: #ffffff; }
+.puntoTinte { fill: var(--tinte); }
+.jaja { fill: var(--tinte); font-size: 6.5px; font-weight: 800; text-anchor: middle; }
+.burbuja1,
+.burbuja2 { transform-origin: 50% 100%; }
+.burbuja2 { opacity: 0; }
+.cabezaA,
+.cabezaB,
+.cabezaC { transform-origin: 50% 100%; }
 
-.centro {
-  fill: var(--tinte);
-}
+/* Todos parpadean de vez en cuando, aunque nadie los mire. */
+.ojos { animation: parpadear 4s ease infinite; animation-delay: calc(var(--i, 0) * 700ms); }
 
-.ondaBlanco {
-  stroke-width: 2;
-  opacity: 0;
-}
-
-.dardo path {
-  fill: none;
-  stroke: var(--ucb-marino);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.dardo .plumas {
-  stroke: var(--ucb-amarillo);
-  stroke-width: 2.5;
-}
-
-.dardo {
-  transform-origin: 0% 100%;
-}
-
-/* ---------- Energía: el rayo se carga y suelta chispas ---------- */
-.rayo {
-  fill: var(--ucb-amarillo);
-  stroke: var(--tinte);
-  stroke-width: 2.5;
-  stroke-linejoin: round;
-}
-
-.chispa {
-  fill: none;
-  stroke: var(--tinte);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.chispas {
-  opacity: 0;
-}
-
-/* ---------- Social: las personas se acercan y aparece un corazón ---------- */
-.personaIzq,
-.personaDer {
-  fill: none;
-  stroke: var(--tinte);
-  stroke-width: 3.5;
-  stroke-linecap: round;
-}
-
-.personaIzq {
-  transform-origin: 50% 100%;
-}
-
-.personaDer {
-  transform-origin: 50% 100%;
-}
-
-.corazon {
-  fill: #e0457b;
-  opacity: 0;
-}
-
-/* Disparadores de las escenas */
+/* ---------- Disparadores: hover (mouse), elegida, foco de teclado y pantallas táctiles ---------- */
 @media (hover: hover) and (pointer: fine) {
   .tarjeta:hover {
     border-color: color-mix(in srgb, var(--tinte) 40%, var(--borde-suave));
@@ -237,79 +210,103 @@
     opacity: 1;
   }
 
-  :global(.animo-escena):hover .luna { animation: mecer 2s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .estrella { animation: titilar 1.4s ease infinite; }
-  :global(.animo-escena):hover .e2 { animation-delay: 350ms; }
-  :global(.animo-escena):hover .e3 { animation-delay: 700ms; }
+  :global(.animo-escena):hover .cabeceo { animation: cabecear 2.6s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .bostezo { animation: bostezar 2.6s var(--curva-movimiento) infinite; }
   :global(.animo-escena):hover .zeta { animation: zetas 1.8s var(--curva-salida) infinite; }
   :global(.animo-escena):hover .z2 { animation-delay: 300ms; }
   :global(.animo-escena):hover .z3 { animation-delay: 600ms; }
+  :global(.animo-escena):hover .estrella { animation: titilar 1.4s ease infinite; }
 
-  :global(.animo-escena):hover .dardo { animation: dardo 1.6s var(--curva-salida) infinite; }
-  :global(.animo-escena):hover .blanco { animation: impacto 1.6s var(--curva-salida) infinite; }
-  :global(.animo-escena):hover .ondaBlanco { animation: ondaBlanco 1.6s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .manoIzq { animation: teclear 0.5s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .manoDer { animation: teclear 0.5s var(--curva-movimiento) 250ms infinite; }
+  :global(.animo-escena):hover .foco { animation: enfocar 1.4s ease infinite; }
+  :global(.animo-escena):hover .luz { animation: iluminar 2s ease infinite; }
 
-  :global(.animo-escena):hover .rayo { animation: cargar 1.2s var(--curva-salida) infinite; }
-  :global(.animo-escena):hover .chispas { animation: chispas 1.2s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .corredor { animation: rebote 0.3s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .piernaDelante { animation: piernaDelante 0.6s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .piernaAtras { animation: piernaAtras 0.6s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .brazoDelante { animation: brazoDelante 0.6s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .brazoAtras { animation: brazoAtras 0.6s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .sombra { animation: sombra 0.3s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .velocidad { animation: velocidad 0.6s linear infinite; }
+  :global(.animo-escena):hover .gota { animation: gota 1.2s var(--curva-salida) infinite; }
 
-  :global(.animo-escena):hover .personaIzq { animation: acercarIzq 1.8s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .personaDer { animation: acercarDer 1.8s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .corazon { animation: corazon 1.8s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .burbuja1 { animation: burbuja1 3.2s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .burbuja2 { animation: burbuja2 3.2s var(--curva-salida) infinite; }
+  :global(.animo-escena):hover .cabezaA { animation: hablar 3.2s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .cabezaB { animation: asentir 3.2s var(--curva-movimiento) infinite; }
+  :global(.animo-escena):hover .cabezaC { animation: reir 3.2s var(--curva-movimiento) infinite; }
 }
 
-/* En pantallas táctiles no hay hover: cada escena se reproduce una vez al entrar. */
+/* En pantallas táctiles no hay hover: los personajes se mueven solos, a un ritmo más tranquilo. */
 @media (hover: none) {
-  .luna { animation: mecer 2s var(--curva-movimiento) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .zeta { animation: zetas 1.8s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .z2 { animation-delay: calc(1200ms + var(--i, 0) * 150ms); }
-  .z3 { animation-delay: calc(1500ms + var(--i, 0) * 150ms); }
-  .dardo { animation: dardo 1.6s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .blanco { animation: impacto 1.6s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .ondaBlanco { animation: ondaBlanco 1.6s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .rayo { animation: cargar 1.2s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .chispas { animation: chispas 1.2s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .personaIzq { animation: acercarIzq 1.8s var(--curva-movimiento) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .personaDer { animation: acercarDer 1.8s var(--curva-movimiento) calc(900ms + var(--i, 0) * 150ms) 1 both; }
-  .corazon { animation: corazon 1.8s var(--curva-salida) calc(900ms + var(--i, 0) * 150ms) 1 both; }
+  .cabeceo { animation: cabecear 3.4s var(--curva-movimiento) infinite; }
+  .bostezo { animation: bostezar 3.4s var(--curva-movimiento) infinite; }
+  .zeta { animation: zetas 2.4s var(--curva-salida) infinite; }
+  .z2 { animation-delay: 400ms; }
+  .z3 { animation-delay: 800ms; }
+  .manoIzq { animation: teclear 0.7s var(--curva-movimiento) infinite; }
+  .manoDer { animation: teclear 0.7s var(--curva-movimiento) 350ms infinite; }
+  .foco { animation: enfocar 2s ease infinite; }
+  .corredor { animation: rebote 0.4s var(--curva-movimiento) infinite; }
+  .piernaDelante { animation: piernaDelante 0.8s var(--curva-movimiento) infinite; }
+  .piernaAtras { animation: piernaAtras 0.8s var(--curva-movimiento) infinite; }
+  .brazoDelante { animation: brazoDelante 0.8s var(--curva-movimiento) infinite; }
+  .brazoAtras { animation: brazoAtras 0.8s var(--curva-movimiento) infinite; }
+  .sombra { animation: sombra 0.4s var(--curva-movimiento) infinite; }
+  .burbuja1 { animation: burbuja1 4s var(--curva-salida) infinite; }
+  .burbuja2 { animation: burbuja2 4s var(--curva-salida) infinite; }
+  .cabezaA { animation: hablar 4s var(--curva-movimiento) infinite; }
+  .cabezaB { animation: asentir 4s var(--curva-movimiento) infinite; }
+  .cabezaC { animation: reir 4s var(--curva-movimiento) infinite; }
 }
 
 /* La elegida y la enfocada con teclado también muestran su escena. */
-.tarjeta[data-elegido] .luna,
-.tarjeta:focus-visible .luna { animation: mecer 2s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .cabeceo,
+.tarjeta:focus-visible .cabeceo { animation: cabecear 2.6s var(--curva-movimiento) infinite; }
 .tarjeta[data-elegido] .zeta,
 .tarjeta:focus-visible .zeta { animation: zetas 1.8s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .dardo,
-.tarjeta:focus-visible .dardo { animation: dardo 1.6s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .blanco,
-.tarjeta:focus-visible .blanco { animation: impacto 1.6s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .ondaBlanco,
-.tarjeta:focus-visible .ondaBlanco { animation: ondaBlanco 1.6s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .rayo,
-.tarjeta:focus-visible .rayo { animation: cargar 1.2s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .chispas,
-.tarjeta:focus-visible .chispas { animation: chispas 1.2s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .personaIzq,
-.tarjeta:focus-visible .personaIzq { animation: acercarIzq 1.8s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .personaDer,
-.tarjeta:focus-visible .personaDer { animation: acercarDer 1.8s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .corazon,
-.tarjeta:focus-visible .corazon { animation: corazon 1.8s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .manoIzq,
+.tarjeta:focus-visible .manoIzq { animation: teclear 0.5s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .manoDer,
+.tarjeta:focus-visible .manoDer { animation: teclear 0.5s var(--curva-movimiento) 250ms infinite; }
+.tarjeta[data-elegido] .foco,
+.tarjeta:focus-visible .foco { animation: enfocar 1.4s ease infinite; }
+.tarjeta[data-elegido] .corredor,
+.tarjeta:focus-visible .corredor { animation: rebote 0.3s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .piernaDelante,
+.tarjeta:focus-visible .piernaDelante { animation: piernaDelante 0.6s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .piernaAtras,
+.tarjeta:focus-visible .piernaAtras { animation: piernaAtras 0.6s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .brazoDelante,
+.tarjeta:focus-visible .brazoDelante { animation: brazoDelante 0.6s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .brazoAtras,
+.tarjeta:focus-visible .brazoAtras { animation: brazoAtras 0.6s var(--curva-movimiento) infinite; }
+.tarjeta[data-elegido] .burbuja2,
+.tarjeta:focus-visible .burbuja2 { animation: burbuja2 3.2s var(--curva-salida) infinite; }
+.tarjeta[data-elegido] .cabezaC,
+.tarjeta:focus-visible .cabezaC { animation: reir 3.2s var(--curva-movimiento) infinite; }
 
 @keyframes aparecer {
-  0% { opacity: 0; transform: scale(0.6) rotate(-18deg); }
-  60% { opacity: 1; transform: scale(1.08) rotate(4deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
 }
 
-@keyframes mecer {
-  0%, 100% { transform: rotate(0deg); }
-  30% { transform: rotate(-14deg); }
-  70% { transform: rotate(8deg); }
+@keyframes parpadear {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
 }
 
-@keyframes titilar {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.6); }
+/* Cansado: la cabeza cae de a poco, se despierta de golpe y vuelve. */
+@keyframes cabecear {
+  0%, 8% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(16deg) translateY(2px); }
+  57% { transform: rotate(-6deg) translateY(-1px); }
+  66%, 100% { transform: rotate(0deg) translateY(0); }
+}
+
+@keyframes bostezar {
+  0%, 12%, 55%, 100% { transform: scale(1, 1); }
+  28%, 42% { transform: scale(1.4, 2.4); }
 }
 
 @keyframes zetas {
@@ -318,75 +315,130 @@
   100% { opacity: 0; transform: translate(6px, -12px) scale(1.15); }
 }
 
-@keyframes dardo {
-  0% { opacity: 0; transform: translate(18px, -18px); }
-  30% { opacity: 1; transform: translate(0, 0); }
-  38% { transform: translate(-1px, 1px) rotate(-4deg); }
-  48%, 85% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
-  100% { opacity: 0; transform: translate(0, 0); }
+@keyframes titilar {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.6); }
 }
 
-@keyframes impacto {
-  0%, 30% { transform: scale(1); }
-  38% { transform: scale(0.9); }
-  52% { transform: scale(1.04); }
-  64%, 100% { transform: scale(1); }
+/* Enfocado: teclea, la lámpara respira y aparecen marcas de concentración. */
+@keyframes teclear {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
 }
 
-@keyframes ondaBlanco {
-  0%, 32% { opacity: 0; transform: scale(0.6); }
-  36% { opacity: 0.6; }
-  80%, 100% { opacity: 0; transform: scale(1.35); }
+@keyframes enfocar {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
-@keyframes cargar {
-  0%, 100% { transform: scale(1); filter: none; }
-  12% { transform: scale(0.88) rotate(-4deg); }
-  26% { transform: scale(1.14) rotate(3deg); filter: drop-shadow(0 0 6px rgba(253, 213, 55, 0.9)); }
-  40% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(253, 213, 55, 0.6)); }
+@keyframes iluminar {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 0.4; }
 }
 
-@keyframes chispas {
-  0%, 18% { opacity: 0; transform: scale(0.7); }
-  30% { opacity: 1; transform: scale(1); }
-  70%, 100% { opacity: 0; transform: scale(1.3); }
+/* Energía: ciclo de carrera; brazos y piernas siempre opuestos. */
+@keyframes rebote {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
 }
 
-@keyframes acercarIzq {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  35%, 70% { transform: translateX(3px) rotate(7deg); }
+@keyframes piernaDelante {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(55deg); }
 }
 
-@keyframes acercarDer {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  35%, 70% { transform: translateX(-3px) rotate(-7deg); }
+@keyframes piernaAtras {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-55deg); }
 }
 
-@keyframes corazon {
-  0%, 28% { opacity: 0; transform: translateY(6px) scale(0.5); }
-  44% { opacity: 1; transform: translateY(-2px) scale(1.15); }
-  56% { transform: translateY(-2px) scale(1); }
-  85% { opacity: 1; transform: translateY(-6px) scale(1); }
-  100% { opacity: 0; transform: translateY(-10px) scale(0.9); }
+@keyframes brazoDelante {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(65deg); }
+}
+
+@keyframes brazoAtras {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-60deg); }
+}
+
+@keyframes sombra {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.85); }
+}
+
+@keyframes velocidad {
+  0% { transform: translateX(4px); opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { transform: translateX(-6px); opacity: 0.3; }
+}
+
+@keyframes gota {
+  0% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-8px, 5px); }
+}
+
+/* Social: uno cuenta, otro asiente y el tercero se ríe. */
+@keyframes burbuja1 {
+  0% { opacity: 0; transform: scale(0.6); }
+  8% { opacity: 1; transform: scale(1.06); }
+  12%, 40% { opacity: 1; transform: scale(1); }
+  46%, 100% { opacity: 0; transform: scale(0.85); }
+}
+
+@keyframes burbuja2 {
+  0%, 48% { opacity: 0; transform: scale(0.6); }
+  56% { opacity: 1; transform: scale(1.06); }
+  60%, 88% { opacity: 1; transform: scale(1); }
+  95%, 100% { opacity: 0; transform: scale(0.85); }
+}
+
+@keyframes hablar {
+  0%, 40%, 100% { transform: rotate(0deg); }
+  6% { transform: rotate(-5deg); }
+  14% { transform: rotate(4deg); }
+  22% { transform: rotate(-4deg); }
+  30% { transform: rotate(3deg); }
+}
+
+@keyframes asentir {
+  0%, 25%, 55%, 75%, 100% { transform: translateY(0); }
+  15%, 65% { transform: translateY(1.6px); }
+}
+
+@keyframes reir {
+  0%, 50%, 90%, 100% { transform: rotate(0deg) translateY(0); }
+  56% { transform: rotate(-10deg) translateY(-1.5px); }
+  63% { transform: rotate(-3deg) translateY(0); }
+  70% { transform: rotate(-10deg) translateY(-1.5px); }
+  77% { transform: rotate(-3deg) translateY(0); }
 }
 
 @media (min-width: 720px) {
   .grilla {
     gap: 16px;
   }
-  .tarjeta {
-    min-height: 186px;
-    padding: 22px;
+  .escena {
+    height: 132px;
   }
 }
 
-/* Con movimiento reducido: sin escenas ni balanceos; la tarjeta solo cambia de color al elegir. */
+/* Laptop ancha: los cuatro ánimos en una fila. */
+@media (min-width: 1100px) {
+  .grilla {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .escena {
+    height: 140px;
+  }
+}
+
+/* Con movimiento reducido: personajes quietos; la tarjeta solo cambia de color al elegir. */
 @media (prefers-reduced-motion: reduce) {
   .escena,
-  .svg *,
-  .tarjeta:hover .svg *,
-  .tarjeta[data-elegido] .svg *,
-  .tarjeta:focus-visible .svg * {
+  .svg * {
     animation: none !important;
   }
+  .burbuja1 { opacity: 1; }
 }
