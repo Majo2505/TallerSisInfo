@@ -253,7 +253,7 @@ export default function Campus() {
               <IconoBuscar tamano={24} />
             </span>
             <p>{resultado.mensaje}</p>
-            {puentes && puentes.length > 1 && <p>Prueba con otro puente más largo.</p>}
+            <p>Prueba con otro puente o cambia tu campus en tu perfil.</p>
           </motion.div>
         )}
 
