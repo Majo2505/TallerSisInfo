@@ -18,11 +18,14 @@ import {
 import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import HeroePuente from "@/components/inicio/HeroePuente";
+import HeroeSinPuentes from "@/components/inicio/HeroeSinPuentes";
 import { Bloque, listarHorario } from "@/lib/horario";
 import { ESTADOS_ANIMO, LUGARES } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./inicio.module.css";
+
+const DIAS_SEMANA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const ICONO_ESTADO = {
   cansado: IconoLuna,
@@ -89,6 +92,30 @@ export default function Inicio() {
   }, [puentes, diaHoy, minutosAhora]);
 
   const foco = activo ?? proximo;
+
+  // Sin puentes por hoy: el primero de los próximos días (la semana es de lunes a sábado).
+  const otroDia = useMemo(() => {
+    for (let k = 1; k <= 7; k++) {
+      const dia = (diaHoy + k) % 7;
+      if (dia === 0) continue;
+      const primero = puentes
+        .filter((p) => p.diaSemana === dia)
+        .sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio))[0];
+      if (primero) {
+        return {
+          puente: primero,
+          datos: {
+            dia: DIAS_SEMANA[dia],
+            corto: DIAS_SEMANA[dia].slice(0, 3).toUpperCase(),
+            rango: `${hhmm(primero.horaInicio)} – ${hhmm(primero.horaFin)}`,
+            minutos: duracionMin(primero),
+            enDias: k,
+          },
+        };
+      }
+    }
+    return undefined;
+  }, [puentes, diaHoy]);
 
   const clasesHoy = useMemo(
     () => bloques.filter((b) => b.diaSemana === diaHoy).sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio)),
@@ -170,16 +197,12 @@ export default function Inicio() {
             rutaIa={rutaIa}
           />
         ) : (
-          <div className={estilos.heroeVacio}>
-            <p className={estilos.vacioTitulo}>{cargando ? "Buscando tus puentes…" : "Hoy no te quedan puentes"}</p>
-            <p className={estilos.vacioTexto}>
-              {error ||
-                "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y van a aparecer aquí."}
-            </p>
-            <MotionLink href="/horario" className={estilos.accionVacio} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
-              Ver mi horario <IconoFlechaDerecha tamano={18} />
-            </MotionLink>
-          </div>
+          <HeroeSinPuentes
+            cargando={cargando}
+            error={error}
+            proximo={otroDia ? { ...otroDia.datos } : undefined}
+            rutaIa={otroDia ? `/ia?puente=${otroDia.puente.id}&min=${otroDia.datos.minutos}` : "/ia"}
+          />
         )}
       </Pieza>
 
