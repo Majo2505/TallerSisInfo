@@ -597,24 +597,6 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '403':
           description: El usuario no tiene rol `ADMIN`.
-  /health:
-    get:
-      tags: [Health]
-      operationId: health
-      summary: Comprueba que la API está en marcha.
-      responses:
-        '200':
-          description: La API responde.
-  /health/db:
-    get:
-      tags: [Health]
-      operationId: healthDb
-      summary: Comprueba que la API puede conectarse a la base de datos MySQL.
-      responses:
-        '200':
-          description: Conexión a la base de datos correcta.
-        '503':
-          description: No se pudo conectar a la base de datos.
   /api/recomendaciones:
     post:
       tags: [Recomendaciones]
