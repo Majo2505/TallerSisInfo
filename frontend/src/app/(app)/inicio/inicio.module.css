@@ -632,3 +632,11 @@
 .lugar > :not(svg) {
   margin-inline: 6px;
 }
+
+/* Celulares angostos (320–359 px): ícono arriba, texto a todo el ancho; héroe y atajos más compactos. */
+@media (max-width: 359px) {
+  .estado {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

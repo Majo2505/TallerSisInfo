@@ -239,6 +239,10 @@
   .portada {
     padding: 36px 40px;
   }
+}
+
+/* Laptop: buscador y filtros en una sola fila (en tablet los filtros van debajo para que se vean todos). */
+@media (min-width: 1025px) {
   .controles {
     grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
     align-items: center;

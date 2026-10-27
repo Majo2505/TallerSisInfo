@@ -191,13 +191,21 @@ main {
   .hz-fila { grid-template-columns: 1fr 1fr; }
 }
 
-@media (min-width: 1025px) {
-  .hz { padding-top: 32px; }
+@media (min-width: 768px) {
+  .hz { padding-top: 28px; }
   .hz-cifras { display: flex; }
   .hz-cifra { min-width: 110px; }
   .hz-head { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
   .hz-head-acciones { grid-column: 2; grid-row: 1; align-self: start; }
   .hz-cifras { grid-column: 1 / -1; }
+  .hz-vista-dia { display: none; }
+  .hz-vista-grilla { display: block; }
+  .hz-lateral { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+
+@media (min-width: 1025px) {
+  .hz { padding-top: 32px; }
+  .hz-lateral { grid-template-columns: minmax(0, 1fr); }
   .hz-toast { bottom: 28px; }
   .hz-layout { grid-template-columns: minmax(0, 1fr) 320px; }
   .hz-lateral { position: sticky; top: 88px; }

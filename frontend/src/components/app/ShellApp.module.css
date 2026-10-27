@@ -237,3 +237,13 @@
     display: none;
   }
 }
+
+/* Tablet: la barra inferior queda centrada con un ancho cómodo para el pulgar. */
+@media (min-width: 600px) and (max-width: 1024px) {
+  .navInferior {
+    left: 0;
+    right: 0;
+    width: min(520px, calc(100% - 24px));
+    margin: 0 auto;
+  }
+}
