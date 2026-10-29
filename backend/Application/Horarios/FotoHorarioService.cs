@@ -14,6 +14,15 @@ public class FotoHorarioService
     private const int LargoMaximoAula = 30;             // horario.aula es VARCHAR(30)
     private static readonly string[] Formatos = ["HH:mm", "HH:mm:ss", "H:mm"];
 
+    // Pausas que algunos horarios imprimen como si fueran una fila más: nunca son clases.
+    private static readonly string[] Pausas = ["receso", "recreo", "descanso", "almuerzo", "break", "intermedio"];
+
+    private static bool EsPausa(string materia)
+    {
+        var texto = materia.Trim().ToLowerInvariant();
+        return Pausas.Any(p => texto == p || texto.StartsWith(p + " ") || texto.StartsWith(p + ":"));
+    }
+
     private readonly ILectorHorarioFoto _lector;
     public FotoHorarioService(ILectorHorarioFoto lector) => _lector = lector;
 
@@ -33,6 +42,7 @@ public class FotoHorarioService
             if (!TimeOnly.TryParseExact(c.HoraInicio?.Trim(), Formatos, out var ini) ||
                 !TimeOnly.TryParseExact(c.HoraFin?.Trim(), Formatos, out var fin)) continue;
             if (ReglasHorario.ValidarBloque(c.Materia, c.DiaSemana, ini, fin) is not null) continue;
+            if (EsPausa(c.Materia)) continue;
 
             var materia = c.Materia.Trim();
             var aula = string.IsNullOrWhiteSpace(c.Aula) ? null : c.Aula.Trim();
