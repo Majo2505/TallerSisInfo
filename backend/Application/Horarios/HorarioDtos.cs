@@ -20,12 +20,14 @@ public record CoincidenciaDto(int Id, string Materia, string HoraInicio, string 
 
 /// <summary>Cambio de asistencia de un bloque.</summary>
 /// <param name="Asiste" example="false">Si el estudiante asiste al bloque.</param>
-public record CambiarAsistenciaRequest(bool Asiste);
+/// <param name="AutorizacionCarrera" example="true">El estudiante confirma que su carrera autoriza el choque. Opcional; si no se envía se conserva el valor actual.</param>
+public record CambiarAsistenciaRequest(bool Asiste, bool? AutorizacionCarrera = null);
 
 /// <summary>Cambio de asistencia de un bloque dentro de un lote.</summary>
 /// <param name="Id" example="12">Identificador del bloque.</param>
 /// <param name="Asiste" example="false">Si el estudiante asiste al bloque.</param>
-public record AsistenciaBloqueRequest(int Id, bool Asiste);
+/// <param name="AutorizacionCarrera" example="true">El estudiante confirma que su carrera autoriza el choque. Opcional; si no se envía se conserva el valor actual.</param>
+public record AsistenciaBloqueRequest(int Id, bool Asiste, bool? AutorizacionCarrera = null);
 
 /// <summary>Cambios de asistencia de varios bloques a la vez (hasta 40).</summary>
 public record CambiarAsistenciasRequest(List<AsistenciaBloqueRequest> Bloques);

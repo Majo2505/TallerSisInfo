@@ -122,7 +122,7 @@ public class HorarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
     public Task<IActionResult> CambiarAsistencia(int id, CambiarAsistenciaRequest req, CancellationToken ct)
-        => Ejecutar(async () => Ok(await _service.CambiarAsistenciaAsync(UsuarioId, id, req.Asiste, ct)));
+        => Ejecutar(async () => Ok(await _service.CambiarAsistenciaAsync(UsuarioId, id, req.Asiste, req.AutorizacionCarrera, ct)));
 
     /// <summary>Marca la asistencia de varios bloques de una vez (el paso «¿a cuáles asistes?» tras importar la foto).</summary>
     /// <remarks>Hasta 40 bloques. Si alguno no existe o es de otro usuario no se cambia ninguno (404).</remarks>

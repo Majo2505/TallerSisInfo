@@ -121,9 +121,9 @@ public class HorarioService
     }
 
     /// <summary>Marca si el estudiante asiste a un bloque. Los puentes se recalculan con los bloques a los que asiste.</summary>
-    public async Task<HorarioDto> CambiarAsistenciaAsync(int usuarioId, int id, bool asiste, CancellationToken ct = default)
+    public async Task<HorarioDto> CambiarAsistenciaAsync(int usuarioId, int id, bool asiste, bool? autorizacionCarrera = null, CancellationToken ct = default)
     {
-        var resultado = await CambiarAsistenciasAsync(usuarioId, [new AsistenciaBloqueRequest(id, asiste)], ct);
+        var resultado = await CambiarAsistenciasAsync(usuarioId, [new AsistenciaBloqueRequest(id, asiste, autorizacionCarrera)], ct);
         return resultado.Single();
     }
 
@@ -144,6 +144,7 @@ public class HorarioService
         {
             var h = propios[c.Id];
             h.Asiste = c.Asiste;
+            if (c.AutorizacionCarrera is not null) h.AutorizacionChoque = c.AutorizacionCarrera.Value;
             h.UpdatedAt = ahora;
         }
 
