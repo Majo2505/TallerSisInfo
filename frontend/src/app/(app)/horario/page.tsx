@@ -11,6 +11,7 @@ import { useSesion } from "@/lib/useSesion";
 import ResumenSemanal from "@/components/horario/ResumenSemanal";
 import PuentesDetectados from "@/components/puentes/puentesDetectados";
 import HorarioPorDia from "@/components/horario/HorarioPorDia";
+import FotoHorario from "@/components/horario/FotoHorario";
 import RegistroHorario from "@/components/horario/RegistroHorario";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -49,6 +50,7 @@ export default function HorarioPage() {
   const [puentes, setPuentes] = useState<Puente[]>([]);
   const [errorPuentes, setErrorPuentes] = useState("");
   const [modal, setModal] = useState<ModalState>(null);
+  const [fotoAbierta, setFotoAbierta] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const [intento, setIntento] = useState(0);
   const reducir = useReducedMotion();
@@ -196,7 +198,7 @@ export default function HorarioPage() {
         <div className="hz-principal">
           <RegistroHorario
             onManual={() => setModal({})}
-            onFoto={() => setToast({ texto: "Subir una foto del horario va a estar disponible pronto.", tipo: "ok" })}
+            onFoto={() => setFotoAbierta(true)}
           />
           {cargando ? (
             <div className="hz-skeleton" aria-busy="true" aria-label="Cargando horario" />
@@ -294,6 +296,17 @@ export default function HorarioPage() {
 
       <AnimatePresence>
         {modal && <BloqueModal estado={modal} onClose={() => setModal(null)} onSaved={alGuardar} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {fotoAbierta && (
+          <FotoHorario
+            onCerrar={() => setFotoAbierta(false)}
+            onGuardado={(n) => {
+              setToast({ texto: n === 1 ? "1 clase agregada desde la foto" : `${n} clases agregadas desde la foto`, tipo: "ok" });
+              cargar();
+            }}
+          />
+        )}
       </AnimatePresence>
       <AnimatePresence>
         {toast && (

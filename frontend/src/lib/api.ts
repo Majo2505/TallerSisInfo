@@ -13,7 +13,8 @@ export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise
     res = await fetch(`${API_URL}${ruta}`, {
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        // Con FormData (archivos) el navegador pone el Content-Type multipart con su boundary.
+        ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
