@@ -4,26 +4,38 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { IconoCamara, IconoCheck, IconoDestello } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
-import { BloqueInput, FOTO_BYTES_MAXIMOS, FOTO_TIPOS, ResultadoLote, guardarLote, leerFotoHorario } from "@/lib/horario";
+import {
+  ClaseLeida,
+  FOTO_BYTES_MAXIMOS,
+  FOTO_TIPOS,
+  OpcionAsistencia,
+  ResultadoLote,
+  cambiarAsistencias,
+  gruposEnChoque,
+  guardarLote,
+  leerFotoHorario,
+} from "@/lib/horario";
 import estilos from "./FotoHorario.module.css";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const MENSAJES = ["Buscando tus materias…", "Leyendo días y horas…", "Revisando las aulas…", "Ordenando tu semana…"];
 
-type Fila = BloqueInput & { clave: number; incluir: boolean };
-type Paso = "elegir" | "leyendo" | "revisar" | "guardando" | "resultado";
+type Fila = ClaseLeida & { clave: number; incluir: boolean };
+type Paso = "elegir" | "leyendo" | "revisar" | "guardando" | "asistencia" | "resultado";
 
 type Props = {
   onCerrar: () => void;
   /** Se guardó al menos una clase: la pantalla recarga el horario y los puentes. */
   onGuardado: (cantidad: number) => void;
+  /** Cambió a cuáles clases asiste: la pantalla recarga los puentes. */
+  onActualizado: () => void;
 };
 
 /**
  * Registro del horario con una foto (HU2): el estudiante elige o toma la foto, el backend la lee con un modelo
  * de visión, el estudiante revisa y corrige las clases detectadas y las guarda de una vez (origen FOTO).
  */
-export default function FotoHorario({ onCerrar, onGuardado }: Props) {
+export default function FotoHorario({ onCerrar, onGuardado, onActualizado }: Props) {
   const reducir = useReducedMotion();
   const [paso, setPaso] = useState<Paso>("elegir");
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -31,12 +43,15 @@ export default function FotoHorario({ onCerrar, onGuardado }: Props) {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [descartadas, setDescartadas] = useState(0);
   const [resultado, setResultado] = useState<ResultadoLote | null>(null);
+  const [grupos, setGrupos] = useState<OpcionAsistencia[][]>([]);
+  const [autorizo, setAutorizo] = useState(false);
+  const [guardandoAsistencia, setGuardandoAsistencia] = useState(false);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState(0);
   const [arrastrando, setArrastrando] = useState(false);
   const galeria = useRef<HTMLInputElement>(null);
   const camara = useRef<HTMLInputElement>(null);
-  const ocupado = paso === "leyendo" || paso === "guardando";
+  const ocupado = paso === "leyendo" || paso === "guardando" || guardandoAsistencia;
 
   // La vista previa usa una URL temporal: se libera al cambiar de foto y, la última, al cerrar.
   const urlVista = useRef<string | null>(null);
@@ -91,13 +106,33 @@ export default function FotoHorario({ onCerrar, onGuardado }: Props) {
     try {
       const r = await guardarLote(elegidas.map(({ materia, diaSemana, horaInicio, horaFin, aula }) => ({ materia, diaSemana, horaInicio, horaFin, aula: aula || null })));
       setResultado(r);
-      setPaso("resultado");
       if (r.guardados.length > 0) onGuardado(r.guardados.length);
+      const choques = gruposEnChoque(r.guardados);
+      setGrupos(choques);
+      setPaso(choques.length > 0 ? "asistencia" : "resultado");
     } catch (e) {
       setError((e as Error).message);
       setPaso("revisar");
     }
   }
+
+  async function guardarAsistencia() {
+    setGuardandoAsistencia(true);
+    setError("");
+    try {
+      const opciones = grupos.flat();
+      await cambiarAsistencias(opciones.map((o) => ({ id: o.id, asiste: o.asiste, ...(autorizo ? { autorizacionCarrera: true } : {}) })));
+      onActualizado();
+      setPaso("resultado");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setGuardandoAsistencia(false);
+    }
+  }
+
+  const marcarAsistencia = (id: number, asiste: boolean) =>
+    setGrupos((gs) => gs.map((g) => g.map((o) => (o.id === id ? { ...o, asiste } : o))));
 
   const cambiarFila = (clave: number, cambios: Partial<Fila>) =>
     setFilas((fs) => fs.map((f) => (f.clave === clave ? { ...f, ...cambios } : f)));
@@ -129,7 +164,13 @@ export default function FotoHorario({ onCerrar, onGuardado }: Props) {
           </span>
           <div>
             <h2 id="foto-titulo">Horario desde una foto</h2>
-            <p>{paso === "revisar" || paso === "guardando" ? "Revisa lo que leímos antes de guardar." : "La IA lee tus materias, días, horas y aulas."}</p>
+            <p>
+              {paso === "revisar" || paso === "guardando"
+                ? "Revisa lo que leímos antes de guardar."
+                : paso === "asistencia"
+                  ? "Estas clases coinciden, ¿a cuáles asistes?"
+                  : "La IA lee tus materias, días, horas y aulas."}
+            </p>
           </div>
           <button type="button" className={estilos.cerrar} onClick={onCerrar} disabled={ocupado} aria-label="Cerrar">
             ×
@@ -314,6 +355,59 @@ export default function FotoHorario({ onCerrar, onGuardado }: Props) {
                   </div>
                 </>
               )}
+            </motion.div>
+          )}
+
+          {paso === "asistencia" && (
+            <motion.div
+              key="asistencia"
+              className={estilos.cuerpo}
+              initial={reducir ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: SALIDA }}
+            >
+              <p className={estilos.resumen}>
+                Guardamos todas tus clases, pero {grupos.length === 1 ? "estas se cruzan" : "algunas se cruzan"} en el horario. Marca las que{" "}
+                <strong>sí asistes</strong>: las que dejes sin marcar no cuentan como tiempo ocupado y tus puentes se calculan con las demás.
+              </p>
+              {grupos.map((g) => (
+                <fieldset key={g[0].id} className={estilos.grupo}>
+                  <legend className={estilos.grupoTitulo}>
+                    {DIAS[g[0].diaSemana]} · {g[0].horaInicio.slice(0, 5)}
+                  </legend>
+                  {g.map((o) => (
+                    <label key={o.id} className={estilos.opcion}>
+                      <input type="checkbox" checked={o.asiste} onChange={(e) => marcarAsistencia(o.id, e.target.checked)} />
+                      <span>
+                        {o.materia}
+                        <small>
+                          {o.horaInicio.slice(0, 5)} – {o.horaFin.slice(0, 5)}
+                        </small>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+              ))}
+              <label className={estilos.autorizo}>
+                <input type="checkbox" checked={autorizo} onChange={(e) => setAutorizo(e.target.checked)} />
+                <span>Tengo autorización de mi carrera para cursar estas clases a la misma hora (opcional).</span>
+              </label>
+              <div className={estilos.acciones}>
+                <button type="button" className={estilos.secundario} onClick={() => setPaso("resultado")} disabled={guardandoAsistencia}>
+                  Asisto a todas
+                </button>
+                <motion.button
+                  type="button"
+                  className={estilos.primario}
+                  disabled={guardandoAsistencia}
+                  onClick={() => void guardarAsistencia()}
+                  whileTap={{ scale: 0.97 }}
+                  transition={RESORTE_TOQUE}
+                >
+                  {guardandoAsistencia ? "Guardando…" : "Guardar asistencia"}
+                </motion.button>
+              </div>
             </motion.div>
           )}
 
