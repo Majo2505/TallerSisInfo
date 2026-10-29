@@ -9,7 +9,7 @@ namespace Breaku.Application.Horarios;
 public record ClaseLeidaDto(string Materia, int DiaSemana, string HoraInicio, string HoraFin, string? Aula);
 
 /// <summary>Resultado de leer la foto del horario.</summary>
-/// <param name="Clases">Clases que pasaron las mismas reglas que un alta manual, ordenadas por día y hora.</param>
+/// <param name="Clases">Clases que pasaron las mismas reglas que un alta manual, ordenadas por día y hora. Incluye las que coinciden con otra clase: el estudiante elige después a cuáles asiste.</param>
 /// <param name="Descartadas" example="1">Cuántas devolvió el modelo pero no cumplían las reglas (día, horas o materia inválidos, o repetidas).</param>
 public record LecturaFotoHorarioDto(List<ClaseLeidaDto> Clases, int Descartadas);
 
@@ -19,7 +19,7 @@ public record GuardarLoteRequest(List<GuardarHorarioRequest> Bloques);
 /// <summary>Un bloque del lote que no se guardó.</summary>
 /// <param name="Indice" example="2">Posición del bloque en la lista enviada (desde 0).</param>
 /// <param name="Materia" example="Física II">Materia del bloque.</param>
-/// <param name="Motivo" example="Se solapa con «Cálculo I» (08:00-09:30).">Por qué no se guardó.</param>
+/// <param name="Motivo" example="Ya registraste «Cálculo I» a esa hora ese día.">Por qué no se guardó.</param>
 public record BloqueRechazadoDto(int Indice, string Materia, string Motivo);
 
 /// <summary>Resultado de guardar un lote: los bloques creados (origen <c>FOTO</c>) y los rechazados.</summary>
