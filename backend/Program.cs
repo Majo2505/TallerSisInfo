@@ -1,3 +1,4 @@
+using Breaku.Application.Perfil;
 using Breaku.Application.Admin;
 using System.Text;
 using Breaku.Infrastructure;
@@ -68,6 +69,7 @@ builder.Services.AddScoped<IPuenteRepository, PuenteRepository>();
 builder.Services.AddScoped<PuenteService>();
 builder.Services.AddScoped<NotificacionService>();
 builder.Services.AddScoped<UbicacionService>();
+builder.Services.AddScoped<PerfilService>();
 builder.Services.AddScoped<BusquedaLugaresService>();
 builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
