@@ -281,6 +281,13 @@ Eliminación de un bloque (#10).
 
 **Errores:** `401` sin token o token inválido; `404` si el bloque no existe o no es del usuario (🟡 Propuesta).
 
+### Foto del horario
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `POST` | `/api/horario/foto` | `multipart/form-data` con `foto` (JPG, PNG o WebP, hasta 8 MB). Un modelo de visión (`LLM_MODEL_IMAGEN`) lee las clases y responde `{ clases, descartadas }` sin guardar nada. `400 VALIDACION` o `503 LECTOR_NO_DISPONIBLE` |
+| `POST` | `/api/horario/lote` | `{ bloques: [...] }` (hasta 40, mismo formato que `POST /api/horario`). Guarda los válidos con `origen = FOTO` y responde `{ guardados, rechazados }`, con el motivo de cada rechazo |
+
 ## 4. Puentes (HU3 — responsable: Majo)
 
 ### Regla de detección

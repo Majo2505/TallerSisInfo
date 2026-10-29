@@ -181,6 +181,7 @@ Para cerrar Ollama: ícono de la llama junto al reloj → **Quit Ollama**, o `Ge
 | `LLM_API_KEY` | No | Activa el LLM. Sin ella se usa el asistente simulado |
 | `LLM_BASE_URL` | Si hay `LLM_API_KEY` | URL base de la API del proveedor |
 | `LLM_MODEL` | Si hay `LLM_API_KEY` | Nombre del modelo en ese proveedor |
+| `LLM_MODEL_IMAGEN` | No (por defecto, `LLM_MODEL`) | Modelo con visión para leer la foto del horario (`POST /api/horario/foto`). Sin `LLM_API_KEY`, la foto no está disponible y el registro manual sigue igual |
 | `LLM_TIMEOUT_SECONDS` | No (por defecto 20) | Segundos de espera al LLM antes de responder `503` |
 
 Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
@@ -191,7 +192,7 @@ Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que s
 | Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` | Gratis, con límite de consultas |
 | OpenAI (configuración del equipo) | `https://api.openai.com/v1/` | `gpt-6-luna` | Pago |
 
-**El equipo usa OpenAI con el modelo de texto `gpt-6-luna`** (ver `backend/.env.example`). La clave se comparte por un medio privado y debe tener permiso de uso de modelos (*Model capabilities: Write*); si OpenAI responde `missing_scope`, a la clave le falta ese permiso. Las claves de Gemini u OpenAI van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
+**El equipo usa OpenAI con el modelo de texto `gpt-6-luna` y el de imagen `gpt-6.1-terra`** (ver `backend/.env.example`). La clave se comparte por un medio privado y debe tener permiso de uso de modelos (*Model capabilities: Write*); si OpenAI responde `missing_scope`, a la clave le falta ese permiso. Las claves de Gemini u OpenAI van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
 
 ### Frontend
 
