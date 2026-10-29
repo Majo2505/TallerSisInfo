@@ -189,9 +189,9 @@ Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que s
 |---|---|---|---|
 | Ollama | `http://localhost:11434/v1/` | `qwen2.5:3b` | Gratis |
 | Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` | Gratis, con límite de consultas |
-| OpenAI | `https://api.openai.com/v1/` | `gpt-4o-mini` | Pago |
+| OpenAI (configuración del equipo) | `https://api.openai.com/v1/` | `gpt-6-luna` | Pago |
 
-Las claves de Gemini u OpenAI son personales: van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
+**El equipo usa OpenAI con el modelo de texto `gpt-6-luna`** (ver `backend/.env.example`). La clave se comparte por un medio privado y debe tener permiso de uso de modelos (*Model capabilities: Write*); si OpenAI responde `missing_scope`, a la clave le falta ese permiso. Las claves de Gemini u OpenAI van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
 
 ### Frontend
 
