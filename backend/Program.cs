@@ -7,6 +7,7 @@ using Breaku.Application.Puentes;
 using Breaku.Application.Notificaciones;
 using Breaku.Application.Recomendaciones;
 using Breaku.Presentation.Documentacion;
+using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -67,6 +68,8 @@ builder.Services.AddScoped<IPuenteRepository, PuenteRepository>();
 builder.Services.AddScoped<PuenteService>();
 builder.Services.AddScoped<NotificacionService>();
 builder.Services.AddScoped<UbicacionService>();
+builder.Services.AddScoped<BusquedaLugaresService>();
+builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
 

@@ -341,6 +341,9 @@ Las coordenadas se envían una sola vez al backend para encontrar la zona más c
 dentro de su `radio_max_m`; no se guardan ni se devuelven. Solo se persiste el campus
 seleccionado y, cuando corresponde, la fecha y el consentimiento explícito.
 
+Los errores usan el mismo formato que horarios y recomendaciones: `{ "codigo": "NO_ENCONTRADO", "mensaje": "..." }`
+(`NO_ENCONTRADO` con 404 y `FUERA_DE_ZONA` con 422).
+
 ### `GET /api/ubicacion/zonas`
 
 Lista de zonas disponibles para selección manual. Respuesta `200`:
@@ -409,7 +412,62 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas consultas al asistente con entrada, estado, modelo y latencia (1 a 200) |
 | `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio y los 5 lugares más recomendados |
 
-## 7. Resumen de decisiones por responsable
+## 7. Lugares viables (HU6 — responsable: Ariana)
+
+Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "mensaje" }`.
+
+### Regla de búsqueda
+
+- ✅ **Definido** (#14): se muestran solo lugares viables para un puente. Un lugar es viable si cumple las tres condiciones:
+  1. Está en estado `ACTIVO` (verificado y aprobado por el administrador). `EN_REVISION` e `INACTIVO` nunca se muestran.
+  2. Queda dentro del radio (`radio_max_m`) de la zona (campus) del estudiante, que se define en HU5. La zona es el área verificada.
+  3. El traslado de ida y vuelta más la actividad no supera la duración del puente. Si suman exactamente lo mismo, sí cabe.
+- 🟡 **Propuesta:** el traslado se calcula con la distancia en línea recta desde el centro de la zona y una velocidad de 80 m por minuto (unos 4,8 km/h), redondeando hacia arriba. La actividad dura `duracion_estimada_min` (RN03).
+- 🟡 **Propuesta:** orden por distancia, del más cercano al más lejano. Máximo 50 lugares.
+- 🔴 **Pendiente:** si el catálogo debe considerar `hora_apertura` y `hora_cierre` (hoy están como [CONFIRMAR] en el esquema y no se usan).
+
+### `GET /api/lugares/viables?puenteId={id}`
+
+`puenteId` debe ser un puente del propio estudiante (`GET /api/puentes`).
+
+**Respuesta 200:**
+
+```json
+{
+  "estado": "OK",
+  "mensaje": null,
+  "zona": { "id": 1, "nombre": "Campus UCB La Paz" },
+  "radioAplicadoM": 800,
+  "minutosDisponibles": 120,
+  "lugares": [
+    {
+      "lugarId": 2,
+      "nombre": "Biblioteca Central",
+      "categoria": "Estudio",
+      "descripcion": "Salas silenciosas y computadoras para estudiar.",
+      "distanciaM": 55,
+      "tiempoTrasladoMin": 2,
+      "duracionEstimadaMin": 45
+    }
+  ]
+}
+```
+
+| `estado` | Cuándo | `mensaje` |
+|---|---|---|
+| `OK` | Hay al menos un lugar viable | `null` |
+| `SIN_RESULTADOS` | Ningún lugar cumple tiempo, cercanía y verificación | `No encontramos opciones cercanas para este tiempo disponible.` (texto de la HU) |
+| `SIN_ZONA` | El estudiante todavía no eligió ni compartió su campus (HU5); `zona` y `radioAplicadoM` vienen en `null` | `Elige tu campus para ver lugares cercanos.` |
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta `puenteId` o no es un número positivo (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
+
+## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |
 |---|---|---|---|

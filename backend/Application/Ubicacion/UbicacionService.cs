@@ -1,10 +1,10 @@
 using Breaku.Domain;
+using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Ubicacion;
 
 public sealed class UbicacionService
 {
-    private const double RadioTierraMetros = 6_371_000;
     private readonly IUbicacionRepository _repository;
 
     public UbicacionService(IUbicacionRepository repository) => _repository = repository;
@@ -28,7 +28,7 @@ public sealed class UbicacionService
     {
         var zonas = await _repository.ListarZonasAsync(ct);
         var zona = zonas
-            .Select(z => new { Zona = z, Distancia = DistanciaMetros(request.Latitud, request.Longitud, z.Latitud, z.Longitud) })
+            .Select(z => new { Zona = z, Distancia = ReglasBusquedaLugares.DistanciaMetros(request.Latitud, request.Longitud, z.Latitud, z.Longitud) })
             .Where(z => z.Distancia <= z.Zona.RadioMaxM)
             .OrderBy(z => z.Distancia)
             .Select(z => z.Zona)
@@ -96,19 +96,6 @@ public sealed class UbicacionService
                     ? new ZonaDto(usuario.ZonaActual.Id, usuario.ZonaActual.Nombre)
                     : null
         );
-
-    private static double DistanciaMetros(decimal latitudA, decimal longitudA, decimal latitudB, decimal longitudB)
-    {
-        var latA = (double)latitudA * Math.PI / 180;
-        var latB = (double)latitudB * Math.PI / 180;
-        var diferenciaLat = ((double)latitudB - (double)latitudA) * Math.PI / 180;
-        var diferenciaLong = ((double)longitudB - (double)longitudA) * Math.PI / 180;
-
-        var a = Math.Pow(Math.Sin(diferenciaLat / 2), 2)
-            + Math.Cos(latA) * Math.Cos(latB) * Math.Pow(Math.Sin(diferenciaLong / 2), 2);
-        a = Math.Clamp(a, 0, 1);
-        return RadioTierraMetros * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-    }
 }
 
 public sealed class UbicacionFueraDeZonaException(string message) : Exception(message);

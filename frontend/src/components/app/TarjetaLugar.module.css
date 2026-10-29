@@ -118,3 +118,17 @@
   gap: 4px;
   white-space: nowrap;
 }
+
+.descripcion {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.total {
+  margin: 2px 0 0;
+  color: var(--ucb-azul-medio);
+  font-size: 0.82rem;
+  font-weight: 800;
+}

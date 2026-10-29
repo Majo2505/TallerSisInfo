@@ -1,5 +1,7 @@
--- Upgrade for databases created with the previous schema.sql.
--- Do not run this after creating a fresh database from the updated schema.sql.
+-- Lleva una base creada con la versión anterior de schema.sql a la actual (HU5: ubicación y campus).
+-- Se ejecuta UNA sola vez, con la base de datos ya seleccionada (sin USE, como seed-dev.sql).
+-- No hace falta en una base nueva creada con el schema.sql actual.
+-- Si falla con "Duplicate column name", la migración ya estaba aplicada.
 ALTER TABLE usuario
   ADD COLUMN zona_actual_id INT NULL AFTER fecha_consentimiento,
   ADD KEY ix_usuario_zona_actual (zona_actual_id),

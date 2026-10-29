@@ -10,10 +10,10 @@ public sealed record EstadoUbicacionDto(
 );
 
 public sealed record CompartirUbicacionRequest(
-    [property: Range(typeof(decimal), "-90", "90")] decimal Latitud,
-    [property: Range(typeof(decimal), "-180", "180")] decimal Longitud
+    [Range(typeof(decimal), "-90", "90")] decimal Latitud,
+    [Range(typeof(decimal), "-180", "180")] decimal Longitud
 );
 
 public sealed record SeleccionarZonaRequest(
-    [property: Range(1, int.MaxValue)] int ZonaId
+    [Range(1, int.MaxValue)] int ZonaId
 );

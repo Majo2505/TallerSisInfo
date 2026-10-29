@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Breaku.Application.DTOs;
 using Breaku.Application.Ubicacion;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,7 @@ public sealed class UbicacionController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new { detail = ex.Message });
+            return NotFound(new ErrorNegocioDto("NO_ENCONTRADO", ex.Message));
         }
     }
 
@@ -46,11 +47,11 @@ public sealed class UbicacionController : ControllerBase
         }
         catch (UbicacionFueraDeZonaException ex)
         {
-            return UnprocessableEntity(new { detail = ex.Message });
+            return UnprocessableEntity(new ErrorNegocioDto("FUERA_DE_ZONA", ex.Message));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new { detail = ex.Message });
+            return NotFound(new ErrorNegocioDto("NO_ENCONTRADO", ex.Message));
         }
     }
 
@@ -65,7 +66,7 @@ public sealed class UbicacionController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new { detail = ex.Message });
+            return NotFound(new ErrorNegocioDto("NO_ENCONTRADO", ex.Message));
         }
     }
 
@@ -79,7 +80,7 @@ public sealed class UbicacionController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new { detail = ex.Message });
+            return NotFound(new ErrorNegocioDto("NO_ENCONTRADO", ex.Message));
         }
     }
 }

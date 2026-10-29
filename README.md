@@ -138,9 +138,9 @@ Token de desarrollo: se obtiene con `POST /api/auth/login` usando ese usuario (c
 
 [`docs/database/seed-dev-catalogo.sql`](docs/database/seed-dev-catalogo.sql) carga una zona (campus), cuatro categorías y siete lugares de ejemplo para probar las recomendaciones (`POST /api/recomendaciones`, HU7). Se ejecuta igual que `seed-dev.sql` y **después** de él, porque usa al usuario de prueba como autor. Es idempotente. Dos lugares están ahí para comprobar los filtros y nunca deben recomendarse: uno queda fuera del radio y otro está `EN_REVISION`.
 
-Para probarlo: registra un horario con un hueco de 45 minutos o más, toma el `id` del puente en `GET /api/puentes` y envía `{ "puenteId": <id> }` a `POST /api/recomendaciones`.
+Para probarlo: elige tu campus (en la app, `/configuracion/ubicacion`, o con `PUT /api/ubicacion/zona`), registra un horario con un hueco de 45 minutos o más y toma el `id` del puente en `GET /api/puentes`. Con ese `id` puedes ver los lugares viables en `GET /api/lugares/viables?puenteId=<id>` (HU6) o pedir recomendaciones enviando `{ "puenteId": <id> }` a `POST /api/recomendaciones` (HU7).
 
-> **Provisional (HU7):** por ahora la búsqueda en el catálogo usa la primera zona registrada (`RecuperadorLugaresProvisional`). Se reemplaza por la búsqueda de HU6 en `backend/Infrastructure/DependencyInjection.cs`.
+**Lugares viables (HU6).** Un lugar solo se muestra si está `ACTIVO` (aprobado por el administrador), queda dentro del radio de tu campus y el traslado de ida y vuelta (caminando, unos 80 m por minuto) más la actividad cabe en tu puente. Sin campus elegido la búsqueda responde `SIN_ZONA`; si ningún lugar cumple, responde `SIN_RESULTADOS` con el mensaje «No encontramos opciones cercanas para este tiempo disponible.». La misma búsqueda es la que usa el asistente de HU7.
 
 ### Asistente de IA (HU7, opcional)
 
