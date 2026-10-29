@@ -147,8 +147,8 @@ Para probarlo: elige tu campus (en la app, `/configuracion/ubicacion`, o con `PU
 [`docs/database/seed-dev-cochabamba.sql`](docs/database/seed-dev-cochabamba.sql) carga la sede **Campus UCB Cochabamba** con los 13 lugares del relevamiento (`docs/datos/lugares_ucb_cochabamba.json`). Se ejecuta igual que los otros seeds y **después** de `seed-dev.sql`. Es idempotente y, al correrlo, deja las demás sedes (La Paz) guardadas pero **inactivas**: no aparecen para elegir ni reciben recomendaciones. Para volver a La Paz: `UPDATE zona SET activa = (nombre = 'Campus UCB La Paz');`. La sede activa se decide con el campo `zona.activa`; no hace falta ninguna variable de entorno.
 
 - Los 13 lugares quedan con `validado = FALSE`: son datos del relevamiento que el equipo todavía tiene que revisar. La app los muestra con la etiqueta «Por validar», y el panel de administración también.
-- Cinco son puntos de referencia (campus, parqueo, bloques A, B y C) con `recomendable = FALSE`: quedan guardados, pero nunca se recomiendan.
-- Las categorías del relevamiento se asignan a las de la app así: `comer` y `cafe_te` → Comida, `estudio` → Estudio, `descanso` → Descanso, `deporte_aire_libre` → Deporte y `campus` → Referencia (categoría nueva).
+- Cinco son puntos de referencia (campus, parqueo, bloques A, B y C) con `recomendable = FALSE`: quedan guardados, pero nunca se recomiendan, así que su categoría no se ve.
+- Las categorías del relevamiento se asignan a las de la app así: `comer` y `cafe_te` → Comida, `estudio` → Estudio, `descanso` → Descanso, `deporte_aire_libre` → Deporte y `campus` → Estudio (los puntos de referencia). No se crea ninguna categoría nueva.
 - Si cambias el JSON, regenera el seed con `python docs/datos/generar_seed_cochabamba.py`.
 
 ### Asistente de IA (HU7, opcional)

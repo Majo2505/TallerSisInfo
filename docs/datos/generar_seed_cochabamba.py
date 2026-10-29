@@ -9,7 +9,7 @@ Mapeo de la categoría del relevamiento a las categorías de la app:
     estudio            -> Estudio
     descanso           -> Descanso
     deporte_aire_libre -> Deporte
-    campus             -> Referencia (categoría nueva; son puntos de referencia, no se recomiendan)
+    campus             -> Estudio (son puntos de referencia del campus y no se recomiendan; no se crean categorías nuevas)
 """
 import json
 import sys
@@ -27,7 +27,7 @@ CATEGORIAS = {
     "estudio": "Estudio",
     "descanso": "Descanso",
     "deporte_aire_libre": "Deporte",
-    "campus": "Referencia",
+    "campus": "Estudio",
 }
 
 
@@ -91,7 +91,7 @@ def main():
 -- Qué hace:
 --   · Crea (o actualiza) la sede «{SEDE}» como sede activa, con un radio de {RADIO_M} m.
 --   · Deja las demás sedes (La Paz) guardadas pero inactivas: no aparecen para elegir ni reciben recomendaciones.
---   · Crea la categoría «Referencia» y reutiliza Comida, Estudio, Descanso y Deporte.
+--   · No crea categorías: usa Comida, Estudio, Descanso y Deporte (las categorías de la app). Si no existen, las crea.
 --   · Carga los lugares con validado = FALSE: el equipo tiene que revisarlos. Los puntos de referencia
 --     (campus, parqueo, bloques) quedan con recomendable = FALSE y nunca se recomiendan.
 --
@@ -111,8 +111,7 @@ INSERT IGNORE INTO categoria (nombre, created_by, updated_by) VALUES
   ('Comida',     @autor, @autor),
   ('Estudio',    @autor, @autor),
   ('Descanso',   @autor, @autor),
-  ('Deporte',    @autor, @autor),
-  ('Referencia', @autor, @autor);
+  ('Deporte',    @autor, @autor);
 
 INSERT INTO lugar (nombre, descripcion, categoria_id, latitud, longitud, duracion_estimada_min, estado,
                    tipo_lugar, modalidad, nivel_energia, duracion_min, duracion_max, actividades_sugeridas,

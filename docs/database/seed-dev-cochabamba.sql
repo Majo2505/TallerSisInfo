@@ -9,7 +9,7 @@
 -- Qué hace:
 --   · Crea (o actualiza) la sede «Campus UCB Cochabamba» como sede activa, con un radio de 500 m.
 --   · Deja las demás sedes (La Paz) guardadas pero inactivas: no aparecen para elegir ni reciben recomendaciones.
---   · Crea la categoría «Referencia» y reutiliza Comida, Estudio, Descanso y Deporte.
+--   · No crea categorías: usa Comida, Estudio, Descanso y Deporte (las categorías de la app). Si no existen, las crea.
 --   · Carga los lugares con validado = FALSE: el equipo tiene que revisarlos. Los puntos de referencia
 --     (campus, parqueo, bloques) quedan con recomendable = FALSE y nunca se recomiendan.
 --
@@ -29,8 +29,7 @@ INSERT IGNORE INTO categoria (nombre, created_by, updated_by) VALUES
   ('Comida',     @autor, @autor),
   ('Estudio',    @autor, @autor),
   ('Descanso',   @autor, @autor),
-  ('Deporte',    @autor, @autor),
-  ('Referencia', @autor, @autor);
+  ('Deporte',    @autor, @autor);
 
 INSERT INTO lugar (nombre, descripcion, categoria_id, latitud, longitud, duracion_estimada_min, estado,
                    tipo_lugar, modalidad, nivel_energia, duracion_min, duracion_max, actividades_sugeridas,
@@ -39,11 +38,11 @@ SELECT d.nombre, d.descripcion, c.id, d.latitud, d.longitud, d.duracion, 'ACTIVO
        d.tipo_lugar, d.modalidad, d.nivel_energia, d.duracion_min, d.duracion_max, d.actividades,
        d.min_a_pie, d.recomendable, d.validado, @autor, @autor
 FROM (
-  SELECT 'Universidad Católica Boliviana - Cochabamba' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Referencia' AS categoria, -17.371672 AS latitud, -66.143916 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
-  SELECT 'Parqueo UCB' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Referencia' AS categoria, -17.372287 AS latitud, -66.144082 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
-  SELECT 'Bloque A' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Referencia' AS categoria, -17.371932 AS latitud, -66.143664 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 0 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
-  SELECT 'Bloque B' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Referencia' AS categoria, -17.372240 AS latitud, -66.143711 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
-  SELECT 'Bloque C' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Referencia' AS categoria, -17.372602 AS latitud, -66.143153 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
+  SELECT 'Universidad Católica Boliviana - Cochabamba' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Estudio' AS categoria, -17.371672 AS latitud, -66.143916 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
+  SELECT 'Parqueo UCB' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Estudio' AS categoria, -17.372287 AS latitud, -66.144082 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
+  SELECT 'Bloque A' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Estudio' AS categoria, -17.371932 AS latitud, -66.143664 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 0 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
+  SELECT 'Bloque B' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Estudio' AS categoria, -17.372240 AS latitud, -66.143711 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
+  SELECT 'Bloque C' AS nombre, 'Punto de referencia del campus. No se recomienda.' AS descripcion, 'Estudio' AS categoria, -17.372602 AS latitud, -66.143153 AS longitud, 1 AS duracion, 'referencia' AS tipo_lugar, NULL AS modalidad, NULL AS nivel_energia, NULL AS duracion_min, NULL AS duracion_max, NULL AS actividades, 1 AS min_a_pie, FALSE AS recomendable, FALSE AS validado UNION ALL
   SELECT 'Biblioteca Tupuraya - UCB Cochabamba' AS nombre, 'Actividades: estudiar, leer, adelantar tareas.' AS descripcion, 'Estudio' AS categoria, -17.371851 AS latitud, -66.144054 AS longitud, 20 AS duracion, 'campus' AS tipo_lugar, 'solitario,grupal' AS modalidad, 'bajo' AS nivel_energia, 20 AS duracion_min, 120 AS duracion_max, '["estudiar", "leer", "adelantar tareas"]' AS actividades, 1 AS min_a_pie, TRUE AS recomendable, FALSE AS validado UNION ALL
   SELECT 'Capilla San Nicolás de Tolentino' AS nombre, 'Actividades: silencio, oración, pausa tranquila.' AS descripcion, 'Descanso' AS categoria, -17.373221 AS latitud, -66.143153 AS longitud, 10 AS duracion, 'campus' AS tipo_lugar, 'solitario' AS modalidad, 'bajo' AS nivel_energia, 10 AS duracion_min, 30 AS duracion_max, '["silencio", "oración", "pausa tranquila"]' AS actividades, 2 AS min_a_pie, TRUE AS recomendable, FALSE AS validado UNION ALL
   SELECT 'Parque Jorge Trigo Andia' AS nombre, 'Actividades: caminar, trotar, estirar, tomar aire.' AS descripcion, 'Deporte' AS categoria, -17.371000 AS latitud, -66.144362 AS longitud, 15 AS duracion, 'aire_libre' AS tipo_lugar, 'solitario,grupal' AS modalidad, 'medio,alto' AS nivel_energia, 15 AS duracion_min, 60 AS duracion_max, '["caminar", "trotar", "estirar", "tomar aire"]' AS actividades, 2 AS min_a_pie, TRUE AS recomendable, FALSE AS validado UNION ALL
