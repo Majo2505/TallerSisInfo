@@ -470,3 +470,15 @@
     margin: -9px 0 0;
   }
 }
+
+/* HU21: mensaje de validación junto al campo. */
+.errorCampo {
+  color: var(--error);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.campo input[aria-invalid="true"] {
+  border-color: var(--error);
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.1);
+}

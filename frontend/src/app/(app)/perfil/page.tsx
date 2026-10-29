@@ -17,8 +17,8 @@ import {
 } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { guardarConfiguracion, obtenerConfiguracion } from "@/lib/notificaciones";
-import { CARRERAS, SEMESTRES } from "@/lib/maqueta";
-import { cerrarSesion } from "@/services/authService";
+import { CARRERAS, LARGO_MAXIMO_NOMBRE, Perfil as DatosPerfil, SEMESTRES, actualizarPerfil, obtenerPerfil } from "@/lib/perfil";
+import { actualizarNombreSesion, cerrarSesion } from "@/services/authService";
 import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./perfil.module.css";
@@ -38,12 +38,62 @@ export default function Perfil() {
   const aviso = useAviso();
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("informacion");
-  const [nombre, setNombre] = useState(sesion?.usuario.nombre ?? "");
-  const [carrera, setCarrera] = useState(CARRERAS[0]);
-  const [semestre, setSemestre] = useState(5);
+  // HU21: datos reales del perfil; el formulario parte de ellos y se compara para saber si hay cambios.
+  const [perfil, setPerfil] = useState<DatosPerfil | null>(null);
+  const [errorPerfil, setErrorPerfil] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [carrera, setCarrera] = useState("");
+  const [semestre, setSemestre] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
+  const [errorGuardar, setErrorGuardar] = useState("");
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
   const [avisosActivos, setAvisosActivos] = useState<boolean | null>(null);
   const [errorAvisos, setErrorAvisos] = useState("");
   const [guardandoAvisos, setGuardandoAvisos] = useState(false);
+
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    obtenerPerfil()
+      .then((datos) => {
+        if (!activo) return;
+        setPerfil(datos);
+        setNombre(datos.nombre);
+        setCarrera(datos.carrera ?? "");
+        setSemestre(datos.semestre ? String(datos.semestre) : "");
+      })
+      .catch((e: Error) => {
+        if (activo) setErrorPerfil(e.message);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  const hayCambios =
+    perfil !== null &&
+    (nombre.trim() !== perfil.nombre || (carrera || null) !== perfil.carrera || (semestre ? Number(semestre) : null) !== perfil.semestre);
+
+  async function guardarPerfil(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorGuardar("");
+    const limpio = nombre.trim();
+    if (!limpio) return setErrorNombre("Tu nombre es obligatorio.");
+    if (limpio.length > LARGO_MAXIMO_NOMBRE) return setErrorNombre(`Tu nombre puede tener hasta ${LARGO_MAXIMO_NOMBRE} caracteres.`);
+    setErrorNombre("");
+    setGuardandoPerfil(true);
+    try {
+      const nuevo = await actualizarPerfil({ nombre: limpio, carrera: carrera || null, semestre: semestre ? Number(semestre) : null });
+      setPerfil(nuevo);
+      setNombre(nuevo.nombre);
+      actualizarNombreSesion(nuevo.nombre);
+      aviso.mostrar("Tu perfil se actualizó.");
+    } catch (err) {
+      setErrorGuardar((err as Error).message);
+    } finally {
+      setGuardandoPerfil(false);
+    }
+  }
 
   useEffect(() => {
     if (!sesion) return;
@@ -101,8 +151,8 @@ export default function Perfil() {
             <span className={estilos.verificado}>
               <IconoCheck tamano={14} /> Verificado
             </span>
-            <span className={estilos.insignia}>{carrera}</span>
-            <span className={estilos.insignia}>Semestre {semestre}</span>
+            {perfil?.carrera && <span className={estilos.insignia}>{perfil.carrera}</span>}
+            {perfil?.semestre && <span className={estilos.insignia}>Semestre {perfil.semestre}</span>}
           </div>
         </div>
       </Pieza>
@@ -150,27 +200,64 @@ export default function Perfil() {
             transition={{ duration: 0.28, ease: SALIDA }}
           >
             {pestana === "informacion" && (
-              <form
-                className={estilos.formulario}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  aviso.mostrar("Guardar el perfil va a estar disponible pronto.");
-                }}
-              >
+              <form className={estilos.formulario} onSubmit={(e) => void guardarPerfil(e)} noValidate>
                 <h2 className={estilos.seccion}>Información personal</h2>
+                {errorPerfil && (
+                  <p className={estilos.error} role="alert">
+                    {errorPerfil}
+                  </p>
+                )}
+                {errorGuardar && (
+                  <motion.p
+                    key={errorGuardar}
+                    className={estilos.error}
+                    role="alert"
+                    initial={reducir ? false : { x: 0 }}
+                    animate={{ x: [0, -8, 8, -5, 5, 0] }}
+                    transition={{ duration: 0.42 }}
+                  >
+                    {errorGuardar}
+                  </motion.p>
+                )}
                 <label className={estilos.campo}>
                   Nombre completo
-                  <input value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" />
+                  <input
+                    value={nombre}
+                    onChange={(e) => {
+                      setNombre(e.target.value);
+                      if (errorNombre) setErrorNombre("");
+                    }}
+                    autoComplete="name"
+                    maxLength={LARGO_MAXIMO_NOMBRE}
+                    disabled={!perfil}
+                    aria-invalid={!!errorNombre}
+                    aria-describedby={errorNombre ? "error-nombre" : undefined}
+                  />
+                  {errorNombre && (
+                    <motion.small
+                      key={errorNombre}
+                      id="error-nombre"
+                      className={estilos.errorCampo}
+                      initial={reducir ? false : { x: 0 }}
+                      animate={{ x: [0, -6, 6, -3, 3, 0] }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      {errorNombre}
+                    </motion.small>
+                  )}
                 </label>
                 <label className={estilos.campo}>
                   Correo institucional
-                  <input value={usuario?.correo ?? ""} disabled readOnly />
-                  <small>Tu correo institucional está verificado y no se puede cambiar.</small>
+                  <input value={perfil?.correo ?? usuario?.correo ?? ""} disabled readOnly />
+                  <small>Tu correo institucional y tu rol no se pueden cambiar.</small>
                 </label>
                 <div className={estilos.fila}>
                   <label className={estilos.campo}>
                     Carrera
-                    <select value={carrera} onChange={(e) => setCarrera(e.target.value)}>
+                    <select value={carrera} onChange={(e) => setCarrera(e.target.value)} disabled={!perfil}>
+                      <option value="">Sin especificar</option>
+                      {/* Si la carrera guardada no está en la lista, igual se muestra. */}
+                      {carrera && !CARRERAS.includes(carrera) && <option value={carrera}>{carrera}</option>}
                       {CARRERAS.map((c) => (
                         <option key={c}>{c}</option>
                       ))}
@@ -178,7 +265,8 @@ export default function Perfil() {
                   </label>
                   <label className={estilos.campo}>
                     Semestre
-                    <select value={semestre} onChange={(e) => setSemestre(Number(e.target.value))}>
+                    <select value={semestre} onChange={(e) => setSemestre(e.target.value)} disabled={!perfil}>
+                      <option value="">—</option>
                       {SEMESTRES.map((s) => (
                         <option key={s} value={s}>
                           {s}°
@@ -188,8 +276,8 @@ export default function Perfil() {
                   </label>
                 </div>
                 <div className={estilos.acciones}>
-                  <button type="submit" className={estilos.primario}>
-                    Guardar cambios
+                  <button type="submit" className={estilos.primario} disabled={!hayCambios || guardandoPerfil}>
+                    {guardandoPerfil ? "Guardando…" : "Guardar cambios"}
                   </button>
                   <Link href="/horario" className={estilos.secundario}>
                     <IconoCalendario tamano={18} /> Editar mi horario
