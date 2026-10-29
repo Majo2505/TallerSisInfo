@@ -61,6 +61,7 @@ CREATE TABLE categoria (
   updated_by  INT         NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_categoria_nombre UNIQUE (nombre),
+  CONSTRAINT ck_categoria_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT fk_categoria_created_by FOREIGN KEY (created_by) REFERENCES usuario (id),
   CONSTRAINT fk_categoria_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -84,6 +85,7 @@ CREATE TABLE lugar (
   KEY ix_lugar_estado_categoria (estado, categoria_id),
   CONSTRAINT ck_lugar_estado   CHECK (estado IN ('ACTIVO','EN_REVISION','INACTIVO')),
   CONSTRAINT ck_lugar_duracion CHECK (duracion_estimada_min > 0),
+  CONSTRAINT ck_lugar_nombre   CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT ck_lugar_lat      CHECK (latitud  BETWEEN -90  AND 90),
   CONSTRAINT ck_lugar_lng      CHECK (longitud BETWEEN -180 AND 180),
   CONSTRAINT fk_lugar_categoria  FOREIGN KEY (categoria_id) REFERENCES categoria (id),
