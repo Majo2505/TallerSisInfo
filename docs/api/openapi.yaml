@@ -230,6 +230,88 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '404':
           $ref: '#/components/responses/BloqueNoEncontrado'
+  /api/horario/foto:
+    post:
+      tags: [Horario]
+      operationId: leerFotoHorario
+      summary: Lee las clases de la foto de un horario (no guarda nada).
+      description: |
+        Un modelo de visión (`LLM_MODEL_IMAGEN`) lee la foto. Las clases que se devuelven ya cumplen las reglas de un alta
+        manual; las demás se cuentan en `descartadas`. Para guardarlas, el estudiante las revisa y las envía a `POST /api/horario/lote`.
+        Al modelo solo se le envía la imagen, nunca el id ni el nombre del estudiante.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [foto]
+              properties:
+                foto:
+                  type: string
+                  format: binary
+                  description: JPG, PNG o WebP, hasta 8 MB.
+      responses:
+        '200':
+          description: Clases leídas (lista vacía si la imagen no es un horario).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LecturaFotoHorarioDto'
+        '400':
+          description: Falta la foto, está vacía, supera 8 MB o no es JPG, PNG ni WebP (`codigo` = `VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '503':
+          description: El modelo de imagen no está configurado o no respondió (`codigo` = `LECTOR_NO_DISPONIBLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/horario/lote:
+    post:
+      tags: [Horario]
+      operationId: guardarLoteHorario
+      summary: Guarda varios bloques de una vez (los confirmados desde la foto), con origen FOTO.
+      description: |
+        Cada bloque se valida igual que en `POST /api/horario`. Los inválidos o que se solapan con el horario (o con otro del lote)
+        vuelven en `rechazados` con el motivo; el resto se guarda. Los puentes se recalculan una sola vez. Hasta 40 bloques.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bloques]
+              properties:
+                bloques:
+                  type: array
+                  maxItems: 40
+                  items:
+                    $ref: '#/components/schemas/GuardarHorarioRequest'
+      responses:
+        '200':
+          description: Bloques guardados y rechazados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoLoteDto'
+        '400':
+          description: Lote vacío o con más de 40 bloques (`codigo` = `VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
   /api/puentes:
     get:
       tags: [Puentes]
@@ -1209,3 +1291,34 @@ components:
               nombre: { type: string, example: Biblioteca Central }
               categoria: { type: string, example: Estudio }
               veces: { type: integer, format: int32, example: 15 }
+    ClaseLeidaDto:
+      type: object
+      properties:
+        materia: { type: string, example: Cálculo II }
+        diaSemana: { type: integer, format: int32, minimum: 1, maximum: 6, example: 2 }
+        horaInicio: { type: string, description: 'HH:mm', example: '07:30' }
+        horaFin: { type: string, description: 'HH:mm', example: '09:00' }
+        aula: { type: string, nullable: true, example: A-101 }
+    LecturaFotoHorarioDto:
+      type: object
+      properties:
+        clases:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaseLeidaDto'
+        descartadas: { type: integer, format: int32, example: 1 }
+    ResultadoLoteDto:
+      type: object
+      properties:
+        guardados:
+          type: array
+          items:
+            $ref: '#/components/schemas/HorarioDto'
+        rechazados:
+          type: array
+          items:
+            type: object
+            properties:
+              indice: { type: integer, format: int32, example: 1 }
+              materia: { type: string, example: Física II }
+              motivo: { type: string, example: 'Se solapa con «Cálculo II» (07:30-09:00).' }

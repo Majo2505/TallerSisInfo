@@ -41,6 +41,60 @@ public class HorarioService
         return ADto(h);
     }
 
+    /// <summary>
+    /// Guarda varios bloques de una vez (los confirmados desde la foto del horario, con origen <c>FOTO</c>).
+    /// Cada uno se valida igual que un alta manual; los que no pasan o chocan con el horario (o con otro del
+    /// mismo lote) se devuelven como rechazados y el resto se guarda. Los puentes se recalculan una sola vez.
+    /// </summary>
+    public async Task<ResultadoLoteDto> CrearLoteAsync(int usuarioId, GuardarLoteRequest req, CancellationToken ct = default)
+    {
+        if (req.Bloques is null || req.Bloques.Count == 0)
+            throw new ReglaNegocioException("VALIDACION", "Envía al menos un bloque.");
+        if (req.Bloques.Count > MaximoBloquesPorLote)
+            throw new ReglaNegocioException("VALIDACION", $"Se pueden guardar hasta {MaximoBloquesPorLote} bloques a la vez.");
+
+        var ocupados = (await _repo.ListarPorUsuarioAsync(usuarioId, ct))
+            .Select(b => (b.DiaSemana, b.HoraInicio, b.HoraFin, b.Materia)).ToList();
+        var nuevos = new List<Horario>();
+        var rechazados = new List<BloqueRechazadoDto>();
+        var ahora = DateTime.UtcNow;
+
+        for (var i = 0; i < req.Bloques.Count; i++)
+        {
+            var b = req.Bloques[i];
+            try
+            {
+                var (ini, fin) = ParsearYValidar(b);
+                var choque = ocupados.FirstOrDefault(o => o.DiaSemana == b.DiaSemana && ReglasHorario.Solapa(ini, fin, o.HoraInicio, o.HoraFin));
+                if (choque != default)
+                    throw new ReglaNegocioException("SOLAPAMIENTO",
+                        $"Se solapa con «{choque.Materia}» ({choque.HoraInicio:HH\\:mm}-{choque.HoraFin:HH\\:mm}).");
+
+                var materia = b.Materia.Trim();
+                nuevos.Add(new Horario
+                {
+                    UsuarioId = usuarioId, // siempre del JWT, nunca del body
+                    Materia = materia, DiaSemana = b.DiaSemana,
+                    HoraInicio = ini, HoraFin = fin, Aula = LimpiarAula(b.Aula),
+                    Origen = "FOTO", CreatedAt = ahora, UpdatedAt = ahora
+                });
+                ocupados.Add((b.DiaSemana, ini, fin, materia));
+            }
+            catch (ReglaNegocioException ex)
+            {
+                rechazados.Add(new BloqueRechazadoDto(i, b.Materia?.Trim() ?? "", ex.Message));
+            }
+        }
+
+        if (nuevos.Count > 0)
+        {
+            foreach (var h in nuevos) await _repo.AgregarAsync(h, ct);
+            await _repo.GuardarCambiosAsync(ct);
+            await _puentes.RecalcularAsync(usuarioId, ct);
+        }
+        return new ResultadoLoteDto(nuevos.Select(ADto).ToList(), rechazados);
+    }
+
     public async Task<HorarioDto> EditarAsync(int usuarioId, int id, GuardarHorarioRequest req, CancellationToken ct = default)
     {
         var h = await _repo.ObtenerAsync(id, usuarioId, ct)
@@ -67,6 +121,7 @@ public class HorarioService
     }
 
     // ---------- helpers ----------
+    public const int MaximoBloquesPorLote = 40;
     private static readonly string[] Formatos = { "HH:mm", "HH:mm:ss" };
 
     private static (TimeOnly, TimeOnly) ParsearYValidar(GuardarHorarioRequest req)
