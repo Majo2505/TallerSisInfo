@@ -472,7 +472,7 @@
 }
 
 /* HU21: mensaje de validación junto al campo. */
-.errorCampo {
+.campo .errorCampo {
   color: var(--error);
   font-size: 0.85rem;
   font-weight: 600;
