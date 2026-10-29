@@ -55,6 +55,7 @@ public static class DependencyInjection
     /// <summary>
     /// HU7: con LLM_API_KEY se usa el LLM de LLM_BASE_URL (y LLM_BASE_URL y LLM_MODEL pasan a ser obligatorios).
     /// Sin clave, el asistente simulado, para que quien no tenga clave pueda levantar la API igual.
+    /// HU2: la lectura de la foto del horario usa el mismo proveedor con LLM_MODEL_IMAGEN; sin clave no está disponible.
     /// </summary>
     private static void AddAsistenteIa(IServiceCollection services, IConfiguration configuration)
     {
@@ -62,6 +63,7 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             services.AddScoped<IAsistenteIa, AsistenteIaSimulado>();
+            services.AddScoped<ILectorHorarioFoto, LectorHorarioNoDisponible>();
             return;
         }
 
@@ -89,6 +91,21 @@ public static class DependencyInjection
             sp.GetRequiredService<IHttpClientFactory>().CreateClient(AsistenteLlm.NombreCliente),
             modelo,
             sp.GetRequiredService<ILogger<AsistenteLlm>>()));
+
+        // Foto del horario (HU2): mismo proveedor y clave; modelo de visión propio (LLM_MODEL_IMAGEN, si no, el de texto)
+        // y más tiempo de espera, porque leer una imagen tarda más que una recomendación.
+        var modeloImagen = configuration["LLM_MODEL_IMAGEN"];
+        if (string.IsNullOrWhiteSpace(modeloImagen)) modeloImagen = modelo;
+        services.AddHttpClient(LectorHorarioLlm.NombreCliente, http =>
+        {
+            http.BaseAddress = uri;
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(segundos, LectorHorarioLlm.SegundosMinimos));
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        });
+        services.AddScoped<ILectorHorarioFoto>(sp => new LectorHorarioLlm(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(LectorHorarioLlm.NombreCliente),
+            modeloImagen,
+            sp.GetRequiredService<ILogger<LectorHorarioLlm>>()));
     }
 
     private static string Required(IConfiguration configuration, string key)
