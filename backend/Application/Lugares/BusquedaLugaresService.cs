@@ -67,6 +67,7 @@ public class BusquedaLugaresService : IRecuperadorLugares
                 var traslado = ReglasBusquedaLugares.TiempoTrasladoIdaVueltaMin(distancia);
                 return new LugarCandidato(l.Id, l.Nombre, l.Categoria.Nombre, l.Descripcion, distancia, traslado, l.DuracionEstimadaMin);
             })
+            .Where(c => ReglasBusquedaLugares.TieneMetricasCompletas(c.Nombre, c.Categoria, c.DistanciaM, c.DuracionEstimadaMin))
             .Where(c => ReglasBusquedaLugares.EstaDentroDelRadio(c.DistanciaM, zona.RadioMaxM))
             .Where(c => ReglasBusquedaLugares.CabeEnElPuente(c.TiempoTrasladoMin, c.DuracionEstimadaMin, disponible))
             .OrderBy(c => c.DistanciaM)
