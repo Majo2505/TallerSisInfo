@@ -22,6 +22,7 @@ export default function TarjetaLugarViable({ lugar, minutosDisponibles }: Props)
       </div>
       <div className={estilos.cuerpo}>
         <span className={estilos.categoria}>{lugar.categoria}</span>
+        {!lugar.validado && <span className={estilos.porValidar}>Por validar</span>}
         <h3 className={estilos.nombre}>{lugar.nombre}</h3>
         {lugar.descripcion && <p className={estilos.descripcion}>{lugar.descripcion}</p>}
         <p className={estilos.meta}>

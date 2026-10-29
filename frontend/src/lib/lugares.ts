@@ -9,6 +9,11 @@ export type LugarViable = {
   distanciaM: number;
   tiempoTrasladoMin: number; // ida y vuelta
   duracionEstimadaMin: number;
+  validado: boolean; // false: el equipo todavía no revisó los datos del lugar
+  tipoLugar: string | null;
+  modalidad: string[];
+  nivelEnergia: string[];
+  actividadesSugeridas: string[];
 };
 
 export type ResultadoLugares = {

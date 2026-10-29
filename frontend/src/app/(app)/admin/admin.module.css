@@ -457,3 +457,16 @@
 @media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
   .fila:not(.encabezado):hover { background: #f4f8fc; }
 }
+
+.dato {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  vertical-align: middle;
+}
