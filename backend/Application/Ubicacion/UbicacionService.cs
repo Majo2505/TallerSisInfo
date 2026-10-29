@@ -92,7 +92,7 @@ public sealed class UbicacionService
             usuario.ConsentimientoUbicacion,
             zona is not null
                 ? new ZonaDto(zona.Id, zona.Nombre)
-                : usuario.ZonaActual is not null
+                : usuario.ZonaActual is { Activa: true }
                     ? new ZonaDto(usuario.ZonaActual.Id, usuario.ZonaActual.Nombre)
                     : null
         );

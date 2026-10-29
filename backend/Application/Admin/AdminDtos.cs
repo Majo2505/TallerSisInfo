@@ -19,7 +19,10 @@ public record LugarAdminDto(
     int DuracionEstimadaMin,
     string? HoraApertura,
     string? HoraCierre,
-    int VecesRecomendado
+    int VecesRecomendado,
+    bool Validado = true,
+    bool Recomendable = true,
+    string? TipoLugar = null
 );
 
 /// <summary>Nuevo estado de un lugar: <c>ACTIVO</c>, <c>EN_REVISION</c> o <c>INACTIVO</c>.</summary>

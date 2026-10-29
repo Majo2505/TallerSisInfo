@@ -34,13 +34,14 @@ public class AdminRepository : IAdminRepository
         var filas = await _db.Database.SqlQuery<FilaLugarAdmin>($"""
                 SELECT l.id AS Id, l.nombre AS Nombre, c.nombre AS Categoria, l.estado AS Estado,
                        l.duracion_estimada_min AS DuracionEstimadaMin, l.hora_apertura AS HoraApertura,
-                       l.hora_cierre AS HoraCierre,
+                       l.hora_cierre AS HoraCierre, l.validado AS Validado, l.recomendable AS Recomendable,
+                       l.tipo_lugar AS TipoLugar,
                        (SELECT COUNT(*) FROM recomendacion r WHERE r.lugar_id = l.id) AS VecesRecomendado
                 FROM lugar l JOIN categoria c ON c.id = l.categoria_id
                 ORDER BY FIELD(l.estado, 'EN_REVISION', 'ACTIVO', 'INACTIVO'), l.nombre
                 """).ToListAsync(ct);
         return filas.Select(f => new LugarAdminDto(f.Id, f.Nombre, f.Categoria, f.Estado, f.DuracionEstimadaMin,
-            Hora(f.HoraApertura), Hora(f.HoraCierre), (int)f.VecesRecomendado)).ToList();
+            Hora(f.HoraApertura), Hora(f.HoraCierre), (int)f.VecesRecomendado, f.Validado, f.Recomendable, f.TipoLugar)).ToList();
     }
 
     public async Task<string?> CambiarEstadoLugarAsync(int lugarId, string estado, int adminId, CancellationToken ct = default)
@@ -146,6 +147,9 @@ public class AdminRepository : IAdminRepository
         public int DuracionEstimadaMin { get; set; }
         public TimeSpan? HoraApertura { get; set; }
         public TimeSpan? HoraCierre { get; set; }
+        public bool Validado { get; set; }
+        public bool Recomendable { get; set; }
+        public string? TipoLugar { get; set; }
         public long VecesRecomendado { get; set; }
     }
 
