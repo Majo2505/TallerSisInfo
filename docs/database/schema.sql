@@ -9,6 +9,8 @@ CREATE TABLE usuario (
   correo                    VARCHAR(120) NOT NULL,
   password_hash             VARCHAR(255) NULL,            -- NULL solo si se adopta SSO (D14)
   nombre                    VARCHAR(100) NOT NULL,
+  carrera                   VARCHAR(80)  NULL,             -- HU21: editable desde el perfil (opcional)
+  semestre                  TINYINT      NULL,             -- HU21: 1 a 10 (opcional)
   rol                       VARCHAR(15)  NOT NULL DEFAULT 'ESTUDIANTE',
   correo_verificado         BOOLEAN      NOT NULL DEFAULT FALSE,
   consentimiento_ubicacion  BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -22,6 +24,7 @@ CREATE TABLE usuario (
   PRIMARY KEY (id),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
   CONSTRAINT ck_usuario_rol    CHECK (rol IN ('ESTUDIANTE','ADMIN')),
+  CONSTRAINT ck_usuario_semestre CHECK (semestre IS NULL OR semestre BETWEEN 1 AND 10),
   CONSTRAINT ck_usuario_consentimiento CHECK (
     consentimiento_ubicacion = FALSE OR (fecha_consentimiento IS NOT NULL AND zona_actual_id IS NOT NULL)
   ),

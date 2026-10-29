@@ -35,14 +35,3 @@ export const LUGARES: Lugar[] = [
   { id: 5, nombre: "Sala de Estudio Grupal", categoria: "Estudio", distanciaM: 180, minutos: 3, rating: 4.7, abreHasta: "21:00", estados: ["enfocado", "social"] },
   { id: 6, nombre: "Kiosco del Patio", categoria: "Comida", distanciaM: 90, minutos: 2, rating: 4.2, abreHasta: "18:00", estados: ["energia", "social"] },
 ];
-
-export const CARRERAS = [
-  "Ingeniería de Sistemas",
-  "Ingeniería Comercial",
-  "Derecho",
-  "Psicología",
-  "Arquitectura",
-  "Administración de Empresas",
-];
-
-export const SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

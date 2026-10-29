@@ -6,6 +6,8 @@ public class Usuario
     public string Email { get; set; } = string.Empty;
     public string? PasswordHash { get; set; }
     public string Nombre { get; set; } = null!;
+    public string? Carrera { get; set; }                       // HU21: opcional, editable desde el perfil
+    public byte? Semestre { get; set; }                        // HU21: 1 a 10, opcional
     public string Rol { get; set; } = null!;
     public bool CorreoVerificado { get; set; }
     public bool ConsentimientoUbicacion { get; set; }

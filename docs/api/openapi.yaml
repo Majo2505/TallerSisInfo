@@ -44,6 +44,8 @@ tags:
     description: Recomendación inteligente con asistente RAG de contexto estricto (HU7). Requiere JWT. Solo recomienda lugares reales del catálogo.
   - name: Administración
     description: Panel de administración del campus. Requiere JWT con rol `ADMIN` (claim `role`); con otro rol responde 403.
+  - name: Perfil
+    description: Gestión del perfil (HU21). Requiere JWT; solo opera sobre el perfil del usuario del token.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -917,6 +919,59 @@ paths:
               example:
                 codigo: ASISTENTE_NO_DISPONIBLE
                 mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+  /api/perfil:
+    get:
+      tags: [Perfil]
+      operationId: obtenerPerfil
+      summary: Devuelve el perfil del usuario autenticado.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Nombre, correo institucional, rol, carrera y semestre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La cuenta no existe o está dada de baja (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+    put:
+      tags: [Perfil]
+      operationId: actualizarPerfil
+      summary: Actualiza nombre, carrera y semestre.
+      description: |
+        Nombre obligatorio (hasta 100 caracteres); carrera (hasta 80) y semestre (1 a 10) opcionales.
+        Si se envía `correo` o `rol` distintos a los actuales, se rechaza con `NO_EDITABLE`.
+        El cambio queda en `historial_cambio` con los valores de antes y de después.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilRequest'
+      responses:
+        '200':
+          description: Perfil actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilDto'
+        '400':
+          description: Datos inválidos (`VALIDACION`) o intento de cambiar correo o rol (`NO_EDITABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
   /health:
     get:
       tags: [Health]
@@ -1622,3 +1677,20 @@ components:
               indice: { type: integer, format: int32, example: 1 }
               materia: { type: string, example: Física II }
               motivo: { type: string, example: 'Ya registraste «Cálculo II» a esa hora ese día.' }
+    PerfilDto:
+      type: object
+      properties:
+        nombre: { type: string, example: Ana Pérez }
+        correo: { type: string, example: ana.perez@ucb.edu.bo }
+        rol: { type: string, enum: [ESTUDIANTE, ADMIN] }
+        carrera: { type: string, nullable: true, example: Ingeniería de Sistemas }
+        semestre: { type: integer, format: int32, nullable: true, minimum: 1, maximum: 10, example: 5 }
+    ActualizarPerfilRequest:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: { type: string, maxLength: 100, example: Ana Pérez }
+        carrera: { type: string, nullable: true, maxLength: 80, example: Ingeniería de Sistemas }
+        semestre: { type: integer, format: int32, nullable: true, minimum: 1, maximum: 10, example: 5 }
+        correo: { type: string, nullable: true, description: No editable; si llega distinto al actual responde NO_EDITABLE. }
+        rol: { type: string, nullable: true, description: No editable; si llega distinto al actual responde NO_EDITABLE. }

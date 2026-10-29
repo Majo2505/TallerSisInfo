@@ -87,7 +87,7 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 Necesitas una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-horario-asistencia.sql` para las clases que coinciden y `004-sede-cochabamba.sql` para la sede activa), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
+> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden y `005-sede-cochabamba.sql` para la sede activa), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 

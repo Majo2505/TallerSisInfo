@@ -3,7 +3,7 @@
 -- SOLO para desarrollo local. NUNCA ejecutar en producción.
 --
 -- Requisitos: haber ejecutado seed-dev.sql (usa al usuario de prueba como created_by / updated_by) y la
--- migración 004-sede-cochabamba.sql (o haber creado la base con el schema.sql actual).
+-- migración 005-sede-cochabamba.sql (o haber creado la base con el schema.sql actual).
 -- Se ejecuta con la base de datos ya seleccionada (sin USE). Es idempotente: se puede correr varias veces.
 --
 -- Qué hace:
