@@ -21,6 +21,9 @@ export type LugarAdmin = {
   horaApertura: string | null;
   horaCierre: string | null;
   vecesRecomendado: number;
+  validado: boolean; // false: datos del relevamiento que el equipo todavía no revisó
+  recomendable: boolean; // false: punto de referencia, nunca se recomienda
+  tipoLugar: string | null;
 };
 
 export type ReporteAdmin = {

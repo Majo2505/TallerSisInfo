@@ -303,7 +303,7 @@ export default function Campus() {
       </Pieza>
 
       <Pieza>
-        <p className={estilos.nota}>Solo mostramos lugares verificados y aprobados por el administrador.</p>
+        <p className={estilos.nota}>Solo mostramos lugares aprobados por el administrador. Los que dicen «Por validar» todavía los está revisando el equipo.</p>
       </Pieza>
     </Entrada>
   );

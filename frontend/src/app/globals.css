@@ -219,3 +219,15 @@ main {
 .cifras {
   font-variant-numeric: tabular-nums;
 }
+
+/* Clases que coinciden y clases a las que no se asiste. */
+.hz-bloque-choque { border: 1.5px dashed var(--ucb-amarillo-oscuro); box-shadow: inset 0 0 0 1px var(--ucb-amarillo); }
+.hz-bloque-ausente { opacity: .55; border-style: dotted; }
+.hz-etiqueta-choque, .hz-etiqueta-ausente { align-self: flex-start; padding: 1px 7px; border-radius: 999px; font-size: .68rem; font-weight: 800; opacity: 1 !important; }
+.hz-etiqueta-choque { background: var(--ucb-amarillo); color: var(--ucb-marino); }
+.hz-etiqueta-ausente { background: var(--fondo-suave); color: var(--texto-suave); }
+.hz-toast-aviso { background: var(--ucb-amarillo-suave); color: var(--ucb-marino); border: 1.5px solid var(--ucb-amarillo); border-radius: 18px; text-align: left; }
+.hz-check { display: flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 700; color: var(--ucb-marino); cursor: pointer; }
+.hz-check input { flex-shrink: 0; width: 22px; height: 22px; accent-color: var(--ucb-marino); }
+.hz-aviso { display: grid; gap: 4px; margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: var(--ucb-amarillo-suave); border: 1px solid var(--ucb-amarillo); color: var(--ucb-amarillo-oscuro); font-size: .92rem; font-weight: 600; }
+.hz-aviso p { margin: 0; }

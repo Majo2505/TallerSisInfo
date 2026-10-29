@@ -38,6 +38,7 @@ CREATE TABLE zona (
   latitud     DECIMAL(9,6)  NOT NULL,
   longitud    DECIMAL(9,6)  NOT NULL,
   radio_max_m INT           NOT NULL,                     -- RN06
+  activa      BOOLEAN       NOT NULL DEFAULT TRUE,        -- sede en uso: las inactivas se conservan pero no se ofrecen
   created_at  DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at  DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   created_by  INT           NOT NULL,
@@ -79,14 +80,25 @@ CREATE TABLE lugar (
   hora_apertura          TIME          NULL,              -- [CONFIRMAR]
   hora_cierre            TIME          NULL,              -- [CONFIRMAR]
   estado                 VARCHAR(15)   NOT NULL DEFAULT 'ACTIVO',
+  tipo_lugar             VARCHAR(30)   NULL,              -- relevamiento: comida, aire_libre, campus, referencia…
+  modalidad              VARCHAR(40)   NULL,              -- valores separados por coma: solitario,grupal
+  nivel_energia          VARCHAR(40)   NULL,              -- valores separados por coma: bajo,medio,alto
+  duracion_min           SMALLINT      NULL,
+  duracion_max           SMALLINT      NULL,
+  actividades_sugeridas  TEXT          NULL,              -- lista JSON de textos
+  min_a_pie_desde_bloque_a SMALLINT    NULL,
+  recomendable           BOOLEAN       NOT NULL DEFAULT TRUE,   -- FALSE: punto de referencia, nunca se recomienda
+  validado               BOOLEAN       NOT NULL DEFAULT TRUE,   -- FALSE: el equipo todavía no revisó los datos
   created_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   created_by             INT           NOT NULL,
   updated_by             INT           NOT NULL,
   PRIMARY KEY (id),
   KEY ix_lugar_estado_categoria (estado, categoria_id),
+  KEY ix_lugar_recomendable (recomendable, estado),
   CONSTRAINT ck_lugar_estado   CHECK (estado IN ('ACTIVO','EN_REVISION','INACTIVO')),
   CONSTRAINT ck_lugar_duracion CHECK (duracion_estimada_min > 0),
+  CONSTRAINT ck_lugar_rango_duracion CHECK (duracion_min IS NULL OR duracion_max IS NULL OR duracion_min <= duracion_max),
   CONSTRAINT ck_lugar_lat      CHECK (latitud  BETWEEN -90  AND 90),
   CONSTRAINT ck_lugar_lng      CHECK (longitud BETWEEN -180 AND 180),
   CONSTRAINT fk_lugar_categoria  FOREIGN KEY (categoria_id) REFERENCES categoria (id),
@@ -104,10 +116,12 @@ CREATE TABLE horario (
   hora_fin    TIME         NOT NULL,
   aula        VARCHAR(30)  NULL,
   origen      VARCHAR(10)  NOT NULL,                      -- MANUAL | FOTO (RF02)
+  asiste      BOOLEAN      NOT NULL DEFAULT TRUE,          -- FALSE: el estudiante no asiste a este bloque (no cuenta como ocupado)
+  autorizacion_choque BOOLEAN NOT NULL DEFAULT FALSE,        -- el estudiante confirmó que su carrera autoriza el choque
   created_at  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
-  CONSTRAINT uq_horario_slot UNIQUE (usuario_id, dia_semana, hora_inicio),
+  CONSTRAINT uq_horario_bloque UNIQUE (usuario_id, dia_semana, hora_inicio, materia),
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),

@@ -183,12 +183,19 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
 | `horaInicio` | hora | Obligatoria | ✅ Definido (schema) |
 | `horaFin` | hora | Obligatoria, posterior a `horaInicio` | ✅ Definido (`ck_horario_horas`) |
 | `aula` | string o `null` | Opcional, hasta 30 caracteres | ✅ Definido (schema) |
-| `origen` | string | Solo en respuestas. En el sprint 1 es siempre `MANUAL`; valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores y `MANUAL` en sprint 1); 🟡 Propuesta (que el cliente no lo envíe) |
+| `origen` | string | Solo en respuestas. `MANUAL` (alta a mano) o `FOTO` (confirmado desde la foto del horario); valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores); 🟡 Propuesta (que el cliente no lo envíe) |
+| `asiste` | booleano | Opcional al enviar: al crear, `true` si no se envía; al editar, se conserva el valor actual. En respuestas siempre viene. `false` = el estudiante no asiste a ese bloque: no cuenta como tiempo ocupado y no choca con otros | ✅ Definido |
+| `autorizacionCarrera` | booleano | Opcional al enviar (se conserva si no se envía). El estudiante confirma que su carrera autoriza que este bloque coincida con otro. Solo informativo: no cambia ningún cálculo | ✅ Definido |
+| `coincide` | lista | Solo en respuestas. Los otros bloques del mismo día que se cruzan con éste, asista o no el estudiante: `{ id, materia, horaInicio, horaFin, asiste }` | ✅ Definido |
+| `advertencias` | lista de textos | Solo en respuestas. Un aviso por cada bloque con el que choca de verdad (el estudiante asiste a los dos), por ejemplo `Coincide con «MAT-241» (14:15-15:45).` No impide guardar | ✅ Definido |
 
-### Regla de solapamiento
+### Regla de choques (clases que coinciden)
 
-- ✅ **Definido:** debe validarse que no haya solapamientos (#10) y la BD impide dos bloques del mismo usuario, día y hora de inicio (`uq_horario_slot`).
-- 🟡 **Propuesta, a confirmar por Maite:** dos bloques del mismo usuario y del mismo día se solapan si `inicioA < finB` y `inicioB < finA`. Dos bloques **contiguos** (fin de uno = inicio del otro) **no** se consideran solapados. En `PUT` el bloque que se edita no se compara consigo mismo.
+- ✅ **Definido:** el horario oficial puede traer dos materias en la misma franja (por ejemplo MAT-133 y MAT-241, lunes a jueves 14:15-15:45). **El sistema no bloquea los choques**: guarda los bloques y devuelve una advertencia.
+- ✅ **Definido:** dos bloques del mismo día chocan si se cruzan (`inicioA < finB` y `inicioB < finA`) **y el estudiante asiste a los dos** (`asiste = true`). Dos bloques contiguos (fin de uno = inicio del otro) no se cruzan. Un bloque con `asiste = false` nunca choca.
+- ✅ **Definido:** lo único que se rechaza es repetir la misma materia el mismo día y a la misma hora de inicio (`409` con `codigo` = `DUPLICADO`; la BD lo respalda con `uq_horario_bloque`).
+- ✅ **Definido:** el tiempo ocupado de un día es la **unión** de los intervalos de los bloques con `asiste = true`. Dos clases iguales, una dentro de otra o encadenadas no generan huecos negativos ni repetidos.
+- ✅ **Definido:** en el flujo de la foto, el lector devuelve todos los bloques, también los que coinciden. Tras importar, la app pregunta «Estas clases coinciden, ¿a cuáles asistes?» y envía la respuesta a `PATCH /api/horario/asistencia`.
 
 ### `GET /api/horarios`
 
@@ -205,7 +212,11 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
     "horaInicio": "08:00:00",
     "horaFin": "09:30:00",
     "aula": "A-101",
-    "origen": "MANUAL"
+    "origen": "MANUAL",
+    "asiste": true,
+    "autorizacionCarrera": false,
+    "coincide": [],
+    "advertencias": []
   }
 ]
 ```
@@ -238,11 +249,17 @@ Alta de un bloque (#10).
   "horaInicio": "08:00:00",
   "horaFin": "09:30:00",
   "aula": "A-101",
-  "origen": "MANUAL"
+  "origen": "MANUAL",
+  "asiste": true,
+  "autorizacionCarrera": false,
+  "coincide": [],
+  "advertencias": []
 }
 ```
 
-**Efecto secundario:** los puentes del usuario se recalculan automáticamente (ver sección 4).
+El `POST` acepta además `asiste` y `autorizacionCarrera` (opcionales). Si el bloque coincide con otro al que el estudiante asiste, la respuesta es igual de `201` y trae el aviso en `advertencias` y el otro bloque en `coincide`.
+
+**Efecto secundario:** los puentes del usuario se recalculan automáticamente con los bloques a los que asiste (ver sección 4).
 
 **Errores**
 
@@ -250,7 +267,7 @@ Alta de un bloque (#10).
 |---|---|---|
 | 400 | Campo obligatorio vacío, `diaSemana` fuera de 1–6, `horaFin` no posterior a `horaInicio`, longitud excedida | ✅ Definido (reglas del schema); código 🟡 Propuesta |
 | 401 | Sin token o token inválido | 🟡 Propuesta |
-| 409 | Solapamiento con otro bloque del usuario, o bloque con el mismo día y hora de inicio (`uq_horario_slot`) | ✅ Definido (la validación); código 409 🟡 Propuesta |
+| 409 | La misma materia ya existe ese día a esa hora de inicio (`codigo` = `DUPLICADO`, `uq_horario_bloque`). Un choque con otra materia **no** es error | ✅ Definido |
 
 ### `PUT /api/horarios/{id}`
 
@@ -269,9 +286,27 @@ Edición de un bloque (#10). 🟡 **Propuesta:** `PUT` con reemplazo completo.
 | 400 | Igual que `POST` | ✅ Definido (reglas); código 🟡 Propuesta |
 | 401 | Sin token o token inválido | 🟡 Propuesta |
 | 404 | El bloque no existe o no pertenece al usuario (no se distinguen) | 🟡 Propuesta |
-| 409 | Solapamiento o bloque duplicado, igual que `POST` | ✅ Definido (la validación); código 🟡 Propuesta |
+| 409 | Bloque duplicado, igual que `POST` | ✅ Definido |
 
 🟡 **Propuesta, a confirmar por Ariana y Maite:** quién fija `updated_at` al editar (el esquema no tiene `ON UPDATE`): el backend, con la hora UTC actual.
+
+### `PATCH /api/horario/{id}/asistencia`
+
+Marca si el estudiante asiste a un bloque. Request: `{ "asiste": false, "autorizacionCarrera": true }` (`autorizacionCarrera` es opcional y, si no se envía, se conserva).
+
+**Respuesta 200:** el bloque actualizado, con `coincide` y `advertencias` al día. **Efecto secundario:** recálculo de puentes con los bloques a los que asiste.
+
+**Errores:** `401` sin token; `404` (`NO_ENCONTRADO`) si el bloque no existe o no es del usuario.
+
+### `PATCH /api/horario/asistencia`
+
+Cambia la asistencia de varios bloques de una vez (hasta 40). Request:
+
+```json
+{ "bloques": [{ "id": 12, "asiste": true }, { "id": 13, "asiste": false, "autorizacionCarrera": true }] }
+```
+
+**Respuesta 200:** la lista de bloques actualizados. Si alguno no existe o es de otro usuario no se cambia ninguno (`404`); una lista vacía o de más de 40 da `400 VALIDACION`. Los puentes se recalculan una sola vez.
 
 ### `DELETE /api/horarios/{id}`
 
@@ -286,13 +321,15 @@ Eliminación de un bloque (#10).
 | Método | Ruta | Qué hace |
 |---|---|---|
 | `POST` | `/api/horario/foto` | `multipart/form-data` con `foto` (JPG, PNG o WebP, hasta 8 MB). Un modelo de visión (`LLM_MODEL_IMAGEN`) lee las clases y responde `{ clases, descartadas }` sin guardar nada. `400 VALIDACION` o `503 LECTOR_NO_DISPONIBLE` |
-| `POST` | `/api/horario/lote` | `{ bloques: [...] }` (hasta 40, mismo formato que `POST /api/horario`). Guarda los válidos con `origen = FOTO` y responde `{ guardados, rechazados }`, con el motivo de cada rechazo |
+| `POST` | `/api/horario/lote` | `{ bloques: [...] }` (hasta 40, mismo formato que `POST /api/horario`). Guarda los válidos con `origen = FOTO` y responde `{ guardados, rechazados }`. Los que coinciden con otra clase **se guardan** y traen `coincide` y `advertencias`; solo se rechazan los inválidos y los repetidos (`DUPLICADO`), con el motivo de cada rechazo |
+| `PATCH` | `/api/horario/asistencia` | Elige a cuáles de las clases que coinciden asiste el estudiante (ver arriba) |
 
 ## 4. Puentes (HU3 — responsable: Majo)
 
 ### Regla de detección
 
 - ✅ **Definido** (#11): el sistema calcula automáticamente los bloques libres entre las clases del estudiante; si duran **45 minutos o más** (incluido exactamente 45) son un "puente"; si duran menos, no son un puente ni generan ningún evento.
+- ✅ **Definido:** solo cuentan los bloques con `asiste = true`, y el tiempo ocupado de cada día es la unión de sus intervalos (ver «Regla de choques»).
 - ✅ **Definido** (#11, criterio 4): al guardar un horario modificado o recargado, los puentes se recalculan solos, sin que el estudiante lo pida. Por eso **no existe un endpoint de recálculo**: ocurre dentro de `POST`, `PUT` y `DELETE` de `/api/horarios`.
 - 🟡 **Propuesta, a confirmar por Majo:**
   - Solo cuentan huecos entre clases del mismo día; el tramo antes de la primera clase y después de la última no es puente (#11 dice "entre sus clases").
@@ -346,7 +383,7 @@ Los errores usan el mismo formato que horarios y recomendaciones: `{ "codigo": "
 
 ### `GET /api/ubicacion/zonas`
 
-Lista de zonas disponibles para selección manual. Respuesta `200`:
+Lista de las sedes **activas** disponibles para selección manual (las inactivas se conservan en la BD pero no se ofrecen). Respuesta `200`:
 
 ```json
 [{ "id": 1, "nombre": "Campus central" }]
@@ -391,7 +428,7 @@ Request:
 { "zonaId": 1 }
 ```
 
-Respuesta `200`: el mismo formato de `GET /api/ubicacion`. Un id inexistente da `404`.
+Respuesta `200`: el mismo formato de `GET /api/ubicacion`. Un id inexistente o de una sede inactiva da `404`.
 
 ### `DELETE /api/ubicacion`
 
@@ -419,9 +456,11 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
 ### Regla de búsqueda
 
 - ✅ **Definido** (#14): se muestran solo lugares viables para un puente. Un lugar es viable si cumple las tres condiciones:
-  1. Está en estado `ACTIVO` (verificado y aprobado por el administrador). `EN_REVISION` e `INACTIVO` nunca se muestran.
+  1. Está en estado `ACTIVO` (aprobado por el administrador) y es `recomendable`. `EN_REVISION` e `INACTIVO` nunca se muestran. Los puntos de referencia (campus, parqueo, bloques) tienen `recomendable = false`: están en el catálogo pero nunca se recomiendan.
   2. Queda dentro del radio (`radio_max_m`) de la zona (campus) del estudiante, que se define en HU5. La zona es el área verificada.
   3. El traslado de ida y vuelta más la actividad no supera la duración del puente. Si suman exactamente lo mismo, sí cabe.
+- ✅ **Definido:** la sede activa se elige con el campo `zona.activa`. Solo las sedes activas se ofrecen en `GET /api/ubicacion/zonas` y reciben búsquedas: si la zona del estudiante quedó inactiva, la búsqueda responde `SIN_ZONA` hasta que elija otra. Hoy la sede activa es **UCB Cochabamba** y La Paz queda guardada pero inactiva (`docs/database/seed-dev-cochabamba.sql`).
+- ✅ **Definido:** `validado = false` significa que el equipo todavía no revisó los datos del lugar. Se sigue mostrando, con la etiqueta «Por validar».
 - 🟡 **Propuesta:** el traslado se calcula con la distancia en línea recta desde el centro de la zona y una velocidad de 80 m por minuto (unos 4,8 km/h), redondeando hacia arriba. La actividad dura `duracion_estimada_min` (RN03).
 - 🟡 **Propuesta:** orden por distancia, del más cercano al más lejano. Máximo 50 lugares.
 - 🔴 **Pendiente:** si el catálogo debe considerar `hora_apertura` y `hora_cierre` (hoy están como [CONFIRMAR] en el esquema y no se usan).
@@ -447,11 +486,18 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
       "descripcion": "Salas silenciosas y computadoras para estudiar.",
       "distanciaM": 55,
       "tiempoTrasladoMin": 2,
-      "duracionEstimadaMin": 45
+      "duracionEstimadaMin": 45,
+      "validado": false,
+      "tipoLugar": "campus",
+      "modalidad": ["solitario", "grupal"],
+      "nivelEnergia": ["bajo"],
+      "actividadesSugeridas": ["estudiar", "leer", "adelantar tareas"]
     }
   ]
 }
 ```
+
+`validado`, `tipoLugar`, `modalidad`, `nivelEnergia` y `actividadesSugeridas` vienen del relevamiento de lugares; las listas vienen vacías y `tipoLugar` en `null` si el lugar no los tiene.
 
 | `estado` | Cuándo | `mensaje` |
 |---|---|---|

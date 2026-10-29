@@ -1,0 +1,283 @@
+[
+  {
+    "id": 1,
+    "nombre": "Universidad Católica Boliviana - Cochabamba",
+    "lat": -17.3716723,
+    "lng": -66.1439156,
+    "tipo_lugar": "referencia",
+    "categoria": "campus",
+    "modalidad": [],
+    "nivel_energia": [],
+    "duracion_min": 0,
+    "duracion_max": 0,
+    "actividades_sugeridas": [],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": false,
+    "validado": false
+  },
+  {
+    "id": 2,
+    "nombre": "Parqueo UCB",
+    "lat": -17.372287,
+    "lng": -66.1440825,
+    "tipo_lugar": "referencia",
+    "categoria": "campus",
+    "modalidad": [],
+    "nivel_energia": [],
+    "duracion_min": 0,
+    "duracion_max": 0,
+    "actividades_sugeridas": [],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": false,
+    "validado": false
+  },
+  {
+    "id": 3,
+    "nombre": "Bloque A",
+    "lat": -17.371932,
+    "lng": -66.1436642,
+    "tipo_lugar": "referencia",
+    "categoria": "campus",
+    "modalidad": [],
+    "nivel_energia": [],
+    "duracion_min": 0,
+    "duracion_max": 0,
+    "actividades_sugeridas": [],
+    "min_a_pie_desde_bloque_a": 0,
+    "recomendable": false,
+    "validado": false
+  },
+  {
+    "id": 4,
+    "nombre": "Bloque B",
+    "lat": -17.3722402,
+    "lng": -66.1437107,
+    "tipo_lugar": "referencia",
+    "categoria": "campus",
+    "modalidad": [],
+    "nivel_energia": [],
+    "duracion_min": 0,
+    "duracion_max": 0,
+    "actividades_sugeridas": [],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": false,
+    "validado": false
+  },
+  {
+    "id": 5,
+    "nombre": "Bloque C",
+    "lat": -17.3726019,
+    "lng": -66.143153,
+    "tipo_lugar": "referencia",
+    "categoria": "campus",
+    "modalidad": [],
+    "nivel_energia": [],
+    "duracion_min": 0,
+    "duracion_max": 0,
+    "actividades_sugeridas": [],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": false,
+    "validado": false
+  },
+  {
+    "id": 6,
+    "nombre": "Biblioteca Tupuraya - UCB Cochabamba",
+    "lat": -17.3718507,
+    "lng": -66.1440542,
+    "tipo_lugar": "campus",
+    "categoria": "estudio",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "bajo"
+    ],
+    "duracion_min": 20,
+    "duracion_max": 120,
+    "actividades_sugeridas": [
+      "estudiar",
+      "leer",
+      "adelantar tareas"
+    ],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 7,
+    "nombre": "Capilla San Nicolás de Tolentino",
+    "lat": -17.3732214,
+    "lng": -66.1431534,
+    "tipo_lugar": "campus",
+    "categoria": "descanso",
+    "modalidad": [
+      "solitario"
+    ],
+    "nivel_energia": [
+      "bajo"
+    ],
+    "duracion_min": 10,
+    "duracion_max": 30,
+    "actividades_sugeridas": [
+      "silencio",
+      "oración",
+      "pausa tranquila"
+    ],
+    "min_a_pie_desde_bloque_a": 2,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 8,
+    "nombre": "Parque Jorge Trigo Andia",
+    "lat": -17.3710001,
+    "lng": -66.1443619,
+    "tipo_lugar": "aire_libre",
+    "categoria": "deporte_aire_libre",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "medio",
+      "alto"
+    ],
+    "duracion_min": 15,
+    "duracion_max": 60,
+    "actividades_sugeridas": [
+      "caminar",
+      "trotar",
+      "estirar",
+      "tomar aire"
+    ],
+    "min_a_pie_desde_bloque_a": 2,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 9,
+    "nombre": "Cairo Restaurante",
+    "lat": -17.371926,
+    "lng": -66.1428995,
+    "tipo_lugar": "comida",
+    "categoria": "comer",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "bajo",
+      "medio"
+    ],
+    "duracion_min": 30,
+    "duracion_max": 60,
+    "actividades_sugeridas": [
+      "almorzar",
+      "comer con amigos"
+    ],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 10,
+    "nombre": "911 Fast Food",
+    "lat": -17.371234,
+    "lng": -66.1438208,
+    "tipo_lugar": "comida",
+    "categoria": "comer",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "bajo",
+      "medio"
+    ],
+    "duracion_min": 20,
+    "duracion_max": 45,
+    "actividades_sugeridas": [
+      "comida rápida",
+      "snack"
+    ],
+    "min_a_pie_desde_bloque_a": 1,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 11,
+    "nombre": "Pizzeria Marechiaro",
+    "lat": -17.3730116,
+    "lng": -66.1430062,
+    "tipo_lugar": "comida",
+    "categoria": "comer",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "bajo",
+      "medio"
+    ],
+    "duracion_min": 40,
+    "duracion_max": 75,
+    "actividades_sugeridas": [
+      "pizza",
+      "comer con amigos"
+    ],
+    "min_a_pie_desde_bloque_a": 2,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 12,
+    "nombre": "HAPPY TEA",
+    "lat": -17.3711076,
+    "lng": -66.1447978,
+    "tipo_lugar": "comida",
+    "categoria": "cafe_te",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "bajo"
+    ],
+    "duracion_min": 20,
+    "duracion_max": 45,
+    "actividades_sugeridas": [
+      "té",
+      "bebida",
+      "conversar"
+    ],
+    "min_a_pie_desde_bloque_a": 2,
+    "recomendable": true,
+    "validado": false
+  },
+  {
+    "id": 13,
+    "nombre": "Latte",
+    "lat": -17.3737746,
+    "lng": -66.1453003,
+    "tipo_lugar": "comida",
+    "categoria": "cafe_te",
+    "modalidad": [
+      "solitario",
+      "grupal"
+    ],
+    "nivel_energia": [
+      "bajo"
+    ],
+    "duracion_min": 20,
+    "duracion_max": 45,
+    "actividades_sugeridas": [
+      "café",
+      "conversar",
+      "trabajar con laptop"
+    ],
+    "min_a_pie_desde_bloque_a": 4,
+    "recomendable": true,
+    "validado": false
+  }
+]

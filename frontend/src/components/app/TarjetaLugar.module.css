@@ -132,3 +132,14 @@
   font-size: 0.82rem;
   font-weight: 800;
 }
+
+.porValidar {
+  justify-self: start;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo-suave);
+  border: 1px solid var(--ucb-amarillo);
+  color: var(--ucb-amarillo-oscuro);
+  font-size: 0.74rem;
+  font-weight: 800;
+}

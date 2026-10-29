@@ -65,7 +65,9 @@ public class BusquedaLugaresService : IRecuperadorLugares
             {
                 var distancia = (int)Math.Round(ReglasBusquedaLugares.DistanciaMetros(zona.Latitud, zona.Longitud, l.Latitud, l.Longitud));
                 var traslado = ReglasBusquedaLugares.TiempoTrasladoIdaVueltaMin(distancia);
-                return new LugarCandidato(l.Id, l.Nombre, l.Categoria.Nombre, l.Descripcion, distancia, traslado, l.DuracionEstimadaMin);
+                return new LugarCandidato(l.Id, l.Nombre, l.Categoria.Nombre, l.Descripcion, distancia, traslado, l.DuracionEstimadaMin,
+                    l.Validado, l.TipoLugar, ListasLugar.SepararPorComas(l.Modalidad), ListasLugar.SepararPorComas(l.NivelEnergia),
+                    ListasLugar.LeerJson(l.ActividadesSugeridas));
             })
             .Where(c => ReglasBusquedaLugares.EstaDentroDelRadio(c.DistanciaM, zona.RadioMaxM))
             .Where(c => ReglasBusquedaLugares.CabeEnElPuente(c.TiempoTrasladoMin, c.DuracionEstimadaMin, disponible))
@@ -80,5 +82,6 @@ public class BusquedaLugaresService : IRecuperadorLugares
     private static int MinutosDelPuente(Puente puente) => (int)(puente.HoraFin - puente.HoraInicio).TotalMinutes;
 
     private static LugarViableDto ADto(LugarCandidato c) =>
-        new(c.LugarId, c.Nombre, c.Categoria, c.Descripcion, c.DistanciaM, c.TiempoTrasladoMin, c.DuracionEstimadaMin);
+        new(c.LugarId, c.Nombre, c.Categoria, c.Descripcion, c.DistanciaM, c.TiempoTrasladoMin, c.DuracionEstimadaMin,
+            c.Validado, c.TipoLugar, c.Modalidad ?? [], c.NivelEnergia ?? [], c.ActividadesSugeridas ?? []);
 }

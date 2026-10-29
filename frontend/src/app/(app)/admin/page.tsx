@@ -203,6 +203,8 @@ export default function PanelAdmin() {
                     >
                       <strong role="cell" className={estilos.nombreLugar}>
                         {l.nombre}
+                        {!l.validado && <span className={estilos.dato}>Por validar</span>}
+                        {!l.recomendable && <span className={estilos.dato}>Solo referencia</span>}
                       </strong>
                       <span role="cell" data-etiqueta="Categoría">
                         {l.categoria}
