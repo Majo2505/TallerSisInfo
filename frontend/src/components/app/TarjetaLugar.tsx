@@ -8,7 +8,7 @@ import estilos from "./TarjetaLugar.module.css";
 /** Un lugar del campus: ilustración de su categoría, nombre, distancia, tiempo y valoración. */
 export default function TarjetaLugar({ lugar }: { lugar: Lugar }) {
   return (
-    <article className={`${estilos.tarjeta} lugar-arte`}>
+    <article className={`${estilos.tarjeta} ${estilos[lugar.categoria.toLowerCase()] ?? ""} lugar-arte`}>
       <div className={estilos.portada}>
         <ArteCategoria categoria={lugar.categoria} />
         <span className={estilos.rating}>

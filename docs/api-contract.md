@@ -281,6 +281,13 @@ Eliminación de un bloque (#10).
 
 **Errores:** `401` sin token o token inválido; `404` si el bloque no existe o no es del usuario (🟡 Propuesta).
 
+### Foto del horario
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `POST` | `/api/horario/foto` | `multipart/form-data` con `foto` (JPG, PNG o WebP, hasta 8 MB). Un modelo de visión (`LLM_MODEL_IMAGEN`) lee las clases y responde `{ clases, descartadas }` sin guardar nada. `400 VALIDACION` o `503 LECTOR_NO_DISPONIBLE` |
+| `POST` | `/api/horario/lote` | `{ bloques: [...] }` (hasta 40, mismo formato que `POST /api/horario`). Guarda los válidos con `origen = FOTO` y responde `{ guardados, rechazados }`, con el motivo de cada rechazo |
+
 ## 4. Puentes (HU3 — responsable: Majo)
 
 ### Regla de detección
@@ -391,6 +398,19 @@ Respuesta `200`: el mismo formato de `GET /api/ubicacion`. Un id inexistente da 
 Revoca el consentimiento de la aplicación y elimina la zona vinculada al usuario.
 Respuesta `204`, sin cuerpo. La autorización del navegador se administra por separado
 desde la configuración del navegador.
+
+## 6b. Administración del campus
+
+Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El login (`POST /api/auth/login`) devuelve el campo `rol` (`ESTUDIANTE` o `ADMIN`); el administrador de prueba está en `docs/database/seed-dev.sql`.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `/api/admin/resumen` | Lugares activos y en revisión, estudiantes activos, comunidades de hoy, consultas al asistente de la semana y reportes pendientes |
+| `GET` | `/api/admin/lugares` | Catálogo completo (primero `EN_REVISION`) con cuántas veces se recomendó cada lugar |
+| `PATCH` | `/api/admin/lugares/{id}/estado` | Cambia el estado a `ACTIVO`, `EN_REVISION` o `INACTIVO`; queda en `historial_cambio`. `204`, `400 VALIDACION` o `404 NO_ENCONTRADO` |
+| `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`) |
+| `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas consultas al asistente con entrada, estado, modelo y latencia (1 a 200) |
+| `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio y los 5 lugares más recomendados |
 
 ## 7. Lugares viables (HU6 — responsable: Ariana)
 

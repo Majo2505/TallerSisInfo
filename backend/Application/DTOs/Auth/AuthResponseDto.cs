@@ -18,4 +18,8 @@ public class AuthResponseDto
     /// <summary>Correo institucional del usuario.</summary>
     /// <example>ana.perez@ucb.edu.bo</example>
     public string Email { get; set; } = string.Empty;
+
+    /// <summary>Rol del usuario: <c>ESTUDIANTE</c> o <c>ADMIN</c>. El frontend lo usa para mostrar el panel de administración.</summary>
+    /// <example>ESTUDIANTE</example>
+    public string Rol { get; set; } = string.Empty;
 }

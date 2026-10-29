@@ -7,6 +7,7 @@ import FondoVivo from "@/components/app/FondoVivo";
 import { IconoFlechaDerecha } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { useSesion } from "@/lib/useSesion";
+import { rutaDeEntrada } from "@/services/authService";
 import { Icono, Informacion } from "./Iconos";
 import styles from "./Onboarding.module.css";
 import { PASOS } from "./pasos";
@@ -54,7 +55,7 @@ export default function Onboarding({ forzar = false }: Props) {
 
   useEffect(() => {
     if (!listo) return;
-    if (sesion) router.replace("/inicio");
+    if (sesion) router.replace(rutaDeEntrada(sesion));
     else if (!forzar && visto) router.replace("/login");
   }, [listo, sesion, forzar, visto, router]);
 

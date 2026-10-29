@@ -1,3 +1,4 @@
+using Breaku.Application.Admin;
 using System.Text;
 using Breaku.Infrastructure;
 using Breaku.Application.Horarios;
@@ -62,6 +63,7 @@ builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
 builder.Services.AddScoped<HorarioService>();
+builder.Services.AddScoped<FotoHorarioService>();
 builder.Services.AddScoped<IPuenteRepository, PuenteRepository>();
 builder.Services.AddScoped<PuenteService>();
 builder.Services.AddScoped<NotificacionService>();
@@ -69,6 +71,7 @@ builder.Services.AddScoped<UbicacionService>();
 builder.Services.AddScoped<BusquedaLugaresService>();
 builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
+builder.Services.AddScoped<AdminService>();
 
 var app = builder.Build();
 

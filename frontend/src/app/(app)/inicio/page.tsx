@@ -18,11 +18,14 @@ import {
 import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import HeroePuente from "@/components/inicio/HeroePuente";
+import HeroeSinPuentes from "@/components/inicio/HeroeSinPuentes";
 import { Bloque, listarHorario } from "@/lib/horario";
 import { ESTADOS_ANIMO, LUGARES } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./inicio.module.css";
+
+const DIAS_SEMANA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const ICONO_ESTADO = {
   cansado: IconoLuna,
@@ -90,6 +93,30 @@ export default function Inicio() {
 
   const foco = activo ?? proximo;
 
+  // Sin puentes por hoy: el primero de los próximos días (la semana es de lunes a sábado).
+  const otroDia = useMemo(() => {
+    for (let k = 1; k <= 7; k++) {
+      const dia = (diaHoy + k) % 7;
+      if (dia === 0) continue;
+      const primero = puentes
+        .filter((p) => p.diaSemana === dia)
+        .sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio))[0];
+      if (primero) {
+        return {
+          puente: primero,
+          datos: {
+            dia: DIAS_SEMANA[dia],
+            corto: DIAS_SEMANA[dia].slice(0, 3).toUpperCase(),
+            rango: `${hhmm(primero.horaInicio)} – ${hhmm(primero.horaFin)}`,
+            minutos: duracionMin(primero),
+            enDias: k,
+          },
+        };
+      }
+    }
+    return undefined;
+  }, [puentes, diaHoy]);
+
   const clasesHoy = useMemo(
     () => bloques.filter((b) => b.diaSemana === diaHoy).sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio)),
     [bloques, diaHoy],
@@ -108,7 +135,7 @@ export default function Inicio() {
   if (activo) minutosParaIa = minutosRestantes;
   else if (foco) minutosParaIa = duracionMin(foco);
   // El puente va en la URL para que la IA pida recomendaciones de ese puente (HU7).
-  const rutaIa = foco && minutosParaIa > 0 ? `/ia?puente=${foco.id}&min=${minutosParaIa}` : "/ia";
+  const rutaIa = foco && minutosParaIa > 0 ? `/recomendaciones?puente=${foco.id}&min=${minutosParaIa}` : "/recomendaciones";
 
   // Línea del día: de la primera a la última hora con algo (clase o puente).
   const tramos = [
@@ -170,16 +197,12 @@ export default function Inicio() {
             rutaIa={rutaIa}
           />
         ) : (
-          <div className={estilos.heroeVacio}>
-            <p className={estilos.vacioTitulo}>{cargando ? "Buscando tus puentes…" : "Hoy no te quedan puentes"}</p>
-            <p className={estilos.vacioTexto}>
-              {error ||
-                "Un puente es un hueco libre de 45 minutos o más entre dos clases del mismo día. Registra tu horario y van a aparecer aquí."}
-            </p>
-            <MotionLink href="/horario" className={estilos.accionVacio} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
-              Ver mi horario <IconoFlechaDerecha tamano={18} />
-            </MotionLink>
-          </div>
+          <HeroeSinPuentes
+            cargando={cargando}
+            error={error}
+            proximo={otroDia ? { ...otroDia.datos } : undefined}
+            rutaIa={otroDia ? `/recomendaciones?puente=${otroDia.puente.id}&min=${otroDia.datos.minutos}` : "/recomendaciones"}
+          />
         )}
       </Pieza>
 
@@ -298,21 +321,15 @@ export default function Inicio() {
       </Pieza>
 
       <Pieza as="section" className={estilos.atajos}>
-        <motion.button
-          type="button"
-          className={estilos.atajo}
-          onClick={() => aviso.mostrar("Los grupos rápidos van a estar disponibles pronto.")}
-          whileTap={{ scale: 0.97 }}
-          transition={RESORTE_TOQUE}
-        >
+        <MotionLink href="/comunidades" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
           <span className={estilos.atajoIcono}>
             <IconoPersonas tamano={20} />
           </span>
           <span>
             <strong>Grupo rápido</strong>
-            <small>Pronto</small>
+            <small>Crea o únete a uno</small>
           </span>
-        </motion.button>
+        </MotionLink>
         <MotionLink href="/campus" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
           <span className={estilos.atajoIcono}>
             <IconoBrujula tamano={20} />

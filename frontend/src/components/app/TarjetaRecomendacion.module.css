@@ -113,6 +113,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
+  white-space: nowrap;
   color: var(--texto-tenue);
   font-size: 0.75rem;
   font-weight: 600;

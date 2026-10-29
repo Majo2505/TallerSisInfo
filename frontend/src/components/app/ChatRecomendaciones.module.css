@@ -1,0 +1,255 @@
+.chat {
+  display: grid;
+  gap: 12px;
+}
+
+.hilo {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  min-height: 260px;
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(47, 127, 209, 0.07), transparent 60%),
+    var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
+  align-content: start;
+}
+
+.fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.filaTu {
+  justify-content: flex-end;
+}
+
+.filaIa {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.filaTu > * {
+  transform-origin: bottom right;
+}
+
+.avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+}
+
+.respuesta {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.burbujaIa,
+.burbujaTu {
+  max-width: min(560px, 100%);
+  padding: 12px 16px;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.burbujaIa {
+  justify-self: start;
+  border-radius: 6px 18px 18px 18px;
+  background: var(--fondo-suave);
+  color: var(--texto);
+}
+
+.burbujaTu {
+  border-radius: 18px 18px 6px 18px;
+  background: var(--ucb-marino);
+  color: #ffffff;
+}
+
+.burbujaError {
+  display: grid;
+  gap: 8px;
+  background: var(--error-fondo);
+  color: var(--error-texto);
+  font-weight: 600;
+}
+
+.burbujaError p {
+  margin: 0;
+}
+
+.reintentar {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--error);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Tres puntos que saltan mientras el asistente piensa. */
+.escribiendo {
+  display: inline-flex;
+  gap: 5px;
+  padding: 4px 2px;
+}
+
+.escribiendo span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ucb-azul-medio);
+  animation: saltar 1s var(--curva-movimiento) infinite;
+}
+
+.escribiendo span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.escribiendo span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes saltar {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.ejemplos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 42px;
+}
+
+.ejemplo {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+.ejemplo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tarjetas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+
+/* Compositor: campo amplio con contador y botón de envío. */
+.compositor {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 22px;
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  transition:
+    border-color 200ms ease,
+    box-shadow 250ms var(--curva-salida);
+}
+
+.compositor:focus-within {
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+}
+
+.campo {
+  width: 100%;
+  min-height: 52px;
+  max-height: 160px;
+  padding: 6px 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: none;
+  field-sizing: content;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.contador {
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.enviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.enviar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nota {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ejemplo:hover:not(:disabled) {
+    border-color: var(--ucb-azul-medio);
+    background: var(--fondo-suave);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .escribiendo span {
+    animation: none;
+  }
+}

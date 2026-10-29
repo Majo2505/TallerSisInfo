@@ -73,7 +73,7 @@ La API está documentada con **OpenAPI 3** y se ve con **Swagger UI** (paquete S
 | Documento OpenAPI en JSON | `http://localhost:5092/swagger/v1/swagger.json` |
 | Copia estática en YAML (para mirarla sin levantar el backend) | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
 
-Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones`):
+Para probar los endpoints protegidos (`/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/recomendaciones` y, con el administrador de prueba, `/api/admin/*`):
 
 1. En Swagger UI, abre `POST /api/auth/login`, pulsa **Try it out** y envía el usuario de prueba (mira más abajo) o uno que hayas registrado.
 2. Copia el valor de `token` de la respuesta.
@@ -115,10 +115,12 @@ Responde `200 OK` si conecta y `503 Service Unavailable` si no.
 
 | Dato | Valor |
 |---|---|
-| Correo | `dev.estudiante@ucb.edu.bo` |
-| Contraseña | `Breaku-Dev-2026!` |
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Estudiante | `dev.estudiante@ucb.edu.bo` | `Breaku-Dev-2026!` |
+| Administrador | `dev.admin@ucb.edu.bo` | `Breaku-Admin-2026!` |
 
-El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta ese usuario (rol `ESTUDIANTE`, correo verificado, activo). Es idempotente: se puede ejecutar varias veces. **No incluye `USE`**: hay que ejecutarlo con tu base de datos ya seleccionada (el nombre es el de tu `DB_NAME`).
+El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta esos dos usuarios (roles `ESTUDIANTE` y `ADMIN`, correo verificado, activos). El administrador entra al panel de administración del campus. Es idempotente: se puede ejecutar varias veces. **No incluye `USE`**: hay que ejecutarlo con tu base de datos ya seleccionada (el nombre es el de tu `DB_NAME`).
 
 **Opción 1: MySQL Workbench.** Abre `docs/database/seed-dev.sql`, deja tu base de datos como esquema por defecto (clic derecho sobre ella en el panel de esquemas → *Set as Default Schema*) y ejecuta el script.
 
@@ -179,6 +181,7 @@ Para cerrar Ollama: ícono de la llama junto al reloj → **Quit Ollama**, o `Ge
 | `LLM_API_KEY` | No | Activa el LLM. Sin ella se usa el asistente simulado |
 | `LLM_BASE_URL` | Si hay `LLM_API_KEY` | URL base de la API del proveedor |
 | `LLM_MODEL` | Si hay `LLM_API_KEY` | Nombre del modelo en ese proveedor |
+| `LLM_MODEL_IMAGEN` | No (por defecto, `LLM_MODEL`) | Modelo con visión para leer la foto del horario (`POST /api/horario/foto`). Sin `LLM_API_KEY`, la foto no está disponible y el registro manual sigue igual |
 | `LLM_TIMEOUT_SECONDS` | No (por defecto 20) | Segundos de espera al LLM antes de responder `503` |
 
 Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
@@ -187,9 +190,9 @@ Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que s
 |---|---|---|---|
 | Ollama | `http://localhost:11434/v1/` | `qwen2.5:3b` | Gratis |
 | Google Gemini (clave en [aistudio.google.com](https://aistudio.google.com)) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.5-flash` | Gratis, con límite de consultas |
-| OpenAI | `https://api.openai.com/v1/` | `gpt-4o-mini` | Pago |
+| OpenAI (configuración del equipo) | `https://api.openai.com/v1/` | `gpt-6-luna` | Pago |
 
-Las claves de Gemini u OpenAI son personales: van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
+**El equipo usa OpenAI con el modelo de texto `gpt-6-luna` y el de imagen `gpt-6.1-terra`** (ver `backend/.env.example`). La clave se comparte por un medio privado y debe tener permiso de uso de modelos (*Model capabilities: Write*); si OpenAI responde `missing_scope`, a la clave le falta ese permiso. Las claves de Gemini u OpenAI van solo en `backend/.env`, nunca en el repositorio. Al LLM se le envían únicamente los lugares recuperados y la preferencia del estudiante, nunca su ubicación ni su identidad.
 
 ### Frontend
 

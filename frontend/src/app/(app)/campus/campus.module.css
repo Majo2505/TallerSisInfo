@@ -1,6 +1,7 @@
 .pagina {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 1080px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 20px 16px 120px;
   display: grid;
@@ -327,6 +328,10 @@
   .portada {
     padding: 36px 40px;
   }
+}
+
+/* Laptop: buscador y filtros en una sola fila (en tablet los filtros van debajo para que se vean todos). */
+@media (min-width: 1025px) {
   .controles {
     grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
     align-items: center;
@@ -334,5 +339,16 @@
   .filtros {
     margin: 0;
     padding: 2px 0 6px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .pagina {
+    padding-left: clamp(16px, 3vw, 48px);
+    padding-right: clamp(16px, 3vw, 48px);
+  }
+  .lista {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
   }
 }

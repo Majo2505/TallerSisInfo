@@ -1,9 +1,11 @@
 .tarjeta {
+  --tono: var(--ucb-azul-medio);
+  --tono-fondo: var(--superficie);
   height: 100%;
   overflow: hidden;
-  border-radius: 22px;
-  background: var(--superficie);
-  border: 1px solid var(--borde-suave);
+  border-radius: 24px;
+  background: var(--tono-fondo);
+  border: 1px solid color-mix(in srgb, var(--tono) 18%, transparent);
   box-shadow: var(--sombra-1);
   transition: box-shadow 250ms var(--curva-salida);
 }
@@ -20,7 +22,29 @@
 }
 
 .portada > svg {
-  height: 92px;
+  height: 112px;
+  border-radius: 18px;
+}
+
+/* Cada categoría tiñe su tarjeta con el mismo tono de su escena. */
+.comida {
+  --tono: #b8860b;
+  --tono-fondo: #fffbea;
+}
+
+.estudio {
+  --tono: var(--ucb-marino);
+  --tono-fondo: #f2f6fb;
+}
+
+.descanso {
+  --tono: #086a7f;
+  --tono-fondo: #eef9f8;
+}
+
+.deporte {
+  --tono: var(--ucb-azul-medio);
+  --tono-fondo: #eff5fc;
 }
 
 .rating {
@@ -50,11 +74,22 @@
 }
 
 .categoria {
-  color: var(--texto-tenue);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: color-mix(in srgb, var(--tono) 85%, #000);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.categoria::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tono);
 }
 
 .nombre {

@@ -8,24 +8,29 @@ import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
 import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
+import { esAdmin } from "@/services/authService";
 import {
   IconoBrujula,
   IconoCalendario,
   IconoDestello,
   IconoInicio,
   IconoPersona,
+  IconoPersonas,
 } from "./Iconos";
+import ShellAdmin from "./ShellAdmin";
 import estilos from "./ShellApp.module.css";
 
 // Resorte del indicador de sección: llega rápido y se asienta con un rebote mínimo.
 const RESORTE = { type: "spring", bounce: 0.18, duration: 0.45 } as const;
 
+// `corto` es la etiqueta de la barra inferior del celular, donde no entran nombres largos.
 const SECCIONES = [
-  { ruta: "/inicio", nombre: "Inicio", Icono: IconoInicio },
-  { ruta: "/horario", nombre: "Horario", Icono: IconoCalendario },
-  { ruta: "/ia", nombre: "IA", Icono: IconoDestello },
-  { ruta: "/campus", nombre: "Campus", Icono: IconoBrujula },
-  { ruta: "/perfil", nombre: "Perfil", Icono: IconoPersona },
+  { ruta: "/inicio", nombre: "Inicio", corto: "Inicio", Icono: IconoInicio },
+  { ruta: "/horario", nombre: "Horario", corto: "Horario", Icono: IconoCalendario },
+  { ruta: "/recomendaciones", nombre: "Recomendaciones", corto: "Para ti", Icono: IconoDestello },
+  { ruta: "/campus", nombre: "Campus", corto: "Campus", Icono: IconoBrujula },
+  { ruta: "/comunidades", nombre: "Comunidades", corto: "Grupos", Icono: IconoPersonas },
+  { ruta: "/perfil", nombre: "Perfil", corto: "Perfil", Icono: IconoPersona },
 ];
 
 export default function ShellApp({ children }: { children: React.ReactNode }) {
@@ -40,6 +45,9 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
   if (!listo || !sesion) {
     return <div className={estilos.app} aria-busy="true" />;
   }
+
+  // El administrador tiene su propia estructura (barra lateral con Inicio y Panel Admin).
+  if (esAdmin(sesion)) return <ShellAdmin sesion={sesion}>{children}</ShellAdmin>;
 
   const activa = (ruta: string) => pathname === ruta || pathname.startsWith(`${ruta}/`);
 
@@ -80,7 +88,7 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
       <div className={estilos.contenido}>{children}</div>
 
       <nav className={estilos.navInferior} aria-label="Secciones">
-        {SECCIONES.map(({ ruta, nombre, Icono }) => (
+        {SECCIONES.map(({ ruta, corto, Icono }) => (
           <Link
             key={ruta}
             href={ruta}
@@ -91,7 +99,7 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
               {activa(ruta) && <motion.span layoutId="indicador-movil" className={estilos.pastilla} transition={RESORTE} />}
               <Icono tamano={22} />
             </span>
-            {nombre}
+            {corto}
           </Link>
         ))}
       </nav>

@@ -293,3 +293,9 @@
     font-size: 5.8rem;
   }
 }
+
+@media (max-width: 359px) {
+  .minutos {
+    font-size: 3.1rem;
+  }
+}

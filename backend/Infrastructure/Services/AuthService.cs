@@ -54,7 +54,8 @@ public class AuthService : IAuthService
             Token = token,
             UserId = usuario.Id,
             Nombre = usuario.Nombre,
-            Email = usuario.Email
+            Email = usuario.Email,
+            Rol = usuario.Rol
         };
     }
 
@@ -75,7 +76,8 @@ public class AuthService : IAuthService
             Token = token,
             UserId = usuario.Id,
             Nombre = usuario.Nombre,
-            Email = usuario.Email
+            Email = usuario.Email,
+            Rol = usuario.Rol
         };
     }
 
@@ -106,7 +108,9 @@ public class AuthService : IAuthService
         {
             new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-            new Claim("nombre", usuario.Nombre)
+            new Claim("nombre", usuario.Nombre),
+            // Rol para [Authorize(Roles = "ADMIN")]; se serializa como "role" en el JWT.
+            new Claim(ClaimTypes.Role, usuario.Rol)
         };
 
         var token = new JwtSecurityToken(

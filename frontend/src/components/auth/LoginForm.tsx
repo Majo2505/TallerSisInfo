@@ -4,11 +4,18 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { RESORTE_TOQUE } from "@/components/app/Movimiento";
-import { ErrorAuth, iniciarSesion, obtenerSesion, registrarse, suscribirSesion } from "@/services/authService";
+import {
+  ErrorAuth,
+  iniciarSesion,
+  iniciarSesionAdmin,
+  obtenerSesion,
+  registrarse,
+  rutaDeEntrada,
+  suscribirSesion,
+} from "@/services/authService";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
 
-const RUTA_DESTINO = "/inicio";
 const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DOMINIO_INSTITUCIONAL = "@ucb.edu.bo";
 // Pendiente: el backend no define reglas de contraseña; este mínimo es solo del formulario.
@@ -92,6 +99,15 @@ function CampoPassword({ id, etiqueta, autoComplete, valor, alCambiar, error }: 
   );
 }
 
+function IconoEscudo() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
@@ -105,12 +121,13 @@ export default function LoginForm() {
   const [errorServidor, setErrorServidor] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [comoAdmin, setComoAdmin] = useState(false);
 
   const esRegistro = modo === "registro";
 
-  // Si ya hay sesión, se va directo al horario.
+  // Si ya hay sesión, se va directo a la entrada de su rol (estudiante: Inicio; administrador: el panel).
   useEffect(() => {
-    if (sesion) router.replace(RUTA_DESTINO);
+    if (sesion) router.replace(rutaDeEntrada(sesion));
   }, [sesion, router]);
 
   function cambiarModo(nuevo: Modo) {
@@ -130,9 +147,11 @@ export default function LoginForm() {
 
     setEnviando(true);
     try {
-      if (esRegistro) await registrarse(nombre.trim(), correo.trim(), password);
-      else await iniciarSesion(correo.trim(), password);
-      router.replace(RUTA_DESTINO);
+      let nueva;
+      if (esRegistro) nueva = await registrarse(nombre.trim(), correo.trim(), password);
+      else if (comoAdmin) nueva = await iniciarSesionAdmin(correo.trim(), password);
+      else nueva = await iniciarSesion(correo.trim(), password);
+      router.replace(rutaDeEntrada(nueva));
     } catch (e) {
       setErrorServidor(e instanceof ErrorAuth ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
       setEnviando(false);
@@ -141,10 +160,27 @@ export default function LoginForm() {
 
   const reducir = useReducedMotion();
   let textoBoton = esRegistro ? "Crear cuenta" : "Iniciar sesión";
+  if (comoAdmin) textoBoton = "Ingresar al panel";
   if (enviando) textoBoton = "Ingresando…";
 
   return (
     <div className={styles.contenedor}>
+      {comoAdmin ? (
+        <motion.div
+          className={styles.accesoAdmin}
+          initial={reducir ? false : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <span className={styles.escudo} aria-hidden="true">
+            <IconoEscudo />
+          </span>
+          <div>
+            <strong>Acceso de administración</strong>
+            <small>Solo para cuentas con rol de administrador del campus.</small>
+          </div>
+        </motion.div>
+      ) : (
       <div className={styles.pestanas} role="tablist" aria-label="Acceso">
         <button
           type="button"
@@ -167,6 +203,7 @@ export default function LoginForm() {
           <span className={styles.textoPestana}>Registrarse</span>
         </button>
       </div>
+      )}
 
       <form className={styles.formulario} onSubmit={alEnviar} noValidate>
         {errorServidor && (
@@ -297,6 +334,20 @@ export default function LoginForm() {
 
         <p className={styles.pie}>Solo con tu correo institucional @ucb.edu.bo</p>
       </form>
+
+      {!esRegistro && (
+        <button
+          type="button"
+          className={styles.cambiarAcceso}
+          onClick={() => {
+            setComoAdmin((v) => !v);
+            setErrorServidor("");
+            setErrores({});
+          }}
+        >
+          {comoAdmin ? "← Volver al acceso de estudiantes" : "¿Administras el campus? Ingresa como administrador"}
+        </button>
+      )}
     </div>
   );
 }

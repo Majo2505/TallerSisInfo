@@ -10,7 +10,7 @@ const enteroPositivo = (valor: string | undefined, maximo: number) => {
   return Number.isInteger(n) && n > 0 && n <= maximo ? n : undefined;
 };
 
-export default async function PaginaIa({ searchParams }: Props) {
+export default async function PaginaRecomendaciones({ searchParams }: Props) {
   const { estado, min, puente } = await searchParams;
   const estadoInicial = ESTADOS_ANIMO.find((e) => e.id === estado)?.id as EstadoAnimo | undefined;
   return (
