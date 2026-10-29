@@ -101,10 +101,12 @@ CREATE TABLE horario (
   hora_fin    TIME         NOT NULL,
   aula        VARCHAR(30)  NULL,
   origen      VARCHAR(10)  NOT NULL,                      -- MANUAL | FOTO (RF02)
+  asiste      BOOLEAN      NOT NULL DEFAULT TRUE,          -- FALSE: el estudiante no asiste a este bloque (no cuenta como ocupado)
+  autorizacion_choque BOOLEAN NOT NULL DEFAULT FALSE,        -- el estudiante confirmó que su carrera autoriza el choque
   created_at  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
-  CONSTRAINT uq_horario_slot UNIQUE (usuario_id, dia_semana, hora_inicio),
+  CONSTRAINT uq_horario_bloque UNIQUE (usuario_id, dia_semana, hora_inicio, materia),
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
