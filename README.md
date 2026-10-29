@@ -19,7 +19,7 @@ Proyecto de la materia SIS-227 (UCB). Plataforma web que detecta "puentes" (huec
 - `docs/` — documentación
   - `docs/api/` — especificación OpenAPI de la API (`openapi.yaml`)
   - `docs/api-contract.md` — borrador del contrato de API del sprint 1 (la referencia vigente es `openapi.yaml`)
-  - `docs/database/` — esquema (`schema.sql`), migraciones (`migraciones/`) y datos de prueba (`seed-dev.sql`, `seed-dev-catalogo.sql`)
+  - `docs/database/` — esquema (`schema.sql`), migraciones (`migraciones/`) y datos de prueba (`seed-dev.sql`, `seed-dev-catalogo.sql`, `seed-dev-cochabamba.sql`)
 
 Archivos en la raíz: `README.md`, `.gitignore`.
 
@@ -87,7 +87,7 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 Necesitas una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4 y `002-hu5-ubicacion.sql` para HU5), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
+> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-horario-asistencia.sql` para las clases que coinciden y `004-sede-cochabamba.sql` para la sede activa), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
@@ -141,6 +141,15 @@ Token de desarrollo: se obtiene con `POST /api/auth/login` usando ese usuario (c
 Para probarlo: elige tu campus (en la app, `/configuracion/ubicacion`, o con `PUT /api/ubicacion/zona`), registra un horario con un hueco de 45 minutos o más y toma el `id` del puente en `GET /api/puentes`. Con ese `id` puedes ver los lugares viables en `GET /api/lugares/viables?puenteId=<id>` (HU6) o pedir recomendaciones enviando `{ "puenteId": <id> }` a `POST /api/recomendaciones` (HU7).
 
 **Lugares viables (HU6).** Un lugar solo se muestra si está `ACTIVO` (aprobado por el administrador), queda dentro del radio de tu campus y el traslado de ida y vuelta (caminando, unos 80 m por minuto) más la actividad cabe en tu puente. Sin campus elegido la búsqueda responde `SIN_ZONA`; si ningún lugar cumple, responde `SIN_RESULTADOS` con el mensaje «No encontramos opciones cercanas para este tiempo disponible.». La misma búsqueda es la que usa el asistente de HU7.
+
+#### Sede UCB Cochabamba (solo desarrollo)
+
+[`docs/database/seed-dev-cochabamba.sql`](docs/database/seed-dev-cochabamba.sql) carga la sede **Campus UCB Cochabamba** con los 13 lugares del relevamiento (`docs/datos/lugares_ucb_cochabamba.json`). Se ejecuta igual que los otros seeds y **después** de `seed-dev.sql`. Es idempotente y, al correrlo, deja las demás sedes (La Paz) guardadas pero **inactivas**: no aparecen para elegir ni reciben recomendaciones. Para volver a La Paz: `UPDATE zona SET activa = (nombre = 'Campus UCB La Paz');`. La sede activa se decide con el campo `zona.activa`; no hace falta ninguna variable de entorno.
+
+- Los 13 lugares quedan con `validado = FALSE`: son datos del relevamiento que el equipo todavía tiene que revisar. La app los muestra con la etiqueta «Por validar», y el panel de administración también.
+- Cinco son puntos de referencia (campus, parqueo, bloques A, B y C) con `recomendable = FALSE`: quedan guardados, pero nunca se recomiendan.
+- Las categorías del relevamiento se asignan a las de la app así: `comer` y `cafe_te` → Comida, `estudio` → Estudio, `descanso` → Descanso, `deporte_aire_libre` → Deporte y `campus` → Referencia (categoría nueva).
+- Si cambias el JSON, regenera el seed con `python docs/datos/generar_seed_cochabamba.py`.
 
 ### Asistente de IA (HU7, opcional)
 
@@ -208,5 +217,18 @@ npm run dev
 El frontend queda en `http://localhost:3000`. `NEXT_PUBLIC_API_URL` (en `frontend/.env.local`, no se sube al repositorio) es la URL base del backend; ejemplo: `http://localhost:5092`. Para que el navegador pueda llamar a la API, el backend tiene que tener `FRONTEND_ORIGIN=http://localhost:3000` en su `.env`.
 
 Build de producción: `npm run build`. Linter: `npm run lint`.
+
+### Pruebas
+
+El backend tiene pruebas unitarias (xUnit) en [`backend/Breaku.Tests`](backend/Breaku.Tests). No usan red, ni base de datos, ni el asistente de IA, así que **no gastan crédito de OpenAI**:
+
+```bash
+cd backend/Breaku.Tests
+dotnet test
+```
+
+Cubren la unión de intervalos, la detección de choques y los huecos libres con clases que coinciden (una sola clase, alternar por día y ambas marcadas).
+
+Para probar la app completa sin gastar crédito, deja `LLM_API_KEY` sin definir en `backend/.env`: se usa el asistente simulado y la foto del horario responde «no disponible» sin llamar a ningún proveedor.
 
 Estilos con CSS Modules (`*.module.css` junto a cada componente) y variables de color y tipografía en `src/app/globals.css`. No se usan librerías de UI ni de estado.

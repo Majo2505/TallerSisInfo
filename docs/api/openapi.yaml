@@ -148,8 +148,12 @@ paths:
       summary: Crea un bloque de clase.
       description: |
         Reglas: materia obligatoria (máx. 100 caracteres), `diaSemana` de 1 a 6, horas en formato `HH:mm` o `HH:mm:ss`
-        y `horaFin` posterior a `horaInicio`. No puede solaparse con otro bloque del mismo día; dos bloques contiguos
-        (uno termina justo cuando empieza el otro) **no** se consideran solapados.
+        y `horaFin` posterior a `horaInicio`.
+
+        Dos clases pueden coincidir en la misma franja (el horario oficial lo permite): no se bloquea, se avisa. La respuesta trae
+        `coincide` (los otros bloques del día que se cruzan) y `advertencias` (un aviso por cada bloque con el que choca de verdad,
+        es decir, al que el estudiante también asiste). Lo único que se rechaza es repetir la misma materia el mismo día y a la misma
+        hora de inicio (`409`, `codigo` = `DUPLICADO`).
 
         Efecto secundario: al guardar se recalculan automáticamente los puentes del usuario (ver `GET /api/puentes`).
       security:
@@ -172,7 +176,7 @@ paths:
         '401':
           $ref: '#/components/responses/NoAutorizado'
         '409':
-          $ref: '#/components/responses/Solapamiento'
+          $ref: '#/components/responses/Duplicado'
   /api/horario/{id}:
     parameters:
       - name: id
@@ -189,7 +193,7 @@ paths:
       summary: Reemplaza por completo un bloque de clase existente.
       description: |
         Es un `PUT` de reemplazo completo: se envían todos los campos, igual que en el alta. Aplican las mismas reglas
-        que en `POST`; el bloque que se edita no se compara consigo mismo al buscar solapamientos.
+        que en `POST`; si no se envían `asiste` ni `autorizacionCarrera` se conserva lo que el bloque ya tenía.
         Si el bloque pertenece a otro usuario se responde igual que si no existiera (404).
 
         Efecto secundario: se recalculan automáticamente los puentes del usuario.
@@ -215,7 +219,7 @@ paths:
         '404':
           $ref: '#/components/responses/BloqueNoEncontrado'
         '409':
-          $ref: '#/components/responses/Solapamiento'
+          $ref: '#/components/responses/Duplicado'
     delete:
       tags: [Horario]
       operationId: eliminarBloque
@@ -228,6 +232,71 @@ paths:
       responses:
         '204':
           description: Bloque eliminado (sin cuerpo).
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/BloqueNoEncontrado'
+  /api/horario/{id}/asistencia:
+    patch:
+      tags: [Horario]
+      operationId: cambiarAsistenciaBloque
+      summary: Marca si el estudiante asiste a un bloque.
+      description: |
+        Un bloque con `asiste` = `false` no cuenta como tiempo ocupado ni choca con otros. Efecto secundario: se recalculan los puentes.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarAsistenciaRequest'
+      responses:
+        '200':
+          description: Bloque actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HorarioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/BloqueNoEncontrado'
+  /api/horario/asistencia:
+    patch:
+      tags: [Horario]
+      operationId: cambiarAsistenciaBloques
+      summary: Cambia la asistencia de varios bloques de una vez.
+      description: |
+        Es el paso «Estas clases coinciden, ¿a cuáles asistes?» tras importar la foto. Hasta 40 bloques. Si alguno no existe o es de otro
+        usuario no se cambia ninguno (`404`). Los puentes se recalculan una sola vez.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarAsistenciasRequest'
+      responses:
+        '200':
+          description: Bloques actualizados, con sus coincidencias.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HorarioDto'
+        '400':
+          $ref: '#/components/responses/DatosInvalidos'
         '401':
           $ref: '#/components/responses/NoAutorizado'
         '404':
@@ -282,8 +351,9 @@ paths:
       operationId: guardarLoteHorario
       summary: Guarda varios bloques de una vez (los confirmados desde la foto), con origen FOTO.
       description: |
-        Cada bloque se valida igual que en `POST /api/horario`. Los inválidos o que se solapan con el horario (o con otro del lote)
-        vuelven en `rechazados` con el motivo; el resto se guarda. Los puentes se recalculan una sola vez. Hasta 40 bloques.
+        Cada bloque se valida igual que en `POST /api/horario`. Los inválidos o repetidos vuelven en `rechazados` con el motivo; el resto se guarda.
+        Las clases que coinciden con otra se guardan igual y traen `coincide` y `advertencias`: después el estudiante elige a cuáles asiste con
+        `PATCH /api/horario/asistencia`. Los puentes se recalculan una sola vez. Hasta 40 bloques.
       security:
         - Bearer: []
       requestBody:
@@ -884,15 +954,15 @@ components:
           example:
             codigo: NO_ENCONTRADO
             mensaje: El bloque no existe.
-    Solapamiento:
-      description: Se solapa con otro bloque del mismo día (`codigo` = `SOLAPAMIENTO`); el mensaje indica con cuál.
+    Duplicado:
+      description: Ya existe la misma materia ese día a esa hora de inicio (`codigo` = `DUPLICADO`). Un choque con otra materia no es error.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorNegocioDto'
           example:
-            codigo: SOLAPAMIENTO
-            mensaje: Se solapa con «Cálculo I» (08:00-09:30).
+            codigo: DUPLICADO
+            mensaje: Ya registraste «Cálculo I» a esa hora ese día.
     DatosInvalidos:
       description: |
         Datos inválidos. Hay dos formas de respuesta:
@@ -998,13 +1068,13 @@ components:
       properties:
         codigo:
           type: string
-          enum: [VALIDACION, SOLAPAMIENTO, NO_ENCONTRADO, ASISTENTE_NO_DISPONIBLE]
-          description: '`VALIDACION` (400), `SOLAPAMIENTO` (409), `NO_ENCONTRADO` (404) o `ASISTENTE_NO_DISPONIBLE` (503).'
-          example: SOLAPAMIENTO
+          enum: [VALIDACION, DUPLICADO, NO_ENCONTRADO, ASISTENTE_NO_DISPONIBLE]
+          description: '`VALIDACION` (400), `DUPLICADO` (409), `NO_ENCONTRADO` (404) o `ASISTENTE_NO_DISPONIBLE` (503).'
+          example: DUPLICADO
         mensaje:
           type: string
           description: Mensaje en español, listo para mostrar al usuario.
-          example: Se solapa con «Cálculo I» (08:00-09:30).
+          example: Ya registraste «Cálculo I» a esa hora ese día.
     ValidationProblemDetails:
       type: object
       description: Error de validación estándar de ASP.NET (cuerpo mal formado o campos faltantes).
@@ -1065,6 +1135,16 @@ components:
           maxLength: 30
           description: Aula (opcional, hasta 30 caracteres). Si llega vacía se guarda como `null`.
           example: A-101
+        asiste:
+          type: boolean
+          nullable: true
+          description: Si el estudiante asiste a este bloque. Si no se envía, es `true` al crear y se conserva el valor actual al editar.
+          example: true
+        autorizacionCarrera:
+          type: boolean
+          nullable: true
+          description: El estudiante confirma que su carrera autoriza que este bloque coincida con otro. Opcional; si no se envía se conserva el valor actual.
+          example: false
     HorarioDto:
       type: object
       description: Bloque de clase del estudiante.
@@ -1099,8 +1179,56 @@ components:
         origen:
           type: string
           enum: [MANUAL, FOTO]
-          description: 'Cómo se cargó el bloque: `MANUAL` (hoy siempre) o `FOTO` (reservado). El cliente no lo envía.'
+          description: 'Cómo se cargó el bloque: `MANUAL` o `FOTO`. El cliente no lo envía.'
           example: MANUAL
+        asiste:
+          type: boolean
+          description: Si el estudiante asiste a este bloque. Si es `false` no cuenta como tiempo ocupado y no choca con otros.
+          example: true
+        autorizacionCarrera:
+          type: boolean
+          description: El estudiante confirmó que su carrera autoriza el choque.
+          example: false
+        coincide:
+          type: array
+          description: Bloques del mismo día que se cruzan con éste, asista o no el estudiante (sirve para preguntarle a cuál asiste).
+          items:
+            $ref: '#/components/schemas/CoincidenciaDto'
+        advertencias:
+          type: array
+          description: Un aviso por cada bloque con el que choca de verdad (el estudiante asiste a los dos). No impiden guardar.
+          items:
+            type: string
+          example: ['Coincide con «MAT-241» (14:15-15:45).']
+    CoincidenciaDto:
+      type: object
+      description: Otro bloque del mismo día que se cruza con el consultado.
+      properties:
+        id: { type: integer, format: int32, example: 13 }
+        materia: { type: string, example: MAT-241 }
+        horaInicio: { type: string, example: '14:15:00' }
+        horaFin: { type: string, example: '15:45:00' }
+        asiste: { type: boolean, example: true }
+    CambiarAsistenciaRequest:
+      type: object
+      required: [asiste]
+      properties:
+        asiste: { type: boolean, example: false }
+        autorizacionCarrera: { type: boolean, nullable: true, description: Opcional; si no se envía se conserva el valor actual., example: true }
+    CambiarAsistenciasRequest:
+      type: object
+      required: [bloques]
+      properties:
+        bloques:
+          type: array
+          maxItems: 40
+          items:
+            type: object
+            required: [id, asiste]
+            properties:
+              id: { type: integer, format: int32, example: 12 }
+              asiste: { type: boolean, example: false }
+              autorizacionCarrera: { type: boolean, nullable: true, example: true }
     PuenteDto:
       type: object
       description: Puente detectado. Hueco libre de 45 minutos o más entre dos clases del mismo día.
@@ -1344,6 +1472,27 @@ components:
           format: int32
           description: Minutos que lleva la actividad en el lugar.
           example: 45
+        validado:
+          type: boolean
+          description: '`false` si el equipo todavía no revisó los datos del lugar; la app lo muestra como «Por validar».'
+          example: false
+        tipoLugar:
+          type: string
+          nullable: true
+          description: Tipo de lugar según el relevamiento.
+          example: campus
+        modalidad:
+          type: array
+          items: { type: string }
+          example: [solitario, grupal]
+        nivelEnergia:
+          type: array
+          items: { type: string }
+          example: [bajo]
+        actividadesSugeridas:
+          type: array
+          items: { type: string }
+          example: [estudiar, leer]
     ResultadoBusquedaLugaresDto:
       type: object
       required: [estado, minutosDisponibles, lugares]
@@ -1394,6 +1543,9 @@ components:
         horaApertura: { type: string, nullable: true, description: 'HH:mm', example: '07:00' }
         horaCierre: { type: string, nullable: true, description: 'HH:mm', example: '21:00' }
         vecesRecomendado: { type: integer, format: int32, example: 15 }
+        validado: { type: boolean, description: 'false: datos del relevamiento que el equipo todavía no revisó.', example: false }
+        recomendable: { type: boolean, description: 'false: punto de referencia (campus, parqueo, bloques), nunca se recomienda.', example: true }
+        tipoLugar: { type: string, nullable: true, example: comida }
     CambioEstadoLugarDto:
       type: object
       required: [estado]
@@ -1469,4 +1621,4 @@ components:
             properties:
               indice: { type: integer, format: int32, example: 1 }
               materia: { type: string, example: Física II }
-              motivo: { type: string, example: 'Se solapa con «Cálculo II» (07:30-09:00).' }
+              motivo: { type: string, example: 'Ya registraste «Cálculo II» a esa hora ese día.' }
