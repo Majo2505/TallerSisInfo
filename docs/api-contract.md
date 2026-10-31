@@ -513,6 +513,57 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
 | 401 | Sin token o token inválido |
 | 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
 
+## 7b. Matching de compañeros con puente compatible (HU12 — responsable: Maite)
+
+Compañeros de tu misma sede que están libres al mismo tiempo que tú. Sin IA: es un cruce de horarios.
+
+### Reglas
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Cruce por franja horaria | Dos puentes son compatibles si caen el **mismo día** y comparten **30 minutos o más**. Se devuelve el tramo en común: inicio = el más tardío de los dos inicios; fin = el más temprano de los dos fines. Si solo se tocan (fin = inicio), no se cruzan | ✅ Definido |
+| Orden por compatibilidad | Primero quien comparte más minutos; en empate, quien coincide en más puentes de tu semana. `porcentaje` = minutos en común ÷ duración de tu puente | ✅ Definido |
+| Quién aparece | Estudiantes activos, de tu misma sede (y la sede activa), que aceptaron aparecer (`usuario.visible_matching`). Nunca tú mismo | ✅ Definido |
+| Reciprocidad | Para ver a otros, tienes que aceptar aparecer. Si no, el resultado es `NO_VISIBLE` | ✅ Definido |
+| Privacidad | El consentimiento arranca desactivado. No se devuelve el correo ni el id de nadie. Cada cambio queda en `historial_cambio` | ✅ Definido |
+| Tope | Hasta 20 compañeros por puente | 🟡 Propuesta (Maite) |
+
+### `GET /api/matching?puenteId={id}`
+
+Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué pasó.
+
+| `estado` | Cuándo | `mensaje` |
+|---|---|---|
+| `OK` | Hay compañeros | `null` |
+| `SIN_ZONA` | No elegiste campus o tu sede ya no está activa | `Elige tu campus para encontrar compañeros con tiempo libre compatible.` |
+| `NO_VISIBLE` | No aceptaste aparecer | `Para ver a tus compañeros, primero acepta que ellos también te encuentren.` |
+| `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo en este puente.` |
+
+```json
+{
+  "estado": "OK",
+  "mensaje": null,
+  "puente": { "id": 5, "diaSemana": 1, "horaInicio": "09:30:00", "horaFin": "11:00:00" },
+  "minutosPuente": 90,
+  "companeros": [
+    { "nombre": "Ana Quiroga", "carrera": "Ingeniería de Sistemas", "semestre": 5,
+      "horaInicio": "09:30:00", "horaFin": "11:00:00", "minutosEnComun": 90, "porcentaje": 100, "franjasCompartidas": 1 }
+  ]
+}
+```
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta `puenteId` o no es un número positivo (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
+
+### `GET /api/matching/configuracion` y `PUT /api/matching/configuracion`
+
+`GET` devuelve `{ "visible": false, "desde": null }`. `PUT` recibe `{ "visible": true }` (obligatorio; sin él responde 400 `VALIDACION`) y devuelve lo mismo con la fecha del consentimiento. Al retirarlo, `desde` vuelve a `null`.
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |

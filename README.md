@@ -19,7 +19,7 @@ Proyecto de la materia SIS-227 (UCB). Plataforma web que detecta "puentes" (huec
 - `docs/` — documentación
   - `docs/api/` — especificación OpenAPI de la API (`openapi.yaml`)
   - `docs/api-contract.md` — borrador del contrato de API del sprint 1 (la referencia vigente es `openapi.yaml`)
-  - `docs/database/` — esquema (`schema.sql`), migraciones (`migraciones/`) y datos de prueba (`seed-dev.sql`, `seed-dev-catalogo.sql`, `seed-dev-cochabamba.sql`)
+  - `docs/database/` — esquema (`schema.sql`), migraciones (`migraciones/`) y datos de prueba (`seed-dev.sql`, `seed-dev-catalogo.sql`, `seed-dev-cochabamba.sql`, `seed-dev-matching.sql`)
 
 Archivos en la raíz: `README.md`, `.gitignore`.
 
@@ -87,7 +87,7 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 Necesitas una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden y `005-sede-cochabamba.sql` para la sede activa), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
+> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden y `005-sede-cochabamba.sql` para la sede activa y `006-hu12-matching.sql` para el matching de compañeros), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
@@ -150,6 +150,13 @@ Para probarlo: elige tu campus (en la app, `/configuracion/ubicacion`, o con `PU
 - Cinco son puntos de referencia (campus, parqueo, bloques A, B y C) con `recomendable = FALSE`: quedan guardados, pero nunca se recomiendan, así que su categoría no se ve.
 - Las categorías del relevamiento se asignan a las de la app así: `comer` y `cafe_te` → Comida, `estudio` → Estudio, `descanso` → Descanso, `deporte_aire_libre` → Deporte y `campus` → Estudio (los puntos de referencia). No se crea ninguna categoría nueva.
 - Si cambias el JSON, regenera el seed con `python docs/datos/generar_seed_cochabamba.py`.
+
+#### Compañeros para el matching (HU12, solo desarrollo)
+
+[`docs/database/seed-dev-matching.sql`](docs/database/seed-dev-matching.sql) crea cinco estudiantes de prueba en la sede Cochabamba, con horario y puentes, para probar el matching de compañeros con puente compatible. Se ejecuta **después** de `seed-dev.sql`, `seed-dev-cochabamba.sql` y la migración `006-hu12-matching.sql`. Es idempotente. Usan la misma contraseña que el estudiante de prueba.
+
+- Ana, Diego, Lucía y Mateo aceptaron aparecer en el matching. Sofía **no**: tiene los mismos puentes que Ana, pero nunca debe aparecer.
+- Para verlos: entra como el estudiante de prueba, elige la sede Cochabamba, activa «Dejar que compañeros con tiempo compatible me encuentren» y registra un horario con un puente, por ejemplo el lunes de 09:30 a 11:00.
 
 ### Asistente de IA (HU7, opcional)
 

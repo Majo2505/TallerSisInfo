@@ -13,6 +13,8 @@ public class Usuario
     public bool ConsentimientoUbicacion { get; set; }
     public DateTime? FechaConsentimiento { get; set; }
     public bool NotificacionesActivas { get; set; } = true;   // HU4: false = no se le envían avisos
+    public bool VisibleMatching { get; set; }                 // HU12: true = compañeros de su sede con tiempo compatible lo encuentran
+    public DateTime? FechaVisibleMatching { get; set; }       // HU12: cuándo lo aceptó
     public int? ZonaActualId { get; set; }
     public Zona? ZonaActual { get; set; }
     public DateTime CreatedAt { get; set; }
