@@ -42,6 +42,13 @@ const ETIQUETA_CONSULTA: Record<ConsultaRag["estado"], string> = {
   ERROR: "Error",
 };
 
+// Los accesos directos del inicio del admin abren el panel en una pestaña: /admin?pestana=reportes
+function pestanaInicial(): Pestana {
+  if (typeof window === "undefined") return "catalogo";
+  const pedida = new URLSearchParams(window.location.search).get("pestana");
+  return PESTANAS.some((p) => p.id === pedida) ? (pedida as Pestana) : "catalogo";
+}
+
 const segundos = (ms: number | null) => (ms === null ? "—" : `${(ms / 1000).toLocaleString("es-BO", { maximumFractionDigits: 1 })} s`);
 
 const fechaCorta = (iso: string) =>
@@ -53,7 +60,7 @@ export default function PanelAdmin() {
   const { sesion, listo } = useSesion();
   const reducir = useReducedMotion();
   const aviso = useAviso();
-  const [pestana, setPestana] = useState<Pestana>("catalogo");
+  const [pestana, setPestana] = useState<Pestana>(pestanaInicial);
   const [resumen, setResumen] = useState<ResumenAdmin | null>(null);
   const [lugares, setLugares] = useState<LugarAdmin[] | null>(null);
   const [reportes, setReportes] = useState<ReporteAdmin[] | null>(null);
