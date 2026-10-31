@@ -127,35 +127,122 @@
   white-space: nowrap;
 }
 
-.feedback {
+/* HU9: valorar la recomendación. Me gusta se pinta de marino con el pulgar amarillo; no me sirve, en gris firme. */
+.valorar {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--borde-suave);
+}
+
+.valorarFila {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.valorarPregunta {
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.gracias {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--exito);
+  font-weight: 800;
+}
+
+.votos {
+  display: flex;
   gap: 8px;
-  color: var(--texto-tenue);
-  font-size: 0.82rem;
 }
 
-.feedback button {
-  border: 1px solid var(--borde-suave);
+.voto,
+.votoMeGusta,
+.votoNoMeSirve {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--borde);
   border-radius: 999px;
-  padding: 7px 10px;
   background: var(--superficie);
-  color: var(--texto);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
 }
 
-.feedback button[aria-pressed="true"] {
-  border-color: var(--ucb-azul);
+.votoMeGusta {
+  border-color: var(--ucb-marino);
+  background: var(--ucb-marino);
+  color: #ffffff;
+}
+
+.votoMeGusta .votoIcono {
+  color: var(--ucb-amarillo);
+}
+
+.votoNoMeSirve {
+  border-color: var(--texto-suave);
   background: var(--fondo-suave);
+  color: var(--texto);
 }
 
-.feedback button:disabled {
-  cursor: wait;
-  opacity: 0.6;
+.votoIcono {
+  display: inline-grid;
 }
 
-.feedback small {
-  flex-basis: 100%;
-  color: var(--error, #a12622);
+.voto:focus-visible,
+.votoMeGusta:focus-visible,
+.votoNoMeSirve:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .voto:hover {
+    border-color: var(--ucb-azul-medio);
+    background: var(--fondo-suave);
+  }
+}
+
+.anuncio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.errorVoto {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--error-borde);
+  background: var(--error-fondo);
+  color: var(--error-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voto,
+  .votoMeGusta,
+  .votoNoMeSirve {
+    transition: none;
+  }
 }
