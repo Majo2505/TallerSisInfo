@@ -113,9 +113,10 @@
 
 /* Pestañas Crear / Descubrir */
 .pestanas {
+  box-sizing: border-box;
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: min(100%, 360px);
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr);
+  width: min(100%, 460px);
   padding: 5px;
   border-radius: 18px;
   background: var(--fondo-suave);
