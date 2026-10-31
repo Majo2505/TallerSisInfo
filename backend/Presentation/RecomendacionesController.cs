@@ -55,16 +55,31 @@ public class RecomendacionesController : ControllerBase
     public Task<IActionResult> Recomendar(SolicitudRecomendacionDto req, CancellationToken ct)
         => Ejecutar(async () => Ok(await _service.RecomendarAsync(UsuarioId, req, ct)));
 
+    /// <summary>Valora una recomendación con me gusta (<c>LIKE</c>) o no me sirve (<c>DISLIKE</c>) (HU9).</summary>
+    /// <remarks>
+    /// El voto queda asociado a la recomendación y, a través de su consulta, al usuario del token: solo se pueden valorar
+    /// las recomendaciones propias. Hay <b>una sola valoración por recomendación</b>: votar de nuevo reemplaza la anterior
+    /// (no se duplica) y repetir el mismo voto no cambia nada. Las valoraciones se ven en las métricas del panel de administración.
+    ///
+    /// Ejemplo de petición:
+    /// <code>
+    /// { "feedback": "LIKE" }
+    /// </code>
+    /// </remarks>
+    /// <param name="id">Id de la recomendación (viene en cada recomendación de <c>POST /api/recomendaciones</c>).</param>
+    /// <param name="req">La valoración.</param>
+    /// <param name="ct">Cancelación de la petición.</param>
+    /// <response code="200">Valoración guardada: la vigente y su fecha.</response>
+    /// <response code="400">El voto no es <c>LIKE</c> ni <c>DISLIKE</c> (<c>codigo</c> = <c>VALIDACION</c>).</response>
+    /// <response code="401">Falta el token, es inválido o está vencido.</response>
+    /// <response code="404">La recomendación no existe o no es tuya (<c>codigo</c> = <c>NO_ENCONTRADO</c>).</response>
     [HttpPatch("{id:long}/feedback")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(FeedbackGuardadoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
-    public Task<IActionResult> Feedback(long id, FeedbackRecomendacionDto req, CancellationToken ct) =>
-        Ejecutar(async () =>
-        {
-            await _service.GuardarFeedbackAsync(UsuarioId, id, req.Feedback, ct);
-            return NoContent();
-        });
+    public Task<IActionResult> Feedback(long id, FeedbackRecomendacionDto req, CancellationToken ct)
+        => Ejecutar(async () => Ok(await _service.GuardarFeedbackAsync(UsuarioId, id, req.Feedback, ct)));
 
     private async Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion)
     {
