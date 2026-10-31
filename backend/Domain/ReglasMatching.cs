@@ -27,6 +27,8 @@ public static class ReglasMatching
     public readonly record struct PuenteDe(int UsuarioId, Franja Franja);
 
     /// <summary>Resultado del cruce con un compañero.</summary>
+    /// <param name="UsuarioId">El compañero.</param>
+    /// <param name="MinutosEnComun">Duración de <paramref name="EnComun"/>.</param>
     /// <param name="EnComun">El tramo compartido más largo dentro de mi puente.</param>
     /// <param name="Porcentaje">Qué parte de mi puente cubre ese tramo, de 1 a 100.</param>
     /// <param name="FranjasCompartidas">En cuántos de mis puentes de la semana coincidimos (incluye el consultado).</param>
