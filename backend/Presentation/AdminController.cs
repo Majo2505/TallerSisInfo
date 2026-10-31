@@ -102,7 +102,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> AuditoriaRag([FromQuery] int? limite, CancellationToken ct)
         => Ok(await _service.ListarConsultasRagAsync(limite, ct));
 
-    /// <summary>Métricas del asistente en los últimos 7 días: consultas por resultado, latencia promedio y lugares más recomendados.</summary>
+    /// <summary>Métricas del asistente en los últimos 7 días: consultas por resultado, latencia promedio, lugares más recomendados y valoraciones de los estudiantes (HU9).</summary>
     /// <response code="200">Métricas.</response>
     /// <response code="401">Falta el token, es inválido o está vencido.</response>
     /// <response code="403">El usuario no es administrador.</response>

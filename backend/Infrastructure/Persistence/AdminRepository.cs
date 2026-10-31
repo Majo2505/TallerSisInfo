@@ -110,7 +110,9 @@ public class AdminRepository : IAdminRepository
                 FROM log_auditoria_rag WHERE created_at >= {desde}
                 """).ToListAsync(ct)).Single();
         var top = await _db.Database.SqlQuery<FilaTop>($"""
-                SELECT l.nombre AS Nombre, c.nombre AS Categoria, COUNT(*) AS Veces
+                SELECT l.nombre AS Nombre, c.nombre AS Categoria, COUNT(*) AS Veces,
+                       COALESCE(SUM(r.feedback = 'LIKE'), 0)    AS MeGusta,
+                       COALESCE(SUM(r.feedback = 'DISLIKE'), 0) AS NoMeSirve
                 FROM recomendacion r
                 JOIN log_auditoria_rag g ON g.id = r.log_id
                 JOIN lugar l ON l.id = r.lugar_id
@@ -120,9 +122,16 @@ public class AdminRepository : IAdminRepository
                 ORDER BY Veces DESC
                 LIMIT 5
                 """).ToListAsync(ct);
+        // HU9: valoraciones registradas en la semana (usa ix_recomendacion_feedback).
+        var votos = (await _db.Database.SqlQuery<FilaVotos>($"""
+                SELECT COALESCE(SUM(feedback = 'LIKE'), 0)    AS MeGusta,
+                       COALESCE(SUM(feedback = 'DISLIKE'), 0) AS NoMeSirve
+                FROM recomendacion WHERE feedback IS NOT NULL AND fecha_feedback >= {desde}
+                """).ToListAsync(ct)).Single();
         return new MetricasAdminDto((int)f.Total, (int)f.Ok, (int)f.SinResultados, (int)f.Rechazadas, (int)f.Errores,
             f.LatenciaPromedio is null ? null : (int)f.LatenciaPromedio,
-            top.Select(t => new LugarTopDto(t.Nombre, t.Categoria, (int)t.Veces)).ToList());
+            top.Select(t => new LugarTopDto(t.Nombre, t.Categoria, (int)t.Veces, (int)t.MeGusta, (int)t.NoMeSirve)).ToList(),
+            (int)votos.MeGusta, (int)votos.NoMeSirve);
     }
 
     private static string? Hora(TimeSpan? t) => t is null ? null : $"{t.Value.Hours:00}:{t.Value.Minutes:00}";
@@ -193,5 +202,13 @@ public class AdminRepository : IAdminRepository
         public string Nombre { get; set; } = "";
         public string Categoria { get; set; } = "";
         public long Veces { get; set; }
+        public decimal MeGusta { get; set; }
+        public decimal NoMeSirve { get; set; }
+    }
+
+    private sealed class FilaVotos
+    {
+        public decimal MeGusta { get; set; }
+        public decimal NoMeSirve { get; set; }
     }
 }
