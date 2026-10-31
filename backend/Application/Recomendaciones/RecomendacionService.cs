@@ -132,5 +132,17 @@ public class RecomendacionService
 
     // Las métricas salen del catálogo (candidato), no del texto del asistente.
     private static RecomendacionDto ADto(Recomendacion r, LugarCandidato l) =>
-        new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion);
+        new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion, r.Feedback);
+
+    public async Task<string> GuardarFeedbackAsync(int usuarioId, long recomendacionId, string? feedback, CancellationToken ct = default)
+    {
+        var valor = feedback?.Trim().ToUpperInvariant();
+        if (valor is not ("LIKE" or "DISLIKE"))
+            throw new ReglaNegocioException("VALIDACION", "El feedback debe ser LIKE o DISLIKE.");
+
+        var recomendacion = await _repo.ObtenerDeUsuarioAsync(recomendacionId, usuarioId, ct)
+            ?? throw new ReglaNegocioException("NO_ENCONTRADO", "La recomendación no existe.");
+        await _repo.GuardarFeedbackAsync(recomendacion, valor, ct);
+        return valor;
+    }
 }

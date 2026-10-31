@@ -28,6 +28,7 @@ public record RespuestaRecomendacionDto(
 /// <param name="TiempoTrasladoMin" example="6">Tiempo de traslado de ida y vuelta, en minutos.</param>
 /// <param name="DuracionEstimadaMin" example="30">Tiempo estimado de la actividad en el lugar, en minutos.</param>
 /// <param name="Explicacion" example="Ideal para repasar en silencio antes de tu próxima clase.">Por qué encaja, redactado por el asistente.</param>
+/// <param name="Feedback" example="LIKE">Valoración del estudiante: <c>LIKE</c>, <c>DISLIKE</c> o <c>null</c> si aún no valoró.</param>
 public record RecomendacionDto(
     long Id,
     int LugarId,
@@ -36,5 +37,8 @@ public record RecomendacionDto(
     int DistanciaM,
     int TiempoTrasladoMin,
     int DuracionEstimadaMin,
-    string Explicacion
+    string Explicacion,
+    string? Feedback = null
 );
+
+public record FeedbackRecomendacionDto(string Feedback);
