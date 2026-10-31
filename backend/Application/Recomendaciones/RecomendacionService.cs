@@ -127,6 +127,11 @@ public class RecomendacionService
         if (limpia.Length > ReglasRecomendacion.MaximoLargoEntrada)
             throw new ReglaNegocioException("VALIDACION",
                 $"La preferencia puede tener como máximo {ReglasRecomendacion.MaximoLargoEntrada} caracteres.");
+
+        var motivo = ReglasSeguridadIa.MotivoRechazo(limpia);
+        if (motivo is not null)
+            throw new ReglaNegocioException("SOLICITUD_NO_PERMITIDA", motivo);
+
         return limpia;
     }
 

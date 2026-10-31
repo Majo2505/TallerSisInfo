@@ -11,6 +11,9 @@ import TarjetaRecomendacion from "./TarjetaRecomendacion";
 
 /** Mismo límite que el backend (ReglasRecomendacion.MaximoLargoEntrada). */
 const MAXIMO = 300;
+const PATRON_NO_PERMITIDO =
+  /\b(ignore|ignora|olvida|omite|desobedece|revela|muestra|explica)\b.{0,80}\b(previous|prior|anteriores?|sistema|system|developer|desarrollador|prompt|instrucciones|reglas)\b|(\bactúa como\b|\bactua como\b|\bjailbreak\b|\bdo anything now\b|\bDAN\b)/i;
+const PATRON_FUERA_DE_ALCANCE = /\b(contraseña|password|token|clave api|código fuente|datos personales|instrucciones del sistema)\b/i;
 
 const EJEMPLOS = [
   "Una plática con café",
@@ -59,8 +62,25 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
     if (!consulta || pensando || !puente) return;
     const idTu = siguienteId.current++;
     const idIa = siguienteId.current++;
+    const rechazo = PATRON_NO_PERMITIDO.test(consulta) || PATRON_FUERA_DE_ALCANCE.test(consulta);
     setMensajes((ms) => [...ms, { id: idTu, autor: "tu", texto: consulta }, { id: idIa, autor: "ia", consulta, estado: "pensando" }]);
     setTexto("");
+    if (rechazo) {
+      setMensajes((ms) =>
+        ms.map((m) =>
+          m.id === idIa
+            ? {
+                id: idIa,
+                autor: "ia",
+                consulta,
+                estado: "error",
+                error: "Solo puedo recomendar actividades y lugares del campus para tu puente.",
+              }
+            : m,
+        ),
+      );
+      return;
+    }
     void consultar(consulta, idIa);
   }
 
