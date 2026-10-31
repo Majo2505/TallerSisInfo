@@ -3,12 +3,20 @@ namespace Breaku.Domain.Rules;
 /// <summary>Reglas puras del horario. No dependen de nada.</summary>
 public static class ReglasHorario
 {
+    /// <summary>La clase más temprana de la UCB empieza a esta hora (ck_horario_rango).</summary>
+    public static readonly TimeOnly InicioMasTemprano = new(7, 15);
+
+    /// <summary>La clase más tarde de la UCB termina a esta hora (ck_horario_rango).</summary>
+    public static readonly TimeOnly FinMasTarde = new(21, 0);
+
     /// <summary>Devuelve el mensaje de error, o null si el bloque es válido.</summary>
     public static string? ValidarBloque(string? materia, int diaSemana, TimeOnly inicio, TimeOnly fin)
     {
         if (string.IsNullOrWhiteSpace(materia)) return "La materia es obligatoria.";
         if (materia.Trim().Length > 100) return "La materia no puede superar 100 caracteres.";
         if (diaSemana < 1 || diaSemana > 6) return "El día debe ir de 1 (lunes) a 6 (sábado).";
+        if (inicio < InicioMasTemprano) return "Las clases empiezan desde las 07:15.";
+        if (fin > FinMasTarde) return "Las clases terminan, como muy tarde, a las 21:00.";
         if (fin <= inicio) return "La hora de fin tiene que ser posterior a la hora de inicio.";
         return null;
     }
