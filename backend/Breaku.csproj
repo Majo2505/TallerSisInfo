@@ -14,6 +14,8 @@
     <Compile Remove="Breaku.Tests/**" />
     <EmbeddedResource Remove="Breaku.Tests/**" />
     <None Remove="Breaku.Tests/**" />
+    <!-- Los .json de Breaku.Tests/bin son Content para el SDK web: sin esto se copian a la salida y se anidan en cada build. -->
+    <Content Remove="Breaku.Tests/**" />
   </ItemGroup>
 
   <ItemGroup>
