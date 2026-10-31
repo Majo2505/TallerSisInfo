@@ -16,6 +16,7 @@ import {
   IconoSalir,
 } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
+import { guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
 import { guardarConfiguracion, obtenerConfiguracion } from "@/lib/notificaciones";
 import { CARRERAS, LARGO_MAXIMO_NOMBRE, Perfil as DatosPerfil, SEMESTRES, actualizarPerfil, obtenerPerfil } from "@/lib/perfil";
 import { actualizarNombreSesion, cerrarSesion } from "@/services/authService";
@@ -50,6 +51,10 @@ export default function Perfil() {
   const [avisosActivos, setAvisosActivos] = useState<boolean | null>(null);
   const [errorAvisos, setErrorAvisos] = useState("");
   const [guardandoAvisos, setGuardandoAvisos] = useState(false);
+  // HU12: consentimiento para que compañeros con tiempo libre compatible te encuentren. Desactivado por defecto.
+  const [visibleMatching, setVisibleMatching] = useState<boolean | null>(null);
+  const [errorMatching, setErrorMatching] = useState("");
+  const [guardandoMatching, setGuardandoMatching] = useState(false);
 
   useEffect(() => {
     if (!sesion) return;
@@ -120,6 +125,34 @@ export default function Perfil() {
       setErrorAvisos((e as Error).message);
     } finally {
       setGuardandoAvisos(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    obtenerConfiguracionMatching()
+      .then((c) => {
+        if (activo) setVisibleMatching(c.visible);
+      })
+      .catch((e: Error) => {
+        if (activo) setErrorMatching(e.message);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  async function cambiarMatching(valor: boolean) {
+    setGuardandoMatching(true);
+    setErrorMatching("");
+    try {
+      const c = await guardarConfiguracionMatching(valor);
+      setVisibleMatching(c.visible);
+    } catch (e) {
+      setErrorMatching((e as Error).message);
+    } finally {
+      setGuardandoMatching(false);
     }
   }
 
@@ -319,6 +352,38 @@ export default function Perfil() {
                     transition={{ duration: 0.42 }}
                   >
                     {errorAvisos}
+                  </motion.p>
+                )}
+                <label className={estilos.interruptor}>
+                  <span className={estilos.interruptorTexto}>
+                    <strong>Dejar que compañeros con tiempo compatible me encuentren</strong>
+                    <small>Tus compañeros de campus verán tu nombre, tu carrera y el tramo libre que comparten. Nunca tu correo.</small>
+                  </span>
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    className={estilos.oculto}
+                    checked={visibleMatching ?? false}
+                    disabled={visibleMatching === null || guardandoMatching}
+                    onChange={(e) => cambiarMatching(e.target.checked)}
+                  />
+                  <span className={visibleMatching ? estilos.rielActivo : estilos.riel} aria-hidden="true">
+                    <motion.span
+                      className={estilos.perilla}
+                      animate={{ x: visibleMatching ? 22 : 0 }}
+                      transition={reducir ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 30 }}
+                    />
+                  </span>
+                </label>
+                {errorMatching && (
+                  <motion.p
+                    className={estilos.error}
+                    role="alert"
+                    initial={reducir ? false : { x: 0 }}
+                    animate={{ x: [0, -8, 8, -5, 5, 0] }}
+                    transition={{ duration: 0.42 }}
+                  >
+                    {errorMatching}
                   </motion.p>
                 )}
                 <Link href="/configuracion/ubicacion" className={estilos.secundario}>
