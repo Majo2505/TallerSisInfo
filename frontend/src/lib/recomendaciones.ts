@@ -27,8 +27,12 @@ export const pedirRecomendaciones = (puenteId: number, entrada?: string) =>
     body: JSON.stringify({ puenteId, entrada }),
   });
 
-export const guardarFeedback = (id: number, feedback: "LIKE" | "DISLIKE") =>
-  pedirApi<void>(`/api/recomendaciones/${id}/feedback`, {
+/** HU9: una sola valoración por recomendación; votar de nuevo reemplaza la anterior. */
+export type Valoracion = "LIKE" | "DISLIKE";
+export type FeedbackGuardado = { recomendacionId: number; feedback: Valoracion; fechaFeedback: string };
+
+export const guardarFeedback = (id: number, feedback: Valoracion) =>
+  pedirApi<FeedbackGuardado>(`/api/recomendaciones/${id}/feedback`, {
     method: "PATCH",
     body: JSON.stringify({ feedback }),
   });

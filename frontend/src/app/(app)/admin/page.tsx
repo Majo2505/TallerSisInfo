@@ -4,7 +4,15 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
-import { IconoBandera, IconoBuscar, IconoDestello, IconoPersonas, IconoPin } from "@/components/app/Iconos";
+import {
+  IconoBandera,
+  IconoBuscar,
+  IconoDestello,
+  IconoPersonas,
+  IconoPin,
+  IconoPulgarAbajo,
+  IconoPulgarArriba,
+} from "@/components/app/Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import {
   ConsultaRag,
@@ -309,6 +317,38 @@ export default function PanelAdmin() {
                   <p className={estilos.grande}>{segundos(metricas.latenciaPromedioMs)}</p>
                   <p className={estilos.ayuda}>Tiempo que tarda el asistente en responder cada consulta.</p>
                 </div>
+                <div className={estilos.tarjetaMetrica}>
+                  <h2>Valoraciones de los estudiantes</h2>
+                  <div className={estilos.votosResumen}>
+                    <p className={estilos.grande}>
+                      <span className={estilos.votoArriba} aria-hidden="true">
+                        <IconoPulgarArriba tamano={22} />
+                      </span>
+                      <Odometro valor={metricas.meGusta} /> <small>me gusta</small>
+                    </p>
+                    <p className={estilos.grande}>
+                      <span className={estilos.votoAbajo} aria-hidden="true">
+                        <IconoPulgarAbajo tamano={22} />
+                      </span>
+                      <Odometro valor={metricas.noMeSirve} /> <small>no me sirve</small>
+                    </p>
+                  </div>
+                  {metricas.meGusta + metricas.noMeSirve > 0 ? (
+                    <span className={estilos.barraPista} aria-hidden="true">
+                      <motion.span
+                        className={`${estilos.barra} ${estilos.barraOk}`}
+                        initial={reducir ? false : { scaleX: 0 }}
+                        animate={{ scaleX: metricas.meGusta / (metricas.meGusta + metricas.noMeSirve) }}
+                        transition={{ duration: 0.8, ease: SALIDA, delay: 0.1 }}
+                      />
+                    </span>
+                  ) : null}
+                  <p className={estilos.ayuda}>
+                    {metricas.meGusta + metricas.noMeSirve > 0
+                      ? `${Math.round((100 * metricas.meGusta) / (metricas.meGusta + metricas.noMeSirve))} % de las valoraciones son positivas.`
+                      : "Todavía nadie valoró una recomendación esta semana."}
+                  </p>
+                </div>
                 <div className={`${estilos.tarjetaMetrica} ${estilos.ancha}`}>
                   <h2>Lugares más recomendados</h2>
                   {metricas.masRecomendados.length === 0 && <p className={estilos.ayuda}>Todavía no hay recomendaciones esta semana.</p>}
@@ -326,6 +366,15 @@ export default function PanelAdmin() {
                         />
                       </span>
                       <strong>{l.veces}</strong>
+                      {l.meGusta + l.noMeSirve > 0 && (
+                        <span
+                          className={estilos.votosLugar}
+                          aria-label={`${l.meGusta} me gusta y ${l.noMeSirve} no me sirve`}
+                        >
+                          <IconoPulgarArriba tamano={13} /> {l.meGusta}
+                          <IconoPulgarAbajo tamano={13} /> {l.noMeSirve}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

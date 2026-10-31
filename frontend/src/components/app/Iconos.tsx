@@ -121,6 +121,20 @@ export const IconoCheck = (p: Props) => (
   </Svg>
 );
 
+export const IconoPulgarArriba = (p: Props) => (
+  <Svg {...p}>
+    <path d="M7 10v11H4V10z" />
+    <path d="M7 10l4-7a2.5 2.5 0 0 1 2.5 3L13 10h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 21H7" />
+  </Svg>
+);
+
+export const IconoPulgarAbajo = (p: Props) => (
+  <Svg {...p}>
+    <path d="M17 14V3h3v11z" />
+    <path d="M17 14l-4 7a2.5 2.5 0 0 1-2.5-3L11 14H5.5a2 2 0 0 1-2-2.3l1.2-7A2 2 0 0 1 6.7 3H17" />
+  </Svg>
+);
+
 export const IconoCamara = (p: Props) => (
   <Svg {...p}>
     <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" />
