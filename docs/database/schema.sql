@@ -128,6 +128,7 @@ CREATE TABLE horario (
   CONSTRAINT uq_horario_bloque UNIQUE (usuario_id, dia_semana, hora_inicio, materia),
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
+  CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),   -- HU2: horario de clases de la UCB
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
   CONSTRAINT fk_horario_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
