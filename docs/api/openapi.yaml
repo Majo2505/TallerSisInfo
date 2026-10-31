@@ -921,6 +921,50 @@ paths:
               example:
                 codigo: ASISTENTE_NO_DISPONIBLE
                 mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+  /api/recomendaciones/{id}/feedback:
+    patch:
+      tags: [Recomendaciones]
+      operationId: valorarRecomendacion
+      summary: Valora una recomendación con me gusta (LIKE) o no me sirve (DISLIKE) (HU9).
+      description: |
+        El voto queda asociado a la recomendación y, por su consulta, al usuario del token: solo se valoran las
+        recomendaciones propias. Hay una sola valoración por recomendación: votar de nuevo reemplaza la anterior
+        (no se duplica) y repetir el mismo voto no cambia nada. Las valoraciones aparecen en `GET /api/admin/metricas`.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id de la recomendación (viene en cada recomendación de `POST /api/recomendaciones`).
+          schema: { type: integer, format: int64, example: 87 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRecomendacionDto'
+      responses:
+        '200':
+          description: Valoración guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackGuardadoDto'
+        '400':
+          description: El voto no es `LIKE` ni `DISLIKE` (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La recomendación no existe o no es tuya (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/perfil:
     get:
       tags: [Perfil]
@@ -1530,6 +1574,23 @@ components:
           type: string
           description: Por qué encaja, redactado por el asistente.
           example: Ideal para repasar en silencio antes de tu próxima clase.
+        feedback:
+          type: string
+          nullable: true
+          enum: [LIKE, DISLIKE]
+          description: Valoración del estudiante (HU9), o `null` si todavía no valoró.
+          example: null
+    FeedbackRecomendacionDto:
+      type: object
+      required: [feedback]
+      properties:
+        feedback: { type: string, enum: [LIKE, DISLIKE], description: No distingue mayúsculas., example: LIKE }
+    FeedbackGuardadoDto:
+      type: object
+      properties:
+        recomendacionId: { type: integer, format: int64, example: 87 }
+        feedback: { type: string, enum: [LIKE, DISLIKE], example: LIKE }
+        fechaFeedback: { type: string, format: date-time, example: '2026-10-31T14:00:04.512Z' }
     ZonaDto:
       type: object
       required: [id, nombre]
@@ -1731,6 +1792,10 @@ components:
               nombre: { type: string, example: Biblioteca Central }
               categoria: { type: string, example: Estudio }
               veces: { type: integer, format: int32, example: 15 }
+              meGusta: { type: integer, format: int32, example: 6, description: Valoraciones LIKE del lugar (HU9). }
+              noMeSirve: { type: integer, format: int32, example: 1, description: Valoraciones DISLIKE del lugar (HU9). }
+        meGusta: { type: integer, format: int32, example: 9, description: Valoraciones LIKE registradas en los últimos 7 días (HU9). }
+        noMeSirve: { type: integer, format: int32, example: 2, description: Valoraciones DISLIKE registradas en los últimos 7 días (HU9). }
     ClaseLeidaDto:
       type: object
       properties:

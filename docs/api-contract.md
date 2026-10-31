@@ -564,6 +564,33 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 
 `GET` devuelve `{ "visible": false, "desde": null }`. `PUT` recibe `{ "visible": true }` (obligatorio; sin él responde 400 `VALIDACION`) y devuelve lo mismo con la fecha del consentimiento. Al retirarlo, `desde` vuelve a `null`.
 
+## 7c. Valoración de recomendaciones (HU9 — responsable: Amira)
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Valores | `LIKE` (me gusta) o `DISLIKE` (no me sirve); no distingue mayúsculas ni espacios | ✅ Definido (`ck_reco_feedback`) |
+| Asociación | El voto va en la fila de `recomendacion`, que pertenece a una consulta (`log_auditoria_rag.usuario_id`). Solo se valoran recomendaciones propias; la de otro responde 404 | ✅ Definido |
+| Sin duplicados | Una sola valoración por recomendación: votar de nuevo reemplaza la anterior y actualiza `fecha_feedback`; repetir el mismo voto no escribe | ✅ Definido |
+| Para qué sirve | `GET /api/admin/metricas` muestra me gusta y no me sirve de la semana, en total y por lugar | ✅ Definido |
+
+### `PATCH /api/recomendaciones/{id}/feedback`
+
+Body: `{ "feedback": "LIKE" }`. Respuesta **200**:
+
+```json
+{ "recomendacionId": 87, "feedback": "LIKE", "fechaFeedback": "2026-10-31T14:00:04.512Z" }
+```
+
+Cada recomendación de `POST /api/recomendaciones` trae `feedback` (`LIKE`, `DISLIKE` o `null`).
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | El voto no es `LIKE` ni `DISLIKE` (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | La recomendación no existe o no es del usuario (`NO_ENCONTRADO`) |
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |

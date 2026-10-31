@@ -28,7 +28,9 @@ public class RecomendacionRepository : IRecomendacionRepository
     public async Task GuardarFeedbackAsync(Recomendacion recomendacion, string feedback, CancellationToken ct = default)
     {
         recomendacion.Feedback = feedback;
-        recomendacion.FechaFeedback = DateTime.UtcNow;
+        // fecha_feedback es DATETIME(6): se recorta a microsegundos para que la respuesta coincida con lo guardado.
+        var ahora = DateTime.UtcNow;
+        recomendacion.FechaFeedback = ahora.AddTicks(-(ahora.Ticks % 10));
         await _db.SaveChangesAsync(ct);
     }
 }
