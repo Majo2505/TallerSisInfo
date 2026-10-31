@@ -332,7 +332,7 @@ export default function HorarioPage() {
 
         <aside className="hz-lateral" aria-label="Puentes y resumen semanal">
           <PuentesDetectados puentes={puentes} cargando={cargando} error={errorPuentes} onReintentar={cargar} />
-          <ResumenSemanal clases={clasesAsistidas} puentes={puentes.length} tiempoLibreMin={tiempoLibreMin} cargando={cargando} />
+          <ResumenSemanal bloques={bloques} puentes={puentes} cargando={cargando} />
         </aside>
       </div>
 
