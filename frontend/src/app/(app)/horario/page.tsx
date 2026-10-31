@@ -5,9 +5,12 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCalendario, IconoCheck, IconoMas } from "@/components/app/Iconos";
 import { Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import { Selector, SelectorHora } from "@/components/app/Selectores";
 import {
   Bloque,
   BloqueInput,
+  HORA_MAXIMA,
+  HORA_MINIMA,
   cambiarAsistencia,
   columnasPorSolape,
   crearBloque,
@@ -33,6 +36,8 @@ const aMin = (h: string) => {
   return a * 60 + b;
 };
 const pad = (n: number) => String(n).padStart(2, "0");
+const aHora = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+const OPCIONES_DIA = [1, 2, 3, 4, 5, 6].map((d) => ({ valor: String(d), etiqueta: DIAS[d] }));
 
 // Colores de los bloques de clase (paleta UCB). Cada materia usa siempre el mismo color, según su nombre.
 const COLORES_BLOQUE = [
@@ -140,8 +145,9 @@ export default function HorarioPage() {
   const clickEnColumna = (e: React.MouseEvent<HTMLDivElement>, dia: number) => {
     if (e.target !== e.currentTarget) return;
     const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
-    const h = Math.min(desde + Math.floor(y / PX_HORA), 22);
-    setModal({ base: { diaSemana: dia, horaInicio: `${pad(h)}:00`, horaFin: `${pad(h + 1)}:00` } });
+    // La hora tocada, ajustada al horario de clases (07:15 a 21:00) con una clase de 1 hora.
+    const inicio = Math.min(Math.max((desde + Math.floor(y / PX_HORA)) * 60, aMin(HORA_MINIMA)), aMin(HORA_MAXIMA) - 60);
+    setModal({ base: { diaSemana: dia, horaInicio: aHora(inicio), horaFin: aHora(inicio + 60) } });
   };
 
   const alGuardar = (texto: string, aviso?: string) => {
@@ -407,9 +413,10 @@ function BloqueModal({ estado, onClose, onSaved }: {
     if (!form.materia.trim()) e.materia = "Escribe el nombre de la materia.";
     else if (form.materia.trim().length > 100) e.materia = "Máximo 100 caracteres.";
     if (!form.horaInicio) e.horaInicio = "Indica la hora de inicio.";
+    else if (form.horaInicio < HORA_MINIMA) e.horaInicio = "Las clases empiezan desde las 07:15.";
     if (!form.horaFin) e.horaFin = "Indica la hora de fin.";
-    if (form.horaInicio && form.horaFin && form.horaFin <= form.horaInicio)
-      e.horaFin = "Tiene que ser posterior a la hora de inicio.";
+    else if (form.horaFin > HORA_MAXIMA) e.horaFin = "Las clases terminan, como muy tarde, a las 21:00.";
+    else if (form.horaInicio && form.horaFin <= form.horaInicio) e.horaFin = "Tiene que ser posterior a la hora de inicio.";
     return e;
   };
 
@@ -485,27 +492,50 @@ function BloqueModal({ estado, onClose, onSaved }: {
           {errores.materia && <small className="hz-err">{errores.materia}</small>}
         </label>
 
-        <label className="hz-campo">
-          <span>Día</span>
-          <select value={form.diaSemana} onChange={(e) => set("diaSemana", Number(e.target.value))}>
-            {[1, 2, 3, 4, 5, 6].map((d) => <option key={d} value={d}>{DIAS[d]}</option>)}
-          </select>
-        </label>
+        <div className="hz-campo">
+          <span id="hz-dia">Día</span>
+          <Selector
+            valor={String(form.diaSemana)}
+            opciones={OPCIONES_DIA}
+            onCambio={(v) => set("diaSemana", Number(v))}
+            etiqueta="Día"
+          />
+        </div>
 
         <div className="hz-fila">
-          <label className="hz-campo">
+          <div className="hz-campo">
             <span>Inicio</span>
-            <input type="time" value={form.horaInicio} aria-invalid={!!errores.horaInicio}
-              onChange={(e) => set("horaInicio", e.target.value)} />
+            <SelectorHora
+              valor={form.horaInicio}
+              min={HORA_MINIMA}
+              // Tiene que quedar al menos 5 minutos de clase antes de las 21:00.
+              max={aHora(aMin(HORA_MAXIMA) - 5)}
+              etiqueta="Hora de inicio"
+              invalido={!!errores.horaInicio}
+              onCambio={(v) => {
+                set("horaInicio", v);
+                if (errores.horaInicio) setErrores((x) => ({ ...x, horaInicio: undefined }));
+              }}
+            />
             {errores.horaInicio && <small className="hz-err">{errores.horaInicio}</small>}
-          </label>
-          <label className="hz-campo">
+          </div>
+          <div className="hz-campo">
             <span>Fin</span>
-            <input type="time" value={form.horaFin} aria-invalid={!!errores.horaFin}
-              onChange={(e) => set("horaFin", e.target.value)} />
+            <SelectorHora
+              valor={form.horaFin}
+              min={form.horaInicio ? aHora(aMin(form.horaInicio) + 5) : aHora(aMin(HORA_MINIMA) + 5)}
+              max={HORA_MAXIMA}
+              etiqueta="Hora de fin"
+              invalido={!!errores.horaFin}
+              onCambio={(v) => {
+                set("horaFin", v);
+                if (errores.horaFin) setErrores((x) => ({ ...x, horaFin: undefined }));
+              }}
+            />
             {errores.horaFin && <small className="hz-err">{errores.horaFin}</small>}
-          </label>
+          </div>
         </div>
+        <p className="hz-nota">Las clases de la UCB van de 07:15 a 21:00.</p>
 
         <label className="hz-campo">
           <span>Aula <em>(opcional)</em></span>
