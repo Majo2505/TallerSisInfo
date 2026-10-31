@@ -1,15 +1,134 @@
-.panel { background: var(--superficie); border: 1px solid var(--borde-suave); border-radius: 24px; padding: 20px; box-shadow: var(--sombra-1); }
-.titulo { margin: 0 0 14px; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ucb-marino); }
+.panel {
+  display: grid;
+  gap: 12px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: var(--sombra-1);
+}
 
-.lista { margin: 0; display: grid; gap: 4px; }
-.fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 12px; border-radius: 14px; transition: background-color 200ms ease; }
-.fila dt { color: var(--texto-suave); font-size: .95rem; }
-.fila dd { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ucb-marino);
+}
 
-.clases { color: var(--ucb-marino); }
-.puentes { color: var(--ucb-azul-medio); }
-.libre { color: var(--ucb-amarillo-oscuro); }
+/* Barras por día: clase (marino) abajo y puentes (amarillo) encima. */
+.grafico {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  height: 120px;
+}
+
+.columna {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  gap: 6px;
+}
+
+.pista {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  gap: 2px;
+  width: 100%;
+  max-width: 28px;
+  height: 100%;
+  padding: 3px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--fondo-suave);
+  overflow: hidden;
+}
+
+.clase,
+.libre {
+  display: block;
+  width: 100%;
+  border-radius: 7px;
+  transform-origin: bottom center;
+}
+
+.clase {
+  background: linear-gradient(180deg, var(--ucb-azul-medio), var(--ucb-marino));
+}
+
+.libre {
+  background: var(--ucb-amarillo);
+}
+
+.dia {
+  color: var(--texto-tenue);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.leyenda {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.puntoClase,
+.puntoLibre {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.puntoClase {
+  background: var(--ucb-marino);
+}
+
+.puntoLibre {
+  margin-left: 8px;
+  background: var(--ucb-amarillo);
+}
+
+.datos {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.dato {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  border-radius: 14px;
+}
+
+.dato dt {
+  color: var(--texto-tenue);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dato dd {
+  margin: 0;
+  color: var(--ucb-marino);
+  font-size: 0.98rem;
+  font-weight: 800;
+}
 
 @media (hover: hover) and (pointer: fine) {
-  .fila:hover { background: var(--fondo-suave); }
+  .dato {
+    transition: background-color 200ms ease;
+  }
+
+  .dato:hover {
+    background: var(--fondo-suave);
+  }
 }

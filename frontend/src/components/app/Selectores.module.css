@@ -1,0 +1,211 @@
+/* Campo que abre la lista: mismo alto, borde y foco que los demás campos de BREAKU. */
+.disparador {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 200ms ease, box-shadow 250ms var(--curva-salida);
+}
+
+.disparador:focus-visible,
+.disparador[aria-expanded="true"] {
+  outline: none;
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+}
+
+.disparador[aria-invalid="true"],
+.disparador[data-invalido="true"] {
+  border-color: var(--error);
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.1);
+}
+
+.disparador:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.disparador > svg {
+  flex-shrink: 0;
+  color: var(--texto-tenue);
+}
+
+.valor,
+.placeholder,
+.valorHora {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--texto-tenue);
+}
+
+.valorHora {
+  font-weight: 700;
+  color: var(--ucb-marino);
+  font-variant-numeric: tabular-nums;
+}
+
+.flecha {
+  transition: transform 200ms var(--curva-salida);
+}
+
+.disparador[aria-expanded="true"] .flecha {
+  transform: rotate(180deg);
+}
+
+/* Panel flotante (en un portal, sobre todo lo demás). */
+.panel {
+  position: fixed;
+  z-index: 80;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-3);
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 264px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 11px;
+  color: var(--texto);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.opcionActiva {
+  background: var(--fondo-suave);
+}
+
+.opcionElegida {
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+.opcionElegida svg {
+  flex-shrink: 0;
+  color: var(--ucb-marino);
+}
+
+/* Reloj: dos columnas desplazables. */
+.reloj {
+  display: grid;
+  gap: 6px;
+}
+
+.columnaTitulos,
+.columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.columnaTitulos span {
+  padding: 4px 0 2px;
+  color: var(--texto-tenue);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.columna {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.celda {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.columna [aria-selected="true"] .celda {
+  background: var(--ucb-marino);
+  color: #ffffff;
+}
+
+.celda:disabled {
+  color: var(--borde);
+  cursor: not-allowed;
+}
+
+.celda:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: -2px;
+}
+
+.rango {
+  margin: 2px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--borde-suave);
+  color: var(--texto-tenue);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .celda:not(:disabled):hover {
+    background: var(--fondo-suave);
+  }
+
+  .columna [aria-selected="true"] .celda:hover {
+    background: var(--ucb-marino);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flecha,
+  .disparador {
+    transition: none;
+  }
+}
