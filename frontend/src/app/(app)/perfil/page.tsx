@@ -16,6 +16,7 @@ import {
   IconoSalir,
 } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
+import { Selector } from "@/components/app/Selectores";
 import { guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
 import { guardarConfiguracion, obtenerConfiguracion } from "@/lib/notificaciones";
 import { CARRERAS, LARGO_MAXIMO_NOMBRE, Perfil as DatosPerfil, SEMESTRES, actualizarPerfil, obtenerPerfil } from "@/lib/perfil";
@@ -25,6 +26,14 @@ import { useSesion } from "@/lib/useSesion";
 import estilos from "./perfil.module.css";
 
 type Pestana = "informacion" | "ajustes" | "seguridad" | "reportar";
+
+// Un reporte es un aviso puntual, no un texto largo.
+const LARGO_MAXIMO_REPORTE = 500;
+const TIPOS_REPORTE = [
+  { valor: "error", etiqueta: "Algo no funciona" },
+  { valor: "lugar", etiqueta: "Información incorrecta de un lugar" },
+  { valor: "sugerencia", etiqueta: "Sugerencia" },
+];
 
 const PESTANAS: { id: Pestana; nombre: string; corto: string; Icono: typeof IconoPersona }[] = [
   { id: "informacion", nombre: "Información personal", corto: "Datos", Icono: IconoPersona },
@@ -51,6 +60,9 @@ export default function Perfil() {
   const [avisosActivos, setAvisosActivos] = useState<boolean | null>(null);
   const [errorAvisos, setErrorAvisos] = useState("");
   const [guardandoAvisos, setGuardandoAvisos] = useState(false);
+  const [tipoReporte, setTipoReporte] = useState("error");
+  const [textoReporte, setTextoReporte] = useState("");
+  const [errorReporte, setErrorReporte] = useState("");
   // HU12: consentimiento para que compañeros con tiempo libre compatible te encuentren. Desactivado por defecto.
   const [visibleMatching, setVisibleMatching] = useState<boolean | null>(null);
   const [errorMatching, setErrorMatching] = useState("");
@@ -285,28 +297,31 @@ export default function Perfil() {
                   <small>Tu correo institucional y tu rol no se pueden cambiar.</small>
                 </label>
                 <div className={estilos.fila}>
-                  <label className={estilos.campo}>
+                  <div className={estilos.campo}>
                     Carrera
-                    <select value={carrera} onChange={(e) => setCarrera(e.target.value)} disabled={!perfil}>
-                      <option value="">Sin especificar</option>
-                      {/* Si la carrera guardada no está en la lista, igual se muestra. */}
-                      {carrera && !CARRERAS.includes(carrera) && <option value={carrera}>{carrera}</option>}
-                      {CARRERAS.map((c) => (
-                        <option key={c}>{c}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className={estilos.campo}>
+                    <Selector
+                      valor={carrera}
+                      etiqueta="Carrera"
+                      deshabilitado={!perfil}
+                      onCambio={setCarrera}
+                      opciones={[
+                        { valor: "", etiqueta: "Sin especificar" },
+                        // Si la carrera guardada no está en la lista, igual se muestra.
+                        ...(carrera && !CARRERAS.includes(carrera) ? [{ valor: carrera, etiqueta: carrera }] : []),
+                        ...CARRERAS.map((c) => ({ valor: c, etiqueta: c })),
+                      ]}
+                    />
+                  </div>
+                  <div className={estilos.campo}>
                     Semestre
-                    <select value={semestre} onChange={(e) => setSemestre(e.target.value)} disabled={!perfil}>
-                      <option value="">—</option>
-                      {SEMESTRES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}°
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                    <Selector
+                      valor={semestre}
+                      etiqueta="Semestre"
+                      deshabilitado={!perfil}
+                      onCambio={setSemestre}
+                      opciones={[{ valor: "", etiqueta: "Sin especificar" }, ...SEMESTRES.map((s) => ({ valor: String(s), etiqueta: `${s}.° semestre` }))]}
+                    />
+                  </div>
                 </div>
                 <div className={estilos.acciones}>
                   <button type="submit" className={estilos.primario} disabled={!hayCambios || guardandoPerfil}>
@@ -420,23 +435,57 @@ export default function Perfil() {
             {pestana === "reportar" && (
               <form
                 className={estilos.formulario}
+                noValidate
                 onSubmit={(e) => {
                   e.preventDefault();
+                  const limpio = textoReporte.trim();
+                  if (limpio.length < 10) return setErrorReporte("Cuéntanos un poco más: al menos 10 caracteres.");
+                  if (limpio.length > LARGO_MAXIMO_REPORTE) return setErrorReporte(`Máximo ${LARGO_MAXIMO_REPORTE} caracteres.`);
+                  setErrorReporte("");
                   aviso.mostrar("Enviar reportes va a estar disponible pronto.");
                 }}
               >
                 <h2 className={estilos.seccion}>Reportar un problema</h2>
-                <label className={estilos.campo}>
+                <div className={estilos.campo}>
                   Tipo de reporte
-                  <select defaultValue="error">
-                    <option value="error">Algo no funciona</option>
-                    <option value="lugar">Información incorrecta de un lugar</option>
-                    <option value="sugerencia">Sugerencia</option>
-                  </select>
-                </label>
+                  <Selector valor={tipoReporte} opciones={TIPOS_REPORTE} onCambio={setTipoReporte} etiqueta="Tipo de reporte" />
+                </div>
                 <label className={estilos.campo}>
                   Cuéntanos qué pasó
-                  <textarea rows={4} />
+                  <textarea
+                    rows={4}
+                    value={textoReporte}
+                    maxLength={LARGO_MAXIMO_REPORTE}
+                    placeholder="Ej: la cafetería figura abierta, pero cierra a las 15:00."
+                    aria-invalid={!!errorReporte}
+                    aria-describedby="contador-reporte"
+                    onChange={(e) => {
+                      setTextoReporte(e.target.value);
+                      if (errorReporte) setErrorReporte("");
+                    }}
+                  />
+                  <span className={estilos.pieCampo}>
+                    {errorReporte ? (
+                      <motion.small
+                        key={errorReporte}
+                        className={estilos.errorCampo}
+                        role="alert"
+                        initial={reducir ? false : { x: 0 }}
+                        animate={{ x: [0, -6, 6, -3, 3, 0] }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        {errorReporte}
+                      </motion.small>
+                    ) : (
+                      <small>Un aviso breve y concreto.</small>
+                    )}
+                    <small
+                      id="contador-reporte"
+                      className={textoReporte.length >= LARGO_MAXIMO_REPORTE * 0.9 ? estilos.contadorLimite : estilos.contador}
+                    >
+                      {textoReporte.length}/{LARGO_MAXIMO_REPORTE}
+                    </small>
+                  </span>
                 </label>
                 <button type="submit" className={estilos.primario}>
                   Enviar reporte

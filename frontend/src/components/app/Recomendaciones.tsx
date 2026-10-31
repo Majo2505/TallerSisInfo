@@ -10,6 +10,7 @@ import { useSesion } from "@/lib/useSesion";
 import FondoVivo from "./FondoVivo";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "./Movimiento";
+import { Selector } from "./Selectores";
 import estilos from "./Recomendaciones.module.css";
 import ChatRecomendaciones from "./ChatRecomendaciones";
 import SelectorAnimo from "./SelectorAnimo";
@@ -142,16 +143,18 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
 
         {puentes && puentes.length > 1 && (
           <Pieza>
-            <label className={estilos.selector}>
+            <div className={estilos.selector}>
               <span>Para qué puente</span>
-              <select value={puenteId ?? ""} onChange={(e) => setPuenteId(Number(e.target.value))}>
-                {puentes.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {`${DIAS[p.diaSemana]}, de ${hhmm(p.horaInicio)} a ${hhmm(p.horaFin)} (${duracionMin(p)} min)`}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <Selector
+                valor={puenteId ? String(puenteId) : ""}
+                opciones={puentes.map((p) => ({
+                  valor: String(p.id),
+                  etiqueta: `${DIAS[p.diaSemana]}, de ${hhmm(p.horaInicio)} a ${hhmm(p.horaFin)} (${duracionMin(p)} min)`,
+                }))}
+                onCambio={(v) => setPuenteId(Number(v))}
+                etiqueta="Para qué puente"
+              />
+            </div>
           </Pieza>
         )}
 
