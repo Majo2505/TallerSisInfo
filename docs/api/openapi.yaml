@@ -46,6 +46,8 @@ tags:
     description: Panel de administración del campus. Requiere JWT con rol `ADMIN` (claim `role`); con otro rol responde 403.
   - name: Perfil
     description: Gestión del perfil (HU21). Requiere JWT; solo opera sobre el perfil del usuario del token.
+  - name: Matching
+    description: Compañeros de la misma sede con puente compatible (HU12). Requiere JWT. Solo aparece quien aceptó aparecer.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -972,6 +974,89 @@ paths:
                 $ref: '#/components/schemas/ErrorNegocioDto'
         '401':
           $ref: '#/components/responses/NoAutorizado'
+  /api/matching:
+    get:
+      tags: [Matching]
+      operationId: buscarCompaneros
+      summary: Compañeros con tiempo libre compatible con uno de tus puentes.
+      description: |
+        Cruce por franja horaria: mismo día y 30 minutos o más en común. Orden por compatibilidad: más minutos en común
+        primero; en empate, más franjas compartidas en la semana. Solo cruza estudiantes de tu sede activa que aceptaron
+        aparecer, y exige que tú también lo hayas aceptado. Siempre 200 si el puente es tuyo: mira `estado`
+        (`OK`, `SIN_RESULTADOS`, `SIN_ZONA` o `NO_VISIBLE`). No devuelve correos ni ids.
+      security:
+        - Bearer: []
+      parameters:
+        - name: puenteId
+          in: query
+          required: true
+          description: Id de uno de tus puentes (de `GET /api/puentes`).
+          schema: { type: integer, format: int32, minimum: 1, example: 5 }
+      responses:
+        '200':
+          description: Resultado del matching.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoMatchingDto'
+        '400':
+          description: Falta `puenteId` (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: El puente no existe o no es tuyo (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/matching/configuracion:
+    get:
+      tags: [Matching]
+      operationId: obtenerConfiguracionMatching
+      summary: Si aceptaste que compañeros con tiempo compatible te encuentren.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Consentimiento actual. Por defecto, `visible` es `false`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionMatchingDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+    put:
+      tags: [Matching]
+      operationId: actualizarConfiguracionMatching
+      summary: Acepta o retira el consentimiento para aparecer en el matching.
+      description: Al aceptar se guarda la fecha; al retirarlo dejas de aparecer y tampoco ves a otros. El cambio queda en `historial_cambio`.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarConfiguracionMatchingRequest'
+      responses:
+        '200':
+          description: Consentimiento actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionMatchingDto'
+        '400':
+          description: Falta `visible` (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
   /health:
     get:
       tags: [Health]
@@ -1694,3 +1779,37 @@ components:
         semestre: { type: integer, format: int32, nullable: true, minimum: 1, maximum: 10, example: 5 }
         correo: { type: string, nullable: true, description: No editable; si llega distinto al actual responde NO_EDITABLE. }
         rol: { type: string, nullable: true, description: No editable; si llega distinto al actual responde NO_EDITABLE. }
+    ConfiguracionMatchingDto:
+      type: object
+      properties:
+        visible: { type: boolean, example: true }
+        desde: { type: string, format: date-time, nullable: true, example: '2026-10-31T14:00:04.512Z' }
+    ActualizarConfiguracionMatchingRequest:
+      type: object
+      required: [visible]
+      properties:
+        visible: { type: boolean, example: true }
+    CompaneroCompatibleDto:
+      type: object
+      properties:
+        nombre: { type: string, example: Ana Quiroga }
+        carrera: { type: string, nullable: true, example: Ingeniería de Sistemas }
+        semestre: { type: integer, format: int32, nullable: true, example: 5 }
+        horaInicio: { type: string, example: '09:30:00', description: Inicio del tramo en común. }
+        horaFin: { type: string, example: '11:00:00', description: Fin del tramo en común. }
+        minutosEnComun: { type: integer, format: int32, minimum: 30, example: 90 }
+        porcentaje: { type: integer, format: int32, minimum: 1, maximum: 100, example: 100 }
+        franjasCompartidas: { type: integer, format: int32, minimum: 1, example: 1 }
+    ResultadoMatchingDto:
+      type: object
+      properties:
+        estado: { type: string, enum: [OK, SIN_RESULTADOS, SIN_ZONA, NO_VISIBLE] }
+        mensaje: { type: string, nullable: true, example: Por ahora nadie de tu campus está libre contigo en este puente. }
+        puente:
+          $ref: '#/components/schemas/PuenteDto'
+        minutosPuente: { type: integer, format: int32, example: 90 }
+        companeros:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/CompaneroCompatibleDto'
