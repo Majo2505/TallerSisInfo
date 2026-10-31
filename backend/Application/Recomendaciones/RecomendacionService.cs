@@ -134,15 +134,21 @@ public class RecomendacionService
     private static RecomendacionDto ADto(Recomendacion r, LugarCandidato l) =>
         new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion, r.Feedback);
 
-    public async Task<string> GuardarFeedbackAsync(int usuarioId, long recomendacionId, string? feedback, CancellationToken ct = default)
+    /// <summary>
+    /// HU9: guarda la valoración del estudiante sobre una de SUS recomendaciones. Hay una sola por recomendación:
+    /// un voto nuevo reemplaza al anterior y repetir el mismo voto no escribe nada.
+    /// </summary>
+    public async Task<FeedbackGuardadoDto> GuardarFeedbackAsync(int usuarioId, long recomendacionId, string? feedback, CancellationToken ct = default)
     {
-        var valor = feedback?.Trim().ToUpperInvariant();
-        if (valor is not ("LIKE" or "DISLIKE"))
-            throw new ReglaNegocioException("VALIDACION", "El feedback debe ser LIKE o DISLIKE.");
+        var valor = ReglasFeedback.Normalizar(feedback)
+            ?? throw new ReglaNegocioException("VALIDACION", ReglasFeedback.MensajeInvalido);
 
+        // Solo las recomendaciones del propio usuario: la de otro responde igual que una inexistente.
         var recomendacion = await _repo.ObtenerDeUsuarioAsync(recomendacionId, usuarioId, ct)
             ?? throw new ReglaNegocioException("NO_ENCONTRADO", "La recomendación no existe.");
-        await _repo.GuardarFeedbackAsync(recomendacion, valor, ct);
-        return valor;
+
+        if (ReglasFeedback.CambiaElVoto(recomendacion.Feedback, valor))
+            await _repo.GuardarFeedbackAsync(recomendacion, valor, ct);
+        return new FeedbackGuardadoDto(recomendacion.Id, recomendacion.Feedback!, recomendacion.FechaFeedback!.Value);
     }
 }

@@ -41,4 +41,12 @@ public record RecomendacionDto(
     string? Feedback = null
 );
 
-public record FeedbackRecomendacionDto(string Feedback);
+/// <summary>Valoración de una recomendación (HU9).</summary>
+/// <param name="Feedback" example="LIKE">Obligatorio: <c>LIKE</c> (me gusta) o <c>DISLIKE</c> (no me sirve). No distingue mayúsculas.</param>
+public record FeedbackRecomendacionDto(string? Feedback);
+
+/// <summary>Valoración guardada. Si ya existía otra, la reemplaza: hay una sola por recomendación.</summary>
+/// <param name="RecomendacionId" example="42">La recomendación valorada.</param>
+/// <param name="Feedback" example="LIKE"><c>LIKE</c> o <c>DISLIKE</c>.</param>
+/// <param name="FechaFeedback" example="2026-10-31T14:00:04.512Z">Cuándo se registró el voto vigente (UTC).</param>
+public record FeedbackGuardadoDto(long RecomendacionId, string Feedback, DateTime FechaFeedback);
