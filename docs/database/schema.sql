@@ -193,6 +193,7 @@ CREATE TABLE recomendacion (
   fecha_feedback DATETIME(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_reco_log_lugar UNIQUE (log_id, lugar_id),
+  KEY ix_recomendacion_feedback (feedback, fecha_feedback),   -- HU9: métricas de valoraciones (me gusta / no me sirve)
   CONSTRAINT ck_reco_feedback  CHECK (feedback IN ('LIKE','DISLIKE')),
   CONSTRAINT ck_reco_fecha     CHECK ((feedback IS NULL) = (fecha_feedback IS NULL)),
   -- RN04 / RNF06: solo se puede recomendar un lugar recuperado en ESA misma consulta
