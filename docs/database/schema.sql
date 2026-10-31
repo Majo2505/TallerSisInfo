@@ -16,6 +16,8 @@ CREATE TABLE usuario (
   consentimiento_ubicacion  BOOLEAN      NOT NULL DEFAULT FALSE,
   fecha_consentimiento      DATETIME(6)  NULL,
   notificaciones_activas    BOOLEAN      NOT NULL DEFAULT TRUE,   -- HU4: FALSE = no se le envían avisos (los puentes se siguen detectando)
+  visible_matching          BOOLEAN      NOT NULL DEFAULT FALSE,  -- HU12: TRUE = compañeros de su sede con tiempo compatible lo pueden encontrar
+  fecha_visible_matching    DATETIME(6)  NULL,                    -- HU12: cuándo lo aceptó
   zona_actual_id            INT          NULL,
   created_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
@@ -28,6 +30,7 @@ CREATE TABLE usuario (
   CONSTRAINT ck_usuario_consentimiento CHECK (
     consentimiento_ubicacion = FALSE OR (fecha_consentimiento IS NOT NULL AND zona_actual_id IS NOT NULL)
   ),
+  CONSTRAINT ck_usuario_visible_matching CHECK (visible_matching = FALSE OR fecha_visible_matching IS NOT NULL),
   CONSTRAINT fk_usuario_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
@@ -54,6 +57,7 @@ CREATE TABLE zona (
 
 ALTER TABLE usuario
   ADD KEY ix_usuario_zona_actual (zona_actual_id),
+  ADD KEY ix_usuario_matching (zona_actual_id, visible_matching),   -- HU12: compañeros de la misma sede que aceptaron aparecer
   ADD CONSTRAINT fk_usuario_zona_actual FOREIGN KEY (zona_actual_id) REFERENCES zona (id);
 
 CREATE TABLE categoria (
