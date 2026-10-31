@@ -126,3 +126,36 @@
   color: var(--ucb-marino);
   white-space: nowrap;
 }
+
+.feedback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+}
+
+.feedback button {
+  border: 1px solid var(--borde-suave);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.feedback button[aria-pressed="true"] {
+  border-color: var(--ucb-azul);
+  background: var(--fondo-suave);
+}
+
+.feedback button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.feedback small {
+  flex-basis: 100%;
+  color: var(--error, #a12622);
+}

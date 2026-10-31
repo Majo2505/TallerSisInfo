@@ -55,6 +55,17 @@ public class RecomendacionesController : ControllerBase
     public Task<IActionResult> Recomendar(SolicitudRecomendacionDto req, CancellationToken ct)
         => Ejecutar(async () => Ok(await _service.RecomendarAsync(UsuarioId, req, ct)));
 
+    [HttpPatch("{id:long}/feedback")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public Task<IActionResult> Feedback(long id, FeedbackRecomendacionDto req, CancellationToken ct) =>
+        Ejecutar(async () =>
+        {
+            await _service.GuardarFeedbackAsync(UsuarioId, id, req.Feedback, ct);
+            return NoContent();
+        });
+
     private async Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion)
     {
         try { return await accion(); }

@@ -10,6 +10,7 @@ export type Recomendacion = {
   tiempoTrasladoMin: number; // ida y vuelta
   duracionEstimadaMin: number;
   explicacion: string;
+  feedback: "LIKE" | "DISLIKE" | null;
 };
 
 export type RespuestaRecomendacion = {
@@ -24,4 +25,10 @@ export const pedirRecomendaciones = (puenteId: number, entrada?: string) =>
   pedirApi<RespuestaRecomendacion>("/api/recomendaciones", {
     method: "POST",
     body: JSON.stringify({ puenteId, entrada }),
+  });
+
+export const guardarFeedback = (id: number, feedback: "LIKE" | "DISLIKE") =>
+  pedirApi<void>(`/api/recomendaciones/${id}/feedback`, {
+    method: "PATCH",
+    body: JSON.stringify({ feedback }),
   });

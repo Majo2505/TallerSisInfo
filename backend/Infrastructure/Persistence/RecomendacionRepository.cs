@@ -1,5 +1,6 @@
 using Breaku.Application.Recomendaciones;
 using Breaku.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace Breaku.Infrastructure.Persistence;
 
@@ -14,6 +15,20 @@ public class RecomendacionRepository : IRecomendacionRepository
         // y propaga el id del log por las navegaciones.
         _db.LogsAuditoriaRag.Add(log);
         _db.Recomendaciones.AddRange(recomendaciones);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public Task<Recomendacion?> ObtenerDeUsuarioAsync(long recomendacionId, int usuarioId, CancellationToken ct = default) =>
+        _db.Recomendaciones
+            .Include(r => r.LugarRecuperado)
+            .ThenInclude(r => r.Log)
+            .Where(r => r.Id == recomendacionId && r.LugarRecuperado.Log.UsuarioId == usuarioId)
+            .SingleOrDefaultAsync(ct);
+
+    public async Task GuardarFeedbackAsync(Recomendacion recomendacion, string feedback, CancellationToken ct = default)
+    {
+        recomendacion.Feedback = feedback;
+        recomendacion.FechaFeedback = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
 }
