@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoBuscar, IconoCheck, IconoPin } from "@/components/app/Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import { Selector } from "@/components/app/Selectores";
 import TarjetaLugarViable from "@/components/campus/TarjetaLugarViable";
 import { buscarLugaresViables, ResultadoLugares } from "@/lib/lugares";
 import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
@@ -140,16 +141,15 @@ export default function Campus() {
 
       {puentes && puentes.length > 0 && (
         <Pieza>
-          <label className={estilos.selector}>
+          <div className={estilos.selector}>
             <span>¿Para qué puente buscas?</span>
-            <select value={puenteId ?? ""} onChange={(e) => elegirPuente(Number(e.target.value))}>
-              {puentes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {etiquetaPuente(p)}
-                </option>
-              ))}
-            </select>
-          </label>
+            <Selector
+              valor={puenteId ? String(puenteId) : ""}
+              opciones={puentes.map((p) => ({ valor: String(p.id), etiqueta: etiquetaPuente(p) }))}
+              onCambio={(v) => elegirPuente(Number(v))}
+              etiqueta="¿Para qué puente buscas?"
+            />
+          </div>
         </Pieza>
       )}
 

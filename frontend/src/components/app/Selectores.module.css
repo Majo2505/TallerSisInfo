@@ -21,6 +21,12 @@
   transition: border-color 200ms ease, box-shadow 250ms var(--curva-salida);
 }
 
+.compacto {
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+}
+
 .disparador:focus-visible,
 .disparador[aria-expanded="true"] {
   outline: none;

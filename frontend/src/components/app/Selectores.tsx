@@ -122,10 +122,14 @@ type PropsSelector = {
   invalido?: boolean;
   deshabilitado?: boolean;
   id?: string;
+  /** Versión de 44 px para filas densas (por ejemplo, la revisión de la foto del horario). */
+  compacto?: boolean;
+  /** Clase extra para ubicar el campo en una grilla. */
+  clase?: string;
 };
 
 /** Lista desplegable (reemplaza a <select>). Flechas para moverse, Enter para elegir, Escape para cerrar. */
-export function Selector({ valor, opciones, onCambio, etiqueta, placeholder = "Elige una opción", invalido, deshabilitado, id }: PropsSelector) {
+export function Selector({ valor, opciones, onCambio, etiqueta, placeholder = "Elige una opción", invalido, deshabilitado, id, compacto, clase }: PropsSelector) {
   const { abierto, setAbierto, cerrar, pos, disparador, panel } = usePopover();
   const idLista = useId();
   const [activo, setActivo] = useState(0);
@@ -171,7 +175,7 @@ export function Selector({ valor, opciones, onCambio, etiqueta, placeholder = "E
         ref={disparador}
         id={id}
         type="button"
-        className={estilos.disparador}
+        className={[estilos.disparador, compacto ? estilos.compacto : "", clase ?? ""].join(" ")}
         role="combobox"
         aria-haspopup="listbox"
         aria-expanded={abierto}
@@ -234,13 +238,15 @@ type PropsHora = {
   etiqueta?: string;
   invalido?: boolean;
   id?: string;
+  compacto?: boolean;
+  clase?: string;
 };
 
 /**
  * Selector de hora (reemplaza a <input type="time">): una columna de horas y otra de minutos de 5 en 5.
  * Lo que queda fuera de [min, max] aparece desactivado, así que no se puede elegir.
  */
-export function SelectorHora({ valor, onCambio, min, max, etiqueta, invalido, id }: PropsHora) {
+export function SelectorHora({ valor, onCambio, min, max, etiqueta, invalido, id, compacto, clase }: PropsHora) {
   const { abierto, setAbierto, cerrar, pos, disparador, panel } = usePopover();
   const desde = aMin(min);
   const hasta = aMin(max);
@@ -272,7 +278,7 @@ export function SelectorHora({ valor, onCambio, min, max, etiqueta, invalido, id
         ref={disparador}
         id={id}
         type="button"
-        className={estilos.disparador}
+        className={[estilos.disparador, compacto ? estilos.compacto : "", clase ?? ""].join(" ")}
         aria-haspopup="dialog"
         aria-expanded={abierto}
         aria-label={etiqueta ? `${etiqueta}: ${valor || "sin elegir"}` : undefined}
