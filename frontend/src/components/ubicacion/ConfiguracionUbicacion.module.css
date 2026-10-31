@@ -1,172 +1,347 @@
-.contenedor {
-  max-width: 760px;
+.pagina {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 24px 16px 64px;
+  padding: 20px 16px 120px;
+  display: grid;
+  gap: 18px;
+}
+
+.pagina > * {
+  min-width: 0;
 }
 
 .volver {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: #3b5bdb;
-  font-weight: 600;
-  text-decoration: none;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
 }
 
-.tarjeta {
+.volver:active {
+  transform: scale(0.96);
+}
+
+/* Portada azul marino con el campus actual. */
+.portadaInterior {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
-  gap: 14px;
-  padding: 24px;
-  border: 1px solid #e0e3ef;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 8px 30px rgba(30, 40, 90, .06);
+  justify-items: start;
+  gap: 10px;
+  padding: 26px 22px;
+  border-radius: 28px;
+  background: var(--ucb-marino);
+  color: #ffffff;
+  box-shadow: var(--sombra-3);
 }
 
-.tarjeta h1,
-.tarjeta h2,
-.tarjeta p {
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.titulo {
   margin: 0;
+  font-size: clamp(2rem, 6vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
 }
 
-.tarjeta h1 {
-  font-size: 1.65rem;
-}
-
-.tarjeta h2 {
-  font-size: 1.1rem;
-}
-
-.tarjeta p {
-  color: #5d6480;
+.bajada {
+  margin: 0;
+  max-width: 58ch;
+  color: rgba(255, 255, 255, 0.82);
   line-height: 1.55;
 }
 
-.etiqueta {
-  color: #3b5bdb !important;
-  font-size: .82rem;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
 .estado {
-  display: grid;
-  gap: 4px;
-  padding: 14px;
-  border-radius: 10px;
-  background: #f3f5fc;
-}
-
-.estado span {
-  color: #5d6480;
-}
-
-.seccion {
-  display: grid;
-  gap: 10px;
-  padding-top: 18px;
-  border-top: 1px solid #eceef6;
-}
-
-.consentimiento {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 12px 16px 12px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.estado > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.estado strong {
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.estado small {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.84rem;
+}
+
+.estadoIcono,
+.estadoIconoOk {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+
+.estadoIcono {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.estadoIconoOk {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+/* Avisos */
+.error,
+.exito {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+.error {
+  background: var(--error-fondo);
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
+}
+
+.exito {
+  background: #e6f6f3;
+  border: 1px solid #a8dcd2;
+  color: var(--exito);
+}
+
+/* Las dos formas de elegir el campus. */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+}
+
+.tarjeta,
+.revocarTarjeta {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--superficie);
+  border: 1px solid var(--borde-suave);
+  box-shadow: var(--sombra-1);
+}
+
+.recomendado {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.tarjetaIcono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--fondo-suave);
+  color: var(--ucb-marino);
+}
+
+.tarjetaTitulo {
+  margin: 0;
+  color: var(--ucb-marino);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.texto {
+  margin: 0;
+  color: var(--texto-suave);
   line-height: 1.5;
 }
 
-.consentimiento input {
-  margin-top: 4px;
-  accent-color: #3b5bdb;
-}
-
-.formulario {
-  display: grid;
-  gap: 8px;
-}
-
-.formulario label {
+.aviso {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
   font-weight: 600;
 }
 
-.formulario select {
-  min-height: 42px;
-  padding: 8px 10px;
-  border: 1px solid #cfd3e3;
-  border-radius: 8px;
-  background: #fff;
-  color: #1c2033;
-  font: inherit;
+.campo {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  color: var(--ucb-marino);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
+/* Casilla de consentimiento con el estilo de la app. */
+.consentimiento {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--fondo-suave);
+  color: var(--texto);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.consentimiento input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.casilla {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  color: transparent;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.consentimiento input:checked + .casilla {
+  border-color: var(--ucb-marino);
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+}
+
+.consentimiento input:focus-visible + .casilla {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+/* Botones (mismos que el resto de la app). */
 .primario,
 .secundario,
 .revocar {
-  justify-self: start;
-  min-height: 42px;
-  padding: 9px 14px;
-  border: 1px solid #cfd3e3;
-  border-radius: 8px;
-  background: #fff;
-  color: #1c2033;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 16px;
   font: inherit;
-  font-weight: 600;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .primario {
-  border-color: #3b5bdb;
-  background: #3b5bdb;
-  color: #fff;
+  border: 0;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #ffffff;
+  box-shadow: 0 12px 24px -14px rgba(5, 40, 69, 0.9);
+}
+
+.secundario {
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  color: var(--ucb-marino);
 }
 
 .revocar {
-  border-color: #f0b8b3;
-  color: #b42318;
-}
-
-.primario:hover:not(:disabled) {
-  background: #3050c4;
-}
-
-.secundario:hover:not(:disabled) {
-  background: #eef0f8;
-}
-
-.revocar:hover:not(:disabled) {
-  background: #fdecea;
+  border: 1.5px solid var(--error-borde);
+  background: var(--superficie);
+  color: var(--error);
 }
 
 .primario:disabled,
 .secundario:disabled,
 .revocar:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: .6;
+  box-shadow: none;
 }
 
-.error {
-  color: #b42318 !important;
+.revocarTarjeta {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.exito {
-  color: #1f7a4d !important;
+.volver:focus-visible,
+.primario:focus-visible,
+.secundario:focus-visible,
+.revocar:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
 }
 
-.aviso {
-  padding: 12px;
-  border-radius: 8px;
-  background: #fff8e6;
-  color: #765514 !important;
+@media (hover: hover) and (pointer: fine) {
+  .secundario:not(:disabled):hover,
+  .volver:hover {
+    box-shadow: var(--sombra-2);
+  }
 }
 
-@media (max-width: 520px) {
-  .tarjeta {
-    padding: 18px;
+@media (min-width: 768px) {
+  .portadaInterior {
+    padding: 36px 40px;
   }
 
-  .primario,
-  .secundario,
-  .revocar {
-    justify-self: stretch;
+  .revocarTarjeta {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+@media (min-width: 1025px) {
+  .pagina {
+    padding-left: clamp(16px, 3vw, 48px);
+    padding-right: clamp(16px, 3vw, 48px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .volver,
+  .casilla {
+    transition: none;
   }
 }
