@@ -9,10 +9,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Breaku.Tests;
 
-/// <summary>HU11: qué se considera válido, qué falta y qué se pregunta.</summary>
 public class ReglasExtraccionTests
 {
-    // Martes 3 de noviembre de 2026, 10:00 en Bolivia.
     private static readonly DateTime Ahora = new(2026, 11, 3, 10, 0, 0);
 
     private static ArgumentosExtraidos Args(string? actividad = "jugar cartas", string? hora = null, int? enMinutos = null,
@@ -56,7 +54,7 @@ public class ReglasExtraccionTests
         Assert.Equal(ReglasExtraccion.EstadoIncompleto, r.Estado);
         Assert.Equal([ReglasExtraccion.CampoDuracion], r.Faltantes);
         Assert.Equal(ReglasExtraccion.PreguntaDuracion, r.Mensaje);
-        Assert.Equal("jugar cartas", r.Datos.Actividad);   // lo entendido se conserva
+        Assert.Equal("jugar cartas", r.Datos.Actividad);
     }
 
     [Fact]
@@ -152,7 +150,7 @@ public class ReglasExtraccionTests
 
         Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
         Assert.Equal(new DatosActividad("jugar cartas", new TimeOnly(16, 0), 90, 4), r.Datos);
-        Assert.Empty(r.Supuestos);   // la hora la había dicho antes: no es un supuesto
+        Assert.Empty(r.Supuestos);
     }
 
     [Fact]
@@ -186,7 +184,6 @@ public class ReglasExtraccionTests
     }
 }
 
-/// <summary>HU11: el extractor simulado (sin LLM) entiende las frases más comunes.</summary>
 public class ExtractorActividadSimuladoTests
 {
     [Fact]
@@ -197,7 +194,7 @@ public class ExtractorActividadSimuladoTests
         Assert.True(a.Entendido);
         Assert.Equal("jugar cartas", a.Actividad);
         Assert.Equal(60, a.DuracionMin);
-        Assert.Equal(4, a.MaxParticipantes);   // cupo habitual de las cartas
+        Assert.Equal(4, a.MaxParticipantes);
         Assert.Null(a.Hora);
         Assert.Null(a.EnMinutos);
     }
@@ -210,7 +207,7 @@ public class ExtractorActividadSimuladoTests
         Assert.Equal("tomar un café", a.Actividad);
         Assert.Equal(20, a.EnMinutos);
         Assert.Null(a.DuracionMin);
-        Assert.Null(a.MaxParticipantes);   // «para un café» no es un cupo
+        Assert.Null(a.MaxParticipantes);
     }
 
     [Theory]
@@ -242,10 +239,8 @@ public class ExtractorActividadSimuladoTests
         => Assert.False(ExtractorActividadSimulado.Extraer(texto).Entendido);
 }
 
-/// <summary>HU11: el caso de uso completo, con el extractor y el repositorio falsos.</summary>
 public class ExtraccionActividadServiceTests
 {
-    // 10:00 en Bolivia = 14:00 UTC.
     private static readonly DateTimeOffset AhoraUtc = new(2026, 11, 3, 14, 0, 0, TimeSpan.Zero);
 
     private sealed class RelojFijo : TimeProvider
@@ -413,8 +408,6 @@ public class ExtraccionActividadServiceTests
         Assert.Equal("VALIDACION", ex.Codigo);
     }
 
-    // ---------- corregir lo que la IA entendió mal ----------
-
     [Fact]
     public async Task Se_puede_corregir_en_palabras_una_actividad_ya_completa()
     {
@@ -424,7 +417,7 @@ public class ExtraccionActividadServiceTests
         var r = await servicio.ExtraerAsync(7, new SolicitudExtraccionDto("mejor a las 5", completa));
 
         Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
-        Assert.Equal(new ActividadExtraidaDto("jugar cartas", "17:00", 60, 4), r.Actividad);   // solo cambia la hora
+        Assert.Equal(new ActividadExtraidaDto("jugar cartas", "17:00", 60, 4), r.Actividad);
     }
 
     [Fact]
@@ -438,8 +431,8 @@ public class ExtraccionActividadServiceTests
 
         Assert.Equal(ReglasExtraccion.EstadoCompleto, revisada.Estado);
         Assert.Equal(new ActividadExtraidaDto("jugar ajedrez", "17:00", 90, 2), revisada.Actividad);
-        Assert.NotEqual(r.ConsultaId, revisada.ConsultaId);   // HU10 crea con la consulta nueva
-        Assert.Equal(1, extractor.Llamadas);                  // solo la extracción inicial llamó al modelo
+        Assert.NotEqual(r.ConsultaId, revisada.ConsultaId);
+        Assert.Equal(1, extractor.Llamadas);
 
         var log = repo.Logs.Single(l => l.Id == revisada.ConsultaId);
         Assert.Equal(LogAuditoriaRag.TipoExtraccionComunidad, log.Tipo);
@@ -490,7 +483,6 @@ public class ExtraccionActividadServiceTests
     }
 }
 
-/// <summary>HU11: el extractor con LLM pide tool calling y lee los argumentos de la función.</summary>
 public class ExtractorActividadLlmTests
 {
     private sealed class ServidorFalso(JsonNode respuesta) : HttpMessageHandler
@@ -510,14 +502,12 @@ public class ExtractorActividadLlmTests
     private const string Argumentos =
         """{"entendido":true,"actividad":"jugar cartas","hora":null,"enMinutos":null,"duracionMin":60,"maxParticipantes":4}""";
 
-    /// <summary>Respuesta de Chat Completions con un solo mensaje.</summary>
     private static JsonNode Respuesta(JsonObject mensaje, string finish = "tool_calls") => new JsonObject
     {
         ["model"] = "m",
         ["choices"] = new JsonArray { new JsonObject { ["finish_reason"] = finish, ["message"] = mensaje } }
     };
 
-    /// <summary>Mensaje con una llamada a registrar_actividad; los argumentos pueden ir como texto o como objeto.</summary>
     private static JsonObject ConLlamada(JsonNode argumentos) => new()
     {
         ["tool_calls"] = new JsonArray
@@ -555,8 +545,6 @@ public class ExtractorActividadLlmTests
     [Fact]
     public async Task Con_OpenAI_apaga_el_razonamiento_porque_no_se_permite_con_tools()
     {
-        // gpt-6-luna lo trae encendido y responde 400 «Function tools with reasoning_effort are not supported». No sale a internet:
-        // el ServidorFalso atiende el pedido aunque la URL base sea la de OpenAI.
         var (_, servidor) = await Extraer(Respuesta(ConLlamada(JsonValue.Create(Argumentos))), "https://api.openai.com/v1/");
 
         Assert.Equal("none", (string?)servidor.Pedido!["reasoning_effort"]);

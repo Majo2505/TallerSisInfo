@@ -14,8 +14,6 @@ public sealed class MatchingRepository : IMatchingRepository
 
     public async Task<List<CompaneroCandidato>> ListarCandidatosAsync(int usuarioId, int zonaId, Puente puente, CancellationToken ct = default)
     {
-        // Cruce por franja: mismo día y horas que se solapan. Usa ix_puente_matching (dia_semana, hora_inicio, hora_fin).
-        // El mínimo de 30 minutos en común lo aplica ReglasMatching.
         var companeros = await _db.Usuarios.AsNoTracking()
             .Where(u => u.Id != usuarioId && u.Activo && u.Rol == "ESTUDIANTE" && u.VisibleMatching && u.ZonaActualId == zonaId)
             .Where(u => _db.Puentes.Any(p => p.UsuarioId == u.Id && p.DiaSemana == puente.DiaSemana
@@ -24,7 +22,6 @@ public sealed class MatchingRepository : IMatchingRepository
             .ToListAsync(ct);
         if (companeros.Count == 0) return [];
 
-        // Toda su semana, para contar en cuántas franjas coinciden.
         var ids = companeros.Select(c => c.Id).ToList();
         var puentes = await _db.Puentes.AsNoTracking().Where(p => ids.Contains(p.UsuarioId)).ToListAsync(ct);
         var porUsuario = puentes.ToLookup(p => p.UsuarioId);
@@ -38,7 +35,6 @@ public sealed class MatchingRepository : IMatchingRepository
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         await _db.SaveChangesAsync(ct);
-        // historial_cambio no está mapeado (lo comparten varias historias): se inserta con SQL.
         await _db.Database.ExecuteSqlAsync($"""
                 INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
                 VALUES ('USUARIO', {usuarioId}, 'UPDATE', CAST({valoresAnteriores} AS JSON), CAST({valoresNuevos} AS JSON), {usuarioId})

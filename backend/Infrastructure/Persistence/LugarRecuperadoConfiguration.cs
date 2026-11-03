@@ -19,6 +19,5 @@ public class LugarRecuperadoConfiguration : IEntityTypeConfiguration<LugarRecupe
 
         builder.HasIndex(l => new { l.LogId, l.Orden }).IsUnique().HasDatabaseName("uq_lr_orden");
         builder.HasOne(l => l.Log).WithMany(log => log.LugaresRecuperados).HasForeignKey(l => l.LogId);
-        // lugar_id → lugar: la entidad Lugar la mapea HU6; la FK la hace cumplir MySQL.
     }
 }

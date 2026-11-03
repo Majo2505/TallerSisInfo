@@ -1,47 +1,35 @@
 import { pedirApi } from "./api";
 
-/** HU11: campos que el servidor extrae del texto libre. */
 export type CampoActividad = "actividad" | "horaInicio" | "duracionMin" | "maxParticipantes";
 
-/** Datos entendidos y válidos. Un campo en null es un dato que falta (ver `faltantes`). */
 export type ActividadExtraida = {
   actividad: string | null;
-  horaInicio: string | null; // "HH:mm", hoy, hora de Bolivia
+  horaInicio: string | null;
   duracionMin: number | null;
-  maxParticipantes: number | null; // contando a quien la crea
+  maxParticipantes: number | null;
 };
 
 export type RespuestaExtraccion = {
-  consultaId: number; // registro de auditoría; HU10 lo guarda como log_id de la comunidad
+  consultaId: number;
   estado: "COMPLETO" | "INCOMPLETO" | "NO_ENTENDIDO";
-  mensaje: string | null; // la pregunta por el primer dato faltante, o el aviso de que no se entendió
+  mensaje: string | null;
   actividad: ActividadExtraida;
   faltantes: CampoActividad[];
-  supuestos: CampoActividad[]; // completados por el sistema (hoy solo la hora: «ahora»)
+  supuestos: CampoActividad[];
 };
 
-/**
- * Extrae la actividad del texto libre. Para responder la pregunta por un dato faltante se manda solo la respuesta
- * en `texto` y lo ya entendido en `anterior`: el estudiante no reescribe toda la descripción.
- */
 export const extraerActividad = (texto: string, anterior: ActividadExtraida | null = null) =>
   pedirApi<RespuestaExtraccion>("/api/actividades/extraer", {
     method: "POST",
     body: JSON.stringify({ texto, anterior }),
   });
 
-/**
- * Revisa los datos que el estudiante corrigió a mano, sin llamar a la IA. Responde igual que `extraerActividad`:
- * con `COMPLETO`, el `consultaId` nuevo es el que se usa para crear la actividad. `texto` es la descripción original.
- * Para corregir en palabras («mejor a las 5») se usa `extraerActividad` con lo ya entendido en `anterior`.
- */
 export const revisarActividad = (texto: string, actividad: ActividadExtraida) =>
   pedirApi<RespuestaExtraccion>("/api/actividades/revisar", {
     method: "POST",
     body: JSON.stringify({ texto, actividad }),
   });
 
-/** 60 → «1 hora», 90 → «1 h 30 min», 45 → «45 min». */
 export function formatearDuracion(minutos: number): string {
   const horas = Math.floor(minutos / 60);
   const resto = minutos % 60;

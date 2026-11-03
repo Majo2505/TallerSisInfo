@@ -16,7 +16,6 @@ public sealed class PerfilRepository : IPerfilRepository
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         await _db.SaveChangesAsync(ct);
-        // historial_cambio no está mapeado (lo comparten varias historias): se inserta con SQL.
         await _db.Database.ExecuteSqlAsync($"""
                 INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
                 VALUES ('USUARIO', {usuarioId}, 'UPDATE', CAST({valoresAnteriores} AS JSON), CAST({valoresNuevos} AS JSON), {usuarioId})

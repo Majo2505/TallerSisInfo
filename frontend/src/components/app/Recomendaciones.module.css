@@ -52,7 +52,6 @@
   }
 }
 
-/* Cabecera de la elección de ánimo */
 .cabecera {
   display: grid;
   gap: 10px;
@@ -97,7 +96,6 @@
   color: var(--ucb-marino);
 }
 
-/* Resumen: tarjeta azul marino con fondo vivo. */
 .resumen {
   position: relative;
   isolation: isolate;
@@ -170,7 +168,6 @@
   cursor: pointer;
 }
 
-/* Espera: el asistente piensa. */
 .pensando {
   position: relative;
   isolation: isolate;
@@ -324,7 +321,6 @@
   }
 }
 
-/* Selector de modo: por ánimo o escribiendo al asistente; la pastilla blanca se desliza. */
 .modos {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

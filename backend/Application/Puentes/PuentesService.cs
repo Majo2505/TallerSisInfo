@@ -5,7 +5,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Puentes;
 
-/// <summary>Casos de uso de HU3: consultar los puentes del usuario y recalcularlos a partir de su horario.</summary>
 public class PuenteService
 {
     private readonly IHorarioRepository _horarios;
@@ -25,11 +24,6 @@ public class PuenteService
         return puentes.OrderBy(p => p.DiaSemana).ThenBy(p => p.HoraInicio).Select(ADto).ToList();
     }
 
-    /// <summary>
-    /// Recalcula y reemplaza los puentes del usuario. Debe llamarse DESPUÉS de guardar
-    /// cualquier cambio de horario (POST, PUT y DELETE de /api/horarios). No hay endpoint público.
-    /// Además desactiva los avisos de puentes que dejaron de existir (HU4).
-    /// </summary>
     public async Task RecalcularAsync(int usuarioId, CancellationToken ct = default)
     {
         var bloques = await _horarios.ListarPorUsuarioAsync(usuarioId, ct);
@@ -38,13 +32,6 @@ public class PuenteService
         await _notificaciones.DesactivarSinPuenteAsync(usuarioId, puentes, ct);
     }
 
-    /// <summary>
-    /// Arma un puente por cada hueco que cumple la regla entre los tramos ocupados de un mismo día.
-    /// Solo cuentan los bloques a los que el estudiante asiste, y el tiempo ocupado es la UNIÓN de sus intervalos:
-    /// si dos clases coinciden (o una contiene a otra) no se generan huecos negativos ni repetidos.
-    /// Solo cuentan huecos ENTRE clases del mismo día (antes de la primera y después de la última no).
-    /// Es estática y no toca la base de datos, así que se puede probar sola.
-    /// </summary>
     public static List<Puente> DetectarPuentes(int usuarioId, IEnumerable<Horario> bloques)
     {
         var puentes = new List<Puente>();

@@ -6,16 +6,11 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Actividades;
 
-/// <summary>
-/// Caso de uso de HU10: crea la actividad cuando el estudiante confirma el resumen que dejó la extracción (HU11).
-/// Los datos que llegan del cliente se vuelven a validar con las mismas reglas de la extracción, y la actividad
-/// tiene que venir de una extracción completa del propio usuario que todavía no se haya usado.
-/// </summary>
 public class CreacionActividadService
 {
     private readonly IActividadRepository _repo;
     private readonly TimeProvider _reloj;
-    private readonly IInvitadorComunidad? _invitador;   // HU13: invita automáticamente a los compañeros libres a esa hora
+    private readonly IInvitadorComunidad? _invitador;
 
     public CreacionActividadService(IActividadRepository repo) : this(repo, TimeProvider.System) { }
 
@@ -32,12 +27,10 @@ public class CreacionActividadService
     {
         var texto = LimpiarTexto(req.Texto);
 
-        // Los mismos guardrails de HU17: lo que no se puede mandar al asistente tampoco se guarda como actividad.
         var rechazo = ReglasSeguridadIa.Evaluar(texto) ?? ReglasSeguridadIa.Evaluar(req.Actividad);
         if (rechazo is not null)
             throw new ReglaNegocioException(RecomendacionService.CodigoSolicitudNoPermitida, rechazo.Mensaje);
 
-        // La extracción tiene que ser del propio usuario (una ajena responde igual que si no existiera) y estar completa.
         var extraccion = await _repo.ObtenerExtraccionAsync(req.ConsultaId, usuarioId, ct)
                          ?? throw new ReglaNegocioException("VALIDACION", "La consulta de la actividad no existe.");
         if (extraccion.Estado != LogAuditoriaRag.EstadoOk)
@@ -50,7 +43,6 @@ public class CreacionActividadService
         var hora = ReglasExtraccion.LeerHora(req.HoraInicio)
                    ?? throw new ReglaNegocioException("VALIDACION", ReglasExtraccion.PreguntaHora);
 
-        // Mismas reglas que la extracción: hora de hoy entre 07:15 y 21:00, duración de 10 a 240 min, grupo de 2 a 30.
         var revisada = ReglasExtraccion.Interpretar(null, new DatosActividad(req.Actividad, hora, req.DuracionMin, req.MaxParticipantes), ahoraLocal);
         if (revisada.Estado != ReglasExtraccion.EstadoCompleto)
             throw new ReglaNegocioException("VALIDACION", revisada.Mensaje ?? ReglasExtraccion.MensajeNoEntendido);
@@ -77,10 +69,6 @@ public class CreacionActividadService
             datos.DuracionMin.Value, comunidad.MaxParticipantes, comunidad.Estado, await InvitarAsync(comunidad, ct));
     }
 
-    /// <summary>
-    /// HU13: recién creada la actividad, se invita y se avisa a los compañeros libres a esa hora. Si algo falla, la actividad
-    /// ya quedó creada: se informa y el estudiante puede volver a buscar (<c>POST /api/comunidades/{id}/invitaciones</c>).
-    /// </summary>
     private async Task<InvitacionDto?> InvitarAsync(ComunidadEfimera comunidad, CancellationToken ct)
     {
         if (_invitador is null) return null;

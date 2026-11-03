@@ -7,16 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Breaku.Application.Actividades;
 
-/// <summary>
-/// Caso de uso de HU11: extracción estructurada por tool calling. Convierte el texto libre del estudiante en los datos de
-/// una actividad (qué, a qué hora, cuánto dura y cuántas personas) y dice qué falta preguntar. No crea la actividad:
-/// eso lo hace HU10 cuando el estudiante confirma el resumen. Cada extracción queda en el log de auditoría.
-/// Si la IA entendió mal, el estudiante puede corregirlo en palabras (<see cref="ExtraerAsync"/> con lo ya entendido)
-/// o editando los datos a mano (<see cref="RevisarAsync"/>).
-/// </summary>
 public class ExtraccionActividadService
 {
-    /// <summary>Valor de log_auditoria_rag.modelo cuando los datos los corrigió el estudiante a mano (sin LLM).</summary>
     public const string ModeloCorreccionManual = "manual";
 
     public const string MensajeFaltaActividad = "Escribe qué actividad vas a hacer.";
@@ -56,15 +48,12 @@ public class ExtraccionActividadService
             CreatedAt = ahoraUtc
         };
 
-        // Los mismos guardrails que el asistente de recomendaciones (HU17), antes de llamar al modelo.
-        // Lo «ya entendido» llega del cliente, así que también se revisa.
         var rechazo = ReglasSeguridadIa.Evaluar(texto) ?? ReglasSeguridadIa.Evaluar(anterior?.Actividad);
         if (rechazo is not null) await RechazarAsync(log, rechazo, ct);
 
         ResultadoExtraccion resultado;
         if (anterior is null && ReglasExtraccion.EsDemasiadoCorto(texto))
         {
-            // Sin ninguna actividad reconocible no se llama al LLM.
             resultado = ReglasExtraccion.Interpretar(null, null, ahoraLocal);
         }
         else
@@ -80,7 +69,6 @@ public class ExtraccionActividadService
             }
             catch (Exception ex) when (!ct.IsCancellationRequested)
             {
-                // La causa (tiempo de espera, respuesta ilegible, error del proveedor) solo va a la terminal, nunca al estudiante.
                 _logger?.LogWarning(ex, "No se pudo extraer la actividad: {Motivo}", ex.Message);
                 log.Estado = LogAuditoriaRag.EstadoError;
                 log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
@@ -93,7 +81,6 @@ public class ExtraccionActividadService
             log.RespuestaLlm = respuesta.TextoCrudo;
             log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
 
-            // Lo que propone el modelo también pasa por los guardrails: nunca se devuelve una actividad no permitida.
             var rechazoSalida = ReglasSeguridadIa.Evaluar(respuesta.Argumentos.Actividad);
             if (rechazoSalida is not null) await RechazarAsync(log, rechazoSalida, ct);
 
@@ -107,16 +94,10 @@ public class ExtraccionActividadService
             _ => LogAuditoriaRag.EstadoSinResultados
         };
 
-        // Se registra ANTES de responder: ninguna extracción se muestra sin quedar en el log.
         await _repo.GuardarLogAsync(log, ct);
         return ADto(log.Id, resultado);
     }
 
-    /// <summary>
-    /// Revisa los datos que el estudiante corrigió a mano, con las mismas reglas que la extracción y sin llamar al LLM.
-    /// Queda en la auditoría como una extracción más (modelo <see cref="ModeloCorreccionManual"/>), así el <c>consultaId</c>
-    /// nuevo es el que se usa para crear la actividad (HU10) y la regla «solo se crea desde una extracción completa» se mantiene.
-    /// </summary>
     public async Task<RespuestaExtraccionDto> RevisarAsync(int usuarioId, RevisionActividadDto req, CancellationToken ct = default)
     {
         var texto = LimpiarTexto(req.Texto);
@@ -133,7 +114,6 @@ public class ExtraccionActividadService
             CreatedAt = ahoraUtc
         };
 
-        // Lo que se escribe a mano pasa por los mismos guardrails (HU17) que lo que propone el modelo.
         var rechazo = ReglasSeguridadIa.Evaluar(texto) ?? ReglasSeguridadIa.Evaluar(datos.Actividad);
         if (rechazo is not null) await RechazarAsync(log, rechazo, ct);
 
@@ -147,7 +127,7 @@ public class ExtraccionActividadService
     private async Task RechazarAsync(LogAuditoriaRag log, ReglasSeguridadIa.Rechazo rechazo, CancellationToken ct)
     {
         log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
-        log.MotivoRechazo = rechazo.Categoria;   // HU17: para que el admin distinga un intento de inyección de otro rechazo
+        log.MotivoRechazo = rechazo.Categoria;
         await _repo.GuardarLogAsync(log, ct);
         throw new ReglaNegocioException(RecomendacionService.CodigoSolicitudNoPermitida, rechazo.Mensaje);
     }
@@ -168,7 +148,6 @@ public class ExtraccionActividadService
             : saneado;
     }
 
-    /// <summary>Lo ya entendido llega del cliente: se limpia igual que lo que propone el modelo. null si no trae nada.</summary>
     private static DatosActividad? LeerAnterior(ActividadExtraidaDto? anterior)
     {
         if (anterior is null) return null;

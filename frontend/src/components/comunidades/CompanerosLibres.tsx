@@ -25,10 +25,9 @@ function duracion(min: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
-/** El próximo puente desde ahora (hoy más tarde o los días que siguen); si no hay, el primero de la semana. */
 function puenteSiguiente(puentes: Puente[]): Puente | undefined {
   const ahora = new Date();
-  const hoy = ahora.getDay(); // 0 = domingo
+  const hoy = ahora.getDay();
   const minutos = ahora.getHours() * 60 + ahora.getMinutes();
   const orden = [...puentes].sort((a, b) => a.diaSemana - b.diaSemana || aMin(a.horaInicio) - aMin(b.horaInicio));
   return orden.find((p) => p.diaSemana > hoy || (p.diaSemana === hoy && aMin(p.horaFin) > minutos)) ?? orden[0];
@@ -52,7 +51,6 @@ export default function CompanerosLibres() {
 
   const [intentoCarga, setIntentoCarga] = useState(0);
 
-  // El estado inicial ya es "cargando"; al reintentar se vuelve a él antes de pedir de nuevo.
   useEffect(() => {
     let activo = true;
     Promise.all([listarPuentes(), obtenerConfiguracionMatching()])

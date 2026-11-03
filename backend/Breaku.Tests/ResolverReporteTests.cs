@@ -4,7 +4,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Tests;
 
-/// <summary>HU16: qué decisión vale y cuándo se puede revisar un reporte.</summary>
 public class ReglasReporteTests
 {
     [Theory]
@@ -15,7 +14,7 @@ public class ReglasReporteTests
         => Assert.Equal(esperada, ReglasReporte.LeerDecision(entrada));
 
     [Theory]
-    [InlineData("PENDIENTE")]   // no se puede «reabrir» un reporte
+    [InlineData("PENDIENTE")]
     [InlineData("BORRADO")]
     [InlineData("")]
     [InlineData(null)]
@@ -29,7 +28,6 @@ public class ReglasReporteTests
         => Assert.Equal(esperado, ReglasReporte.SePuedeRevisar(estado));
 }
 
-/// <summary>HU16: el caso de uso, con un repositorio falso.</summary>
 public class ResolverReporteServiceTests
 {
     private const int Admin = 2;

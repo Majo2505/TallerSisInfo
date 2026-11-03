@@ -34,7 +34,6 @@ public class CreacionActividadTests
         }
     }
 
-    // 15:00 en Bolivia (UTC-4) de un martes: 19:00 UTC.
     private static (CreacionActividadService Servicio, RepositorioFalso Repo) Armar(string estadoExtraccion = LogAuditoriaRag.EstadoOk)
     {
         var repo = new RepositorioFalso();
@@ -111,15 +110,15 @@ public class CreacionActividadTests
     }
 
     [Theory]
-    [InlineData("14:00", 60, 4)]   // ya pasó (son las 15:00)
-    [InlineData("06:30", 60, 4)]   // antes de las 07:15
-    [InlineData("21:30", 30, 4)]   // después de las 21:00
-    [InlineData("abc", 60, 4)]     // no es una hora
-    [InlineData("20:30", 60, 4)]   // terminaría después de las 21:00
-    [InlineData("16:00", 5, 4)]    // dura menos de 10 minutos
-    [InlineData("16:00", 300, 4)]  // dura más de 4 horas
-    [InlineData("16:00", 60, 1)]   // un grupo de una sola persona
-    [InlineData("16:00", 60, 31)]  // más de 30 personas
+    [InlineData("14:00", 60, 4)]
+    [InlineData("06:30", 60, 4)]
+    [InlineData("21:30", 30, 4)]
+    [InlineData("abc", 60, 4)]
+    [InlineData("20:30", 60, 4)]
+    [InlineData("16:00", 5, 4)]
+    [InlineData("16:00", 300, 4)]
+    [InlineData("16:00", 60, 1)]
+    [InlineData("16:00", 60, 31)]
     public async Task Datos_que_no_cumplen_las_reglas_de_la_extraccion_no_crean_nada(string hora, int duracion, int max)
     {
         var (servicio, repo) = Armar();

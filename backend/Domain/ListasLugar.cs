@@ -2,7 +2,6 @@ using System.Text.Json;
 
 namespace Breaku.Domain.Rules;
 
-/// <summary>Convierte los campos de lista del catálogo (texto separado por comas o JSON) en listas.</summary>
 public static class ListasLugar
 {
     public static List<string> SepararPorComas(string? texto)

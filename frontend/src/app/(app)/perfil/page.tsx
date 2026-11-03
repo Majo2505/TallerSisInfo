@@ -27,7 +27,6 @@ import estilos from "./perfil.module.css";
 
 type Pestana = "informacion" | "ajustes" | "seguridad" | "reportar";
 
-// Un reporte es un aviso puntual, no un texto largo.
 const LARGO_MAXIMO_REPORTE = 500;
 const TIPOS_REPORTE = [
   { valor: "error", etiqueta: "Algo no funciona" },
@@ -48,7 +47,6 @@ export default function Perfil() {
   const aviso = useAviso();
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("informacion");
-  // HU21: datos reales del perfil; el formulario parte de ellos y se compara para saber si hay cambios.
   const [perfil, setPerfil] = useState<DatosPerfil | null>(null);
   const [errorPerfil, setErrorPerfil] = useState("");
   const [nombre, setNombre] = useState("");
@@ -63,7 +61,6 @@ export default function Perfil() {
   const [tipoReporte, setTipoReporte] = useState("error");
   const [textoReporte, setTextoReporte] = useState("");
   const [errorReporte, setErrorReporte] = useState("");
-  // HU12: consentimiento para que compañeros con tiempo libre compatible te encuentren. Desactivado por defecto.
   const [visibleMatching, setVisibleMatching] = useState<boolean | null>(null);
   const [errorMatching, setErrorMatching] = useState("");
   const [guardandoMatching, setGuardandoMatching] = useState(false);
@@ -306,7 +303,6 @@ export default function Perfil() {
                       onCambio={setCarrera}
                       opciones={[
                         { valor: "", etiqueta: "Sin especificar" },
-                        // Si la carrera guardada no está en la lista, igual se muestra.
                         ...(carrera && !CARRERAS.includes(carrera) ? [{ valor: carrera, etiqueta: carrera }] : []),
                         ...CARRERAS.map((c) => ({ valor: c, etiqueta: c })),
                       ]}

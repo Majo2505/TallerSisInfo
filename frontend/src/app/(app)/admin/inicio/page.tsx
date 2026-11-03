@@ -28,7 +28,6 @@ function saludoPara(hora: number) {
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
-/** Inicio del administrador: lo que hay que atender hoy, las cifras del campus y accesos directos al panel. */
 export default function InicioAdmin() {
   const router = useRouter();
   const { sesion, listo } = useSesion();
@@ -37,7 +36,6 @@ export default function InicioAdmin() {
   const [error, setError] = useState("");
   const [ahora] = useState(() => new Date());
 
-  // Solo administradores: el resto vuelve a su inicio (el backend igual responde 403).
   useEffect(() => {
     if (listo && sesion && !esAdmin(sesion)) router.replace("/inicio");
   }, [listo, sesion, router]);
@@ -184,7 +182,6 @@ export default function InicioAdmin() {
   );
 }
 
-/** Lo que hay que atender. El botón lleva a lo más urgente: primero los lugares por revisar, luego los reportes. */
 function Pendientes({ enRevision, reportes }: Readonly<{ enRevision: number; reportes: number }>) {
   const pendientes = enRevision + reportes;
 

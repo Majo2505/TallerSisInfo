@@ -31,7 +31,6 @@ public class NotificacionRepository : INotificacionRepository
         }
         catch (DbUpdateException ex) when (ex.InnerException is MySqlException { ErrorCode: MySqlErrorCode.DuplicateKeyEntry })
         {
-            // Otra ejecución lo insertó entre la consulta y este insert: el UNIQUE evita el aviso repetido.
             _db.Entry(notificacion).State = EntityState.Detached;
             return false;
         }
@@ -54,7 +53,6 @@ public class NotificacionRepository : INotificacionRepository
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.Activa, false), ct);
 
     public async Task<bool> MarcarLeidaAsync(long id, int usuarioId, CancellationToken ct = default)
-        // MySqlConnector cuenta filas encontradas (no solo modificadas): marcar dos veces sigue devolviendo 1.
         => await _db.Notificaciones.Where(n => n.Id == id && n.UsuarioId == usuarioId && n.Activa)
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.Leida, true), ct) > 0;
 

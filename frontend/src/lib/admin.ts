@@ -1,6 +1,5 @@
 import { pedirApi } from "./api";
 
-/** Panel de administración del campus (rol ADMIN). El backend vuelve a comprobar el rol en cada endpoint. */
 export type EstadoLugar = "ACTIVO" | "EN_REVISION" | "INACTIVO";
 
 export type ResumenAdmin = {
@@ -21,8 +20,8 @@ export type LugarAdmin = {
   horaApertura: string | null;
   horaCierre: string | null;
   vecesRecomendado: number;
-  validado: boolean; // false: datos del relevamiento que el equipo todavía no revisó
-  recomendable: boolean; // false: punto de referencia, nunca se recomienda
+  validado: boolean;
+  recomendable: boolean;
   tipoLugar: string | null;
 };
 
@@ -36,7 +35,6 @@ export type ReporteAdmin = {
   creadoEn: string;
 };
 
-/** HU17: por qué los guardrails rechazaron una consulta. SIN_MOTIVO = rechazos anteriores a la HU17. */
 export type MotivoRechazo = "INYECCION" | "FUERA_DE_ALCANCE" | "BIENESTAR" | "FUERA_DE_REGLAMENTO" | "FUERA_DE_CONTEXTO";
 
 export type ConsultaRag = {
@@ -45,12 +43,12 @@ export type ConsultaRag = {
   usuario: string;
   tipo: string;
   entrada: string | null;
-  estado: "OK" | "SIN_RESULTADOS" | "RECHAZADO_SEGURIDAD" | "ERROR" | "INCOMPLETO"; // INCOMPLETO: extracción de HU11 a la que le falta un dato
+  estado: "OK" | "SIN_RESULTADOS" | "RECHAZADO_SEGURIDAD" | "ERROR" | "INCOMPLETO";
   modelo: string | null;
   latenciaMs: number | null;
   lugaresRecuperados: number;
   recomendados: number;
-  motivoRechazo?: MotivoRechazo | null; // HU17: solo con RECHAZADO_SEGURIDAD
+  motivoRechazo?: MotivoRechazo | null;
 };
 
 export type MetricasAdmin = {
@@ -61,9 +59,9 @@ export type MetricasAdmin = {
   errores: number;
   latenciaPromedioMs: number | null;
   masRecomendados: { nombre: string; categoria: string; veces: number; meGusta: number; noMeSirve: number }[];
-  meGusta: number; // HU9: valoraciones de la semana
+  meGusta: number;
   noMeSirve: number;
-  rechazosPorMotivo?: { motivo: MotivoRechazo | "SIN_MOTIVO"; cantidad: number }[]; // HU17
+  rechazosPorMotivo?: { motivo: MotivoRechazo | "SIN_MOTIVO"; cantidad: number }[];
 };
 
 export const obtenerResumen = () => pedirApi<ResumenAdmin>("/api/admin/resumen");

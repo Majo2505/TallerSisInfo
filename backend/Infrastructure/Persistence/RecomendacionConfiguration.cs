@@ -20,7 +20,6 @@ public class RecomendacionConfiguration : IEntityTypeConfiguration<Recomendacion
 
         builder.HasIndex(r => new { r.LogId, r.LugarId }).IsUnique().HasDatabaseName("uq_reco_log_lugar");
 
-        // fk_reco_recuperado: solo se recomienda un lugar recuperado en ESA misma consulta (RN04 / RNF06).
         builder.HasOne(r => r.LugarRecuperado).WithMany()
             .HasForeignKey(r => new { r.LogId, r.LugarId });
     }

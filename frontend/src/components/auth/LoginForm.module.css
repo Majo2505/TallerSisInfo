@@ -5,7 +5,6 @@
   gap: 24px;
 }
 
-/* Pestañas: pastilla blanca que se desliza entre "Iniciar sesión" y "Registrarse". */
 .pestanas {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -67,7 +66,6 @@
   color: var(--ucb-marino);
 }
 
-/* Campo: al enfocarlo aparece un halo azul suave en vez de un contorno duro. */
 .campo input {
   box-sizing: border-box;
   width: 100%;
@@ -78,7 +76,7 @@
   background: var(--superficie);
   color: var(--texto);
   font: inherit;
-  font-size: 1rem; /* 16px: evita el zoom automático del iPhone al enfocar */
+  font-size: 1rem;
   transition:
     border-color 200ms ease,
     box-shadow 250ms var(--curva-salida);
@@ -157,7 +155,6 @@
   color: var(--ucb-marino);
 }
 
-/* Acción principal: azul marino con flecha amarilla implícita en el brillo que la cruza. */
 .boton {
   position: relative;
   overflow: hidden;
@@ -197,7 +194,6 @@
   opacity: 0.85;
 }
 
-/* Indicador de carga: un aro amarillo que gira. */
 .girando {
   width: 18px;
   height: 18px;
@@ -265,7 +261,6 @@
   font-size: 0.84rem;
 }
 
-/* Acceso de administración: tarjeta azul marino en lugar de las pestañas. */
 .accesoAdmin {
   display: flex;
   align-items: center;

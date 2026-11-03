@@ -8,7 +8,6 @@
   transition: box-shadow 250ms var(--curva-salida);
 }
 
-/* La mejor opción: borde con degradado amarillo a azul y una sombra con más presencia. */
 .destacada {
   border: 2px solid transparent;
   background:
@@ -127,7 +126,6 @@
   white-space: nowrap;
 }
 
-/* HU9: valorar la recomendación. Me gusta se pinta de marino con el pulgar amarillo; no me sirve, en gris firme. */
 .valorar {
   display: grid;
   gap: 6px;

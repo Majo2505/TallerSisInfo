@@ -37,7 +37,6 @@ if (string.IsNullOrWhiteSpace(frontendOrigin))
 builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>
     policy.WithOrigins(frontendOrigin.TrimEnd('/')).AllowAnyHeader().AllowAnyMethod()));
 
-// JWT: debe coincidir con lo que firma AuthService (clave, emisor y audiencia).
 var jwtSecret = builder.Configuration["JWT_SECRET"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
 {
@@ -81,7 +80,6 @@ builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
 builder.Services.AddScoped<ComunidadService>();
 builder.Services.AddScoped<DescubrirComunidadesService>();
-// HU10 crea la actividad y HU13 invita automáticamente a los compañeros libres a esa hora.
 builder.Services.AddScoped(sp => new CreacionActividadService(
     sp.GetRequiredService<IActividadRepository>(), TimeProvider.System, sp.GetRequiredService<ComunidadService>()));
 
@@ -89,7 +87,6 @@ var app = builder.Build();
 
 app.UseCors(FrontendCorsPolicy);
 
-// Swagger UI en /swagger (solo Development, o SWAGGER_ENABLED=true).
 app.UseSwaggerDocumentation();
 
 app.UseAuthentication();

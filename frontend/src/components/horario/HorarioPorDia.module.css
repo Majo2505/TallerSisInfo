@@ -3,7 +3,6 @@
   gap: 12px;
 }
 
-/* Días: pastilla azul marino que se desliza; puntos azules por clase y amarillos por puente. */
 .dias {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -134,7 +133,6 @@
   gap: 6px;
 }
 
-/* Clase: hora a la izquierda y un punto del color de la materia. */
 .clase {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
@@ -255,7 +253,6 @@
   }
 }
 
-/* Clases que coinciden y casilla «Asisto». */
 .fila {
   display: grid;
   gap: 6px;

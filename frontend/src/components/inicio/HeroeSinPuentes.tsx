@@ -7,11 +7,11 @@ import { MotionLink, Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/co
 import estilos from "./HeroeSinPuentes.module.css";
 
 export type ProximoPuente = {
-  dia: string; // "Miércoles"
-  corto: string; // "MIÉ"
-  rango: string; // "10:30 – 12:30"
+  dia: string;
+  corto: string;
+  rango: string;
   minutos: number;
-  enDias: number; // 1 = mañana
+  enDias: number;
 };
 
 type Props = {
@@ -21,10 +21,6 @@ type Props = {
   rutaIa: string;
 };
 
-/**
- * Héroe de Inicio cuando hoy ya no quedan puentes: fondo vivo, un calendario que pasa la hoja
- * y, si hay, el próximo puente de la semana con sus minutos en odómetro.
- */
 export default function HeroeSinPuentes({ cargando, error, proximo, rutaIa }: Props) {
   const reducir = useReducedMotion();
   const cuando = proximo ? (proximo.enDias === 1 ? "Mañana" : proximo.dia) : "";
@@ -92,7 +88,6 @@ export default function HeroeSinPuentes({ cargando, error, proximo, rutaIa }: Pr
   );
 }
 
-/** Calendario que pasa la hoja hasta el día del próximo puente; las estrellas titilan alrededor. */
 function Calendario({ dia }: { dia: string }) {
   return (
     <svg className={estilos.calendario} viewBox="0 0 140 120" aria-hidden="true">

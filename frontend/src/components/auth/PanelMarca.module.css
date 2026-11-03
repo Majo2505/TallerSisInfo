@@ -1,4 +1,3 @@
-/* Panel de marca: azul marino con fondo vivo. En celular es una franja; en laptop, media pantalla. */
 .panel {
   position: relative;
   overflow: hidden;
@@ -69,14 +68,12 @@
   position: relative;
 }
 
-/* En celular solo marca y lema. */
 .demo,
 .beneficios,
 .pie {
   display: none;
 }
 
-/* ---------- Mini tarjeta de ejemplo (laptop) ---------- */
 .demo {
   position: relative;
   width: min(360px, 100%);
@@ -154,7 +151,6 @@
   font-size: 0.9rem;
 }
 
-/* ---------- Beneficios ---------- */
 .beneficios {
   list-style: none;
   margin: 0;

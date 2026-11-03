@@ -1,4 +1,3 @@
-/* HU11: casilla del resumen que se edita ahí mismo. Mismo aspecto que .dato / .datoFalta de comunidades.module.css. */
 .dato,
 .datoFalta,
 .editando {
@@ -68,7 +67,7 @@
 
 .dato strong,
 .datoFalta strong {
-  padding-right: 20px; /* espacio para el lápiz de la esquina inferior */
+  padding-right: 20px;
   color: var(--ucb-marino);
   font-size: 1rem;
 }

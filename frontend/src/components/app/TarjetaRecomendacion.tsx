@@ -13,16 +13,13 @@ const OPCIONES: { valor: Valoracion; etiqueta: string; Icono: typeof IconoPulgar
   { valor: "DISLIKE", etiqueta: "No me sirve", Icono: IconoPulgarAbajo },
 ];
 
-// Cuánto se ve el «¡Gracias!» después de votar: una confirmación breve que no interrumpe.
 const DURACION_GRACIAS_MS = 2200;
 
 type Props = {
   recomendacion: Recomendacion;
-  /** La primera es la mejor opción según el asistente. */
   destacada?: boolean;
 };
 
-/** Una recomendación del asistente (HU7) con sus métricas a la vista (HU8). Las cifras salen del catálogo. */
 export default function TarjetaRecomendacion({ recomendacion: r, destacada = false }: Props) {
   const reducir = useReducedMotion();
   return (
@@ -77,15 +74,11 @@ export default function TarjetaRecomendacion({ recomendacion: r, destacada = fal
   );
 }
 
-/**
- * HU9: me gusta / no me sirve. El voto se marca al instante (y se revierte si falla), el ícono elegido rebota y
- * aparece un «¡Gracias!» breve. Votar de nuevo reemplaza el voto anterior: el backend nunca lo duplica.
- */
 function Valorar({ id, nombre, inicial }: { id: number; nombre: string; inicial: Valoracion | null }) {
   const reducir = useReducedMotion();
   const [voto, setVoto] = useState<Valoracion | null>(inicial);
   const [guardando, setGuardando] = useState(false);
-  const [gracias, setGracias] = useState(0); // cambia en cada voto guardado para volver a mostrar la confirmación
+  const [gracias, setGracias] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {

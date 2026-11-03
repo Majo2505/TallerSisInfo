@@ -46,14 +46,12 @@ const PESTANAS: { id: Pestana; nombre: string; Icono: typeof IconoPin }[] = [
 
 const ETIQUETA_ESTADO: Record<EstadoLugar, string> = { ACTIVO: "Activo", EN_REVISION: "En revisión", INACTIVO: "Inactivo" };
 
-/** HU16: cómo se ve el estado de cada reporte (reutiliza los colores de los estados de lugar). */
 const ESTADO_REPORTE: Record<ReporteAdmin["estado"], { etiqueta: string; clase: string }> = {
   PENDIENTE: { etiqueta: "Pendiente", clase: "estado_EN_REVISION" },
   RESUELTO: { etiqueta: "Resuelto", clase: "estado_ACTIVO" },
   DESCARTADO: { etiqueta: "Descartado", clase: "estado_INACTIVO" },
 };
 
-/** HU17: cómo se nombra cada motivo de rechazo en el panel. */
 const MOTIVO_RECHAZO: Record<MotivoRechazo | "SIN_MOTIVO", { etiqueta: string; ayuda: string }> = {
   INYECCION: { etiqueta: "Prompt injection", ayuda: "Intentó cambiar las instrucciones del asistente o ver su prompt" },
   FUERA_DE_ALCANCE: { etiqueta: "Datos internos", ayuda: "Pidió contraseñas, tokens, código o datos personales" },
@@ -79,7 +77,6 @@ const ETIQUETA_CONSULTA: Record<ConsultaRag["estado"], string> = {
   INCOMPLETO: "Incompleta",
 };
 
-// Los accesos directos del inicio del admin abren el panel en una pestaña: /admin?pestana=reportes
 function pestanaInicial(): Pestana {
   if (typeof window === "undefined") return "catalogo";
   const pedida = new URLSearchParams(window.location.search).get("pestana");
@@ -91,7 +88,6 @@ const segundos = (ms: number | null) => (ms === null ? "—" : `${(ms / 1000).to
 const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleString("es-BO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-/** Panel de administración del campus (rol ADMIN): cifras, catálogo, reportes, métricas y auditoría del asistente. */
 export default function PanelAdmin() {
   const router = useRouter();
   const { sesion, listo } = useSesion();
@@ -108,7 +104,6 @@ export default function PanelAdmin() {
   const [error, setError] = useState("");
   const [cambiando, setCambiando] = useState<number | null>(null);
 
-  // Solo administradores: el resto vuelve a su inicio (el backend igual responde 403).
   useEffect(() => {
     if (listo && sesion && !esAdmin(sesion)) router.replace("/inicio");
   }, [listo, sesion, router]);
@@ -145,7 +140,6 @@ export default function PanelAdmin() {
     }
   }
 
-  // HU16: cierra un reporte pendiente. Si otro admin ya lo revisó (409), se vuelve a cargar la lista para ver su decisión.
   async function revisar(reporte: ReporteAdmin, decision: "RESUELTO" | "DESCARTADO") {
     setResolviendoReporte(reporte.id);
     try {
@@ -164,7 +158,6 @@ export default function PanelAdmin() {
     }
   }
 
-  // HU17: el admin puede ver solo los rechazos, o solo los intentos de prompt injection.
   const consultasFiltradas = (consultas ?? []).filter((c) =>
     filtroAuditoria === "todas"
       ? true

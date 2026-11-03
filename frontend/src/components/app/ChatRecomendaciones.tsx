@@ -10,7 +10,6 @@ import { RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import estilos from "./ChatRecomendaciones.module.css";
 import TarjetaRecomendacion from "./TarjetaRecomendacion";
 
-/** Mismo límite que el backend (ReglasRecomendacion.MaximoLargoEntrada). */
 const MAXIMO = 300;
 
 const EJEMPLOS = [
@@ -26,11 +25,6 @@ type Mensaje =
   | { id: number; autor: "ia"; consulta: string; estado: "listo"; respuesta: RespuestaRecomendacion }
   | { id: number; autor: "ia"; consulta: string; estado: "error"; error: string; reintentable: boolean };
 
-/**
- * Chat con el asistente (HU7): el estudiante escribe lo que quiere hacer y recibe lugares del catálogo
- * para su puente. Cada mensaje es una consulta nueva al mismo endpoint de recomendaciones;
- * el texto va como preferencia y el backend ignora cualquier instrucción que contenga.
- */
 export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
   const reducir = useReducedMotion();
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
@@ -39,7 +33,6 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
   const final = useRef<HTMLDivElement>(null);
   const pensando = mensajes.some((m) => m.autor === "ia" && m.estado === "pensando");
 
-  // Cada mensaje nuevo queda a la vista.
   useEffect(() => {
     if (mensajes.length) final.current?.scrollIntoView({ behavior: reducir ? "auto" : "smooth", block: "end" });
   }, [mensajes, reducir]);

@@ -29,7 +29,7 @@ import FotoHorario from "@/components/horario/FotoHorario";
 import RegistroHorario from "@/components/horario/RegistroHorario";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const PX_HORA = 56; // alto de una hora en la grilla
+const PX_HORA = 56;
 
 const aMin = (h: string) => {
   const [a, b] = h.split(":").map(Number);
@@ -39,14 +39,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const aHora = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 const OPCIONES_DIA = [1, 2, 3, 4, 5, 6].map((d) => ({ valor: String(d), etiqueta: DIAS[d] }));
 
-// Colores de los bloques de clase (paleta UCB). Cada materia usa siempre el mismo color, según su nombre.
 const COLORES_BLOQUE = [
-  { fondo: "#dcebf7", borde: "#11446d", texto: "#0b2a44" }, // azul institucional
-  { fondo: "#d6eef9", borde: "#0088cc", texto: "#04405f" }, // celeste
-  { fondo: "#d3f0f5", borde: "#009dc1", texto: "#04434f" }, // turquesa
-  { fondo: "#fff3bf", borde: "#e0b400", texto: "#4a3b00" }, // amarillo
-  { fondo: "#e3e8ef", borde: "#052845", texto: "#052845" }, // azul marino
-  { fondo: "#e1eaf5", borde: "#2f6fb5", texto: "#0b2a5a" }, // azul medio
+  { fondo: "#dcebf7", borde: "#11446d", texto: "#0b2a44" },
+  { fondo: "#d6eef9", borde: "#0088cc", texto: "#04405f" },
+  { fondo: "#d3f0f5", borde: "#009dc1", texto: "#04434f" },
+  { fondo: "#fff3bf", borde: "#e0b400", texto: "#4a3b00" },
+  { fondo: "#e3e8ef", borde: "#052845", texto: "#052845" },
+  { fondo: "#e1eaf5", borde: "#2f6fb5", texto: "#0b2a5a" },
 ];
 const colorBloque = (s: string) => {
   let h = 0;
@@ -72,13 +71,11 @@ export default function HorarioPage() {
   const reducir = useReducedMotion();
   const [ahora, setAhora] = useState(() => new Date());
 
-  // El marcador de "ahora" avanza solo, una vez por minuto.
   useEffect(() => {
     const t = setInterval(() => setAhora(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
-  // Para reintentar o refrescar tras guardar: muestra el estado de carga y dispara una nueva petición.
   const cargar = useCallback(() => {
     setCargando(true);
     setErrorCarga("");
@@ -86,17 +83,13 @@ export default function HorarioPage() {
     setIntento((n) => n + 1);
   }, []);
 
-  // Pantalla protegida: sin sesión (nunca inició, la cerró o el servidor devolvió 401) se va al login.
   useEffect(() => {
     if (listo && !sesion) router.replace("/login");
   }, [listo, sesion, router]);
 
-  // Solo se piden los datos cuando ya hay una sesión restaurada (evita mandar un token vacío al refrescar).
-  // Horario y puentes se piden juntos pero por separado: si falla uno, el otro se sigue mostrando.
-  // El backend recalcula los puentes al guardar un bloque, así que recargar tras guardar los deja al día.
   useEffect(() => {
     if (!listo || !sesion) return;
-    let activo = true; // evita actualizar el estado si el componente ya se desmontó o llegó otra petición
+    let activo = true;
     Promise.allSettled([listarHorario(), listarPuentes()]).then(([horario, listaPuentes]) => {
       if (!activo) return;
       if (horario.status === "fulfilled") setBloques(horario.value);
@@ -114,7 +107,6 @@ export default function HorarioPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Rango visible: 07:00–21:00 por defecto, se amplía si hay clases fuera de ese rango.
   const { desde, hasta } = useMemo(() => {
     let d = 7, h = 21;
     for (const b of bloques) {
@@ -145,7 +137,6 @@ export default function HorarioPage() {
   const clickEnColumna = (e: React.MouseEvent<HTMLDivElement>, dia: number) => {
     if (e.target !== e.currentTarget) return;
     const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
-    // La hora tocada, ajustada al horario de clases (07:15 a 21:00) con una clase de 1 hora.
     const inicio = Math.min(Math.max((desde + Math.floor(y / PX_HORA)) * 60, aMin(HORA_MINIMA)), aMin(HORA_MAXIMA) - 60);
     setModal({ base: { diaSemana: dia, horaInicio: aHora(inicio), horaFin: aHora(inicio + 60) } });
   };
@@ -371,8 +362,6 @@ export default function HorarioPage() {
   );
 }
 
-/* ------------------------------ Modal ------------------------------ */
-
 type Errores = Partial<Record<"materia" | "horaInicio" | "horaFin", string>>;
 
 function BloqueModal({ estado, onClose, onSaved }: {
@@ -407,7 +396,6 @@ function BloqueModal({ estado, onClose, onSaved }: {
     setErrorServidor("");
   };
 
-  // Validación de formato en el cliente (las reglas reales las aplica el backend; un choque con otra clase no impide guardar, solo avisa).
   const validar = (): Errores => {
     const e: Errores = {};
     if (!form.materia.trim()) e.materia = "Escribe el nombre de la materia.";
@@ -508,7 +496,6 @@ function BloqueModal({ estado, onClose, onSaved }: {
             <SelectorHora
               valor={form.horaInicio}
               min={HORA_MINIMA}
-              // Tiene que quedar al menos 5 minutos de clase antes de las 21:00.
               max={aHora(aMin(HORA_MAXIMA) - 5)}
               etiqueta="Hora de inicio"
               invalido={!!errores.horaInicio}

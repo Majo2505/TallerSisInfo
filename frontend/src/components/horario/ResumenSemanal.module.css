@@ -16,7 +16,6 @@
   color: var(--ucb-marino);
 }
 
-/* Barras por día: clase (marino) abajo y puentes (amarillo) encima. */
 .grafico {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

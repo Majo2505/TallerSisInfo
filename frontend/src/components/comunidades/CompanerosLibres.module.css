@@ -29,7 +29,6 @@
   line-height: 1.5;
 }
 
-/* Botones */
 .primario,
 .secundario {
   display: inline-flex;
@@ -70,7 +69,6 @@
   transform: scale(0.97);
 }
 
-/* Estados vacíos y de error */
 .estado {
   display: grid;
   gap: 8px;
@@ -115,7 +113,6 @@
   font-weight: 600;
 }
 
-/* Consentimiento: tarjeta marino con un halo amarillo que respira. */
 .consentimiento {
   position: relative;
   isolation: isolate;
@@ -190,7 +187,6 @@
   box-shadow: 0 12px 24px -14px rgba(0, 0, 0, 0.6);
 }
 
-/* Selector de puentes: fila desplazable con una pastilla marino que se desliza. */
 .matching {
   display: grid;
   gap: 16px;
@@ -265,7 +261,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Resultado */
 .resultado {
   display: grid;
   gap: 14px;
@@ -385,7 +380,6 @@
   color: var(--texto-suave);
 }
 
-/* Línea de tiempo: el riel es tu puente completo; el tramo amarillo, lo que comparten. */
 .linea {
   display: grid;
   gap: 6px;
@@ -453,7 +447,6 @@
   font-weight: 800;
 }
 
-/* Esqueleto mientras se busca. */
 .esqueleto {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));

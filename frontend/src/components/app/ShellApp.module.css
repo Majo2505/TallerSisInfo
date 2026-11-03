@@ -4,7 +4,6 @@
   color: var(--texto);
 }
 
-/* Barra superior de vidrio: el contenido se difumina detrás al hacer scroll. */
 .barra {
   position: sticky;
   top: 0;
@@ -100,7 +99,6 @@
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 
-/* Navegación inferior (celular): pastilla que se desliza a la sección activa. */
 .navInferior {
   position: fixed;
   left: 12px;
@@ -204,7 +202,6 @@
     font-weight: 800;
   }
 
-  /* Indicador que se desliza entre secciones (layoutId de Motion). */
   .indicador {
     position: absolute;
     inset: 0;
@@ -238,7 +235,6 @@
   }
 }
 
-/* Tablet: la barra inferior queda centrada con un ancho cómodo para el pulgar. */
 @media (min-width: 600px) and (max-width: 1024px) {
   .navInferior {
     left: 0;

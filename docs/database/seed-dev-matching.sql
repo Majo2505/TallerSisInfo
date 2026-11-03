@@ -1,20 +1,3 @@
--- BREAKU · Seed de DESARROLLO: compañeros de prueba para el matching de puentes compatibles (HU12).
--- SOLO para desarrollo local. NUNCA ejecutar en producción.
---
--- Requisitos: seed-dev.sql, seed-dev-cochabamba.sql y la migración 006-hu12-matching.sql
--- (o haber creado la base con el schema.sql actual).
--- Se ejecuta con la base de datos ya seleccionada (sin USE). Es idempotente: se puede correr varias veces;
--- los horarios y puentes de estos cinco compañeros se borran y se vuelven a cargar.
---
--- Qué hace:
---   · Crea cinco estudiantes en la sede «Campus UCB Cochabamba», con horario y con los puentes que salen de ese horario.
---   · Cuatro aceptaron aparecer en el matching (visible_matching = TRUE).
---   · Sofía NO lo aceptó: tiene los mismos puentes que Ana, pero nunca debe aparecer. Sirve para probar la privacidad.
---   · Todos usan la contraseña del estudiante de prueba (ver README.md).
---
--- Para probar: entra como dev.estudiante@ucb.edu.bo, elige la sede Cochabamba, activa «Dejar que compañeros con
--- tiempo compatible me encuentren» y registra un horario con un puente, por ejemplo el lunes de 09:30 a 11:00.
-
 SET @sede := (SELECT id FROM zona WHERE nombre = 'Campus UCB Cochabamba');
 SET @clave := (SELECT password_hash FROM usuario WHERE correo = 'dev.estudiante@ucb.edu.bo');
 
@@ -51,7 +34,6 @@ SET @sofia := (SELECT id FROM usuario WHERE correo = 'dev.sofia.flores@ucb.edu.b
 DELETE FROM puente  WHERE usuario_id IN (@ana, @diego, @lucia, @mateo, @sofia);
 DELETE FROM horario WHERE usuario_id IN (@ana, @diego, @lucia, @mateo, @sofia);
 
--- Días: 1 = lunes … 6 = sábado. Cada par de clases deja el puente que va más abajo.
 INSERT INTO horario (usuario_id, materia, dia_semana, hora_inicio, hora_fin, aula, origen) VALUES
   (@ana,   'Bases de Datos II',          1, '08:00', '09:30', 'A-201', 'MANUAL'),
   (@ana,   'Ingeniería de Software',     1, '11:00', '12:30', 'A-305', 'MANUAL'),

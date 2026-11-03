@@ -19,10 +19,6 @@ type Props = {
   rutaIa: string;
 };
 
-/**
- * La tarjeta del puente: la única superficie azul marino de Inicio.
- * Con mouse, la luz sigue al cursor y la tarjeta se inclina en 3D con resorte (decorativo, no cambia la tarea).
- */
 export default function HeroePuente({ activo, minutos, rango, empiezaEn, usado, siguiente, rutaIa }: Props) {
   const reducir = useReducedMotion();
   const x = useMotionValue(0);
@@ -96,7 +92,7 @@ export default function HeroePuente({ activo, minutos, rango, empiezaEn, usado, 
                 transition={{ duration: 1.4, ease: SALIDA, delay: 0.3 }}
                 transform="rotate(-90 36 36)"
               />
-              {/* Punto de luz que recorre el anillo hasta el porcentaje usado. */}
+              {}
               <motion.g
                 style={{ transformOrigin: "36px 36px", transformBox: "view-box" }}
                 initial={{ rotate: reducir ? usado * 3.6 : 0 }}

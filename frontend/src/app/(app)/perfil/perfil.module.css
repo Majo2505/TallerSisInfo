@@ -12,7 +12,6 @@
   min-width: 0;
 }
 
-/* Cabecera azul marino viva con el avatar amarillo que entra con resorte. */
 .cabecera {
   position: relative;
   isolation: isolate;
@@ -95,7 +94,6 @@
   color: #fff;
 }
 
-/* Pestañas: pastilla blanca que se desliza. */
 .pestanas {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -304,7 +302,6 @@
   }
 }
 
-/* Interruptor con perilla que salta con resorte. */
 .interruptor {
   display: flex;
   align-items: center;
@@ -471,14 +468,12 @@
   }
 }
 
-/* HU21: mensaje de validación junto al campo. */
 .campo .errorCampo {
   color: var(--error);
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-/* Reportar: mensaje o ayuda a la izquierda y contador a la derecha. */
 .pieCampo {
   display: flex;
   justify-content: space-between;

@@ -7,12 +7,6 @@ import { IconoReloj } from "./Iconos";
 import { SALIDA } from "./Movimiento";
 import estilos from "./Selectores.module.css";
 
-/*
- * Selectores con el estilo de BREAKU, en lugar de los <select> y <input type="time"> del navegador
- * (que se ven distintos en cada sistema). La lista se abre en un portal con position: fixed para que
- * ningún contenedor con overflow (por ejemplo, un modal) la recorte.
- */
-
 type Posicion = { top: number; left: number; width: number; arriba: boolean };
 
 function usePopover() {
@@ -39,7 +33,6 @@ function usePopover() {
       const t = e.target as Node;
       if (!panel.current?.contains(t) && !disparador.current?.contains(t)) setAbierto(false);
     };
-    // Si se desplaza la página (no la lista), se cierra: la lista quedaría lejos de su campo.
     const desplazar = (e: Event) => {
       if (!panel.current?.contains(e.target as Node)) setAbierto(false);
     };
@@ -108,27 +101,21 @@ const Flecha = () => (
   </svg>
 );
 
-/* ------------------------------------------------------------------ */
-
 export type Opcion = { valor: string; etiqueta: string };
 
 type PropsSelector = {
   valor: string;
   opciones: Opcion[];
   onCambio: (valor: string) => void;
-  /** Nombre accesible si no hay un <label> que lo envuelva. */
   etiqueta?: string;
   placeholder?: string;
   invalido?: boolean;
   deshabilitado?: boolean;
   id?: string;
-  /** Versión de 44 px para filas densas (por ejemplo, la revisión de la foto del horario). */
   compacto?: boolean;
-  /** Clase extra para ubicar el campo en una grilla. */
   clase?: string;
 };
 
-/** Lista desplegable (reemplaza a <select>). Flechas para moverse, Enter para elegir, Escape para cerrar. */
 export function Selector({ valor, opciones, onCambio, etiqueta, placeholder = "Elige una opción", invalido, deshabilitado, id, compacto, clase }: PropsSelector) {
   const { abierto, setAbierto, cerrar, pos, disparador, panel } = usePopover();
   const idLista = useId();
@@ -219,8 +206,6 @@ const Check = () => (
   </svg>
 );
 
-/* ------------------------------------------------------------------ */
-
 const aMin = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
@@ -229,11 +214,9 @@ const dos = (n: number) => String(n).padStart(2, "0");
 const MINUTOS = Array.from({ length: 12 }, (_, i) => i * 5);
 
 type PropsHora = {
-  valor: string; // "HH:mm" o ""
+  valor: string;
   onCambio: (valor: string) => void;
-  /** Hora mínima permitida, "HH:mm" (incluida). */
   min: string;
-  /** Hora máxima permitida, "HH:mm" (incluida). */
   max: string;
   etiqueta?: string;
   invalido?: boolean;
@@ -242,10 +225,6 @@ type PropsHora = {
   clase?: string;
 };
 
-/**
- * Selector de hora (reemplaza a <input type="time">): una columna de horas y otra de minutos de 5 en 5.
- * Lo que queda fuera de [min, max] aparece desactivado, así que no se puede elegir.
- */
 export function SelectorHora({ valor, onCambio, min, max, etiqueta, invalido, id, compacto, clase }: PropsHora) {
   const { abierto, setAbierto, cerrar, pos, disparador, panel } = usePopover();
   const desde = aMin(min);
@@ -261,7 +240,6 @@ export function SelectorHora({ valor, onCambio, min, max, etiqueta, invalido, id
   }, [abierto, panel]);
 
   function elegirHora(h: number) {
-    // Se conserva el minuto si sigue siendo válido; si no, el primero válido de esa hora.
     const m = !Number.isNaN(mSel) && valido(h, mSel) ? mSel : MINUTOS.find((x) => valido(h, x))!;
     onCambio(`${dos(h)}:${dos(m)}`);
   }

@@ -17,7 +17,6 @@ public sealed class DescubrirComunidadesRepository : IDescubrirComunidadesReposi
     {
         var participaciones = _db.Set<Participacion>();
 
-        // Usa ix_comunidad_estado_fin. Las de otros: misma sede y consentimiento del matching (HU12), como las invitaciones de HU13.
         return (from c in _db.Comunidades.AsNoTracking()
                 join u in _db.Usuarios on c.CreadorId equals u.Id
                 where c.Estado == ComunidadEfimera.EstadoActiva && c.Fin > ahoraUtc && c.Inicio < hastaUtc

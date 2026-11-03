@@ -4,7 +4,6 @@
   gap: 12px;
 }
 
-/* Tarjeta: el color de cada ánimo llega por --tinte, --fondo-escena y --ropa. */
 .tarjeta {
   --tinte: var(--ucb-celeste);
   --fondo-escena: #e7f0fb;
@@ -54,7 +53,6 @@
   --ropa: #0e8a94;
 }
 
-/* Brillo del color del ánimo que sigue al mouse. */
 .tarjeta::before {
   content: "";
   position: absolute;
@@ -86,7 +84,6 @@
   outline-offset: 3px;
 }
 
-/* Onda que nace desde el punto tocado al elegir. */
 .onda {
   position: absolute;
   z-index: -1;
@@ -97,7 +94,6 @@
   pointer-events: none;
 }
 
-/* Franja ilustrada con el personaje. */
 .escena {
   display: block;
   width: 100%;
@@ -141,7 +137,6 @@
   line-height: 1.4;
 }
 
-/* ---------- Piezas comunes de los personajes ---------- */
 .piel { fill: #f6c9a4; }
 .pelo { fill: var(--ucb-marino); }
 .peloB { fill: #7a3e1d; }
@@ -156,13 +151,11 @@
 .acento { fill: var(--ucb-amarillo); }
 .decoTinte { fill: var(--tinte); opacity: 0.45; }
 
-/* Cansado */
 .cabeceo { transform-origin: 50% 100%; }
 .bostezo { fill: var(--ucb-marino); }
 .estrella { fill: var(--tinte); opacity: 0.4; }
 .zeta { fill: var(--tinte); font-size: 9px; font-weight: 800; opacity: 0; }
 
-/* Enfocado */
 .luz { fill: var(--ucb-amarillo); opacity: 0.22; }
 .lampara { fill: none; stroke: var(--ucb-marino); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .pantalla { fill: var(--ucb-amarillo); }
@@ -171,7 +164,6 @@
 .manoIzq,
 .manoDer { fill: #f6c9a4; }
 
-/* Energía */
 .suelo { fill: none; stroke: var(--tinte); stroke-width: 1.5; stroke-dasharray: 3 5; opacity: 0.4; }
 .sombra { fill: var(--ucb-marino); opacity: 0.2; }
 .pierna { fill: none; stroke: var(--ucb-marino); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
@@ -179,13 +171,11 @@
 .torso { fill: none; stroke: var(--ropa); stroke-width: 9; stroke-linecap: round; }
 .vincha { fill: none; stroke: var(--ucb-amarillo); stroke-width: 2.2; stroke-linecap: round; }
 .gota { fill: #8fc0ef; opacity: 0; }
-/* Cada extremidad gira desde su articulación (hombro o cadera). */
 .piernaDelante,
 .brazoDelante { transform-origin: 0% 0%; }
 .piernaAtras,
 .brazoAtras { transform-origin: 100% 0%; }
 
-/* Social */
 .burbuja { fill: #ffffff; }
 .puntoTinte { fill: var(--tinte); }
 .jaja { fill: var(--tinte); font-size: 6.5px; font-weight: 800; text-anchor: middle; }
@@ -196,10 +186,8 @@
 .cabezaB,
 .cabezaC { transform-origin: 50% 100%; }
 
-/* Todos parpadean de vez en cuando, aunque nadie los mire. */
 .ojos { animation: parpadear 4s ease infinite; animation-delay: calc(var(--i, 0) * 700ms); }
 
-/* ---------- Disparadores: hover (mouse), elegida, foco de teclado y pantallas táctiles ---------- */
 @media (hover: hover) and (pointer: fine) {
   .tarjeta:hover {
     border-color: color-mix(in srgb, var(--tinte) 40%, var(--borde-suave));
@@ -238,7 +226,6 @@
   :global(.animo-escena):hover .cabezaC { animation: reir 3.2s var(--curva-movimiento) infinite; }
 }
 
-/* En pantallas táctiles no hay hover: los personajes se mueven solos, a un ritmo más tranquilo. */
 @media (hover: none) {
   .cabeceo { animation: cabecear 3.4s var(--curva-movimiento) infinite; }
   .bostezo { animation: bostezar 3.4s var(--curva-movimiento) infinite; }
@@ -261,7 +248,6 @@
   .cabezaC { animation: reir 4s var(--curva-movimiento) infinite; }
 }
 
-/* La elegida y la enfocada con teclado también muestran su escena. */
 .tarjeta[data-elegido] .cabeceo,
 .tarjeta:focus-visible .cabeceo { animation: cabecear 2.6s var(--curva-movimiento) infinite; }
 .tarjeta[data-elegido] .zeta,
@@ -296,7 +282,6 @@
   95% { transform: scaleY(0.1); }
 }
 
-/* Cansado: la cabeza cae de a poco, se despierta de golpe y vuelve. */
 @keyframes cabecear {
   0%, 8% { transform: rotate(0deg) translateY(0); }
   50% { transform: rotate(16deg) translateY(2px); }
@@ -320,7 +305,6 @@
   50% { opacity: 1; transform: scale(1.6); }
 }
 
-/* Enfocado: teclea, la lámpara respira y aparecen marcas de concentración. */
 @keyframes teclear {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-2.5px); }
@@ -336,7 +320,6 @@
   50% { opacity: 0.4; }
 }
 
-/* Energía: ciclo de carrera; brazos y piernas siempre opuestos. */
 @keyframes rebote {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-2.5px); }
@@ -379,7 +362,6 @@
   100% { opacity: 0; transform: translate(-8px, 5px); }
 }
 
-/* Social: uno cuenta, otro asiente y el tercero se ríe. */
 @keyframes burbuja1 {
   0% { opacity: 0; transform: scale(0.6); }
   8% { opacity: 1; transform: scale(1.06); }
@@ -424,7 +406,6 @@
   }
 }
 
-/* Laptop ancha: los cuatro ánimos en una fila. */
 @media (min-width: 1100px) {
   .grilla {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -434,7 +415,6 @@
   }
 }
 
-/* Con movimiento reducido: personajes quietos; la tarjeta solo cambia de color al elegir. */
 @media (prefers-reduced-motion: reduce) {
   .escena,
   .svg * {

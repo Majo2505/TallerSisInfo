@@ -27,8 +27,6 @@ public class LogAuditoriaRagConfiguration : IEntityTypeConfiguration<LogAuditori
         builder.Property(l => l.LatenciaMs).HasColumnName("latencia_ms");
         builder.Property(l => l.CreatedAt).HasColumnName("created_at").HasColumnType("datetime(6)");
 
-        // zona_id y puente_id no se mapean como relación: zona la mapea HU5 y puente se borra al cambiar el horario
-        // (en la base es ON DELETE SET NULL). Las FKs las sigue haciendo cumplir MySQL.
         builder.HasOne<Usuario>().WithMany().HasForeignKey(l => l.UsuarioId);
     }
 }

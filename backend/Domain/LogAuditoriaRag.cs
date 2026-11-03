@@ -1,10 +1,5 @@
 namespace Breaku.Domain;
 
-/// <summary>
-/// Registro de auditoría de una consulta al asistente (tabla log_auditoria_rag). HU7 usa el tipo RECOMENDACION
-/// y HU11 el tipo EXTRACCION_COMUNIDAD.
-/// Se guarda SIEMPRE, también cuando no hubo resultados o falló el LLM, para poder rastrear cada respuesta.
-/// </summary>
 public class LogAuditoriaRag
 {
     public const string TipoRecomendacion = "RECOMENDACION";
@@ -12,26 +7,25 @@ public class LogAuditoriaRag
 
     public const string EstadoOk = "OK";
     public const string EstadoSinResultados = "SIN_RESULTADOS";
-    public const string EstadoRechazadoSeguridad = "RECHAZADO_SEGURIDAD";   // la entrada no se pudo enviar (guardrails) o el asistente propuso algo fuera del contexto
+    public const string EstadoRechazadoSeguridad = "RECHAZADO_SEGURIDAD";
     public const string EstadoError = "ERROR";
-    public const string EstadoIncompleto = "INCOMPLETO";                    // HU11: se entendió la actividad, pero falta algún dato
+    public const string EstadoIncompleto = "INCOMPLETO";
 
     public long Id { get; set; }
     public int UsuarioId { get; set; }
-    public string Tipo { get; set; } = "";              // RECOMENDACION | EXTRACCION_COMUNIDAD
+    public string Tipo { get; set; } = "";
     public int? ZonaId { get; set; }
-    public int? RadioAplicadoM { get; set; }            // copia del radio usado en la búsqueda (RN06)
+    public int? RadioAplicadoM { get; set; }
     public int? PuenteId { get; set; }
-    public short? TiempoDisponibleMin { get; set; }     // copia de la duración del puente al momento de la consulta
+    public short? TiempoDisponibleMin { get; set; }
     public string? EntradaUsuario { get; set; }
-    public string? PromptEnviado { get; set; }          // null si nunca se llamó al LLM
+    public string? PromptEnviado { get; set; }
     public string? RespuestaLlm { get; set; }
-    public string Estado { get; set; } = "";            // OK | SIN_RESULTADOS | RECHAZADO_SEGURIDAD | ERROR | INCOMPLETO
-    public string? MotivoRechazo { get; set; }          // HU17: categoría del guardrail; solo con RECHAZADO_SEGURIDAD
+    public string Estado { get; set; } = "";
+    public string? MotivoRechazo { get; set; }
     public string? Modelo { get; set; }
     public int? LatenciaMs { get; set; }
-    public DateTime CreatedAt { get; set; }             // UTC
+    public DateTime CreatedAt { get; set; }
 
-    /// <summary>Lugares que devolvió la búsqueda en el catálogo: el ÚNICO contexto que puede usar el asistente.</summary>
     public List<LugarRecuperado> LugaresRecuperados { get; set; } = new();
 }

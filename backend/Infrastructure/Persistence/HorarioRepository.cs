@@ -4,10 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Breaku.Infrastructure.Persistence;
 
-/// <summary>Requiere en el DbContext de Ariana: public DbSet&lt;Horario&gt; Horarios =&gt; Set&lt;Horario&gt;();</summary>
 public class HorarioRepository : IHorarioRepository
 {
-    private readonly AppDbContext _db;   // ajustar al nombre real del DbContext (#139)
+    private readonly AppDbContext _db;
     public HorarioRepository(AppDbContext db) => _db = db;
 
     public Task<List<Horario>> ListarPorUsuarioAsync(int usuarioId, CancellationToken ct = default)

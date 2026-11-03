@@ -1,6 +1,5 @@
 import { pedirApi } from "./api";
 
-/** Perfil del usuario (HU21). Correo y rol no se editan; el backend rechaza el intento con NO_EDITABLE. */
 export type Perfil = {
   nombre: string;
   correo: string;
@@ -11,7 +10,6 @@ export type Perfil = {
 
 export type CambiosPerfil = { nombre: string; carrera: string | null; semestre: number | null };
 
-/** Mismos límites que el backend (ReglasPerfil). */
 export const LARGO_MAXIMO_NOMBRE = 100;
 
 export const CARRERAS = [

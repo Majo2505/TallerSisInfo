@@ -11,8 +11,6 @@ public class RecomendacionRepository : IRecomendacionRepository
 
     public async Task GuardarAsync(LogAuditoriaRag log, IReadOnlyList<Recomendacion> recomendaciones, CancellationToken ct = default)
     {
-        // Un solo SaveChanges = una transacción. EF inserta en orden log → lugar_recuperado → recomendacion
-        // y propaga el id del log por las navegaciones.
         _db.LogsAuditoriaRag.Add(log);
         _db.Recomendaciones.AddRange(recomendaciones);
         await _db.SaveChangesAsync(ct);
@@ -28,7 +26,6 @@ public class RecomendacionRepository : IRecomendacionRepository
     public async Task GuardarFeedbackAsync(Recomendacion recomendacion, string feedback, CancellationToken ct = default)
     {
         recomendacion.Feedback = feedback;
-        // fecha_feedback es DATETIME(6): se recorta a microsegundos para que la respuesta coincida con lo guardado.
         var ahora = DateTime.UtcNow;
         recomendacion.FechaFeedback = ahora.AddTicks(-(ahora.Ticks % 10));
         await _db.SaveChangesAsync(ct);

@@ -62,12 +62,6 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>
-    /// HU7: con LLM_API_KEY se usa el LLM de LLM_BASE_URL (y LLM_BASE_URL y LLM_MODEL pasan a ser obligatorios).
-    /// Sin clave, el asistente simulado, para que quien no tenga clave pueda levantar la API igual.
-    /// HU2: la lectura de la foto del horario usa el mismo proveedor con LLM_MODEL_IMAGEN; sin clave no está disponible.
-    /// HU11: la extracción de actividades usa el mismo proveedor y modelo (tool calling); sin clave, el extractor simulado.
-    /// </summary>
     private static void AddAsistenteIa(IServiceCollection services, IConfiguration configuration)
     {
         var apiKey = configuration["LLM_API_KEY"];
@@ -95,7 +89,7 @@ public static class DependencyInjection
 
         services.AddHttpClient(AsistenteLlm.NombreCliente, http =>
         {
-            http.BaseAddress = uri;   // con "/" final, para que "chat/completions" se agregue y no reemplace la ruta
+            http.BaseAddress = uri;
             http.Timeout = TimeSpan.FromSeconds(segundos);
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         });
@@ -104,14 +98,11 @@ public static class DependencyInjection
             modelo,
             sp.GetRequiredService<ILogger<AsistenteLlm>>()));
 
-        // Extracción de actividades (HU11): mismo cliente y modelo que las recomendaciones.
         services.AddScoped<IExtractorActividad>(sp => new ExtractorActividadLlm(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient(AsistenteLlm.NombreCliente),
             modelo,
             sp.GetRequiredService<ILogger<ExtractorActividadLlm>>()));
 
-        // Foto del horario (HU2): mismo proveedor y clave; modelo de visión propio (LLM_MODEL_IMAGEN, si no, el de texto)
-        // y más tiempo de espera, porque leer una imagen tarda más que una recomendación.
         var modeloImagen = configuration["LLM_MODEL_IMAGEN"];
         if (string.IsNullOrWhiteSpace(modeloImagen)) modeloImagen = modelo;
         services.AddHttpClient(LectorHorarioLlm.NombreCliente, http =>

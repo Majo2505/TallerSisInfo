@@ -91,7 +91,6 @@
   gap: 14px;
 }
 
-/* Zona para soltar o ver la foto */
 .zona {
   border: 2px dashed var(--borde);
   border-radius: 22px;
@@ -146,7 +145,6 @@
   background: #0b1f33;
 }
 
-/* Mientras la IA lee: una línea amarilla recorre la foto y un velo azul respira. */
 .escaneo {
   position: absolute;
   left: 0;
@@ -237,7 +235,6 @@
   transform: scale(0.97);
 }
 
-/* Revisión editable */
 .resumen {
   margin: 0;
   color: var(--texto-suave);
@@ -316,7 +313,6 @@
   grid-column: 2 / -1;
 }
 
-/* Resultado */
 .exito {
   display: grid;
   justify-items: center;
@@ -387,7 +383,6 @@
   }
 }
 
-/* Paso «¿a cuáles asistes?»: clases que coinciden */
 .grupo {
   display: grid;
   gap: 8px;

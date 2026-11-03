@@ -12,10 +12,9 @@ import { Icono, Informacion } from "./Iconos";
 import styles from "./Onboarding.module.css";
 import { PASOS } from "./pasos";
 
-// Se recuerda solo durante la pestaña: cada visita nueva sin sesión vuelve a mostrar el onboarding.
 const CLAVE_VISTO = "breaku_onboarding_visto";
-const UMBRAL_SWIPE = 60; // píxeles: o una pasada larga...
-const UMBRAL_VELOCIDAD = 400; // ...o un toque rápido (px/s), aunque sea corto
+const UMBRAL_SWIPE = 60;
+const UMBRAL_VELOCIDAD = 400;
 
 function yaFueVisto(): boolean {
   try {
@@ -31,12 +30,10 @@ function marcarVisto() {
   try {
     window.sessionStorage.setItem(CLAVE_VISTO, "1");
   } catch {
-    // Sin sessionStorage (modo privado estricto): se mostrará de nuevo al volver a "/".
   }
 }
 
 type Props = {
-  /** Ignora la marca de "ya visto" (útil en desarrollo con ?onboarding=1). */
   forzar?: boolean;
 };
 
@@ -44,10 +41,8 @@ export default function Onboarding({ forzar = false }: Props) {
   const router = useRouter();
   const reducir = useReducedMotion();
   const [[indice, direccion], setPaso] = useState<[number, number]>([0, 1]);
-  // null en el servidor y durante la hidratación: aún no se sabe si ya lo vio.
   const visto = useSyncExternalStore<boolean | null>(sinSuscripcion, yaFueVisto, () => null);
   const { sesion, listo } = useSesion();
-  // Con la sesión abierta no hace falta el onboarding: se va directo a Inicio.
   const verificando = !listo || !!sesion || (!forzar && (visto === null || visto));
 
   const paso = PASOS[indice];
@@ -85,7 +80,6 @@ export default function Onboarding({ forzar = false }: Props) {
     return () => window.removeEventListener("keydown", alPresionarTecla);
   }, [verificando, siguiente, anterior]);
 
-  // Deslizar: cuenta la distancia o la velocidad, así un toque rápido alcanza.
   function alSoltar(_: unknown, info: PanInfo) {
     if (info.offset.x < -UMBRAL_SWIPE || info.velocity.x < -UMBRAL_VELOCIDAD) siguiente();
     else if (info.offset.x > UMBRAL_SWIPE || info.velocity.x > UMBRAL_VELOCIDAD) anterior();
@@ -127,7 +121,7 @@ export default function Onboarding({ forzar = false }: Props) {
               dragElastic={0.18}
               onDragEnd={alSoltar}
             >
-              {/* Ilustración: el ícono dentro de anillos que laten, con un punto en órbita. */}
+              {}
               <div className={styles.ilustracion} aria-hidden="true">
                 <span className={styles.anillo1} />
                 <span className={styles.anillo2} />

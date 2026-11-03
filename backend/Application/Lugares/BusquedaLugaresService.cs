@@ -7,10 +7,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Lugares;
 
-/// <summary>
-/// Caso de uso de HU6: lugares viables para un puente según el tiempo disponible, la cercanía al campus del estudiante
-/// y la zona verificada. También es la recuperación del asistente de IA (HU7): la recomendación solo ve estos lugares.
-/// </summary>
 public class BusquedaLugaresService : IRecuperadorLugares
 {
     public const string EstadoOk = "OK";

@@ -10,7 +10,6 @@
   align-content: start;
 }
 
-/* En celular las dos columnas se disuelven en la grilla y el orden queda: día, ánimos, sugerencias, atajos. */
 .columnaIzquierda,
 .columnaDerecha {
   display: contents;
@@ -37,12 +36,10 @@
   min-width: 0;
 }
 
-/* Sin esto, el carrusel ensancha la página entera en el celular. */
 .pagina > * {
   min-width: 0;
 }
 
-/* ---------- Saludo ---------- */
 .cabecera {
   display: grid;
   gap: 2px;
@@ -66,7 +63,6 @@
 }
 
 
-/* ---------- Saludo animado ---------- */
 .palabra {
   display: inline-block;
   margin-right: 0.26em;
@@ -83,7 +79,6 @@
   margin-right: 0;
 }
 
-/* Trazo de resaltador amarillo que se pinta de izquierda a derecha bajo el nombre. */
 .resaltador {
   position: absolute;
   left: -0.12em;
@@ -96,12 +91,10 @@
   transform: rotate(-1.2deg);
 }
 
-/* ---------- Marco del héroe ---------- */
 .marcoHeroe {
   perspective: 1200px;
 }
 
-/* ---------- Tarjetas blancas ---------- */
 .tarjeta {
   padding: 18px;
   border-radius: 22px;
@@ -152,7 +145,6 @@
   }
 }
 
-/* ---------- Línea del día ---------- */
 .linea {
   position: relative;
   height: 30px;
@@ -175,7 +167,6 @@
   background: linear-gradient(180deg, #2a5f92, var(--ucb-azul));
 }
 
-/* Los puentes llevan rayas que corren: tiempo libre "en marcha". */
 .tramoPuente {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.45) 0 6px, transparent 6px 12px),
@@ -204,7 +195,7 @@
   margin-left: -1px;
   border-radius: 1px;
   background: var(--ucb-marino);
-  pointer-events: none; /* deja pasar el mouse al tramo de abajo */
+  pointer-events: none;
 }
 
 .ahoraPunto {
@@ -257,7 +248,6 @@
   background: var(--ucb-amarillo);
 }
 
-/* ---------- Ánimos ---------- */
 .estados {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -324,7 +314,6 @@
   line-height: 1.35;
 }
 
-/* Cada ánimo con un acento suave de la paleta: marino, azul medio, amarillo y turquesa. */
 .estado_cansado .estadoIcono {
   background: #e8eef6;
   color: var(--ucb-azul);
@@ -345,7 +334,6 @@
   color: #086a7f;
 }
 
-/* ---------- Sugerencias: carrusel horizontal ---------- */
 .carrusel {
   display: grid;
   grid-auto-flow: column;
@@ -442,7 +430,6 @@
   font-size: 0.8rem;
 }
 
-/* ---------- Atajos ---------- */
 .atajos {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -485,7 +472,6 @@
   box-shadow: var(--sombra-1);
 }
 
-/* ---------- Pantalla grande ---------- */
 @media (min-width: 900px) {
   .pagina {
     max-width: 1680px;
@@ -568,7 +554,6 @@
   }
 }
 
-/* ---------- Ánimos: brillo que sigue al cursor ---------- */
 .estado::before {
   content: "";
   position: absolute;
@@ -589,12 +574,10 @@
   position: relative;
 }
 
-/* ---------- Sugerencias: la ilustración va arriba ---------- */
 .lugar > :not(svg) {
   margin-inline: 6px;
 }
 
-/* Celulares angostos (320–359 px): ícono arriba, texto a todo el ancho; héroe y atajos más compactos. */
 @media (max-width: 359px) {
   .estado {
     flex-direction: column;

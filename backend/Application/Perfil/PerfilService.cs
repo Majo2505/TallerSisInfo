@@ -5,10 +5,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Perfil;
 
-/// <summary>
-/// Casos de uso de HU21: ver y editar el perfil. Solo se editan nombre, carrera y semestre; el correo institucional
-/// y el rol no se pueden cambiar desde aquí. Cada cambio queda en historial_cambio.
-/// </summary>
 public class PerfilService
 {
     private readonly IPerfilRepository _repo;
@@ -21,7 +17,6 @@ public class PerfilService
     {
         var usuario = await ObtenerUsuarioAsync(usuarioId, ct);
 
-        // Correo y rol no son editables: si llegan distintos se rechaza en vez de ignorarlos en silencio.
         if (req.Correo is not null && !string.Equals(req.Correo.Trim(), usuario.Email, StringComparison.OrdinalIgnoreCase))
             throw new ReglaNegocioException("NO_EDITABLE", "El correo institucional no se puede modificar.");
         if (req.Rol is not null && !string.Equals(req.Rol.Trim(), usuario.Rol, StringComparison.OrdinalIgnoreCase))
@@ -35,7 +30,7 @@ public class PerfilService
         var semestre = req.Semestre is null ? null : (byte?)req.Semestre;
 
         if (nombre == usuario.Nombre && carrera == usuario.Carrera && semestre == usuario.Semestre)
-            return ADto(usuario);   // sin cambios: no se escribe ni se audita
+            return ADto(usuario);
 
         var antes = Valores(usuario);
         usuario.Nombre = nombre;

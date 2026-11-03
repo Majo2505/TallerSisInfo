@@ -26,7 +26,6 @@
   border-radius: 18px;
 }
 
-/* Cada categoría tiñe su tarjeta con el mismo tono de su escena. */
 .comida {
   --tono: #b8860b;
   --tono-fondo: #fffbea;
@@ -45,26 +44,6 @@
 .deporte {
   --tono: var(--ucb-azul-medio);
   --tono-fondo: #eff5fc;
-}
-
-.rating {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: var(--superficie);
-  box-shadow: var(--sombra-1);
-  color: var(--ucb-marino);
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.rating svg {
-  color: #c99400;
 }
 
 .cuerpo {

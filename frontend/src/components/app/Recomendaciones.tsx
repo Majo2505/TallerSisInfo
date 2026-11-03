@@ -30,7 +30,6 @@ const aMin = (h: string) => {
   return a * 60 + b;
 };
 
-/** Sin puente en la URL se sugiere el de hoy que está en curso o el próximo; si no, el primero de la semana. */
 function puentePorDefecto(puentes: Puente[]): Puente | undefined {
   const ahora = new Date();
   const minutos = ahora.getHours() * 60 + ahora.getMinutes();
@@ -54,8 +53,6 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
   const [respuesta, setRespuesta] = useState<RespuestaRecomendacion | null>(null);
   const [error, setError] = useState("");
   const [intento, setIntento] = useState(0);
-  // Clave del pedido en curso: evita repetir la consulta al LLM (StrictMode monta dos veces en desarrollo)
-  // y descarta respuestas de un pedido que ya no corresponde.
   const pedido = useRef<string | null>(null);
 
   useEffect(() => {
@@ -287,7 +284,6 @@ const MENSAJES_PENSANDO = [
   "Eligiendo lo que va con tu ánimo…",
 ];
 
-/** Mientras el asistente piensa (puede tardar hasta un minuto): una tarjeta viva con mensajes que rotan. */
 function Pensando() {
   const reducir = useReducedMotion();
   const [i, setI] = useState(0);

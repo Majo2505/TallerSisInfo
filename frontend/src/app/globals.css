@@ -1,21 +1,14 @@
-/* ============================================================
-   Tema UCB. El azul marino y el amarillo son la identidad: el marino da peso en pocas zonas
-   (la tarjeta del puente, el texto fuerte) y el amarillo es la chispa (acción principal, lo activo).
-   Todo lo demás son neutros fríos y finos.
-   ============================================================ */
 :root {
-  /* Marca UCB */
   --ucb-marino: #052845;
-  --ucb-marino-2: #0b3a63;      /* para degradados sobre el marino */
+  --ucb-marino-2: #0b3a63;
   --ucb-azul: #11446d;
   --ucb-azul-medio: #1d5c91;
-  --ucb-celeste: #2f7fd1;       /* foco y enlaces */
+  --ucb-celeste: #2f7fd1;
   --ucb-turquesa: #0e9fbe;
   --ucb-amarillo: #fdd537;
   --ucb-amarillo-suave: #fff7d6;
-  --ucb-amarillo-oscuro: #7a5c00; /* amarillo apto para texto sobre blanco */
+  --ucb-amarillo-oscuro: #7a5c00;
 
-  /* Superficies y texto */
   --fondo-app: #f6f7fb;
   --fondo-suave: #eef1f6;
   --superficie: #ffffff;
@@ -25,20 +18,17 @@
   --borde: #d6dde6;
   --borde-suave: #e8ecf2;
 
-  /* Estados */
   --error-fondo: #fdecea;
   --error-borde: #f0b8b3;
   --error-texto: #8a1c13;
   --error: #b42318;
   --exito: #0f766e;
 
-  /* Profundidad: sombras en capas, siempre del tono del marino. */
   --sombra: rgba(5, 40, 69, 0.08);
   --sombra-1: 0 1px 2px rgba(5, 40, 69, 0.06), 0 1px 1px rgba(5, 40, 69, 0.04);
   --sombra-2: 0 1px 2px rgba(5, 40, 69, 0.05), 0 8px 24px -6px rgba(5, 40, 69, 0.12);
   --sombra-3: 0 2px 4px rgba(5, 40, 69, 0.06), 0 24px 48px -12px rgba(5, 40, 69, 0.28);
 
-  /* Curvas de animación (las de los componentes de Motion usan las mismas). */
   --curva-salida: cubic-bezier(0.23, 1, 0.32, 1);
   --curva-movimiento: cubic-bezier(0.77, 0, 0.175, 1);
 
@@ -71,7 +61,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Controles: responden al instante y no se seleccionan al mantener presionado. */
 button,
 [role="button"],
 [role="tab"] {
@@ -88,11 +77,9 @@ main {
   padding: 2rem;
 }
 
-/* ---------- Horario (HU2) ---------- */
 .hz { max-width: 1680px; margin: 0 auto; padding: 20px 16px 120px; }
 @media (min-width: 1025px) { .hz { padding-left: clamp(16px, 3vw, 48px); padding-right: clamp(16px, 3vw, 48px); } }
 
-/* Portada azul marino viva con las cifras de la semana. */
 .hz-head { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 18px; margin-bottom: 20px; padding: 24px 22px; border-radius: 28px; background: var(--ucb-marino); color: #fff; box-shadow: var(--sombra-3); }
 .hz-head h1 { margin: 0; font-size: clamp(1.9rem, 6vw, 2.8rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.04em; text-wrap: balance; }
 .hz-sub { margin: 8px 0 0; max-width: 46ch; color: rgba(255, 255, 255, 0.8); font-size: 1rem; line-height: 1.5; }
@@ -129,7 +116,6 @@ main {
 .hz-skeleton { height: 420px; border-radius: 22px; background: linear-gradient(90deg, #e3e8ef 25%, #f1f4f8 50%, #e3e8ef 75%); background-size: 200% 100%; animation: hz-shimmer 1.2s infinite; }
 @keyframes hz-shimmer { to { background-position: -200% 0; } }
 
-/* Grilla semanal (laptop) */
 .hz-scroll { overflow-x: auto; overscroll-behavior-x: contain; background: var(--superficie); border: 1px solid var(--borde-suave); border-radius: 24px; box-shadow: var(--sombra-1); }
 .hz-grid { display: grid; grid-template-columns: 48px repeat(6, minmax(112px, 1fr)); min-width: 48px; }
 
@@ -143,18 +129,15 @@ main {
   background-image: linear-gradient(to bottom, var(--borde-suave) 1px, transparent 1px); background-size: 100% var(--ph); transition: background-color 200ms ease; }
 .hz-col-hoy { background-color: #fbfcfe; }
 
-/* Bloque de clase: fondo suave del color de la materia y un punto que la identifica. */
 .hz-bloque { position: absolute; left: 4px; right: 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; text-align: left; font: inherit; font-size: .78rem; line-height: 1.25; padding: 7px 8px; border: 1px solid color-mix(in srgb, var(--acento) 18%, transparent); border-radius: 12px; overflow: hidden; cursor: pointer; transition: box-shadow 220ms var(--curva-salida); }
 .hz-bloque strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; flex-shrink: 0; font-size: .82rem; font-weight: 800; }
 .hz-bloque strong::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--acento); transform: translateY(-1px); }
 .hz-bloque span { opacity: .85; }
 
-/* Marcador de "ahora" en la columna de hoy. */
 .hz-ahora { position: absolute; left: -1px; right: 0; z-index: 1; height: 2px; background: var(--ucb-marino); pointer-events: none; }
 .hz-ahora::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--ucb-amarillo); box-shadow: 0 0 0 3px rgba(253, 213, 55, 0.35); animation: hz-latido 2s ease-in-out infinite; }
 @keyframes hz-latido { 50% { box-shadow: 0 0 0 7px rgba(253, 213, 55, 0); } }
 
-/* Modal */
 .hz-overlay { position: fixed; inset: 0; background: rgba(5, 40, 69, .45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
 .hz-modal { background: var(--superficie); color: var(--texto); width: 100%; max-width: 460px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; border-radius: 26px; padding: 24px; display: grid; gap: 16px; box-shadow: 0 30px 60px -20px rgba(5, 40, 69, .5); }
 .hz-modal-cabecera { display: flex; align-items: center; gap: 12px; }
@@ -216,12 +199,10 @@ main {
   .hz-grid { grid-template-columns: 56px repeat(6, minmax(120px, 1fr)); min-width: 56px; }
 }
 
-/* Cifras de ancho fijo para minutos y horas que cambian. */
 .cifras {
   font-variant-numeric: tabular-nums;
 }
 
-/* Clases que coinciden y clases a las que no se asiste. */
 .hz-bloque-choque { border: 1.5px dashed var(--ucb-amarillo-oscuro); box-shadow: inset 0 0 0 1px var(--ucb-amarillo); }
 .hz-bloque-ausente { opacity: .55; border-style: dotted; }
 .hz-etiqueta-choque, .hz-etiqueta-ausente { align-self: flex-start; padding: 1px 7px; border-radius: 999px; font-size: .68rem; font-weight: 800; opacity: 1 !important; }

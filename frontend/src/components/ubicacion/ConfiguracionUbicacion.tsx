@@ -18,7 +18,6 @@ import {
 } from "@/lib/ubicacion";
 import styles from "./ConfiguracionUbicacion.module.css";
 
-/** HU5: elegir el campus a mano o compartir la ubicación una vez (con consentimiento), y revocarlo. */
 export default function ConfiguracionUbicacion() {
   const router = useRouter();
   const reducir = useReducedMotion();
@@ -115,7 +114,6 @@ export default function ConfiguracionUbicacion() {
     void conGuardado(() => seleccionarZona(Number(zonaSeleccionada)), "Campus guardado. No se compartió la ubicación del dispositivo.");
   }
 
-  // Se llega desde Perfil, Campus o Comunidades: «Volver» regresa a donde estaba.
   function volver() {
     if (window.history.length > 1) router.back();
     else router.push("/perfil");

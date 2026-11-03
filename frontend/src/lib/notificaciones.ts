@@ -4,18 +4,17 @@ export type Notificacion = {
   id: number;
   tipo: "PUENTE_DISPONIBLE" | "INVITACION_COMUNIDAD" | "COMUNIDAD_CERRADA";
   mensaje: string;
-  fecha: string | null; // "yyyy-MM-dd" (hora de Bolivia); null si no es aviso de puente
-  horaInicio: string | null; // "HH:mm:ss"
+  fecha: string | null;
+  horaInicio: string | null;
   horaFin: string | null;
   duracionMinutos: number | null;
   leida: boolean;
-  creadaEn: string; // ISO en UTC
-  comunidadId?: number | null; // HU13: la comunidad a la que invita (INVITACION_COMUNIDAD)
+  creadaEn: string;
+  comunidadId?: number | null;
 };
 
 export type ConfiguracionNotificaciones = { notificacionesActivas: boolean };
 
-// El backend crea el aviso al empezar el puente; sin push todavía, se consulta cada tanto.
 export const INTERVALO_CONSULTA_MS = 15_000;
 
 export const listarNotificaciones = () => pedirApi<Notificacion[]>("/api/notificaciones");

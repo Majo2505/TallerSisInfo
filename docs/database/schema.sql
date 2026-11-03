@@ -1,28 +1,25 @@
--- BREAKU · Modelo físico v2 (MySQL 8.x, InnoDB, utf8mb4)
--- Todas las fechas se guardan en UTC (DATETIME(6)); Bolivia es UTC-4 y se convierte en la interfaz.
 CREATE DATABASE IF NOT EXISTS breaku CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE breaku;
 
--- ============ IDENTIDAD ============
 CREATE TABLE usuario (
   id                        INT          NOT NULL AUTO_INCREMENT,
   correo                    VARCHAR(120) NOT NULL,
-  password_hash             VARCHAR(255) NULL,            -- NULL solo si se adopta SSO (D14)
+  password_hash             VARCHAR(255) NULL,
   nombre                    VARCHAR(100) NOT NULL,
-  carrera                   VARCHAR(80)  NULL,             -- HU21: editable desde el perfil (opcional)
-  semestre                  TINYINT      NULL,             -- HU21: 1 a 10 (opcional)
+  carrera                   VARCHAR(80)  NULL,
+  semestre                  TINYINT      NULL,
   rol                       VARCHAR(15)  NOT NULL DEFAULT 'ESTUDIANTE',
   correo_verificado         BOOLEAN      NOT NULL DEFAULT FALSE,
   consentimiento_ubicacion  BOOLEAN      NOT NULL DEFAULT FALSE,
   fecha_consentimiento      DATETIME(6)  NULL,
-  notificaciones_activas    BOOLEAN      NOT NULL DEFAULT TRUE,   -- HU4: FALSE = no se le envían avisos (los puentes se siguen detectando)
-  visible_matching          BOOLEAN      NOT NULL DEFAULT FALSE,  -- HU12: TRUE = compañeros de su sede con tiempo compatible lo pueden encontrar
-  fecha_visible_matching    DATETIME(6)  NULL,                    -- HU12: cuándo lo aceptó
+  notificaciones_activas    BOOLEAN      NOT NULL DEFAULT TRUE,
+  visible_matching          BOOLEAN      NOT NULL DEFAULT FALSE,
+  fecha_visible_matching    DATETIME(6)  NULL,
   zona_actual_id            INT          NULL,
   created_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
-  updated_by                INT          NULL,            -- quien hizo el último cambio (NULL = el propio usuario / sistema)
-  activo                    BOOLEAN      NOT NULL DEFAULT TRUE,   -- borrado lógico: 1 = activa, 0 = dada de baja (quién/cuándo: historial_cambio)
+  updated_by                INT          NULL,
+  activo                    BOOLEAN      NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
   CONSTRAINT ck_usuario_rol    CHECK (rol IN ('ESTUDIANTE','ADMIN')),
@@ -34,14 +31,13 @@ CREATE TABLE usuario (
   CONSTRAINT fk_usuario_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
--- ============ CATÁLOGO (administrado por ADMIN) ============
 CREATE TABLE zona (
   id          INT           NOT NULL AUTO_INCREMENT,
   nombre      VARCHAR(80)   NOT NULL,
   latitud     DECIMAL(9,6)  NOT NULL,
   longitud    DECIMAL(9,6)  NOT NULL,
-  radio_max_m INT           NOT NULL,                     -- RN06
-  activa      BOOLEAN       NOT NULL DEFAULT TRUE,        -- sede en uso: las inactivas se conservan pero no se ofrecen
+  radio_max_m INT           NOT NULL,
+  activa      BOOLEAN       NOT NULL DEFAULT TRUE,
   created_at  DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at  DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   created_by  INT           NOT NULL,
@@ -57,7 +53,7 @@ CREATE TABLE zona (
 
 ALTER TABLE usuario
   ADD KEY ix_usuario_zona_actual (zona_actual_id),
-  ADD KEY ix_usuario_matching (zona_actual_id, visible_matching),   -- HU12: compañeros de la misma sede que aceptaron aparecer
+  ADD KEY ix_usuario_matching (zona_actual_id, visible_matching),
   ADD CONSTRAINT fk_usuario_zona_actual FOREIGN KEY (zona_actual_id) REFERENCES zona (id);
 
 CREATE TABLE categoria (
@@ -81,19 +77,19 @@ CREATE TABLE lugar (
   categoria_id           INT           NOT NULL,
   latitud                DECIMAL(9,6)  NOT NULL,
   longitud               DECIMAL(9,6)  NOT NULL,
-  duracion_estimada_min  SMALLINT      NOT NULL,          -- RN03
-  hora_apertura          TIME          NULL,              -- [CONFIRMAR]
-  hora_cierre            TIME          NULL,              -- [CONFIRMAR]
+  duracion_estimada_min  SMALLINT      NOT NULL,
+  hora_apertura          TIME          NULL,
+  hora_cierre            TIME          NULL,
   estado                 VARCHAR(15)   NOT NULL DEFAULT 'ACTIVO',
-  tipo_lugar             VARCHAR(30)   NULL,              -- relevamiento: comida, aire_libre, campus, referencia…
-  modalidad              VARCHAR(40)   NULL,              -- valores separados por coma: solitario,grupal
-  nivel_energia          VARCHAR(40)   NULL,              -- valores separados por coma: bajo,medio,alto
+  tipo_lugar             VARCHAR(30)   NULL,
+  modalidad              VARCHAR(40)   NULL,
+  nivel_energia          VARCHAR(40)   NULL,
   duracion_min           SMALLINT      NULL,
   duracion_max           SMALLINT      NULL,
-  actividades_sugeridas  TEXT          NULL,              -- lista JSON de textos
+  actividades_sugeridas  TEXT          NULL,
   min_a_pie_desde_bloque_a SMALLINT    NULL,
-  recomendable           BOOLEAN       NOT NULL DEFAULT TRUE,   -- FALSE: punto de referencia, nunca se recomienda
-  validado               BOOLEAN       NOT NULL DEFAULT TRUE,   -- FALSE: el equipo todavía no revisó los datos
+  recomendable           BOOLEAN       NOT NULL DEFAULT TRUE,
+  validado               BOOLEAN       NOT NULL DEFAULT TRUE,
   created_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   created_by             INT           NOT NULL,
@@ -112,25 +108,24 @@ CREATE TABLE lugar (
   CONSTRAINT fk_lugar_updated_by FOREIGN KEY (updated_by)   REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
--- ============ HORARIOS Y PUENTES ============
 CREATE TABLE horario (
   id          INT          NOT NULL AUTO_INCREMENT,
   usuario_id  INT          NOT NULL,
   materia     VARCHAR(100) NOT NULL,
-  dia_semana  SMALLINT     NOT NULL,                      -- 1=lunes ... 6=sábado
+  dia_semana  SMALLINT     NOT NULL,
   hora_inicio TIME         NOT NULL,
   hora_fin    TIME         NOT NULL,
   aula        VARCHAR(30)  NULL,
-  origen      VARCHAR(10)  NOT NULL,                      -- MANUAL | FOTO (RF02)
-  asiste      BOOLEAN      NOT NULL DEFAULT TRUE,          -- FALSE: el estudiante no asiste a este bloque (no cuenta como ocupado)
-  autorizacion_choque BOOLEAN NOT NULL DEFAULT FALSE,        -- el estudiante confirmó que su carrera autoriza el choque
+  origen      VARCHAR(10)  NOT NULL,
+  asiste      BOOLEAN      NOT NULL DEFAULT TRUE,
+  autorizacion_choque BOOLEAN NOT NULL DEFAULT FALSE,
   created_at  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   CONSTRAINT uq_horario_bloque UNIQUE (usuario_id, dia_semana, hora_inicio, materia),
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
-  CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),   -- HU2: horario de clases de la UCB
+  CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
   CONSTRAINT fk_horario_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -145,36 +140,32 @@ CREATE TABLE puente (
   CONSTRAINT uq_puente_slot UNIQUE (usuario_id, dia_semana, hora_inicio),
   KEY ix_puente_matching (dia_semana, hora_inicio, hora_fin),
   CONSTRAINT ck_puente_dia   CHECK (dia_semana BETWEEN 1 AND 6),
-  CONSTRAINT ck_puente_horas CHECK (hora_fin > hora_inicio),   -- el mínimo de 45 min (RN02) es parámetro (D8), no CHECK
+  CONSTRAINT ck_puente_horas CHECK (hora_fin > hora_inicio),
   CONSTRAINT fk_puente_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
--- ============ RAG: TRAZABILIDAD DE LA IA ============
 CREATE TABLE log_auditoria_rag (
   id                     BIGINT       NOT NULL AUTO_INCREMENT,
   usuario_id             INT          NOT NULL,
   tipo                   VARCHAR(25)  NOT NULL,
   zona_id                INT          NULL,
-  radio_aplicado_m       INT          NULL,               -- copia del radio usado (RN06)
+  radio_aplicado_m       INT          NULL,
   puente_id              INT          NULL,
-  tiempo_disponible_min  SMALLINT     NULL,               -- copia del puente al momento de la consulta
+  tiempo_disponible_min  SMALLINT     NULL,
   entrada_usuario        TEXT         NULL,
-  prompt_enviado         TEXT         NULL,               -- NULL si nunca se llamó al LLM
+  prompt_enviado         TEXT         NULL,
   respuesta_llm          TEXT         NULL,
   estado                 VARCHAR(20)  NOT NULL,
-  motivo_rechazo         VARCHAR(20)  NULL,               -- HU17: por qué se rechazó (solo con estado RECHAZADO_SEGURIDAD)
+  motivo_rechazo         VARCHAR(20)  NULL,
   modelo                 VARCHAR(40)  NULL,
-  latencia_ms            INT          NULL,               -- evidencia de RNF02
+  latencia_ms            INT          NULL,
   created_at             DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   KEY ix_log_created (created_at),
   KEY ix_log_usuario (usuario_id, created_at),
-  KEY ix_log_motivo (motivo_rechazo, created_at),                     -- HU17: el admin filtra los intentos por motivo
+  KEY ix_log_motivo (motivo_rechazo, created_at),
   CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD')),
-  -- HU11: INCOMPLETO = se entendió la actividad, pero falta algún dato (el estudiante tiene que responder una pregunta)
   CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
-  -- HU17: INYECCION (intentó cambiar o ver las instrucciones), FUERA_DE_ALCANCE (pidió datos internos), BIENESTAR (riesgo
-  -- para la persona), FUERA_DE_REGLAMENTO (alcohol, apuestas…), FUERA_DE_CONTEXTO (la IA respondió algo que no salió del catálogo)
   CONSTRAINT ck_log_motivo CHECK (motivo_rechazo IN ('INYECCION','FUERA_DE_ALCANCE','BIENESTAR','FUERA_DE_REGLAMENTO','FUERA_DE_CONTEXTO')),
   CONSTRAINT ck_log_motivo_estado CHECK (motivo_rechazo IS NULL OR estado = 'RECHAZADO_SEGURIDAD'),
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
@@ -186,7 +177,7 @@ CREATE TABLE lugar_recuperado (
   log_id              BIGINT   NOT NULL,
   lugar_id            INT      NOT NULL,
   distancia_m         INT      NOT NULL,
-  tiempo_traslado_min SMALLINT NOT NULL,                  -- ida y vuelta (RN03)
+  tiempo_traslado_min SMALLINT NOT NULL,
   orden               SMALLINT NOT NULL,
   PRIMARY KEY (log_id, lugar_id),
   CONSTRAINT uq_lr_orden UNIQUE (log_id, orden),
@@ -203,33 +194,31 @@ CREATE TABLE recomendacion (
   fecha_feedback DATETIME(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_reco_log_lugar UNIQUE (log_id, lugar_id),
-  KEY ix_recomendacion_feedback (feedback, fecha_feedback),   -- HU9: métricas de valoraciones (me gusta / no me sirve)
+  KEY ix_recomendacion_feedback (feedback, fecha_feedback),
   CONSTRAINT ck_reco_feedback  CHECK (feedback IN ('LIKE','DISLIKE')),
   CONSTRAINT ck_reco_fecha     CHECK ((feedback IS NULL) = (fecha_feedback IS NULL)),
-  -- RN04 / RNF06: solo se puede recomendar un lugar recuperado en ESA misma consulta
   CONSTRAINT fk_reco_recuperado FOREIGN KEY (log_id, lugar_id) REFERENCES lugar_recuperado (log_id, lugar_id)
 ) ENGINE=InnoDB;
 
--- ============ COMUNIDADES EFÍMERAS ============
 CREATE TABLE comunidad_efimera (
   id                INT          NOT NULL AUTO_INCREMENT,
-  creador_id        INT          NOT NULL,                -- hace de "created_by"
-  log_id            BIGINT       NULL,                    -- HU13: la extracción de HU11 que originó la comunidad (una comunidad por extracción)
+  creador_id        INT          NOT NULL,
+  log_id            BIGINT       NULL,
   texto_original    TEXT         NOT NULL,
   actividad         VARCHAR(100) NOT NULL,
-  inicio            DATETIME(6)  NOT NULL,                -- UTC, como created_at (Bolivia = UTC-4)
-  fin               DATETIME(6)  NOT NULL,                -- UTC
+  inicio            DATETIME(6)  NOT NULL,
+  fin               DATETIME(6)  NOT NULL,
   max_participantes SMALLINT     NOT NULL,
-  lugar_id          INT          NULL,                    -- [CONFIRMAR] I9
+  lugar_id          INT          NULL,
   estado            VARCHAR(10)  NOT NULL DEFAULT 'ACTIVA',
   created_at        DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at        DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   KEY ix_comunidad_estado_fin (estado, fin),
-  CONSTRAINT uq_com_log    UNIQUE (log_id),                                  -- HU13: la misma extracción no crea dos comunidades
+  CONSTRAINT uq_com_log    UNIQUE (log_id),
   CONSTRAINT ck_com_fechas CHECK (fin > inicio),
   CONSTRAINT ck_com_estado CHECK (estado IN ('ACTIVA','ARCHIVADA')),
-  CONSTRAINT ck_com_max    CHECK (max_participantes BETWEEN 2 AND 30),     -- HU11/HU13: de 2 a 30 personas, contando a quien la crea
+  CONSTRAINT ck_com_max    CHECK (max_participantes BETWEEN 2 AND 30),
   CONSTRAINT fk_com_creador FOREIGN KEY (creador_id) REFERENCES usuario (id),
   CONSTRAINT fk_com_log     FOREIGN KEY (log_id)     REFERENCES log_auditoria_rag (id),
   CONSTRAINT fk_com_lugar   FOREIGN KEY (lugar_id)   REFERENCES lugar (id)
@@ -253,41 +242,38 @@ CREATE TABLE notificacion (
   usuario_id          INT          NOT NULL,
   tipo                VARCHAR(25)  NOT NULL,
   comunidad_id        INT          NULL,
-  -- HU4: copia del puente avisado (solo PUENTE_DISPONIBLE). Sin puente_id: los puentes se borran y
-  -- se reinsertan en cada cambio de horario, así que su id no es estable. Hora local de Bolivia, como puente.
-  puente_fecha        DATE         NULL,                  -- día concreto en que ocurre el puente
-  puente_hora_inicio  TIME         NULL,                  -- = puente.hora_inicio
-  puente_hora_fin     TIME         NULL,                  -- = puente.hora_fin; duración = fin - inicio
+  puente_fecha        DATE         NULL,
+  puente_hora_inicio  TIME         NULL,
+  puente_hora_fin     TIME         NULL,
   mensaje             VARCHAR(200) NOT NULL,
   leida               BOOLEAN      NOT NULL DEFAULT FALSE,
-  activa              BOOLEAN      NOT NULL DEFAULT TRUE, -- HU4: FALSE si el puente dejó de existir al cambiar el horario
-  created_at          DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),   -- momento del envío
+  activa              BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at          DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
-  CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),   -- HU4: un solo aviso por puente
-  CONSTRAINT uq_notif_comunidad UNIQUE (usuario_id, comunidad_id, tipo),             -- HU13: una sola invitación por comunidad
+  CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),
+  CONSTRAINT uq_notif_comunidad UNIQUE (usuario_id, comunidad_id, tipo),
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
   CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
   CONSTRAINT ck_notif_ref  CHECK ((tipo = 'PUENTE_DISPONIBLE' AND comunidad_id IS NULL
                                    AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL)
                                OR (tipo <> 'PUENTE_DISPONIBLE' AND comunidad_id IS NOT NULL
                                    AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL)),
-  CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),   -- NULL en los otros tipos: pasa
+  CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
   CONSTRAINT fk_notif_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id)
 ) ENGINE=InnoDB;
 
--- ============ MODERACIÓN ============
 CREATE TABLE reporte (
   id           INT          NOT NULL AUTO_INCREMENT,
-  usuario_id   INT          NOT NULL,                     -- autor del reporte (= created_by)
+  usuario_id   INT          NOT NULL,
   lugar_id     INT          NULL,
   comunidad_id INT          NULL,
   motivo       VARCHAR(30)  NOT NULL,
   descripcion  TEXT         NULL,
   estado       VARCHAR(12)  NOT NULL DEFAULT 'PENDIENTE',
-  revisor_id   INT          NULL,                         -- ADMIN que resolvió (= updated_by)
+  revisor_id   INT          NULL,
   created_at   DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
-  revisado_en  DATETIME(6)  NULL,                         -- (= updated_at)
+  revisado_en  DATETIME(6)  NULL,
   PRIMARY KEY (id),
   CONSTRAINT ck_rep_estado  CHECK (estado IN ('PENDIENTE','RESUELTO','DESCARTADO')),
   CONSTRAINT ck_rep_objeto  CHECK ((lugar_id IS NULL) <> (comunidad_id IS NULL)),
@@ -299,15 +285,14 @@ CREATE TABLE reporte (
   CONSTRAINT fk_rep_revisor   FOREIGN KEY (revisor_id)   REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
--- ============ AUDITORÍA: HISTORIAL DE CAMBIOS (valores antes/después) ============
 CREATE TABLE historial_cambio (
   id                 BIGINT      NOT NULL AUTO_INCREMENT,
   entidad            VARCHAR(30) NOT NULL,
-  entidad_id         INT         NOT NULL,                -- sin FK a propósito: el historial debe sobrevivir a la fila
+  entidad_id         INT         NOT NULL,
   accion             VARCHAR(10) NOT NULL,
   valores_anteriores JSON        NULL,
   valores_nuevos     JSON        NULL,
-  usuario_id         INT         NULL,                    -- actor; NULL = proceso del sistema
+  usuario_id         INT         NULL,
   created_at         DATETIME(6) NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   KEY ix_hist_entidad (entidad, entidad_id, created_at),
@@ -321,7 +306,6 @@ CREATE TABLE historial_cambio (
   CONSTRAINT fk_hist_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
--- ============ MÉTRICAS RF20 (vista, no tabla) ============
 CREATE OR REPLACE VIEW v_metricas_lugar AS
 SELECT l.id AS lugar_id, l.nombre, c.nombre AS categoria,
        COUNT(r.id)                     AS veces_recomendado,

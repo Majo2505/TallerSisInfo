@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Breaku.Infrastructure.Persistence;
 
-/// <summary>Mapeo a la tabla horario del modelo v2. En OnModelCreating: modelBuilder.ApplyConfiguration(new HorarioConfiguration());</summary>
 public class HorarioConfiguration : IEntityTypeConfiguration<Horario>
 {
     public void Configure(EntityTypeBuilder<Horario> b)
@@ -31,6 +30,5 @@ public class HorarioConfiguration : IEntityTypeConfiguration<Horario>
             t.HasCheckConstraint("ck_horario_horas", "hora_fin > hora_inicio");
             t.HasCheckConstraint("ck_horario_origen", "origen IN ('MANUAL','FOTO')");
         });
-        // FK a usuario: la define la entidad Usuario de HU1-DB (Ariana).
     }
 }

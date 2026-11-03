@@ -14,9 +14,6 @@ public class PuenteRepository : IPuenteRepository
 
     public async Task ReemplazarAsync(int usuarioId, IReadOnlyList<Puente> nuevos, CancellationToken ct = default)
     {
-        // Primero se borra y se confirma, y recién después se inserta: la tabla tiene
-        // UNIQUE (usuario_id, dia_semana, hora_inicio) y un solo SaveChanges podría
-        // insertar antes de borrar y fallar por duplicado. La transacción hace todo atómico.
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
         await _db.Puentes.Where(p => p.UsuarioId == usuarioId).ExecuteDeleteAsync(ct);
