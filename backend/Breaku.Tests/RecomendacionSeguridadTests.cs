@@ -50,6 +50,11 @@ public class RecomendacionSeguridadTests
             Logs.Add(log);
             return Task.CompletedTask;
         }
+
+        public Task<Recomendacion?> ObtenerDeUsuarioAsync(long recomendacionId, int usuarioId, CancellationToken ct = default)
+            => Task.FromResult<Recomendacion?>(null);
+
+        public Task GuardarFeedbackAsync(Recomendacion recomendacion, string feedback, CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private static (RecomendacionService Servicio, RecuperadorFalso Recuperador, AsistenteFalso Asistente, RepositorioFalso Repo) Armar()
