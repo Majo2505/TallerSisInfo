@@ -658,6 +658,28 @@ Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendim
 | 401 | Sin token o token inválido |
 | 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
 
+### Corregir lo que la IA entendió mal
+
+Desde el resumen, el estudiante puede corregir sin empezar de nuevo, de dos formas:
+
+| Forma | Cómo | Estado |
+|---|---|---|
+| En palabras | `POST /api/actividades/extraer` con `texto` = la corrección («mejor a las 5 y somos 6») y `anterior` = el `actividad` del resumen. Cambia solo lo que dice la corrección | ✅ Definido |
+| Editando cada dato | `POST /api/actividades/revisar` con los cuatro datos tal como los dejó. Las mismas reglas, **sin llamar al LLM**; queda en la auditoría con `modelo` = `manual` | ✅ Definido |
+
+En los dos casos la respuesta trae un `consultaId` nuevo: **ese** es el que se manda a `POST /api/actividades` (HU10), que solo crea a partir de una extracción `COMPLETO`.
+
+### `POST /api/actividades/revisar`
+
+Body: `{ "texto": "Quiero jugar cartas por una hora", "actividad": { "actividad": "jugar ajedrez", "horaInicio": "17:00", "duracionMin": 90, "maxParticipantes": 2 } }` (`texto` es la descripción original). Respuesta **200**: el mismo formato que `POST /api/actividades/extraer` (`COMPLETO`, o `INCOMPLETO` con la pregunta por el dato que no es válido).
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta la descripción o la actividad (`VALIDACION`: «Escribe qué actividad vas a hacer.»), o no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`) |
+| 401 | Sin token o token inválido |
+
 ## 7e. Crear la actividad (HU10 — responsable: Ariana)
 
 Cuando el estudiante revisa el resumen que dejó `POST /api/actividades/extraer` (estado `COMPLETO`) y pulsa **Confirmar y crear**, se llama a este endpoint. Si no confirma, no se llama y no se crea nada.

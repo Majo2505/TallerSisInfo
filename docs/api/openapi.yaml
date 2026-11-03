@@ -1112,6 +1112,52 @@ paths:
               example:
                 codigo: ASISTENTE_NO_DISPONIBLE
                 mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+  /api/actividades/revisar:
+    post:
+      tags: [Actividades]
+      operationId: revisarActividad
+      summary: Revisa los datos de una actividad que el estudiante corrigió a mano, sin llamar a la IA.
+      description: |
+        Sirve cuando la IA entendió mal y el estudiante edita las casillas del resumen. Se aplican las mismas reglas que en
+        `POST /api/actividades/extraer` y la respuesta tiene el mismo formato: con `COMPLETO`, su `consultaId` es el que se
+        manda a `POST /api/actividades` para crear la actividad (HU10). Queda en la auditoría con modelo `manual`.
+        Para corregir en palabras se usa `POST /api/actividades/extraer` con `anterior`.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevisionActividadDto'
+            example:
+              texto: Quiero jugar cartas por una hora
+              actividad: { actividad: jugar ajedrez, horaInicio: '17:00', duracionMin: 90, maxParticipantes: 2 }
+      responses:
+        '200':
+          description: Datos revisados (`COMPLETO`, o `INCOMPLETO` con la pregunta en `mensaje`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaExtraccionDto'
+              example:
+                consultaId: 61
+                estado: COMPLETO
+                mensaje: null
+                actividad: { actividad: jugar ajedrez, horaInicio: '17:00', duracionMin: 90, maxParticipantes: 2 }
+                faltantes: []
+                supuestos: []
+        '400':
+          description: Falta la descripción o la actividad (`codigo` = `VALIDACION`), o no pasa los guardrails de HU17 (`codigo` = `SOLICITUD_NO_PERMITIDA`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: VALIDACION
+                mensaje: Escribe qué actividad vas a hacer.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
   /api/actividades:
     post:
       tags: [Actividades]
@@ -2155,6 +2201,12 @@ components:
             - $ref: '#/components/schemas/ActividadExtraidaDto'
           nullable: true
           description: Lo ya entendido (el campo `actividad` de la respuesta anterior). `null` en la primera consulta.
+    RevisionActividadDto:
+      type: object
+      properties:
+        texto: { type: string, maxLength: 200, example: Quiero jugar cartas por una hora, description: La descripción original del estudiante. }
+        actividad:
+          $ref: '#/components/schemas/ActividadExtraidaDto'
     CrearActividadRequest:
       type: object
       required: [texto, actividad, horaInicio, duracionMin, maxParticipantes, consultaId]

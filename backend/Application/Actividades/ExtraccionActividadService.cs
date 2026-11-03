@@ -3,6 +3,7 @@ using Breaku.Application.Horarios;
 using Breaku.Application.Recomendaciones;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
+using Microsoft.Extensions.Logging;
 
 namespace Breaku.Application.Actividades;
 
@@ -10,21 +11,34 @@ namespace Breaku.Application.Actividades;
 /// Caso de uso de HU11: extracción estructurada por tool calling. Convierte el texto libre del estudiante en los datos de
 /// una actividad (qué, a qué hora, cuánto dura y cuántas personas) y dice qué falta preguntar. No crea la actividad:
 /// eso lo hace HU10 cuando el estudiante confirma el resumen. Cada extracción queda en el log de auditoría.
+/// Si la IA entendió mal, el estudiante puede corregirlo en palabras (<see cref="ExtraerAsync"/> con lo ya entendido)
+/// o editando los datos a mano (<see cref="RevisarAsync"/>).
 /// </summary>
 public class ExtraccionActividadService
 {
+    /// <summary>Valor de log_auditoria_rag.modelo cuando los datos los corrigió el estudiante a mano (sin LLM).</summary>
+    public const string ModeloCorreccionManual = "manual";
+
+    public const string MensajeFaltaActividad = "Escribe qué actividad vas a hacer.";
+
     private readonly IExtractorActividad _extractor;
     private readonly IExtraccionRepository _repo;
     private readonly TimeProvider _reloj;
+    private readonly ILogger<ExtraccionActividadService>? _logger;
 
     public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo)
         : this(extractor, repo, TimeProvider.System) { }
 
-    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, TimeProvider reloj)
+    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, ILogger<ExtraccionActividadService> logger)
+        : this(extractor, repo, TimeProvider.System, logger) { }
+
+    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, TimeProvider reloj,
+        ILogger<ExtraccionActividadService>? logger = null)
     {
         _extractor = extractor;
         _repo = repo;
         _reloj = reloj;
+        _logger = logger;
     }
 
     public async Task<RespuestaExtraccionDto> ExtraerAsync(int usuarioId, SolicitudExtraccionDto req, CancellationToken ct = default)
@@ -64,8 +78,10 @@ public class ExtraccionActividadService
             {
                 respuesta = await _extractor.ExtraerAsync(prompt, texto, ct);
             }
-            catch (Exception) when (!ct.IsCancellationRequested)
+            catch (Exception ex) when (!ct.IsCancellationRequested)
             {
+                // La causa (tiempo de espera, respuesta ilegible, error del proveedor) solo va a la terminal, nunca al estudiante.
+                _logger?.LogWarning(ex, "No se pudo extraer la actividad: {Motivo}", ex.Message);
                 log.Estado = LogAuditoriaRag.EstadoError;
                 log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
                 await _repo.GuardarLogAsync(log, ct);
@@ -92,6 +108,38 @@ public class ExtraccionActividadService
         };
 
         // Se registra ANTES de responder: ninguna extracción se muestra sin quedar en el log.
+        await _repo.GuardarLogAsync(log, ct);
+        return ADto(log.Id, resultado);
+    }
+
+    /// <summary>
+    /// Revisa los datos que el estudiante corrigió a mano, con las mismas reglas que la extracción y sin llamar al LLM.
+    /// Queda en la auditoría como una extracción más (modelo <see cref="ModeloCorreccionManual"/>), así el <c>consultaId</c>
+    /// nuevo es el que se usa para crear la actividad (HU10) y la regla «solo se crea desde una extracción completa» se mantiene.
+    /// </summary>
+    public async Task<RespuestaExtraccionDto> RevisarAsync(int usuarioId, RevisionActividadDto req, CancellationToken ct = default)
+    {
+        var texto = LimpiarTexto(req.Texto);
+        var datos = LeerAnterior(req.Actividad);
+        if (datos?.Actividad is null) throw new ReglaNegocioException("VALIDACION", MensajeFaltaActividad);
+
+        var ahoraUtc = _reloj.GetUtcNow().UtcDateTime;
+        var log = new LogAuditoriaRag
+        {
+            UsuarioId = usuarioId,
+            Tipo = LogAuditoriaRag.TipoExtraccionComunidad,
+            EntradaUsuario = texto,
+            Modelo = ModeloCorreccionManual,
+            CreatedAt = ahoraUtc
+        };
+
+        // Lo que se escribe a mano pasa por los mismos guardrails (HU17) que lo que propone el modelo.
+        var rechazo = ReglasSeguridadIa.Evaluar(texto) ?? ReglasSeguridadIa.Evaluar(datos.Actividad);
+        if (rechazo is not null) await RechazarAsync(log, rechazo, ct);
+
+        var resultado = ReglasExtraccion.Interpretar(null, datos, ReglasNotificacion.AHoraLocal(ahoraUtc));
+        log.Estado = resultado.Estado == ReglasExtraccion.EstadoCompleto ? LogAuditoriaRag.EstadoOk : LogAuditoriaRag.EstadoIncompleto;
+
         await _repo.GuardarLogAsync(log, ct);
         return ADto(log.Id, resultado);
     }
