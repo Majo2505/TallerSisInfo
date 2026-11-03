@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { ErrorApi } from "@/lib/api";
 import { Puente, duracionMin } from "@/lib/puentes";
 import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendaciones";
 import { IconoDestello, IconoFlechaDerecha } from "./Iconos";
@@ -23,7 +24,7 @@ type Mensaje =
   | { id: number; autor: "tu"; texto: string }
   | { id: number; autor: "ia"; consulta: string; estado: "pensando" }
   | { id: number; autor: "ia"; consulta: string; estado: "listo"; respuesta: RespuestaRecomendacion }
-  | { id: number; autor: "ia"; consulta: string; estado: "error"; error: string };
+  | { id: number; autor: "ia"; consulta: string; estado: "error"; error: string; reintentable: boolean };
 
 /**
  * Chat con el asistente (HU7): el estudiante escribe lo que quiere hacer y recibe lugares del catálogo
@@ -50,7 +51,8 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
       setMensajes((ms) => ms.map((m) => (m.id === idIa ? { id: idIa, autor: "ia", consulta, estado: "listo", respuesta } : m)));
     } catch (e) {
       const error = (e as Error).message;
-      setMensajes((ms) => ms.map((m) => (m.id === idIa ? { id: idIa, autor: "ia", consulta, estado: "error", error } : m)));
+      const reintentable = !(e instanceof ErrorApi && e.codigo === "SOLICITUD_NO_PERMITIDA");
+      setMensajes((ms) => ms.map((m) => (m.id === idIa ? { id: idIa, autor: "ia", consulta, estado: "error", error, reintentable } : m)));
     }
   }
 
@@ -136,9 +138,11 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
                   {m.estado === "error" && (
                     <div className={`${estilos.burbujaIa} ${estilos.burbujaError}`} role="alert">
                       <p>{m.error}</p>
-                      <button type="button" className={estilos.reintentar} onClick={() => reintentar(m)}>
-                        Reintentar
-                      </button>
+                      {m.reintentable && (
+                        <button type="button" className={estilos.reintentar} onClick={() => reintentar(m)}>
+                          Reintentar
+                        </button>
+                      )}
                     </div>
                   )}
 

@@ -35,6 +35,11 @@ public class RecomendacionesController : ControllerBase
     /// Si no hay lugares viables, no se llama al asistente y se responde <c>200</c> con
     /// <c>estado</c> = <c>SIN_RESULTADOS</c> y el mensaje «No encontramos opciones cercanas para este tiempo disponible.».
     ///
+    /// La preferencia pasa antes por los guardrails de HU17: se rechaza con <c>400</c> y <c>SOLICITUD_NO_PERMITIDA</c> si intenta cambiar las
+    /// instrucciones del asistente, pide datos internos (claves, contraseñas, el prompt) o habla de algo fuera del reglamento universitario
+    /// (alcohol, drogas, apuestas, contenido sexual, ocultismo, violencia, deshonestidad académica o lenguaje vulgar). No se llama al asistente
+    /// y el intento queda en el registro de auditoría como <c>RECHAZADO_SEGURIDAD</c>.
+    ///
     /// Ejemplo de petición:
     /// <code>
     /// { "puenteId": 5, "entrada": "Estoy cansado, quiero algo tranquilo" }
@@ -42,7 +47,7 @@ public class RecomendacionesController : ControllerBase
     /// </remarks>
     /// <param name="req">Puente y preferencia opcional del estudiante.</param>
     /// <response code="200">Recomendaciones (<c>OK</c>) o mensaje de que no hay opciones (<c>SIN_RESULTADOS</c>).</response>
-    /// <response code="400">La preferencia supera los 300 caracteres (<c>codigo</c> = <c>VALIDACION</c>) o el cuerpo está mal formado.</response>
+    /// <response code="400">La preferencia supera los 300 caracteres (<c>codigo</c> = <c>VALIDACION</c>), el cuerpo está mal formado o la preferencia no se puede enviar al asistente (<c>codigo</c> = <c>SOLICITUD_NO_PERMITIDA</c>).</response>
     /// <response code="401">Falta el token, es inválido o está vencido.</response>
     /// <response code="404">El puente no existe o no pertenece al usuario (<c>codigo</c> = <c>NO_ENCONTRADO</c>).</response>
     /// <response code="503">El asistente no respondió (<c>codigo</c> = <c>ASISTENTE_NO_DISPONIBLE</c>). La consulta queda registrada como <c>ERROR</c>.</response>

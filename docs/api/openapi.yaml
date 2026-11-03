@@ -893,14 +893,22 @@ paths:
                     mensaje: No encontramos opciones cercanas para este tiempo disponible.
                     recomendaciones: []
         '400':
-          description: La preferencia supera los 300 caracteres (`codigo` = `VALIDACION`) o el cuerpo está mal formado (`ProblemDetails` estándar de ASP.NET).
+          description: La preferencia supera los 300 caracteres (`codigo` = `VALIDACION`), no se puede enviar al asistente porque intenta cambiar sus instrucciones, pide datos internos o está fuera del reglamento (`codigo` = `SOLICITUD_NO_PERMITIDA`, queda en la auditoría como `RECHAZADO_SEGURIDAD`), o el cuerpo está mal formado (`ProblemDetails` estándar de ASP.NET).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
-              example:
-                codigo: VALIDACION
-                mensaje: La preferencia puede tener como máximo 300 caracteres.
+              examples:
+                demasiadoLarga:
+                  summary: La preferencia es demasiado larga
+                  value:
+                    codigo: VALIDACION
+                    mensaje: La preferencia puede tener como máximo 300 caracteres.
+                solicitudNoPermitida:
+                  summary: La preferencia no se puede enviar al asistente (HU17)
+                  value:
+                    codigo: SOLICITUD_NO_PERMITIDA
+                    mensaje: Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.
         '401':
           $ref: '#/components/responses/NoAutorizado'
         '404':
@@ -1252,8 +1260,8 @@ components:
       properties:
         codigo:
           type: string
-          enum: [VALIDACION, DUPLICADO, NO_ENCONTRADO, ASISTENTE_NO_DISPONIBLE]
-          description: '`VALIDACION` (400), `DUPLICADO` (409), `NO_ENCONTRADO` (404) o `ASISTENTE_NO_DISPONIBLE` (503).'
+          enum: [VALIDACION, DUPLICADO, NO_ENCONTRADO, SOLICITUD_NO_PERMITIDA, ASISTENTE_NO_DISPONIBLE]
+          description: '`VALIDACION` (400), `DUPLICADO` (409), `NO_ENCONTRADO` (404), `SOLICITUD_NO_PERMITIDA` (400) o `ASISTENTE_NO_DISPONIBLE` (503).'
           example: DUPLICADO
         mensaje:
           type: string
