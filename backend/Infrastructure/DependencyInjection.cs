@@ -17,6 +17,7 @@ using Breaku.Application.Recomendaciones;
 using Breaku.Application.Perfil;
 using Breaku.Application.Admin;
 using Breaku.Application.Matching;
+using Breaku.Application.Comunidades;
 using Breaku.Application.Actividades;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
@@ -54,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IPerfilRepository, PerfilRepository>();
         services.AddScoped<IMatchingRepository, MatchingRepository>();
         services.AddScoped<IExtraccionRepository, ExtraccionRepository>();
+        services.AddScoped<IComunidadRepository, ComunidadRepository>();
 
         return services;
     }
