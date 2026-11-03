@@ -1,7 +1,5 @@
-/**
- * Comunidades efímeras: datos de ejemplo para la vista previa del frontend.
- * El backend de comunidades (tabla comunidad_efimera) llega con su historia de usuario.
- */
+import { pedirApi } from "./api";
+
 export type Comunidad = {
   id: number;
   actividad: string;
@@ -13,6 +11,49 @@ export type Comunidad = {
   maximo: number;
   creador: string;
 };
+
+type ComunidadApi = {
+  id: number;
+  actividad: string;
+  texto: string;
+  inicio: string;
+  fin: string;
+  maxParticipantes: number;
+  estado: string;
+  participantes: number;
+  lugar: string | null;
+};
+
+const adaptar = (c: ComunidadApi): Comunidad => ({
+  id: c.id,
+  actividad: c.actividad,
+  lugar: c.lugar ?? "Campus UCB",
+  categoria: "Estudio",
+  inicio: new Date(c.inicio).toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit", hour12: false }),
+  fin: new Date(c.fin).toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit", hour12: false }),
+  participantes: Array.from({ length: c.participantes }, () => "Participante"),
+  maximo: c.maxParticipantes,
+  creador: "Tú",
+});
+
+export async function listarComunidades(): Promise<Comunidad[]> {
+  const datos = await pedirApi<ComunidadApi[]>("/api/comunidades");
+  return datos.map(adaptar);
+}
+
+export function crearComunidad(texto: string): Promise<ComunidadApi> {
+  const inicio = new Date();
+  inicio.setMinutes(Math.ceil((inicio.getMinutes() + 1) / 15) * 15, 0, 0);
+  const fin = new Date(inicio.getTime() + 45 * 60_000);
+  return pedirApi<ComunidadApi>("/api/comunidades", {
+    method: "POST",
+    body: JSON.stringify({ texto, actividad: texto.slice(0, 100), inicio: inicio.toISOString(), fin: fin.toISOString() }),
+  });
+}
+
+export function responderComunidad(id: number, confirmar: boolean) {
+  return pedirApi(`/api/comunidades/${id}/rsvp`, { method: "PATCH", body: JSON.stringify({ confirmar }) });
+}
 
 export const COMUNIDADES_EJEMPLO: Comunidad[] = [
   { id: 1, actividad: "Estudiar para el parcial de Redes", lugar: "Biblioteca Norte", categoria: "Estudio", inicio: "10:30", fin: "12:00", participantes: ["Carlos", "Ana", "Luis"], maximo: 5, creador: "Carlos R." },

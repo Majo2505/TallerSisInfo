@@ -8,6 +8,7 @@ using Breaku.Infrastructure.Persistence;
 using Breaku.Application.Puentes;
 using Breaku.Application.Notificaciones;
 using Breaku.Application.Recomendaciones;
+using Breaku.Application.Comunidades;
 using Breaku.Presentation.Documentacion;
 using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
@@ -76,6 +77,7 @@ builder.Services.AddScoped<BusquedaLugaresService>();
 builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
+builder.Services.AddScoped<ComunidadService>();
 
 var app = builder.Build();
 

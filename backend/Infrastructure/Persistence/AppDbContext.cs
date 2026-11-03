@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
     public DbSet<LogAuditoriaRag> LogsAuditoriaRag => Set<LogAuditoriaRag>();
     public DbSet<LugarRecuperado> LugaresRecuperados => Set<LugarRecuperado>();
     public DbSet<Recomendacion> Recomendaciones => Set<Recomendacion>();
+    public DbSet<ComunidadEfimera> Comunidades => Set<ComunidadEfimera>();
+    public DbSet<Participacion> Participaciones => Set<Participacion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

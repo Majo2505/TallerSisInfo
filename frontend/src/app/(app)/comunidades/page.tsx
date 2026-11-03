@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoPin, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
-import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
+import { Comunidad, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD, crearComunidad, listarComunidades, responderComunidad } from "@/lib/comunidades";
 import { iniciales } from "@/lib/iniciales";
 import estilos from "./comunidades.module.css";
 
@@ -21,13 +21,24 @@ export default function Comunidades() {
   const [texto, setTexto] = useState("");
   const [envio, setEnvio] = useState<Envio>("nada");
   const [unido, setUnido] = useState<Set<number>>(new Set());
+  const [comunidades, setComunidades] = useState<Comunidad[]>([]);
+  const [errorComunidades, setErrorComunidades] = useState("");
 
-  function enviar(e: React.FormEvent) {
+  useEffect(() => {
+    void listarComunidades().then(setComunidades).catch((e: Error) => setErrorComunidades(e.message));
+  }, [envio]);
+
+  async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!texto.trim() || envio === "buscando") return;
     setEnvio("buscando");
-    // Vista previa: simula la búsqueda de compañeros con el mismo tiempo libre.
-    setTimeout(() => setEnvio("listo"), reducir ? 0 : 2200);
+    try {
+      await crearComunidad(texto.trim());
+      setEnvio("listo");
+    } catch (e) {
+      setEnvio("nada");
+      setErrorComunidades((e as Error).message);
+    }
   }
 
   function alternarUnion(id: number) {
@@ -138,10 +149,7 @@ export default function Comunidades() {
                       </span>
                       <div>
                         <strong>¡Grupo armado!</strong>
-                        <p>
-                          3 compañeros con tu mismo puente se sumaron a “{texto.trim()}”. Te esperan en la Cafetería Central de 10:30 a
-                          11:15.
-                        </p>
+                        <p>La comunidad quedó creada y ya puedes recibir confirmaciones de otros estudiantes compatibles.</p>
                       </div>
                       <button
                         type="button"
@@ -214,7 +222,8 @@ export default function Comunidades() {
                 animate="visible"
                 variants={{ oculto: {}, visible: { transition: { staggerChildren: 0.07 } } }}
               >
-                {COMUNIDADES_EJEMPLO.map((c) => {
+                {errorComunidades && <li className={estilos.aviso}>{errorComunidades}</li>}
+                {comunidades.map((c) => {
                   const dentro = unido.has(c.id);
                   const total = c.participantes.length + (dentro ? 1 : 0);
                   return (
@@ -252,7 +261,9 @@ export default function Comunidades() {
                           <motion.button
                             type="button"
                             className={dentro ? estilos.unido : estilos.unirme}
-                            onClick={() => alternarUnion(c.id)}
+                            onClick={() => {
+                              void responderComunidad(c.id, !dentro).then(() => alternarUnion(c.id)).catch((e: Error) => setErrorComunidades(e.message));
+                            }}
                             whileTap={{ scale: 0.95 }}
                             transition={RESORTE_TOQUE}
                             aria-pressed={dentro}
@@ -279,7 +290,7 @@ export default function Comunidades() {
 
       {pestana !== "libres" && (
         <Pieza>
-          <p className={estilos.aviso}>Vista previa con comunidades de ejemplo; la creación real de grupos llega con su historia de usuario.</p>
+          <p className={estilos.aviso}>Las comunidades activas y sus confirmaciones se cargan desde el backend.</p>
         </Pieza>
       )}
     </Entrada>
