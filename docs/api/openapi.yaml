@@ -695,6 +695,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/admin/lugares/{id}/validacion:
+    patch:
+      tags: [Administración]
+      operationId: cambiarValidacionLugar
+      summary: Marca un lugar como validado o le quita la validación.
+      description: La validación es independiente del estado. Un lugar `ACTIVO` puede seguir «Por validar» hasta que el equipo revise sus datos. El cambio queda en `historial_cambio` con el valor anterior, el nuevo y el administrador.
+      security: [{ Bearer: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambioValidacionLugarDto'
+      responses:
+        '204':
+          description: Validación actualizada.
+        '400':
+          description: Falta indicar `validado` (`codigo` = `VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/admin/lugares/validar-pendientes:
+    post:
+      tags: [Administración]
+      operationId: validarLugaresPendientes
+      summary: Valida de una vez todos los lugares activos que siguen sin validar.
+      description: Solo cambia los lugares `ACTIVO`; los que están `EN_REVISION` o `INACTIVO` no se tocan. Cada lugar validado queda en `historial_cambio`.
+      security: [{ Bearer: [] }]
+      responses:
+        '200':
+          description: Lugares validados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoValidacionMasivaDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
   /api/admin/reportes:
     get:
       tags: [Administración]
@@ -2065,6 +2122,15 @@ components:
       required: [estado]
       properties:
         estado: { type: string, enum: [ACTIVO, EN_REVISION, INACTIVO], example: INACTIVO }
+    CambioValidacionLugarDto:
+      type: object
+      required: [validado]
+      properties:
+        validado: { type: boolean, example: true }
+    ResultadoValidacionMasivaDto:
+      type: object
+      properties:
+        validados: { type: integer, format: int32, example: 13, description: Cuántos lugares se validaron. }
     ResolverReporteDto:
       type: object
       required: [estado]
