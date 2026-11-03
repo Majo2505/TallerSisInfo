@@ -20,10 +20,29 @@ import ArteCategoria from "@/components/inicio/ArteCategoria";
 import HeroePuente from "@/components/inicio/HeroePuente";
 import HeroeSinPuentes from "@/components/inicio/HeroeSinPuentes";
 import { Bloque, listarHorario } from "@/lib/horario";
-import { ESTADOS_ANIMO, LUGARES } from "@/lib/maqueta";
+import { LugarViable, ResultadoLugares, buscarLugaresViables } from "@/lib/lugares";
+import { ESTADOS_ANIMO } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./inicio.module.css";
+
+const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
+
+/** Lo que se dice debajo de las sugerencias: de qué puente son, o por qué no hay ninguna. */
+function textoSugerencias(
+  cargando: boolean,
+  hayPuente: boolean,
+  sugerencias: { resultado: ResultadoLugares | null; error: string } | null,
+): string {
+  if (cargando) return "Buscando lugares para tu puente…";
+  if (!hayPuente) return "Cuando tengas un puente, aquí verás los lugares del campus que te caben.";
+  if (!sugerencias) return "Buscando lugares para tu puente…";
+  if (sugerencias.error) return sugerencias.error;
+  const r = sugerencias.resultado;
+  if (!r) return "";
+  if (r.estado === "OK") return `Lugares del catálogo que caben en tu puente de ${r.minutosDisponibles} min.`;
+  return r.mensaje ?? "";
+}
 
 const DIAS_SEMANA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -57,6 +76,8 @@ export default function Inicio() {
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  // Sugerencias rápidas: lugares reales del catálogo que caben en el puente (HU6). `sugeridas` guarda de qué puente son.
+  const [sugeridas, setSugeridas] = useState<{ puenteId: number; resultado: ResultadoLugares | null; error: string } | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setAhora(new Date()), 30_000);
@@ -116,6 +137,27 @@ export default function Inicio() {
     }
     return undefined;
   }, [puentes, diaHoy]);
+
+  const puenteSugerencias = foco ?? otroDia?.puente;
+
+  useEffect(() => {
+    if (!sesion || !puenteSugerencias) return;
+    const puenteId = puenteSugerencias.id;
+    let activoEfecto = true;
+    buscarLugaresViables(puenteId)
+      .then((resultado) => {
+        if (activoEfecto) setSugeridas({ puenteId, resultado, error: "" });
+      })
+      .catch((e: Error) => {
+        if (activoEfecto) setSugeridas({ puenteId, resultado: null, error: e.message });
+      });
+    return () => {
+      activoEfecto = false;
+    };
+  }, [sesion, puenteSugerencias]);
+
+  const sugerencias = sugeridas && puenteSugerencias && sugeridas.puenteId === puenteSugerencias.id ? sugeridas : null;
+  const lugaresSugeridos: LugarViable[] = sugerencias?.resultado?.estado === "OK" ? sugerencias.resultado.lugares.slice(0, 6) : [];
 
   const clasesHoy = useMemo(
     () => bloques.filter((b) => b.diaSemana === diaHoy).sort((a, b) => aMin(a.horaInicio) - aMin(b.horaInicio)),
@@ -263,29 +305,38 @@ export default function Inicio() {
             Ver campus <IconoFlechaDerecha tamano={14} />
           </Link>
         </div>
-        <div className={estilos.carrusel}>
-          {LUGARES.map((l) => (
-            <motion.article
-              key={l.id}
-              className={`${estilos.lugar} lugar-arte`}
-              whileHover={reducir ? undefined : { y: -4 }}
-              transition={RESORTE_TOQUE}
-            >
-              <ArteCategoria categoria={l.categoria} />
-              <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
-              <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
-              <p className={estilos.lugarMeta}>
-                <span>
-                  <IconoPin tamano={14} /> {l.distanciaM} m
-                </span>
-                <span>
-                  <IconoReloj tamano={14} /> {l.minutos} min
-                </span>
-              </p>
-            </motion.article>
-          ))}
-        </div>
-        <p className={estilos.nota}>Lugares de ejemplo; las recomendaciones reales salen del catálogo según tu puente.</p>
+        {lugaresSugeridos.length > 0 && (
+          <div className={estilos.carrusel}>
+            {lugaresSugeridos.map((l) => (
+              <motion.article
+                key={l.lugarId}
+                className={`${estilos.lugar} lugar-arte`}
+                whileHover={reducir ? undefined : { y: -4 }}
+                transition={RESORTE_TOQUE}
+              >
+                <ArteCategoria categoria={CON_ILUSTRACION.includes(l.categoria.toLowerCase()) ? l.categoria : "Descanso"} />
+                <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
+                <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
+                <p className={estilos.lugarMeta}>
+                  <span>
+                    <IconoPin tamano={14} /> {l.distanciaM} m
+                  </span>
+                  <span>
+                    <IconoReloj tamano={14} /> {l.tiempoTrasladoMin} min
+                  </span>
+                </p>
+              </motion.article>
+            ))}
+          </div>
+        )}
+        <p className={estilos.nota} role="status">
+          {textoSugerencias(cargando, !!puenteSugerencias, sugerencias)}{" "}
+          {sugerencias?.resultado?.estado === "SIN_ZONA" && (
+            <Link href="/configuracion/ubicacion" className={estilos.verTodo}>
+              Elegir mi campus
+            </Link>
+          )}
+        </p>
       </Pieza>
 
       </div>
