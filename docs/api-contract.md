@@ -657,72 +657,106 @@ Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendim
 | 401 | Sin token o token inválido |
 | 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
 
-## 7e. Creación automática de comunidades y notificación (HU13 — responsable: Maite)
+## 7e. Crear la actividad (HU10 — responsable: Ariana)
 
-Une HU11, HU12 y HU4: cuando la actividad que describió el estudiante está completa, el sistema busca **solo** a quién le
-coincide el tiempo libre y, si encuentra a alguien, crea la comunidad y le avisa. Sin IA: la IA ya trabajó en HU11.
-
-### Reglas
+Cuando el estudiante revisa el resumen que dejó `POST /api/actividades/extraer` (estado `COMPLETO`) y pulsa **Confirmar y crear**, se llama a este endpoint. Si no confirma, no se llama y no se crea nada.
 
 | Regla | Valor | Estado |
 |---|---|---|
-| Punto de partida | Una extracción de HU11 con estado `COMPLETO`, **del mismo estudiante y de hoy** (`consultaId`). Los datos se vuelven a validar con `ReglasExtraccion` (07:15 a 21:00, hora no pasada, 10 a 240 min, 2 a 30 personas) | ✅ Definido |
-| Coincidencias | Compañeros de la misma sede activa que aceptaron el matching (`visible_matching`), con un puente **hoy** que comparta **30 min o más** con la actividad (si dura menos de 30, la actividad entera). Mismo cruce que HU12 | ✅ Definido |
-| Solo si hay coincidencias | Sin nadie libre no se crea nada (`SIN_COINCIDENCIAS`) | ✅ Definido |
-| A quién se invita | A los más compatibles (más minutos en común; en empate, por id), **uno por plaza**: `maxParticipantes - 1` | 🟡 Propuesta (Maite) |
-| Ocupados | No se invita a quien ya creó o confirmó otra comunidad activa que se cruza con ese horario; y quien crea tampoco puede estar en otra (`EN_OTRA_COMUNIDAD`) | ✅ Definido |
-| Reciprocidad | Sin campus → `SIN_ZONA`; sin aceptar el matching → `NO_VISIBLE` (quien no aparece tampoco invita) | ✅ Definido |
-| Notificación | Un aviso `INVITACION_COMUNIDAD` por invitado, con `comunidadId`, en `GET /api/notificaciones`. Quien apagó los avisos (HU4) queda invitado pero sin aviso. Uno por comunidad (`uq_notif_comunidad`) | ✅ Definido |
-| Participaciones | Quien crea queda `CONFIRMADO` (con `respondido_en`); los invitados, `PENDIENTE` | ✅ Definido |
-| Atomicidad | Comunidad, participaciones y avisos en una sola transacción. Una extracción crea como mucho una comunidad (`uq_com_log`) | ✅ Definido |
-| Horas | `inicio` y `fin` se guardan en UTC; la API responde en hora de Bolivia (`HH:mm`) | ✅ Definido |
+| Qué se crea | Una fila en `comunidad_efimera` con `creador_id` = el usuario del token, `log_id` = el `consultaId` de la extracción, `texto_original`, `actividad`, `inicio` y `fin` en UTC, `max_participantes` y `estado` = `ACTIVA` | ✅ Definido |
+| Validación | Se vuelven a aplicar las reglas de la extracción (`ReglasExtraccion`): hora de hoy entre 07:15 y 21:00 en hora de Bolivia, duración de 10 a 240 minutos que no pase de las 21:00, y de 2 a 30 personas. Una hora que ya pasó hace más de 5 minutos se rechaza | ✅ Definido |
+| La extracción | Tiene que ser del propio usuario (una ajena responde igual que si no existiera), estar `COMPLETA` (`log_auditoria_rag.estado` = `OK`) y no haberse usado antes | ✅ Definido |
+| Guardrails | El texto y la actividad pasan por los guardrails de HU17 | ✅ Definido |
+| Quién la invita | Esta historia solo crea la actividad. Avisar a compañeros compatibles y las confirmaciones son de HU13 y HU14 | 🟡 Propuesta, a confirmar por Amira |
 
-### `POST /api/comunidades`
+### `POST /api/actividades`
 
-Body (lo que devolvió la extracción, tal cual):
+Body (los datos son los del resumen de la extracción):
 
 ```json
 {
-  "consultaId": 58,
-  "texto": "Quiero jugar cartas a las 10:30 por una hora, somos 4",
-  "actividad": { "actividad": "jugar cartas", "horaInicio": "10:30", "duracionMin": 60, "maxParticipantes": 4 }
+  "texto": "quiero jugar cartas por una hora",
+  "actividad": "jugar cartas",
+  "horaInicio": "16:00",
+  "duracionMin": 60,
+  "maxParticipantes": 4,
+  "consultaId": 58
 }
 ```
 
-Respuesta **201** (`CREADA`):
+Respuesta **201**:
 
 ```json
-{
-  "estado": "CREADA",
-  "mensaje": "¡Grupo armado! Invitamos a 2 compañeros libres a esa hora.",
-  "comunidad": {
-    "id": 12, "actividad": "jugar cartas", "horaInicio": "10:30", "horaFin": "11:30", "maxParticipantes": 4,
-    "invitados": [
-      { "nombre": "Diego Mamani", "carrera": "Ingeniería Industrial", "libreDesde": "10:30", "libreHasta": "11:30", "minutosEnComun": 60 },
-      { "nombre": "Mateo Vargas", "carrera": "Arquitectura", "libreDesde": "10:30", "libreHasta": "11:00", "minutosEnComun": 30 }
-    ]
-  }
-}
+{ "id": 12, "actividad": "jugar cartas", "horaInicio": "16:00", "horaFin": "17:00", "duracionMin": 60, "maxParticipantes": 4, "estado": "ACTIVA" }
 ```
-
-Cada invitado recibe: «Camila te invita a «jugar cartas» hoy de 10:30 a 11:30. Coincide con tu tiempo libre.»
-
-Respuesta **200** cuando **no** se crea (`comunidad: null`):
-
-| `estado` | Cuándo | `mensaje` |
-|---|---|---|
-| `SIN_COINCIDENCIAS` | Nadie libre a esa hora | `Nadie de tu campus está libre a esa hora. Prueba con otra hora o vuelve a intentarlo más tarde.` |
-| `SIN_ZONA` | No elegiste campus | `Elige tu campus para encontrar compañeros libres a esa hora.` |
-| `NO_VISIBLE` | No aceptaste el matching | `Para invitar a tus compañeros, primero acepta que ellos también te encuentren.` |
 
 **Errores**
 
 | Código | Caso |
 |---|---|
-| 400 | Falta la extracción o un dato no es válido (`VALIDACION`; `mensaje` es la misma pregunta de HU11) |
+| 400 | Datos que no cumplen las reglas, texto vacío o de más de 200 caracteres, o consulta inexistente, ajena o incompleta (`VALIDACION`); o texto que no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`) |
 | 401 | Sin token o token inválido |
-| 404 | La extracción no existe, no es tuya, no es de hoy o no estaba completa (`NO_ENCONTRADO`) |
-| 409 | La extracción ya creó una comunidad (`YA_CREADA`) o ya estás en otra a esa hora (`EN_OTRA_COMUNIDAD`) |
+| 409 | Esa consulta ya se usó para crear una actividad (`DUPLICADO`) |
+
+## 7f. Armado automático de la comunidad y notificación (HU13 — responsable: Maite)
+
+Une HU10, HU12 y HU4: cuando `POST /api/actividades` (HU10) crea la actividad, el servidor busca **solo** a los compañeros
+libres a esa hora, los invita y les avisa. Sin IA: es un cruce de horarios, como el matching.
+
+### Reglas
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Cuándo | Automático, en la misma petición que crea la actividad. El resultado viene en `invitacion` de la respuesta de HU10 | ✅ Definido |
+| Coincidencias | Compañeros de la misma sede activa que aceptaron el matching (`visible_matching`), con un puente **ese día** que comparta **30 min o más** con la actividad (si dura menos de 30, la actividad entera). Mismo cruce que HU12 | ✅ Definido |
+| A quién se invita | A los más compatibles (más minutos en común; en empate, por id), **uno por lugar libre** (`maxParticipantes` menos quienes ya están) | 🟡 Propuesta (Maite) |
+| Ocupados | No se invita a quien ya creó o confirmó otra comunidad activa que se cruza con ese horario, ni a quien ya está en esta | ✅ Definido |
+| Reciprocidad | Sin campus → `SIN_ZONA`; sin aceptar el matching → `NO_VISIBLE` (quien no aparece tampoco invita). La actividad queda creada igual | ✅ Definido |
+| Participaciones | Quien crea queda `CONFIRMADO` (con `respondido_en`); los invitados, `PENDIENTE` | ✅ Definido |
+| Notificación | Un aviso `INVITACION_COMUNIDAD` por invitado, con `comunidadId`, en `GET /api/notificaciones`. Quien apagó los avisos (HU4) queda invitado pero sin aviso. Uno por comunidad (`uq_notif_comunidad`) | ✅ Definido |
+| Atomicidad | Participaciones y avisos en una sola transacción. Si invitar falla, la actividad ya quedó creada: `invitacion.estado` = `ERROR` y se puede volver a buscar | ✅ Definido |
+
+### En `POST /api/actividades` (HU10)
+
+La respuesta 201 agrega `invitacion`:
+
+```json
+{
+  "id": 12, "actividad": "jugar cartas", "horaInicio": "16:00", "horaFin": "17:00", "duracionMin": 60, "maxParticipantes": 4, "estado": "ACTIVA",
+  "invitacion": {
+    "estado": "INVITADOS",
+    "mensaje": "Invitamos a 2 compañeros libres a esa hora.",
+    "invitados": [
+      { "nombre": "Diego Mamani", "carrera": "Ingeniería Industrial", "libreDesde": "16:00", "libreHasta": "17:00", "minutosEnComun": 60 },
+      { "nombre": "Mateo Vargas", "carrera": "Arquitectura", "libreDesde": "16:00", "libreHasta": "16:30", "minutosEnComun": 30 }
+    ]
+  }
+}
+```
+
+Cada invitado recibe: «Camila te invita a «jugar cartas» hoy de 16:00 a 17:00. Coincide con tu tiempo libre.»
+
+| `invitacion.estado` | Cuándo | `mensaje` |
+|---|---|---|
+| `INVITADOS` | Se invitó a alguien | `Invitamos a N compañeros libres a esa hora.` |
+| `SIN_COINCIDENCIAS` | Nadie libre a esa hora | `Por ahora nadie de tu campus está libre a esa hora. Puedes volver a buscar más tarde.` |
+| `SIN_ZONA` | No eligió campus | `Elige tu campus para invitar a compañeros libres a esa hora.` |
+| `NO_VISIBLE` | No aceptó el matching | `Para invitar a tus compañeros, primero acepta que ellos también te encuentren.` |
+| `COMPLETA` | No quedan lugares | `El grupo ya está completo.` |
+| `ERROR` | No se pudo invitar | `Tu actividad quedó creada, pero no pudimos invitar a tus compañeros. Vuelve a buscar en un momento.` |
+
+### `POST /api/comunidades/{id}/invitaciones`
+
+Vuelve a buscar con las mismas reglas (después de aceptar el matching, de elegir campus o si antes no había nadie). Responde
+**200** con el mismo objeto que `invitacion`. Solo invita a los lugares que quedan y nunca dos veces a la misma persona.
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | La actividad ya terminó (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | La actividad no existe o no es tuya (`NO_ENCONTRADO`) |
 
 ## 8. Resumen de decisiones por responsable
 

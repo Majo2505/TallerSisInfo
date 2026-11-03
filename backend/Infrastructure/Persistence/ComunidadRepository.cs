@@ -1,9 +1,7 @@
 using Breaku.Application.Comunidades;
-using Breaku.Application.Horarios;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
 using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
 
 namespace Breaku.Infrastructure.Persistence;
 
@@ -15,26 +13,31 @@ public sealed class ComunidadRepository : IComunidadRepository
     public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default)
         => _db.Usuarios.AsNoTracking().Include(u => u.ZonaActual).FirstOrDefaultAsync(u => u.Id == usuarioId && u.Activo, ct);
 
-    public Task<LogAuditoriaRag?> ObtenerExtraccionAsync(long consultaId, CancellationToken ct = default)
-        => _db.LogsAuditoriaRag.AsNoTracking().FirstOrDefaultAsync(l => l.Id == consultaId, ct);
+    public Task<ComunidadEfimera?> ObtenerComunidadAsync(int comunidadId, CancellationToken ct = default)
+        => _db.Comunidades.AsNoTracking().FirstOrDefaultAsync(c => c.Id == comunidadId, ct);
 
-    public Task<bool> ExisteComunidadDeConsultaAsync(long consultaId, CancellationToken ct = default)
-        => _db.Set<ComunidadEfimera>().AnyAsync(c => c.LogId == consultaId, ct);
+    public Task<List<int>> ListarParticipantesAsync(int comunidadId, CancellationToken ct = default)
+        => _db.Set<Participacion>().Where(p => p.ComunidadId == comunidadId).Select(p => p.UsuarioId).ToListAsync(ct);
 
-    public Task<bool> EstaEnOtraComunidadAsync(int usuarioId, DateTime inicioUtc, DateTime finUtc, CancellationToken ct = default)
-        => OcupadosEn(inicioUtc, finUtc).AnyAsync(id => id == usuarioId, ct);
-
-    public async Task<List<CandidatoComunidad>> ListarCandidatosAsync(int usuarioId, int zonaId, ReglasMatching.Franja actividad,
-        DateTime inicioUtc, DateTime finUtc, CancellationToken ct = default)
+    public async Task<List<CandidatoComunidad>> ListarCandidatosAsync(ComunidadEfimera comunidad, int zonaId, ReglasMatching.Franja actividad,
+        CancellationToken ct = default)
     {
         var (diaSemana, inicio, fin) = (actividad.DiaSemana, actividad.Inicio, actividad.Fin);
+
         // Mismo filtro que el matching de HU12 (sede, consentimiento, puente que se solapa; usa ix_usuario_matching e
-        // ix_puente_matching) y, además, que no estén ya en otra comunidad a esa hora. El mínimo en común lo aplica ReglasComunidad.
-        var ocupados = OcupadosEn(inicioUtc, finUtc);
+        // ix_puente_matching). Además: nadie que ya esté en esta comunidad ni en otra a esa hora.
+        // El mínimo de minutos en común lo aplica ReglasComunidad.
+        var ocupados = from p in _db.Set<Participacion>()
+                       join c in _db.Comunidades on p.ComunidadId equals c.Id
+                       where c.Id != comunidad.Id && p.Estado == Participacion.EstadoConfirmado
+                             && c.Estado == ComunidadEfimera.EstadoActiva && c.Inicio < comunidad.Fin && c.Fin > comunidad.Inicio
+                       select p.UsuarioId;
+        var yaDentro = _db.Set<Participacion>().Where(p => p.ComunidadId == comunidad.Id).Select(p => p.UsuarioId);
+
         var companeros = await _db.Usuarios.AsNoTracking()
-            .Where(u => u.Id != usuarioId && u.Activo && u.Rol == "ESTUDIANTE" && u.VisibleMatching && u.ZonaActualId == zonaId)
+            .Where(u => u.Id != comunidad.CreadorId && u.Activo && u.Rol == "ESTUDIANTE" && u.VisibleMatching && u.ZonaActualId == zonaId)
             .Where(u => _db.Puentes.Any(p => p.UsuarioId == u.Id && p.DiaSemana == diaSemana && p.HoraInicio < fin && p.HoraFin > inicio))
-            .Where(u => !ocupados.Contains(u.Id))
+            .Where(u => !ocupados.Contains(u.Id) && !yaDentro.Contains(u.Id))
             .Select(u => new { u.Id, u.Nombre, u.Carrera, u.NotificacionesActivas })
             .ToListAsync(ct);
         if (companeros.Count == 0) return [];
@@ -50,39 +53,16 @@ public sealed class ComunidadRepository : IComunidadRepository
             .ToList();
     }
 
-    public async Task CrearAsync(ComunidadEfimera comunidad, IReadOnlyList<Participacion> participaciones, IReadOnlyList<Notificacion> avisos,
+    public async Task GuardarInvitacionesAsync(IReadOnlyList<Participacion> participaciones, IReadOnlyList<Notificacion> avisos,
         CancellationToken ct = default)
     {
+        if (participaciones.Count == 0 && avisos.Count == 0) return;
+
+        // Participaciones y avisos van juntos: nadie queda invitado sin su aviso (ni al revés).
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
-        try
-        {
-            _db.Set<ComunidadEfimera>().Add(comunidad);
-            await _db.SaveChangesAsync(ct);
-
-            foreach (var p in participaciones) p.ComunidadId = comunidad.Id;
-            foreach (var a in avisos) a.ComunidadId = comunidad.Id;
-            _db.Set<Participacion>().AddRange(participaciones);
-            _db.Notificaciones.AddRange(avisos);
-            await _db.SaveChangesAsync(ct);
-
-            await tx.CommitAsync(ct);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is MySqlException { ErrorCode: MySqlErrorCode.DuplicateKeyEntry } mysql
-                                           && mysql.Message.Contains("uq_com_log"))
-        {
-            // Dos pedidos a la vez con la misma extracción: la base deja pasar solo uno.
-            throw new ReglaNegocioException("YA_CREADA", "Ya creaste una comunidad con esta actividad.");
-        }
+        _db.Set<Participacion>().AddRange(participaciones);
+        _db.Notificaciones.AddRange(avisos);
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
     }
-
-    /// <summary>
-    /// Ids de quienes ya están en una comunidad activa que se cruza con ese horario: la crearon o confirmaron que van.
-    /// Una invitación pendiente no cuenta, porque todavía no aceptaron.
-    /// </summary>
-    private IQueryable<int> OcupadosEn(DateTime inicioUtc, DateTime finUtc)
-        => from p in _db.Set<Participacion>()
-           join c in _db.Set<ComunidadEfimera>() on p.ComunidadId equals c.Id
-           where p.Estado == Participacion.EstadoConfirmado && c.Estado == ComunidadEfimera.EstadoActiva
-                 && c.Inicio < finUtc && c.Fin > inicioUtc
-           select p.UsuarioId;
 }
