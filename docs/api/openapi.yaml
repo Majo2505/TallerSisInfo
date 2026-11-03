@@ -704,31 +704,6 @@ paths:
       responses:
         '200':
           description: Reportes.
-  /api/admin/reportes/{id}:
-    patch:
-      summary: Resuelve o descarta un reporte pendiente.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [estado]
-              properties:
-                estado:
-                  type: string
-                  enum: [RESUELTO, DESCARTADO]
-      responses:
-        '204': { description: Reporte actualizado. }
-        '400': { description: Estado inválido. }
-        '404': { description: Reporte inexistente o ya revisado. }
           content:
             application/json:
               schema:
@@ -739,6 +714,53 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '403':
           description: El usuario no tiene rol `ADMIN`.
+  /api/admin/reportes/{id}:
+    patch:
+      tags: [Administración]
+      operationId: resolverReporteAdmin
+      summary: Resuelve o descarta un reporte pendiente y registra al administrador que lo revisó (HU16).
+      description: |
+        Un reporte se revisa una sola vez: queda `RESUELTO` (se atendió) o `DESCARTADO` (no correspondía), con el administrador
+        del token en `revisor_id` y la fecha en `revisado_en`. La fila se bloquea mientras se revisa: si dos administradores lo
+        intentan a la vez, el segundo recibe `409 YA_REVISADO`. No distingue mayúsculas.
+      security: [{ Bearer: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id del reporte (de `GET /api/admin/reportes`).
+          schema: { type: integer, format: int32, example: 4 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolverReporteDto'
+      responses:
+        '204':
+          description: Reporte revisado.
+        '400':
+          description: El estado no es `RESUELTO` ni `DESCARTADO` (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El reporte no existe (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: El reporte ya fue revisado (`YA_REVISADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/admin/auditoria-rag:
     get:
       tags: [Administración]
@@ -1971,6 +1993,11 @@ components:
       required: [estado]
       properties:
         estado: { type: string, enum: [ACTIVO, EN_REVISION, INACTIVO], example: INACTIVO }
+    ResolverReporteDto:
+      type: object
+      required: [estado]
+      properties:
+        estado: { type: string, enum: [RESUELTO, DESCARTADO], example: RESUELTO, description: Decisión del administrador. }
     ReporteAdminDto:
       type: object
       properties:
