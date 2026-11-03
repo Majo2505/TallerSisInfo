@@ -80,7 +80,9 @@ builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
 builder.Services.AddScoped<ComunidadService>();
-builder.Services.AddScoped<CreacionActividadService>();
+// HU10 crea la actividad y HU13 invita automáticamente a los compañeros libres a esa hora.
+builder.Services.AddScoped(sp => new CreacionActividadService(
+    sp.GetRequiredService<IActividadRepository>(), TimeProvider.System, sp.GetRequiredService<ComunidadService>()));
 
 var app = builder.Build();
 
