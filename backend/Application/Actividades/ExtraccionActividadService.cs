@@ -99,6 +99,7 @@ public class ExtraccionActividadService
     private async Task RechazarAsync(LogAuditoriaRag log, ReglasSeguridadIa.Rechazo rechazo, CancellationToken ct)
     {
         log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
+        log.MotivoRechazo = rechazo.Categoria;   // HU17: para que el admin distinga un intento de inyección de otro rechazo
         await _repo.GuardarLogAsync(log, ct);
         throw new ReglaNegocioException(RecomendacionService.CodigoSolicitudNoPermitida, rechazo.Mensaje);
     }

@@ -27,6 +27,7 @@ public class LogAuditoriaRag
     public string? PromptEnviado { get; set; }          // null si nunca se llamó al LLM
     public string? RespuestaLlm { get; set; }
     public string Estado { get; set; } = "";            // OK | SIN_RESULTADOS | RECHAZADO_SEGURIDAD | ERROR | INCOMPLETO
+    public string? MotivoRechazo { get; set; }          // HU17: categoría del guardrail; solo con RECHAZADO_SEGURIDAD
     public string? Modelo { get; set; }
     public int? LatenciaMs { get; set; }
     public DateTime CreatedAt { get; set; }             // UTC
