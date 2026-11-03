@@ -78,6 +78,7 @@ builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<Busq
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
+builder.Services.AddScoped<CreacionActividadService>();
 
 var app = builder.Build();
 
