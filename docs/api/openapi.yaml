@@ -734,24 +734,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
-  /api/admin/lugares/validar-pendientes:
-    post:
-      tags: [Administración]
-      operationId: validarLugaresPendientes
-      summary: Valida de una vez todos los lugares activos que siguen sin validar.
-      description: Solo cambia los lugares `ACTIVO`; los que están `EN_REVISION` o `INACTIVO` no se tocan. Cada lugar validado queda en `historial_cambio`.
-      security: [{ Bearer: [] }]
-      responses:
-        '200':
-          description: Lugares validados.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoValidacionMasivaDto'
-        '401':
-          $ref: '#/components/responses/NoAutorizado'
-        '403':
-          description: El usuario no tiene rol `ADMIN`.
   /api/admin/reportes:
     get:
       tags: [Administración]
@@ -2127,10 +2109,6 @@ components:
       required: [validado]
       properties:
         validado: { type: boolean, example: true }
-    ResultadoValidacionMasivaDto:
-      type: object
-      properties:
-        validados: { type: integer, format: int32, example: 13, description: Cuántos lugares se validaron. }
     ResolverReporteDto:
       type: object
       required: [estado]
