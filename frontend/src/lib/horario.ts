@@ -1,5 +1,9 @@
 import { pedirApi } from "./api";
 
+/** Horario de clases de la UCB: la más temprana empieza a las 07:15 y la más tarde termina a las 21:00 (mismo límite que el backend). */
+export const HORA_MINIMA = "07:15";
+export const HORA_MAXIMA = "21:00";
+
 /** Otro bloque del mismo día que se cruza con éste, asista o no el estudiante. */
 export type Coincidencia = { id: number; materia: string; horaInicio: string; horaFin: string; asiste: boolean };
 

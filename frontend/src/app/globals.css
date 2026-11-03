@@ -167,6 +167,7 @@ main {
 .hz-campo input:focus, .hz-campo select:focus { outline: none; border-color: var(--ucb-celeste); box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16); }
 .hz-campo input[aria-invalid="true"] { border-color: var(--error); box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.1); }
 .hz-err { color: var(--error); font-weight: 600; }
+.hz-nota { margin: -6px 0 0; color: var(--texto-tenue); font-size: .82rem; font-weight: 600; }
 .hz-acciones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hz-espacio { flex: 1; }
 

@@ -478,6 +478,31 @@
   font-weight: 600;
 }
 
+/* Reportar: mensaje o ayuda a la izquierda y contador a la derecha. */
+.pieCampo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.pieCampo small {
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+}
+
+.campo .contador,
+.campo .contadorLimite {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.campo .contadorLimite {
+  color: var(--ucb-amarillo-oscuro);
+  font-weight: 800;
+}
+
+.campo textarea[aria-invalid="true"],
 .campo input[aria-invalid="true"] {
   border-color: var(--error);
   box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.1);

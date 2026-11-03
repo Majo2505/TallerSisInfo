@@ -16,6 +16,8 @@ CREATE TABLE usuario (
   consentimiento_ubicacion  BOOLEAN      NOT NULL DEFAULT FALSE,
   fecha_consentimiento      DATETIME(6)  NULL,
   notificaciones_activas    BOOLEAN      NOT NULL DEFAULT TRUE,   -- HU4: FALSE = no se le envían avisos (los puentes se siguen detectando)
+  visible_matching          BOOLEAN      NOT NULL DEFAULT FALSE,  -- HU12: TRUE = compañeros de su sede con tiempo compatible lo pueden encontrar
+  fecha_visible_matching    DATETIME(6)  NULL,                    -- HU12: cuándo lo aceptó
   zona_actual_id            INT          NULL,
   created_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at                DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
@@ -28,6 +30,7 @@ CREATE TABLE usuario (
   CONSTRAINT ck_usuario_consentimiento CHECK (
     consentimiento_ubicacion = FALSE OR (fecha_consentimiento IS NOT NULL AND zona_actual_id IS NOT NULL)
   ),
+  CONSTRAINT ck_usuario_visible_matching CHECK (visible_matching = FALSE OR fecha_visible_matching IS NOT NULL),
   CONSTRAINT fk_usuario_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
@@ -54,6 +57,7 @@ CREATE TABLE zona (
 
 ALTER TABLE usuario
   ADD KEY ix_usuario_zona_actual (zona_actual_id),
+  ADD KEY ix_usuario_matching (zona_actual_id, visible_matching),   -- HU12: compañeros de la misma sede que aceptaron aparecer
   ADD CONSTRAINT fk_usuario_zona_actual FOREIGN KEY (zona_actual_id) REFERENCES zona (id);
 
 CREATE TABLE categoria (
@@ -65,6 +69,7 @@ CREATE TABLE categoria (
   updated_by  INT         NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_categoria_nombre UNIQUE (nombre),
+  CONSTRAINT ck_categoria_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT fk_categoria_created_by FOREIGN KEY (created_by) REFERENCES usuario (id),
   CONSTRAINT fk_categoria_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -98,6 +103,7 @@ CREATE TABLE lugar (
   KEY ix_lugar_recomendable (recomendable, estado),
   CONSTRAINT ck_lugar_estado   CHECK (estado IN ('ACTIVO','EN_REVISION','INACTIVO')),
   CONSTRAINT ck_lugar_duracion CHECK (duracion_estimada_min > 0),
+  CONSTRAINT ck_lugar_nombre   CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT ck_lugar_rango_duracion CHECK (duracion_min IS NULL OR duracion_max IS NULL OR duracion_min <= duracion_max),
   CONSTRAINT ck_lugar_lat      CHECK (latitud  BETWEEN -90  AND 90),
   CONSTRAINT ck_lugar_lng      CHECK (longitud BETWEEN -180 AND 180),
@@ -124,6 +130,7 @@ CREATE TABLE horario (
   CONSTRAINT uq_horario_bloque UNIQUE (usuario_id, dia_semana, hora_inicio, materia),
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
+  CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),   -- HU2: horario de clases de la UCB
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
   CONSTRAINT fk_horario_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -189,6 +196,7 @@ CREATE TABLE recomendacion (
   fecha_feedback DATETIME(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_reco_log_lugar UNIQUE (log_id, lugar_id),
+  KEY ix_recomendacion_feedback (feedback, fecha_feedback),   -- HU9: métricas de valoraciones (me gusta / no me sirve)
   CONSTRAINT ck_reco_feedback  CHECK (feedback IN ('LIKE','DISLIKE')),
   CONSTRAINT ck_reco_fecha     CHECK ((feedback IS NULL) = (fecha_feedback IS NULL)),
   -- RN04 / RNF06: solo se puede recomendar un lugar recuperado en ESA misma consulta

@@ -180,8 +180,8 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
 | `id` | entero | Solo en respuestas | ✅ Definido |
 | `materia` | string | Obligatorio, hasta 100 caracteres | ✅ Definido (schema) |
 | `diaSemana` | entero | 1 a 6 (1 = lunes … 6 = sábado) | ✅ Definido (`ck_horario_dia`) |
-| `horaInicio` | hora | Obligatoria | ✅ Definido (schema) |
-| `horaFin` | hora | Obligatoria, posterior a `horaInicio` | ✅ Definido (`ck_horario_horas`) |
+| `horaInicio` | hora | Obligatoria, desde las **07:15** (la clase más temprana de la UCB). Antes: 400 «Las clases empiezan desde las 07:15.» | ✅ Definido (`ck_horario_rango`) |
+| `horaFin` | hora | Obligatoria, posterior a `horaInicio` y hasta las **21:00** (la más tarde). Después: 400 «Las clases terminan, como muy tarde, a las 21:00.» | ✅ Definido (`ck_horario_horas`, `ck_horario_rango`) |
 | `aula` | string o `null` | Opcional, hasta 30 caracteres | ✅ Definido (schema) |
 | `origen` | string | Solo en respuestas. `MANUAL` (alta a mano) o `FOTO` (confirmado desde la foto del horario); valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores); 🟡 Propuesta (que el cliente no lo envíe) |
 | `asiste` | booleano | Opcional al enviar: al crear, `true` si no se envía; al editar, se conserva el valor actual. En respuestas siempre viene. `false` = el estudiante no asiste a ese bloque: no cuenta como tiempo ocupado y no choca con otros | ✅ Definido |
@@ -461,6 +461,7 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
   3. El traslado de ida y vuelta más la actividad no supera la duración del puente. Si suman exactamente lo mismo, sí cabe.
 - ✅ **Definido:** la sede activa se elige con el campo `zona.activa`. Solo las sedes activas se ofrecen en `GET /api/ubicacion/zonas` y reciben búsquedas: si la zona del estudiante quedó inactiva, la búsqueda responde `SIN_ZONA` hasta que elija otra. Hoy la sede activa es **UCB Cochabamba** y La Paz queda guardada pero inactiva (`docs/database/seed-dev-cochabamba.sql`).
 - ✅ **Definido:** `validado = false` significa que el equipo todavía no revisó los datos del lugar. Se sigue mostrando, con la etiqueta «Por validar».
+- ✅ **Definido** (HU8, #16): un lugar sin nombre, categoría, distancia o duración válida no se devuelve, ni en `GET /api/lugares/viables` ni en las recomendaciones.
 - 🟡 **Propuesta:** el traslado se calcula con la distancia en línea recta desde el centro de la zona y una velocidad de 80 m por minuto (unos 4,8 km/h), redondeando hacia arriba. La actividad dura `duracion_estimada_min` (RN03).
 - 🟡 **Propuesta:** orden por distancia, del más cercano al más lejano. Máximo 50 lugares.
 - 🔴 **Pendiente:** si el catálogo debe considerar `hora_apertura` y `hora_cierre` (hoy están como [CONFIRMAR] en el esquema y no se usan).
@@ -512,6 +513,84 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
 | 400 | Falta `puenteId` o no es un número positivo (`VALIDACION`) |
 | 401 | Sin token o token inválido |
 | 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
+
+## 7b. Matching de compañeros con puente compatible (HU12 — responsable: Maite)
+
+Compañeros de tu misma sede que están libres al mismo tiempo que tú. Sin IA: es un cruce de horarios.
+
+### Reglas
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Cruce por franja horaria | Dos puentes son compatibles si caen el **mismo día** y comparten **30 minutos o más**. Se devuelve el tramo en común: inicio = el más tardío de los dos inicios; fin = el más temprano de los dos fines. Si solo se tocan (fin = inicio), no se cruzan | ✅ Definido |
+| Orden por compatibilidad | Primero quien comparte más minutos; en empate, quien coincide en más puentes de tu semana. `porcentaje` = minutos en común ÷ duración de tu puente | ✅ Definido |
+| Quién aparece | Estudiantes activos, de tu misma sede (y la sede activa), que aceptaron aparecer (`usuario.visible_matching`). Nunca tú mismo | ✅ Definido |
+| Reciprocidad | Para ver a otros, tienes que aceptar aparecer. Si no, el resultado es `NO_VISIBLE` | ✅ Definido |
+| Privacidad | El consentimiento arranca desactivado. No se devuelve el correo ni el id de nadie. Cada cambio queda en `historial_cambio` | ✅ Definido |
+| Tope | Hasta 20 compañeros por puente | 🟡 Propuesta (Maite) |
+
+### `GET /api/matching?puenteId={id}`
+
+Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué pasó.
+
+| `estado` | Cuándo | `mensaje` |
+|---|---|---|
+| `OK` | Hay compañeros | `null` |
+| `SIN_ZONA` | No elegiste campus o tu sede ya no está activa | `Elige tu campus para encontrar compañeros con tiempo libre compatible.` |
+| `NO_VISIBLE` | No aceptaste aparecer | `Para ver a tus compañeros, primero acepta que ellos también te encuentren.` |
+| `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo en este puente.` |
+
+```json
+{
+  "estado": "OK",
+  "mensaje": null,
+  "puente": { "id": 5, "diaSemana": 1, "horaInicio": "09:30:00", "horaFin": "11:00:00" },
+  "minutosPuente": 90,
+  "companeros": [
+    { "nombre": "Ana Quiroga", "carrera": "Ingeniería de Sistemas", "semestre": 5,
+      "horaInicio": "09:30:00", "horaFin": "11:00:00", "minutosEnComun": 90, "porcentaje": 100, "franjasCompartidas": 1 }
+  ]
+}
+```
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta `puenteId` o no es un número positivo (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
+
+### `GET /api/matching/configuracion` y `PUT /api/matching/configuracion`
+
+`GET` devuelve `{ "visible": false, "desde": null }`. `PUT` recibe `{ "visible": true }` (obligatorio; sin él responde 400 `VALIDACION`) y devuelve lo mismo con la fecha del consentimiento. Al retirarlo, `desde` vuelve a `null`.
+
+## 7c. Valoración de recomendaciones (HU9 — responsable: Amira)
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Valores | `LIKE` (me gusta) o `DISLIKE` (no me sirve); no distingue mayúsculas ni espacios | ✅ Definido (`ck_reco_feedback`) |
+| Asociación | El voto va en la fila de `recomendacion`, que pertenece a una consulta (`log_auditoria_rag.usuario_id`). Solo se valoran recomendaciones propias; la de otro responde 404 | ✅ Definido |
+| Sin duplicados | Una sola valoración por recomendación: votar de nuevo reemplaza la anterior y actualiza `fecha_feedback`; repetir el mismo voto no escribe | ✅ Definido |
+| Para qué sirve | `GET /api/admin/metricas` muestra me gusta y no me sirve de la semana, en total y por lugar | ✅ Definido |
+
+### `PATCH /api/recomendaciones/{id}/feedback`
+
+Body: `{ "feedback": "LIKE" }`. Respuesta **200**:
+
+```json
+{ "recomendacionId": 87, "feedback": "LIKE", "fechaFeedback": "2026-10-31T14:00:04.512Z" }
+```
+
+Cada recomendación de `POST /api/recomendaciones` trae `feedback` (`LIKE`, `DISLIKE` o `null`).
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | El voto no es `LIKE` ni `DISLIKE` (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | La recomendación no existe o no es del usuario (`NO_ENCONTRADO`) |
 
 ## 8. Resumen de decisiones por responsable
 

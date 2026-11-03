@@ -91,7 +91,7 @@ export const obtenerToken = (): string | null => obtenerSesion()?.token ?? null;
 export const esAdmin = (s: Sesion | null): boolean => s?.usuario.rol === "ADMIN";
 
 /** Cada rol tiene su pantalla de entrada. */
-export const rutaDeEntrada = (s: Sesion | null): string => (esAdmin(s) ? "/admin" : "/inicio");
+export const rutaDeEntrada = (s: Sesion | null): string => (esAdmin(s) ? "/admin/inicio" : "/inicio");
 
 /** Tras editar el perfil (HU21): el nombre nuevo se ve al instante en la barra y en el saludo. */
 export function actualizarNombreSesion(nombre: string) {

@@ -1,5 +1,6 @@
 using Breaku.Application.Perfil;
 using Breaku.Application.Admin;
+using Breaku.Application.Matching;
 using System.Text;
 using Breaku.Infrastructure;
 using Breaku.Application.Horarios;
@@ -70,6 +71,7 @@ builder.Services.AddScoped<PuenteService>();
 builder.Services.AddScoped<NotificacionService>();
 builder.Services.AddScoped<UbicacionService>();
 builder.Services.AddScoped<PerfilService>();
+builder.Services.AddScoped<MatchingService>();
 builder.Services.AddScoped<BusquedaLugaresService>();
 builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
