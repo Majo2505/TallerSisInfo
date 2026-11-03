@@ -1,7 +1,44 @@
+import { pedirApi } from "./api";
+import { ActividadExtraida } from "./actividades";
+
 /**
- * Comunidades efímeras: datos de ejemplo para la vista previa del frontend.
- * El backend de comunidades (tabla comunidad_efimera) llega con su historia de usuario.
+ * HU13: creación automática de la comunidad. Con la actividad que HU11 dejó completa, el backend busca a los compañeros
+ * de tu campus libres a esa hora (las reglas del matching de HU12) y, solo si encuentra a alguien, crea el grupo,
+ * invita a los más compatibles (uno por plaza) y les avisa.
  */
+export type Invitado = {
+  nombre: string;
+  carrera: string | null;
+  libreDesde: string; // "HH:mm", hora de Bolivia
+  libreHasta: string;
+  minutosEnComun: number;
+};
+
+export type ComunidadCreada = {
+  id: number;
+  actividad: string;
+  horaInicio: string; // "HH:mm"
+  horaFin: string;
+  maxParticipantes: number; // contando a quien la crea
+  invitados: Invitado[];
+};
+
+export type EstadoCreacion = "CREADA" | "SIN_COINCIDENCIAS" | "SIN_ZONA" | "NO_VISIBLE";
+
+export type ResultadoComunidad = {
+  estado: EstadoCreacion;
+  mensaje: string;
+  comunidad: ComunidadCreada | null; // null si no se creó
+};
+
+/** Se manda la extracción tal cual: el backend vuelve a validar los datos. */
+export const crearComunidad = (consultaId: number, texto: string, actividad: ActividadExtraida) =>
+  pedirApi<ResultadoComunidad>("/api/comunidades", {
+    method: "POST",
+    body: JSON.stringify({ consultaId, texto, actividad }),
+  });
+
+/** Descubrir todavía usa datos de ejemplo (llega con su historia de usuario). */
 export type Comunidad = {
   id: number;
   actividad: string;
