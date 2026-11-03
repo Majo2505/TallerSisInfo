@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
@@ -30,6 +30,7 @@ import {
 import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
 import { iniciales } from "@/lib/iniciales";
 import { guardarConfiguracionMatching } from "@/lib/matching";
+import { useSesion } from "@/lib/useSesion";
 import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
@@ -45,6 +46,7 @@ function etiquetaEstado(c: ComunidadActiva): string | null {
 
 export default function Comunidades() {
   const reducir = useReducedMotion();
+  const { sesion } = useSesion();
   const [pestana, setPestana] = useState<Pestana>("libres");
   const [texto, setTexto] = useState("");
   // Descubrir (adición a HU11): las comunidades reales activas de hoy. Se piden cada vez que se abre la pestaña.
@@ -170,6 +172,29 @@ export default function Comunidades() {
     }
   }
 
+  // El banner de arriba cuenta las comunidades reales de hoy: se piden al entrar, sin esperar a abrir «Descubrir».
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    listarComunidades()
+      .then((r) => {
+        if (activo) setDescubrir(r);
+      })
+      .catch(() => undefined);
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  const activas = descubrir?.estado === "OK" ? descubrir.comunidades : [];
+  const nombresCaras = [...new Set(activas.map((c) => (c.esMia ? (sesion?.usuario.nombre ?? "Tú") : c.creador)))].slice(0, 4);
+  const textoBanner =
+    descubrir?.estado === "OK"
+      ? `${activas.length} ${activas.length === 1 ? "comunidad activa" : "comunidades activas"} hoy`
+      : descubrir?.estado === "SIN_RESULTADOS"
+        ? "Aún no hay comunidades hoy"
+        : null;
+
   function elegirPestana(id: Pestana) {
     setPestana(id);
     if (id === "descubrir") void cargarDescubrir();
@@ -191,21 +216,24 @@ export default function Comunidades() {
           </span>
           <h1 className={estilos.titulo}>Crea y descubre comunidades</h1>
           <p className={estilos.bajada}>Junta gente con el mismo tiempo libre para estudiar, comer o moverte, solo por ese puente.</p>
-          <div className={estilos.caras} aria-hidden="true">
-            {["Ana", "Luis", "Sofía", "Marco"].map((n, i) => (
-              <motion.span
-                key={n}
-                className={estilos.cara}
-                style={{ zIndex: 4 - i }}
-                initial={reducir ? false : { opacity: 0, transform: "translateX(-12px) scale(0.8)" }}
-                animate={{ opacity: 1, transform: "translateX(0px) scale(1)" }}
-                transition={{ type: "spring", duration: 0.5, bounce: 0.3, delay: 0.3 + i * 0.08 }}
-              >
-                {iniciales(n)}
-              </motion.span>
-            ))}
-            <span className={estilos.carasTexto}>+38 hoy en el campus</span>
-          </div>
+          {textoBanner && (
+            <div className={estilos.caras} role="status">
+              {nombresCaras.map((n, i) => (
+                <motion.span
+                  key={n}
+                  className={estilos.cara}
+                  style={{ zIndex: 4 - i }}
+                  aria-hidden="true"
+                  initial={reducir ? false : { opacity: 0, transform: "translateX(-12px) scale(0.8)" }}
+                  animate={{ opacity: 1, transform: "translateX(0px) scale(1)" }}
+                  transition={{ type: "spring", duration: 0.5, bounce: 0.3, delay: 0.3 + i * 0.08 }}
+                >
+                  {iniciales(n)}
+                </motion.span>
+              ))}
+              <span className={estilos.carasTexto}>{textoBanner}</span>
+            </div>
+          )}
         </div>
       </Pieza>
 
