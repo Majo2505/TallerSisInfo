@@ -759,6 +759,31 @@ Vuelve a buscar con las mismas reglas (después de aceptar el matching, de elegi
 | 401 | Sin token o token inválido |
 | 404 | La actividad no existe o no es tuya (`NO_ENCONTRADO`) |
 
+## 7g. Protección contra prompt injection y solicitudes no permitidas (HU17 — Amira y Ariana; ajustes: Maite)
+
+Todo texto que llega al asistente o sale de él pasa por los guardrails (`ReglasSeguridadIa`). Lo que no pasa se rechaza
+**sin llamar al LLM** (no gasta tokens) y queda en la auditoría con su motivo.
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Qué se revisa | La entrada del estudiante en recomendaciones (HU7), extracción (HU11) y creación de actividades (HU10); la **respuesta de la IA** en la extracción (la actividad propuesta) y en las recomendaciones (cada explicación) | ✅ Definido |
+| Normalización | Minúsculas, sin tildes, letras separadas unidas («i g n o r a») y números que reemplazan letras («1gn0r4») antes de comparar | ✅ Definido |
+| Respuesta | 400 `SOLICITUD_NO_PERMITIDA` con el mensaje de la categoría; si la respuesta de la IA no pasa, se descarta y se responde `SIN_RESULTADOS` | ✅ Definido |
+| Auditoría | `log_auditoria_rag.estado` = `RECHAZADO_SEGURIDAD` y `motivo_rechazo` con la categoría (migración 012) | ✅ Definido |
+| Foto del horario | Lo que la IA lee en la imagen no son instrucciones: se descarta la clase cuya materia o aula intenta manipular al asistente (`INYECCION` o `FUERA_DE_ALCANCE`). El filtro de reglamento no aplica (una materia real puede llamarse «Educación Sexual») | ✅ Definido |
+| Delimitación | La preferencia va en `<preferencia>…</preferencia>` y se le quitan `<` y `>` para que no pueda cerrar el bloque | ✅ Definido |
+
+| `motivo_rechazo` | Cuándo | Mensaje al estudiante |
+|---|---|---|
+| `INYECCION` | Intenta cambiar las reglas, ver el prompt o cambiar de rol («ignora tus instrucciones», «modo desarrollador», «DAN») | «La solicitud intenta modificar las instrucciones del asistente.» |
+| `FUERA_DE_ALCANCE` | Pide datos internos: contraseñas, tokens, API keys, código fuente, datos personales | «Solo puedo recomendar actividades y lugares del campus para tu puente.» |
+| `BIENESTAR` | Menciona autolesión | Deriva al área de bienestar universitario |
+| `FUERA_DE_REGLAMENTO` | Alcohol, drogas, apuestas, contenido sexual, ocultismo, violencia, deshonestidad académica, groserías | «Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.» |
+| `FUERA_DE_CONTEXTO` | La IA respondió con lugares que no se recuperaron, cifras, enlaces o una explicación que no pasa los guardrails | (no se le muestra nada: `SIN_RESULTADOS`) |
+
+**Panel admin:** `GET /api/admin/auditoria-rag` trae `motivoRechazo` en cada consulta y `GET /api/admin/metricas` trae
+`rechazosPorMotivo` (últimos 7 días).
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |

@@ -2016,7 +2016,13 @@ components:
         usuario: { type: string, example: Ana Pérez }
         tipo: { type: string, example: RECOMENDACION }
         entrada: { type: string, nullable: true, example: Una plática con café }
-        estado: { type: string, enum: [OK, SIN_RESULTADOS, RECHAZADO_SEGURIDAD, ERROR] }
+        estado: { type: string, enum: [OK, SIN_RESULTADOS, RECHAZADO_SEGURIDAD, ERROR, INCOMPLETO] }
+        motivoRechazo:
+          type: string
+          nullable: true
+          enum: [INYECCION, FUERA_DE_ALCANCE, BIENESTAR, FUERA_DE_REGLAMENTO, FUERA_DE_CONTEXTO, null]
+          example: INYECCION
+          description: HU17. Con `RECHAZADO_SEGURIDAD`, por qué se rechazó. `null` en los demás estados y en rechazos anteriores a la HU17.
         modelo: { type: string, nullable: true, example: 'qwen2.5:3b' }
         latenciaMs: { type: integer, format: int32, nullable: true, example: 23494 }
         lugaresRecuperados: { type: integer, format: int32, example: 5 }
@@ -2042,6 +2048,14 @@ components:
               noMeSirve: { type: integer, format: int32, example: 1, description: Valoraciones DISLIKE del lugar (HU9). }
         meGusta: { type: integer, format: int32, example: 9, description: Valoraciones LIKE registradas en los últimos 7 días (HU9). }
         noMeSirve: { type: integer, format: int32, example: 2, description: Valoraciones DISLIKE registradas en los últimos 7 días (HU9). }
+        rechazosPorMotivo:
+          type: array
+          description: HU17. Rechazos de seguridad de los últimos 7 días por motivo (`SIN_MOTIVO` = anteriores a la HU17).
+          items:
+            type: object
+            properties:
+              motivo: { type: string, example: INYECCION }
+              cantidad: { type: integer, format: int32, example: 3 }
     ClaseLeidaDto:
       type: object
       properties:

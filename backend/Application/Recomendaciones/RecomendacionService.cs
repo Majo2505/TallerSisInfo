@@ -51,6 +51,7 @@ public class RecomendacionService
                 TiempoDisponibleMin = (short)minutosDisponibles,
                 EntradaUsuario = entrada,
                 Estado = LogAuditoriaRag.EstadoRechazadoSeguridad,
+                MotivoRechazo = rechazo.Categoria,
                 CreatedAt = DateTime.UtcNow
             }, [], ct);
             throw new ReglaNegocioException(CodigoSolicitudNoPermitida, rechazo.Mensaje);
@@ -104,15 +105,20 @@ public class RecomendacionService
         log.RespuestaLlm = respuesta.TextoCrudo;
         log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
 
-        // Contexto estricto: se descarta todo lugar que no se haya recuperado y toda explicación con datos externos (criterios 1 y 2).
-        var validas = ReglasRecomendacion.FiltrarSoloRecuperados(
-            respuesta.Sugerencias.Select(s => (s.LugarId, s.Explicacion)),
-            candidatos.ToDictionary(l => l.LugarId, l => l.Nombre));
+        // Contexto estricto: se descarta todo lugar que no se haya recuperado y toda explicación con datos externos (criterios 1 y 2)
+        // o que no pase los guardrails (HU17: la respuesta de la IA se revisa igual que la entrada).
+        var sugerencias = respuesta.Sugerencias.Select(s => (s.LugarId, s.Explicacion)).ToList();
+        var recuperados = candidatos.ToDictionary(l => l.LugarId, l => l.Nombre);
+        var validas = ReglasRecomendacion.FiltrarSoloRecuperados(sugerencias, recuperados);
 
         if (validas.Count == 0)
         {
-            // Si el asistente propuso algo y todo se descartó, queda constancia como rechazo por seguridad.
-            if (respuesta.Sugerencias.Count > 0) log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
+            // Si el asistente propuso algo y todo se descartó, queda constancia como rechazo por seguridad, con el motivo.
+            if (respuesta.Sugerencias.Count > 0)
+            {
+                log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
+                log.MotivoRechazo = ReglasRecomendacion.MotivoDescarte(sugerencias, recuperados);
+            }
             return await SinResultadosAsync(log, ct);
         }
 

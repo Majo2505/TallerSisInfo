@@ -22,6 +22,7 @@ public class LogAuditoriaRagConfiguration : IEntityTypeConfiguration<LogAuditori
         builder.Property(l => l.PromptEnviado).HasColumnName("prompt_enviado").HasColumnType("text");
         builder.Property(l => l.RespuestaLlm).HasColumnName("respuesta_llm").HasColumnType("text");
         builder.Property(l => l.Estado).HasColumnName("estado").HasMaxLength(20).IsRequired();
+        builder.Property(l => l.MotivoRechazo).HasColumnName("motivo_rechazo").HasMaxLength(20);
         builder.Property(l => l.Modelo).HasColumnName("modelo").HasMaxLength(40);
         builder.Property(l => l.LatenciaMs).HasColumnName("latencia_ms");
         builder.Property(l => l.CreatedAt).HasColumnName("created_at").HasColumnType("datetime(6)");

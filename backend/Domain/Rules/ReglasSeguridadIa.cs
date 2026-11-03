@@ -4,13 +4,19 @@ using System.Text.RegularExpressions;
 
 namespace Breaku.Domain.Rules;
 
-/// <summary>Guardrails de entrada para el asistente de recomendaciones (HU17).</summary>
+/// <summary>
+/// Guardrails del asistente (HU17): lo que el estudiante escribe (recomendaciones, extracción, actividad) y lo que responde
+/// la IA pasan por aquí antes de usarse. La categoría del rechazo queda en log_auditoria_rag.motivo_rechazo.
+/// </summary>
 public static class ReglasSeguridadIa
 {
     public const string CategoriaInyeccion = "INYECCION";
     public const string CategoriaFueraDeAlcance = "FUERA_DE_ALCANCE";
     public const string CategoriaBienestar = "BIENESTAR";
     public const string CategoriaFueraDeReglamento = "FUERA_DE_REGLAMENTO";
+
+    /// <summary>La IA respondió algo que no sale del contexto (un lugar inventado o una explicación no permitida) y se descartó.</summary>
+    public const string CategoriaFueraDeContexto = "FUERA_DE_CONTEXTO";
 
     public const string MensajeInyeccion = "La solicitud intenta modificar las instrucciones del asistente.";
     public const string MensajeFueraDeAlcance = "Solo puedo recomendar actividades y lugares del campus para tu puente.";
@@ -133,6 +139,14 @@ public static class ReglasSeguridadIa
             return new Rechazo(CategoriaInyeccion, MensajeInyeccion);
         }
     }
+
+    /// <summary>
+    /// true si el texto intenta manipular al asistente (cambiar o ver sus instrucciones) o pedir datos internos.
+    /// Para textos que no escribe el estudiante, como lo que la IA lee en la foto del horario: ahí no se aplica el filtro
+    /// de reglamento, porque una materia real como «Educación Sexual» no es una solicitud.
+    /// </summary>
+    public static bool EsManipulacion(string? texto)
+        => Evaluar(texto)?.Categoria is CategoriaInyeccion or CategoriaFueraDeAlcance;
 
     /// <summary>El mensaje del rechazo, o <c>null</c> si la entrada se puede enviar.</summary>
     public static string? MotivoRechazo(string? entrada) => Evaluar(entrada)?.Mensaje;

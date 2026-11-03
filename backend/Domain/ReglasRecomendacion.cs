@@ -40,6 +40,17 @@ public static class ReglasRecomendacion
     }
 
     /// <summary>
+    /// HU17: por qué se descartó TODO lo que propuso la IA. Si alguna explicación de un lugar real no pasó los guardrails,
+    /// esa categoría (por ejemplo INYECCION si «revela» su prompt); si no, FUERA_DE_CONTEXTO (lugares inventados, cifras, enlaces).
+    /// </summary>
+    public static string MotivoDescarte(IEnumerable<(int LugarId, string Explicacion)> sugerencias, IReadOnlyDictionary<int, string> recuperados)
+        => sugerencias
+               .Where(s => recuperados.ContainsKey(s.LugarId))
+               .Select(s => ReglasSeguridadIa.Evaluar(s.Explicacion)?.Categoria)
+               .FirstOrDefault(c => c is not null)
+           ?? ReglasSeguridadIa.CategoriaFueraDeContexto;
+
+    /// <summary>
     /// La explicación solo puede ser texto libre sobre el lugar. Distancia, tiempo, categoría y horarios los muestra
     /// el sistema desde el catálogo, así que una explicación con cifras o enlaces trae datos que no salen del
     /// contexto y se descarta. Los dígitos del propio nombre del lugar (p. ej. "Sala 2") sí se permiten.
@@ -50,6 +61,7 @@ public static class ReglasRecomendacion
 
         var texto = explicacion.Trim();
         if (texto.Length > MaximoLargoExplicacion) return false;
+        if (ReglasSeguridadIa.Evaluar(texto) is not null) return false;   // HU17: la respuesta de la IA también pasa por los guardrails
         if (texto.Contains("http", StringComparison.OrdinalIgnoreCase) || texto.Contains("www.", StringComparison.OrdinalIgnoreCase)) return false;
 
         var sinNombre = texto.Replace(nombreLugar, "", StringComparison.OrdinalIgnoreCase);
