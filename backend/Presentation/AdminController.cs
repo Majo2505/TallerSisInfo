@@ -90,11 +90,33 @@ public class AdminController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Reportes(CancellationToken ct) => Ok(await _service.ListarReportesAsync(ct));
 
-    /// <summary>Resuelve o descarta un reporte pendiente y registra al administrador que lo revisó.</summary>
+    /// <summary>Resuelve o descarta un reporte pendiente y registra al administrador que lo revisó (HU16).</summary>
+    /// <remarks>
+    /// Un reporte se revisa una sola vez: queda <c>RESUELTO</c> o <c>DESCARTADO</c>, con el administrador del token como
+    /// <c>revisor_id</c> y la fecha en <c>revisado_en</c>. La fila se bloquea mientras se revisa, así que si dos
+    /// administradores lo intentan a la vez, el segundo recibe <c>YA_REVISADO</c>.
+    ///
+    /// Ejemplo de petición:
+    /// <code>
+    /// { "estado": "RESUELTO" }
+    /// </code>
+    /// </remarks>
+    /// <param name="id">Id del reporte (de <c>GET /api/admin/reportes</c>).</param>
+    /// <param name="req">La decisión.</param>
+    /// <param name="ct">Cancelación de la petición.</param>
+    /// <response code="204">Reporte revisado.</response>
+    /// <response code="400">El estado no es <c>RESUELTO</c> ni <c>DESCARTADO</c> (<c>codigo</c> = <c>VALIDACION</c>).</response>
+    /// <response code="401">Falta el token, es inválido o está vencido.</response>
+    /// <response code="403">El usuario no es administrador.</response>
+    /// <response code="404">El reporte no existe (<c>codigo</c> = <c>NO_ENCONTRADO</c>).</response>
+    /// <response code="409">El reporte ya fue revisado (<c>codigo</c> = <c>YA_REVISADO</c>).</response>
     [HttpPatch("reportes/{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ResolverReporte(int id, ResolverReporteDto req, CancellationToken ct)
     {
         try
@@ -105,7 +127,12 @@ public class AdminController : ControllerBase
         catch (ReglaNegocioException ex)
         {
             var body = new ErrorNegocioDto(ex.Codigo, ex.Message);
-            return ex.Codigo == "NO_ENCONTRADO" ? NotFound(body) : BadRequest(body);
+            return ex.Codigo switch
+            {
+                "NO_ENCONTRADO" => NotFound(body),
+                "YA_REVISADO" => Conflict(body),
+                _ => BadRequest(body)
+            };
         }
     }
 

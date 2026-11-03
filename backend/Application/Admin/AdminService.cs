@@ -1,4 +1,5 @@
 using Breaku.Application.Horarios;
+using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Admin;
 
@@ -29,13 +30,19 @@ public class AdminService
 
     public Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default) => _repo.ListarReportesAsync(ct);
 
+    /// <summary>
+    /// HU16: el administrador cierra un reporte pendiente como RESUELTO o DESCARTADO; queda quién lo revisó y cuándo.
+    /// Una decisión no se cambia: un reporte ya revisado responde YA_REVISADO (por ejemplo, si otro admin se adelantó).
+    /// </summary>
     public async Task ResolverReporteAsync(int reporteId, ResolverReporteDto req, int adminId, CancellationToken ct = default)
     {
-        var estado = req.Estado.Trim().ToUpperInvariant();
-        if (estado is not ("RESUELTO" or "DESCARTADO"))
-            throw new ReglaNegocioException("VALIDACION", "El estado debe ser RESUELTO o DESCARTADO.");
-        if (await _repo.ResolverReporteAsync(reporteId, estado, adminId, ct) is null)
-            throw new ReglaNegocioException("NO_ENCONTRADO", "El reporte no existe o ya fue revisado.");
+        var decision = ReglasReporte.LeerDecision(req.Estado)
+                       ?? throw new ReglaNegocioException("VALIDACION", ReglasReporte.MensajeDecisionInvalida);
+
+        var anterior = await _repo.ResolverReporteAsync(reporteId, decision, adminId, ct)
+                       ?? throw new ReglaNegocioException("NO_ENCONTRADO", ReglasReporte.MensajeNoExiste);
+        if (!ReglasReporte.SePuedeRevisar(anterior))
+            throw new ReglaNegocioException("YA_REVISADO", ReglasReporte.MensajeYaRevisado);
     }
 
     public Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int? limite, CancellationToken ct = default)

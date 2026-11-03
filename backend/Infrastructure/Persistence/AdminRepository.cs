@@ -87,7 +87,8 @@ public class AdminRepository : IAdminRepository
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var anterior = (await _db.Database.SqlQuery<string>(
             $"SELECT estado AS Value FROM reporte WHERE id = {reporteId} FOR UPDATE").ToListAsync(ct)).FirstOrDefault();
-        if (anterior is null || anterior != "PENDIENTE") return null;
+        if (anterior is null) return null;
+        if (anterior != "PENDIENTE") return anterior;   // ya revisado: no se toca (el servicio responde YA_REVISADO)
 
         await _db.Database.ExecuteSqlAsync($"""
             UPDATE reporte
