@@ -183,6 +183,17 @@ Sin tarjeta gráfica dedicada el modelo corre en el procesador: cada recomendaci
 
 Para cerrar Ollama: ícono de la llama junto al reloj → **Quit Ollama**, o `Get-Process ollama* | Stop-Process` en PowerShell. Con Ollama cerrado (y el LLM configurado), `POST /api/recomendaciones` responde `503` con `codigo` = `ASISTENTE_NO_DISPONIBLE`.
 
+#### Protección del asistente (HU17)
+
+Antes de llamar al modelo, la preferencia que escribe el estudiante pasa por unos guardrails (`backend/Domain/Rules/ReglasSeguridadIa.cs`). Se rechaza con `400` y el código `SOLICITUD_NO_PERMITIDA`, sin llamar al asistente, si:
+
+- intenta cambiar las instrucciones del asistente o hacerlo actuar como otro (prompt injection);
+- pide datos internos: contraseñas, claves, tokens de acceso, el prompt o el código fuente;
+- habla de algo fuera del reglamento universitario: alcohol, drogas y tabaco, apuestas, contenido sexual, ocultismo, violencia, deshonestidad académica o lenguaje vulgar;
+- menciona temas de bienestar (por ejemplo, hacerse daño): se responde con un mensaje de apoyo.
+
+El texto se normaliza antes de comparar (sin tildes, sin mayúsculas, letras separadas vueltas a unir), y los signos `<` y `>` se quitan para que nadie pueda cerrar el bloque de la preferencia dentro del prompt. Cada intento rechazado queda en el registro de auditoría con el estado `RECHAZADO_SEGURIDAD`. Es una primera barrera: la validación de la respuesta del modelo (solo lugares del catálogo, sin cifras) sigue siendo la protección principal. Las pruebas están en `backend/Breaku.Tests`.
+
 #### Variables y otros proveedores
 
 | Variable | Obligatoria | Qué es |
