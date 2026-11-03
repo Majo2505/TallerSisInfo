@@ -103,7 +103,7 @@ public class AdminRepository : IAdminRepository
     {
         var filas = await _db.Database.SqlQuery<FilaConsultaRag>($"""
                 SELECT g.id AS Id, g.created_at AS Fecha, u.nombre AS Usuario, g.tipo AS Tipo, g.entrada_usuario AS Entrada,
-                       g.estado AS Estado, g.modelo AS Modelo, g.latencia_ms AS LatenciaMs,
+                       g.estado AS Estado, g.motivo_rechazo AS MotivoRechazo, g.modelo AS Modelo, g.latencia_ms AS LatenciaMs,
                        (SELECT COUNT(*) FROM lugar_recuperado lr WHERE lr.log_id = g.id) AS LugaresRecuperados,
                        (SELECT COUNT(*) FROM recomendacion r WHERE r.log_id = g.id)      AS Recomendados
                 FROM log_auditoria_rag g JOIN usuario u ON u.id = g.usuario_id
@@ -111,7 +111,7 @@ public class AdminRepository : IAdminRepository
                 LIMIT {limite}
                 """).ToListAsync(ct);
         return filas.Select(f => new ConsultaRagAdminDto(f.Id, f.Fecha, f.Usuario, f.Tipo, f.Entrada, f.Estado, f.Modelo,
-            f.LatenciaMs, (int)f.LugaresRecuperados, (int)f.Recomendados)).ToList();
+            f.LatenciaMs, (int)f.LugaresRecuperados, (int)f.Recomendados, f.MotivoRechazo)).ToList();
     }
 
     public async Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default)
@@ -145,10 +145,19 @@ public class AdminRepository : IAdminRepository
                        COALESCE(SUM(feedback = 'DISLIKE'), 0) AS NoMeSirve
                 FROM recomendacion WHERE feedback IS NOT NULL AND fecha_feedback >= {desde}
                 """).ToListAsync(ct)).Single();
+        // HU17: rechazos de la semana por motivo (usa ix_log_motivo). Los anteriores a la HU17 no tienen motivo.
+        var rechazos = await _db.Database.SqlQuery<FilaRechazo>($"""
+                SELECT COALESCE(motivo_rechazo, 'SIN_MOTIVO') AS Motivo, COUNT(*) AS Cantidad
+                FROM log_auditoria_rag
+                WHERE estado = 'RECHAZADO_SEGURIDAD' AND created_at >= {desde}
+                GROUP BY COALESCE(motivo_rechazo, 'SIN_MOTIVO')
+                ORDER BY Cantidad DESC
+                """).ToListAsync(ct);
         return new MetricasAdminDto((int)f.Total, (int)f.Ok, (int)f.SinResultados, (int)f.Rechazadas, (int)f.Errores,
             f.LatenciaPromedio is null ? null : (int)f.LatenciaPromedio,
             top.Select(t => new LugarTopDto(t.Nombre, t.Categoria, (int)t.Veces, (int)t.MeGusta, (int)t.NoMeSirve)).ToList(),
-            (int)votos.MeGusta, (int)votos.NoMeSirve);
+            (int)votos.MeGusta, (int)votos.NoMeSirve,
+            rechazos.Select(r => new RechazoPorMotivoDto(r.Motivo, (int)r.Cantidad)).ToList());
     }
 
     private static string? Hora(TimeSpan? t) => t is null ? null : $"{t.Value.Hours:00}:{t.Value.Minutes:00}";
@@ -198,6 +207,7 @@ public class AdminRepository : IAdminRepository
         public string Tipo { get; set; } = "";
         public string? Entrada { get; set; }
         public string Estado { get; set; } = "";
+        public string? MotivoRechazo { get; set; }
         public string? Modelo { get; set; }
         public int? LatenciaMs { get; set; }
         public long LugaresRecuperados { get; set; }
@@ -221,6 +231,12 @@ public class AdminRepository : IAdminRepository
         public long Veces { get; set; }
         public decimal MeGusta { get; set; }
         public decimal NoMeSirve { get; set; }
+    }
+
+    private sealed class FilaRechazo
+    {
+        public string Motivo { get; set; } = "";
+        public long Cantidad { get; set; }
     }
 
     private sealed class FilaVotos
