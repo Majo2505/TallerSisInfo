@@ -83,6 +83,12 @@ public class ExtractorActividadLlm : IExtractorActividad
             }
         };
 
+        // Los modelos de razonamiento de OpenAI (gpt-6-luna) lo traen encendido por defecto, y en /v1/chat/completions no
+        // aceptan tools con razonamiento: responden 400 «Function tools with reasoning_effort are not supported».
+        // Extraer cuatro datos no necesita razonar, así que se apaga. Solo con OpenAI: otros proveedores (Groq, Ollama)
+        // podrían rechazar el campo.
+        if (EsOpenAi(_http.BaseAddress)) cuerpo["reasoning_effort"] = "none";
+
         using var respuesta = await _http.PostAsJsonAsync("chat/completions", cuerpo, ct);
         if (!respuesta.IsSuccessStatusCode)
         {
@@ -112,6 +118,10 @@ public class ExtractorActividadLlm : IExtractorActividad
 
         return new RespuestaExtractor(modelo.Length > LargoColumnaModelo ? modelo[..LargoColumnaModelo] : modelo, argumentos, extraidos);
     }
+
+    /// <summary>true si el proveedor es la API de OpenAI (la única a la que se le manda <c>reasoning_effort</c>).</summary>
+    public static bool EsOpenAi(Uri? urlBase)
+        => urlBase is not null && urlBase.Host.Equals("api.openai.com", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Los argumentos de la llamada a la función. Si el modelo no hizo tool calling (algunos modelos locales ignoran

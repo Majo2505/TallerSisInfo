@@ -452,10 +452,11 @@ public class ExtractorActividadLlmTests
         }
     };
 
-    private static async Task<(RespuestaExtractor Respuesta, ServidorFalso Servidor)> Extraer(JsonNode respuestaLlm)
+    private static async Task<(RespuestaExtractor Respuesta, ServidorFalso Servidor)> Extraer(JsonNode respuestaLlm,
+        string urlBase = "http://llm.local/v1/")
     {
         var servidor = new ServidorFalso(respuestaLlm);
-        var http = new HttpClient(servidor) { BaseAddress = new Uri("http://llm.local/v1/") };
+        var http = new HttpClient(servidor) { BaseAddress = new Uri(urlBase) };
         var extractor = new ExtractorActividadLlm(http, "modelo-de-prueba", NullLogger<ExtractorActividadLlm>.Instance);
         var prompt = PromptExtraccion.Construir("jugar cartas por una hora", null, new DateTime(2026, 11, 3, 10, 0, 0));
         return (await extractor.ExtraerAsync(prompt, "jugar cartas por una hora"), servidor);
@@ -471,6 +472,24 @@ public class ExtractorActividadLlmTests
         Assert.True((bool?)pedido["tools"]![0]!["function"]!["strict"]);
         Assert.Equal("registrar_actividad", (string?)pedido["tool_choice"]!["function"]!["name"]);
         Assert.Null(pedido["response_format"]);
+    }
+
+    [Fact]
+    public async Task Con_OpenAI_apaga_el_razonamiento_porque_no_se_permite_con_tools()
+    {
+        // gpt-6-luna lo trae encendido y responde 400 «Function tools with reasoning_effort are not supported». No sale a internet:
+        // el ServidorFalso atiende el pedido aunque la URL base sea la de OpenAI.
+        var (_, servidor) = await Extraer(Respuesta(ConLlamada(JsonValue.Create(Argumentos))), "https://api.openai.com/v1/");
+
+        Assert.Equal("none", (string?)servidor.Pedido!["reasoning_effort"]);
+    }
+
+    [Fact]
+    public async Task Con_otro_proveedor_no_manda_reasoning_effort()
+    {
+        var (_, servidor) = await Extraer(Respuesta(ConLlamada(JsonValue.Create(Argumentos))), "http://localhost:11434/v1/");
+
+        Assert.Null(servidor.Pedido!["reasoning_effort"]);
     }
 
     [Fact]
