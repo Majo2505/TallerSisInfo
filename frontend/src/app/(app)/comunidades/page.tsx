@@ -7,11 +7,13 @@ import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoPin, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
+import InvitacionGrupo from "@/components/comunidades/InvitacionGrupo";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { ActividadExtraida, RespuestaExtraccion, extraerActividad, formatearDuracion } from "@/lib/actividades";
-import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
+import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD, buscarDeNuevo } from "@/lib/comunidades";
 import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
 import { iniciales } from "@/lib/iniciales";
+import { guardarConfiguracionMatching } from "@/lib/matching";
 import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
@@ -39,6 +41,8 @@ export default function Comunidades() {
   // HU10: el estudiante confirmó el resumen y la actividad se creó (o se está creando).
   const [creando, setCreando] = useState(false);
   const [creada, setCreada] = useState<ActividadCreada | null>(null);
+  // HU13: volver a buscar compañeros para la actividad recién creada.
+  const [invitando, setInvitando] = useState(false);
 
   async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
     setBuscando(true);
@@ -81,6 +85,22 @@ export default function Comunidades() {
       setError(e instanceof Error ? e.message : "No pudimos crear la actividad. Inténtalo de nuevo.");
     } finally {
       setCreando(false);
+    }
+  }
+
+  // HU13: la primera búsqueda es automática al crear; esto la repite (y, si hace falta, acepta antes el matching).
+  async function invitar(aceptarMatching = false) {
+    if (!creada || invitando) return;
+    setInvitando(true);
+    setError("");
+    try {
+      if (aceptarMatching) await guardarConfiguracionMatching(true);
+      const invitacion = await buscarDeNuevo(creada.id);
+      setCreada((actual) => (actual ? { ...actual, invitacion } : actual));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos buscar compañeros. Inténtalo de nuevo.");
+    } finally {
+      setInvitando(false);
     }
   }
 
@@ -204,16 +224,24 @@ export default function Comunidades() {
                       transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
                     >
                       <span className={estilos.resultadoIcono}>
-                        <IconoCheck tamano={22} />
+                        {creada.invitacion?.estado === "INVITADOS" ? <IconoPersonas tamano={22} /> : <IconoCheck tamano={22} />}
                       </span>
-                      <div>
-                        <strong>¡Actividad creada!</strong>
+                      <div className={estilos.entendida}>
+                        <strong>{creada.invitacion?.estado === "INVITADOS" ? "¡Grupo armado!" : "¡Actividad creada!"}</strong>
                         <p>
                           “{creada.actividad}” quedó creada para hoy, de {creada.horaInicio} a {creada.horaFin}, con lugar para hasta{" "}
                           {creada.maxParticipantes} personas.
                         </p>
+                        {creada.invitacion && (
+                          <InvitacionGrupo
+                            invitacion={creada.invitacion}
+                            buscando={invitando}
+                            onBuscar={() => void invitar()}
+                            onAceptarYBuscar={() => void invitar(true)}
+                          />
+                        )}
                       </div>
-                      <button type="button" className={estilos.otra} onClick={reiniciar}>
+                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={invitando}>
                         Crear otra
                       </button>
                     </motion.div>

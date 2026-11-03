@@ -10,6 +10,7 @@ export type Notificacion = {
   duracionMinutos: number | null;
   leida: boolean;
   creadaEn: string; // ISO en UTC
+  comunidadId?: number | null; // HU13: la comunidad a la que invita (INVITACION_COMUNIDAD)
 };
 
 export type ConfiguracionNotificaciones = { notificacionesActivas: boolean };

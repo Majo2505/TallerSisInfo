@@ -1,0 +1,211 @@
+/* HU13: a quiénes se invitó al crear la actividad (vive dentro de la tarjeta verde de la pestaña Crear). */
+.bloque {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.bloque .texto {
+  margin: 0;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.bloque .privacidad {
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.bloque .nadie {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.primario,
+.secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida), box-shadow 200ms ease;
+}
+
+.primario {
+  border: 0;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #ffffff;
+  box-shadow: 0 12px 24px -14px rgba(5, 40, 69, 0.9);
+}
+
+.primario:disabled {
+  opacity: 0.6;
+  cursor: progress;
+  box-shadow: none;
+}
+
+.secundario {
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  color: var(--ucb-marino);
+}
+
+.secundario:active {
+  transform: scale(0.97);
+}
+
+.primario:focus-visible,
+.secundario:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+/* Radar amarillo mientras se busca (el mismo de «Enviar solicitud»). */
+.radar {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ucb-amarillo);
+}
+
+.radar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ucb-amarillo);
+  animation: radar 1.2s var(--curva-salida) infinite;
+}
+
+@keyframes radar {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+/* Grupo armado: a quiénes se invitó. */
+.bloque .mensaje {
+  margin: 0;
+  color: #17704a;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.invitados {
+  container-type: inline-size;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.invitado {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #b9e6cb;
+  border-radius: 16px;
+  background: var(--superficie);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.quien {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* El nombre se lee completo (es quien va a ir); la carrera se puede cortar. */
+.quien strong {
+  color: var(--ucb-marino);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.quien small {
+  overflow: hidden;
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.libre {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eef9f3;
+  color: #17704a;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bloque .pie {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primario:not(:disabled):hover,
+  .secundario:hover {
+    box-shadow: var(--sombra-2);
+  }
+}
+
+@container (max-width: 400px) {
+  /* Si la lista es angosta, la hora baja debajo del nombre en vez de apretarlo. */
+  .invitado {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 6px;
+    align-items: start;
+  }
+  .libre {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar::after {
+    animation: none;
+  }
+  .primario,
+  .secundario {
+    transition: none;
+  }
+}
