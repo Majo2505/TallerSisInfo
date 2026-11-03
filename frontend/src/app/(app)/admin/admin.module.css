@@ -423,6 +423,70 @@
 }
 
 /* Auditoría RAG */
+/* HU17: filtro de la auditoría y motivo del rechazo. */
+.filtrosAuditoria {
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filtro,
+.filtroActivo {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida), background-color 160ms ease;
+}
+
+.filtro {
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto-suave);
+}
+
+.filtroActivo {
+  border: 1.5px solid var(--ucb-marino);
+  background: var(--ucb-marino);
+  color: #ffffff;
+}
+
+.filtro:active,
+.filtroActivo:active {
+  transform: scale(0.96);
+}
+
+.filtro:focus-visible,
+.filtroActivo:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+.motivo,
+.motivoInyeccion {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.motivo {
+  border: 1px solid var(--error-borde);
+  color: var(--error-texto);
+}
+
+.motivoInyeccion {
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+}
+
 .consultaCabecera {
   display: flex;
   flex-wrap: wrap;
@@ -448,6 +512,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .filtro:hover { border-color: var(--ucb-azul-medio); color: var(--ucb-marino); }
   .pestana:hover { color: var(--ucb-marino); }
   .actualizar:hover { box-shadow: var(--sombra-2); }
 }
@@ -514,4 +579,11 @@
   font-weight: 800;
   white-space: nowrap;
   vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filtro,
+  .filtroActivo {
+    transition: none;
+  }
 }
