@@ -704,6 +704,31 @@ paths:
       responses:
         '200':
           description: Reportes.
+  /api/admin/reportes/{id}:
+    patch:
+      summary: Resuelve o descarta un reporte pendiente.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado:
+                  type: string
+                  enum: [RESUELTO, DESCARTADO]
+      responses:
+        '204': { description: Reporte actualizado. }
+        '400': { description: Estado inválido. }
+        '404': { description: Reporte inexistente o ya revisado. }
           content:
             application/json:
               schema:

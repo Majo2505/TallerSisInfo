@@ -66,5 +66,7 @@ export const listarLugaresAdmin = () => pedirApi<LugarAdmin[]>("/api/admin/lugar
 export const cambiarEstadoLugar = (id: number, estado: EstadoLugar) =>
   pedirApi<void>(`/api/admin/lugares/${id}/estado`, { method: "PATCH", body: JSON.stringify({ estado }) });
 export const listarReportes = () => pedirApi<ReporteAdmin[]>("/api/admin/reportes");
+export const resolverReporte = (id: number, estado: "RESUELTO" | "DESCARTADO") =>
+  pedirApi<void>(`/api/admin/reportes/${id}`, { method: "PATCH", body: JSON.stringify({ estado }) });
 export const listarConsultasRag = (limite = 50) => pedirApi<ConsultaRag[]>(`/api/admin/auditoria-rag?limite=${limite}`);
 export const obtenerMetricas = () => pedirApi<MetricasAdmin>("/api/admin/metricas");

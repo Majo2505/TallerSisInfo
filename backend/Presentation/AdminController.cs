@@ -90,6 +90,25 @@ public class AdminController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Reportes(CancellationToken ct) => Ok(await _service.ListarReportesAsync(ct));
 
+    /// <summary>Resuelve o descarta un reporte pendiente y registra al administrador que lo revisó.</summary>
+    [HttpPatch("reportes/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResolverReporte(int id, ResolverReporteDto req, CancellationToken ct)
+    {
+        try
+        {
+            await _service.ResolverReporteAsync(id, req, AdminId, ct);
+            return NoContent();
+        }
+        catch (ReglaNegocioException ex)
+        {
+            var body = new ErrorNegocioDto(ex.Codigo, ex.Message);
+            return ex.Codigo == "NO_ENCONTRADO" ? NotFound(body) : BadRequest(body);
+        }
+    }
+
     /// <summary>Últimas consultas al asistente RAG con su entrada, estado, modelo y latencia (auditoría).</summary>
     /// <param name="limite">Cuántas devolver: 1 a 200 (por defecto 50).</param>
     /// <response code="200">Consultas, de la más reciente a la más antigua.</response>

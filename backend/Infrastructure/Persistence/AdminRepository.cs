@@ -82,6 +82,22 @@ public class AdminRepository : IAdminRepository
         return filas.Select(f => new ReporteAdminDto(f.Id, f.Motivo, f.Descripcion, f.Estado, f.Objeto, f.Autor, f.CreadoEn)).ToList();
     }
 
+    public async Task<string?> ResolverReporteAsync(int reporteId, string estado, int adminId, CancellationToken ct = default)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+        var anterior = (await _db.Database.SqlQuery<string>(
+            $"SELECT estado AS Value FROM reporte WHERE id = {reporteId} FOR UPDATE").ToListAsync(ct)).FirstOrDefault();
+        if (anterior is null || anterior != "PENDIENTE") return null;
+
+        await _db.Database.ExecuteSqlAsync($"""
+            UPDATE reporte
+            SET estado = {estado}, revisor_id = {adminId}, revisado_en = UTC_TIMESTAMP(6)
+            WHERE id = {reporteId} AND estado = 'PENDIENTE'
+            """, ct);
+        await tx.CommitAsync(ct);
+        return anterior;
+    }
+
     public async Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default)
     {
         var filas = await _db.Database.SqlQuery<FilaConsultaRag>($"""

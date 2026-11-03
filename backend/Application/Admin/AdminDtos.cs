@@ -39,6 +39,8 @@ public record ReporteAdminDto(
     DateTime CreadoEn
 );
 
+public record ResolverReporteDto(string Estado);
+
 /// <summary>Una consulta al asistente RAG registrada en el log de auditoría.</summary>
 public record ConsultaRagAdminDto(
     long Id,
