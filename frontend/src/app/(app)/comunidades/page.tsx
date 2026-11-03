@@ -10,6 +10,7 @@ import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { ActividadExtraida, RespuestaExtraccion, extraerActividad, formatearDuracion } from "@/lib/actividades";
 import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
+import { ComunidadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
 import { iniciales } from "@/lib/iniciales";
 import estilos from "./comunidades.module.css";
 
@@ -25,6 +26,12 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
   );
 }
 
+/** «2026-11-03T20:00:00Z» → «16:00», en hora de Bolivia (UTC-4), sin depender de la zona del navegador. */
+function horaLocal(iso: string): string {
+  const d = new Date(new Date(iso).getTime() - 4 * 3_600_000);
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
 export default function Comunidades() {
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("libres");
@@ -35,6 +42,9 @@ export default function Comunidades() {
   const [respuesta, setRespuesta] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState("");
+  // HU10: el estudiante confirmó el resumen y la actividad se creó (o se está creando).
+  const [creando, setCreando] = useState(false);
+  const [creada, setCreada] = useState<ComunidadCreada | null>(null);
 
   async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
     setBuscando(true);
@@ -64,8 +74,25 @@ export default function Comunidades() {
     void consultar(respuesta.trim(), extraccion.actividad);
   }
 
+  // Solo con todos los datos y solo al confirmar: si el estudiante descarta el resumen, no se crea nada.
+  async function confirmar() {
+    if (!extraccion || extraccion.estado !== "COMPLETO" || creando) return;
+    const completa = comoCompleta(extraccion.actividad);
+    if (!completa) return;
+    setCreando(true);
+    setError("");
+    try {
+      setCreada(await crearActividad(completa, texto.trim(), extraccion.consultaId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos crear la actividad. Inténtalo de nuevo.");
+    } finally {
+      setCreando(false);
+    }
+  }
+
   function reiniciar() {
     setExtraccion(null);
+    setCreada(null);
     setTexto("");
     setRespuesta("");
     setError("");
@@ -174,7 +201,29 @@ export default function Comunidades() {
                 )}
 
                 <AnimatePresence mode="wait" initial={false}>
-                  {entendida ? (
+                  {creada ? (
+                    <motion.div
+                      key="creada"
+                      className={estilos.resultado}
+                      initial={reducir ? false : { opacity: 0, transform: "translateY(12px) scale(0.97)" }}
+                      animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+                      transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
+                    >
+                      <span className={estilos.resultadoIcono}>
+                        <IconoCheck tamano={22} />
+                      </span>
+                      <div>
+                        <strong>¡Actividad creada!</strong>
+                        <p>
+                          “{creada.actividad}” quedó creada para hoy, de {horaLocal(creada.inicio)} a {horaLocal(creada.fin)}, con lugar para hasta{" "}
+                          {creada.maxParticipantes} personas.
+                        </p>
+                      </div>
+                      <button type="button" className={estilos.otra} onClick={reiniciar}>
+                        Crear otra
+                      </button>
+                    </motion.div>
+                  ) : entendida ? (
                     <motion.div
                       key="entendida"
                       className={estilos.resultado}
@@ -229,11 +278,13 @@ export default function Comunidades() {
                             </div>
                           </form>
                         ) : (
-                          <p>Pronto podrás confirmar y crear el grupo desde aquí.</p>
+                          <button type="button" className={estilos.confirmar} onClick={() => void confirmar()} disabled={creando}>
+                            {creando ? "Creando…" : "Confirmar y crear"}
+                          </button>
                         )}
                       </div>
-                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={buscando}>
-                        Escribir otra
+                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={buscando || creando}>
+                        {entendida.estado === "COMPLETO" ? "Descartar" : "Escribir otra"}
                       </button>
                     </motion.div>
                   ) : (
