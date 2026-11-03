@@ -29,6 +29,7 @@ import {
   obtenerMetricas,
   obtenerResumen,
 } from "@/lib/admin";
+import { ErrorApi } from "@/lib/api";
 import { useSesion } from "@/lib/useSesion";
 import { esAdmin } from "@/services/authService";
 import estilos from "./admin.module.css";
@@ -43,6 +44,13 @@ const PESTANAS: { id: Pestana; nombre: string; Icono: typeof IconoPin }[] = [
 ];
 
 const ETIQUETA_ESTADO: Record<EstadoLugar, string> = { ACTIVO: "Activo", EN_REVISION: "En revisión", INACTIVO: "Inactivo" };
+
+/** HU16: cómo se ve el estado de cada reporte (reutiliza los colores de los estados de lugar). */
+const ESTADO_REPORTE: Record<ReporteAdmin["estado"], { etiqueta: string; clase: string }> = {
+  PENDIENTE: { etiqueta: "Pendiente", clase: "estado_EN_REVISION" },
+  RESUELTO: { etiqueta: "Resuelto", clase: "estado_ACTIVO" },
+  DESCARTADO: { etiqueta: "Descartado", clase: "estado_INACTIVO" },
+};
 
 const ETIQUETA_CONSULTA: Record<ConsultaRag["estado"], string> = {
   OK: "OK",
@@ -114,6 +122,25 @@ export default function PanelAdmin() {
       aviso.mostrar((e as Error).message);
     } finally {
       setCambiando(null);
+    }
+  }
+
+  // HU16: cierra un reporte pendiente. Si otro admin ya lo revisó (409), se vuelve a cargar la lista para ver su decisión.
+  async function revisar(reporte: ReporteAdmin, decision: "RESUELTO" | "DESCARTADO") {
+    setResolviendoReporte(reporte.id);
+    try {
+      await resolverReporte(reporte.id, decision);
+      setReportes((rs) => rs?.map((r) => (r.id === reporte.id ? { ...r, estado: decision } : r)) ?? null);
+      aviso.mostrar(`Reporte de ${reporte.objeto}: ${ESTADO_REPORTE[decision].etiqueta.toLowerCase()}.`);
+      void obtenerResumen().then(setResumen).catch(() => undefined);
+    } catch (e) {
+      aviso.mostrar((e as Error).message);
+      if (e instanceof ErrorApi && e.codigo === "YA_REVISADO") {
+        void listarReportes().then(setReportes).catch(() => undefined);
+        void obtenerResumen().then(setResumen).catch(() => undefined);
+      }
+    } finally {
+      setResolviendoReporte(null);
     }
   }
 
@@ -271,7 +298,7 @@ export default function PanelAdmin() {
                 <ul className={estilos.listaReportes}>
                   {reportes.map((r) => (
                     <li key={r.id} className={estilos.reporte}>
-                      <span className={`${estilos.estado} ${r.estado === "PENDIENTE" ? estilos.estado_EN_REVISION : estilos.estado_ACTIVO}`}>{r.estado}</span>
+                      <span className={`${estilos.estado} ${estilos[ESTADO_REPORTE[r.estado].clase]}`}>{ESTADO_REPORTE[r.estado].etiqueta}</span>
                       <strong>{r.objeto}</strong>
                       <p>
                         {r.motivo}
@@ -286,12 +313,8 @@ export default function PanelAdmin() {
                             type="button"
                             className={estilos.aprobar}
                             disabled={resolviendoReporte === r.id}
-                            onClick={() => {
-                              setResolviendoReporte(r.id);
-                              void resolverReporte(r.id, "RESUELTO")
-                                .then(() => setReportes((actual) => actual ? actual.map((item) => item.id === r.id ? { ...item, estado: "RESUELTO" } : item) : null))
-                                .finally(() => setResolviendoReporte(null));
-                            }}
+                            onClick={() => void revisar(r, "RESUELTO")}
+                            aria-label={`Marcar como resuelto el reporte de ${r.objeto}`}
                           >
                             Resolver
                           </button>
@@ -299,12 +322,8 @@ export default function PanelAdmin() {
                             type="button"
                             className={estilos.desactivar}
                             disabled={resolviendoReporte === r.id}
-                            onClick={() => {
-                              setResolviendoReporte(r.id);
-                              void resolverReporte(r.id, "DESCARTADO")
-                                .then(() => setReportes((actual) => actual ? actual.map((item) => item.id === r.id ? { ...item, estado: "DESCARTADO" } : item) : null))
-                                .finally(() => setResolviendoReporte(null));
-                            }}
+                            onClick={() => void revisar(r, "DESCARTADO")}
+                            aria-label={`Descartar el reporte de ${r.objeto}`}
                           >
                             Descartar
                           </button>
