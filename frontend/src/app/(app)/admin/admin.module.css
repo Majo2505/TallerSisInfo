@@ -218,7 +218,8 @@
 .estado_ACTIVO,
 .consulta_OK { background: #e3f6ea; color: #17704a; }
 .estado_EN_REVISION,
-.consulta_SIN_RESULTADOS { background: var(--ucb-amarillo-suave); color: var(--ucb-amarillo-oscuro); }
+.consulta_SIN_RESULTADOS,
+.consulta_INCOMPLETO { background: var(--ucb-amarillo-suave); color: var(--ucb-amarillo-oscuro); }
 .estado_INACTIVO { background: var(--fondo-suave); color: var(--texto-tenue); }
 .consulta_RECHAZADO_SEGURIDAD,
 .consulta_ERROR { background: var(--error-fondo); color: var(--error-texto); }

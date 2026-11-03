@@ -8,27 +8,70 @@ import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, Ic
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
+import { ActividadExtraida, RespuestaExtraccion, extraerActividad, formatearDuracion } from "@/lib/actividades";
 import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
 import { iniciales } from "@/lib/iniciales";
 import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
-type Envio = "nada" | "buscando" | "listo";
+
+/** Un dato extraído (HU11). Si falta, se muestra «Falta» para que se vea qué se va a preguntar. */
+function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
+  return (
+    <li className={valor ? estilos.dato : estilos.datoFalta}>
+      <span>{etiqueta}</span>
+      <strong>{valor ?? "Falta"}</strong>
+    </li>
+  );
+}
 
 export default function Comunidades() {
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("libres");
   const [texto, setTexto] = useState("");
-  const [envio, setEnvio] = useState<Envio>("nada");
   const [unido, setUnido] = useState<Set<number>>(new Set());
+  // HU11: lo que el servidor entendió del texto libre y la respuesta a la pregunta por un dato faltante.
+  const [extraccion, setExtraccion] = useState<RespuestaExtraccion | null>(null);
+  const [respuesta, setRespuesta] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  const [error, setError] = useState("");
+
+  async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
+    setBuscando(true);
+    setError("");
+    try {
+      setExtraccion(await extraerActividad(textoAEnviar, anterior));
+      setRespuesta("");
+    } catch (e) {
+      // Incluye el rechazo de los guardrails (SOLICITUD_NO_PERMITIDA): el servidor ya manda el texto para mostrar.
+      setError(e instanceof Error ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
+    } finally {
+      setBuscando(false);
+    }
+  }
 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!texto.trim() || envio === "buscando") return;
-    setEnvio("buscando");
-    // Vista previa: simula la búsqueda de compañeros con el mismo tiempo libre.
-    setTimeout(() => setEnvio("listo"), reducir ? 0 : 2200);
+    if (!texto.trim() || buscando) return;
+    setExtraccion(null); // una descripción nueva: el aviso de la anterior («no entendimos») ya no aplica
+    void consultar(texto.trim(), null);
   }
+
+  // Solo se manda la respuesta y lo ya entendido: no hace falta reescribir toda la descripción.
+  function responder(e: React.FormEvent) {
+    e.preventDefault();
+    if (!extraccion || !respuesta.trim() || buscando) return;
+    void consultar(respuesta.trim(), extraccion.actividad);
+  }
+
+  function reiniciar() {
+    setExtraccion(null);
+    setTexto("");
+    setRespuesta("");
+    setError("");
+  }
+
+  const entendida = extraccion && extraccion.estado !== "NO_ENTENDIDO" ? extraccion : null;
 
   function alternarUnion(id: number) {
     setUnido((actual) => {
@@ -122,12 +165,18 @@ export default function Comunidades() {
                 <h2 id="crear-titulo" className={estilos.subtitulo}>
                   Escríbelo en tus palabras
                 </h2>
-                <p className={estilos.texto}>Buscamos compañeros con el mismo tiempo libre y armamos el grupo por ti.</p>
+                <p className={estilos.texto}>Cuéntanos qué, a qué hora, cuánto dura y con cuántas personas. Si falta algo, te preguntamos.</p>
+                {/* Arriba del formulario: en el celular, debajo del botón quedaría tapado por la barra inferior. */}
+                {error && (
+                  <p className={estilos.error} role="alert">
+                    {error}
+                  </p>
+                )}
 
                 <AnimatePresence mode="wait" initial={false}>
-                  {envio === "listo" ? (
+                  {entendida ? (
                     <motion.div
-                      key="listo"
+                      key="entendida"
                       className={estilos.resultado}
                       initial={reducir ? false : { opacity: 0, transform: "translateY(12px) scale(0.97)" }}
                       animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
@@ -136,26 +185,64 @@ export default function Comunidades() {
                       <span className={estilos.resultadoIcono}>
                         <IconoCheck tamano={22} />
                       </span>
-                      <div>
-                        <strong>¡Grupo armado!</strong>
-                        <p>
-                          3 compañeros con tu mismo puente se sumaron a “{texto.trim()}”. Te esperan en la Cafetería Central de 10:30 a
-                          11:15.
-                        </p>
+                      <div className={estilos.entendida}>
+                        <strong>{entendida.estado === "COMPLETO" ? "Esto entendimos" : "Ya casi"}</strong>
+                        <ul className={estilos.datos}>
+                          <Dato etiqueta="Actividad" valor={entendida.actividad.actividad} />
+                          <Dato
+                            etiqueta="Hora"
+                            valor={
+                              entendida.actividad.horaInicio &&
+                              `${entendida.actividad.horaInicio}${entendida.supuestos.includes("horaInicio") ? " (ahora)" : ""}`
+                            }
+                          />
+                          <Dato
+                            etiqueta="Duración"
+                            valor={entendida.actividad.duracionMin ? formatearDuracion(entendida.actividad.duracionMin) : null}
+                          />
+                          <Dato
+                            etiqueta="Participantes"
+                            valor={entendida.actividad.maxParticipantes ? `hasta ${entendida.actividad.maxParticipantes}` : null}
+                          />
+                        </ul>
+
+                        {entendida.estado === "INCOMPLETO" ? (
+                          <form className={estilos.respuesta} onSubmit={responder}>
+                            <label htmlFor="respuesta-dato" className={estilos.pregunta}>
+                              {entendida.mensaje}
+                            </label>
+                            <div className={estilos.respuestaFila}>
+                              <input
+                                id="respuesta-dato"
+                                className={estilos.respuestaCampo}
+                                value={respuesta}
+                                maxLength={MAXIMO_SOLICITUD}
+                                onChange={(e) => setRespuesta(e.target.value)}
+                                placeholder="Tu respuesta"
+                                autoComplete="off"
+                                autoFocus
+                                disabled={buscando}
+                              />
+                              <button type="submit" className={estilos.responder} disabled={!respuesta.trim() || buscando}>
+                                {buscando ? "Revisando…" : "Responder"}
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <p>Pronto podrás confirmar y crear el grupo desde aquí.</p>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        className={estilos.otra}
-                        onClick={() => {
-                          setEnvio("nada");
-                          setTexto("");
-                        }}
-                      >
-                        Crear otra
+                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={buscando}>
+                        Escribir otra
                       </button>
                     </motion.div>
                   ) : (
                     <motion.form key="form" className={estilos.formulario} onSubmit={enviar} exit={{ opacity: 0 }}>
+                      {extraccion?.estado === "NO_ENTENDIDO" && (
+                        <p className={estilos.noEntendido} role="status">
+                          {extraccion.mensaje}
+                        </p>
+                      )}
                       <textarea
                         className={estilos.campo}
                         value={texto}
@@ -163,7 +250,7 @@ export default function Comunidades() {
                         onChange={(e) => setTexto(e.target.value)}
                         placeholder="¿Qué quieres hacer? Ej: ¿alguien libre para un café en 20 minutos?"
                         aria-label="Describe tu solicitud"
-                        disabled={envio === "buscando"}
+                        disabled={buscando}
                       />
                       <span className={estilos.contador}>
                         {texto.length}/{MAXIMO_SOLICITUD} caracteres
@@ -178,7 +265,7 @@ export default function Comunidades() {
                             className={estilos.ejemplo}
                             onClick={() => setTexto(e)}
                             whileTap={{ scale: 0.96 }}
-                            disabled={envio === "buscando"}
+                            disabled={buscando}
                           >
                             {e}
                           </motion.button>
@@ -188,13 +275,13 @@ export default function Comunidades() {
                       <motion.button
                         type="submit"
                         className={estilos.enviar}
-                        disabled={!texto.trim() || envio === "buscando"}
+                        disabled={!texto.trim() || buscando}
                         whileTap={{ scale: 0.97 }}
                         transition={RESORTE_TOQUE}
                       >
-                        {envio === "buscando" ? (
+                        {buscando ? (
                           <>
-                            <span className={estilos.radar} aria-hidden="true" /> Buscando compañeros…
+                            <span className={estilos.radar} aria-hidden="true" /> Leyendo tu actividad…
                           </>
                         ) : (
                           <>
@@ -277,7 +364,7 @@ export default function Comunidades() {
         </AnimatePresence>
       </Pieza>
 
-      {pestana !== "libres" && (
+      {pestana === "descubrir" && (
         <Pieza>
           <p className={estilos.aviso}>Vista previa con comunidades de ejemplo; la creación real de grupos llega con su historia de usuario.</p>
         </Pieza>

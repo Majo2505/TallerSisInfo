@@ -351,6 +351,131 @@
   text-align: center;
 }
 
+/* HU11: lo que se entendió del texto libre y la pregunta por el dato que falta. */
+.entendida {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.datos {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 112px), 1fr));
+  gap: 8px;
+}
+
+.dato,
+.datoFalta {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid #b9e6cb;
+  border-radius: 14px;
+  background: var(--superficie);
+}
+
+.dato span,
+.datoFalta span {
+  color: var(--texto-tenue);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dato strong,
+.datoFalta strong {
+  color: var(--ucb-marino);
+  font-size: 1rem;
+}
+
+.datoFalta {
+  border-style: dashed;
+  border-color: var(--ucb-amarillo);
+  background: var(--ucb-amarillo-suave);
+}
+
+.datoFalta strong {
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.respuesta {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pregunta {
+  color: var(--ucb-marino);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.respuestaFila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.respuestaCampo {
+  flex: 1 1 180px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.respuestaCampo:focus {
+  outline: none;
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+}
+
+.responder {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.responder:disabled,
+.otra:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.noEntendido,
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.noEntendido {
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.error {
+  background: var(--error-fondo);
+  color: var(--error-texto);
+}
+
 /* Descubrir: tarjetas de comunidades activas. */
 .lista {
   margin: 0;

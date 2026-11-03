@@ -48,6 +48,7 @@ const ETIQUETA_CONSULTA: Record<ConsultaRag["estado"], string> = {
   SIN_RESULTADOS: "Sin resultados",
   RECHAZADO_SEGURIDAD: "Rechazada",
   ERROR: "Error",
+  INCOMPLETO: "Incompleta",
 };
 
 // Los accesos directos del inicio del admin abren el panel en una pestaña: /admin?pestana=reportes

@@ -592,6 +592,71 @@ Cada recomendación de `POST /api/recomendaciones` trae `feedback` (`LIKE`, `DIS
 | 401 | Sin token o token inválido |
 | 404 | La recomendación no existe o no es del usuario (`NO_ENCONTRADO`) |
 
+## 7d. Extracción estructurada de actividades (HU11 — responsable: Majo)
+
+Convierte lo que el estudiante escribe en sus palabras en datos consistentes de una actividad. **Solo extrae y valida: no crea nada.** La pantalla de resumen, la confirmación y la creación de la comunidad son de HU10 (Ariana), que llama a este endpoint.
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Tool calling | Se ofrece al LLM una sola función, `registrar_actividad`, con esquema estricto, y se le obliga a llamarla (`tool_choice`). Si un modelo local no hace tool calling pero responde el mismo JSON como texto, también se acepta | ✅ Definido |
+| Quién decide | El LLM solo propone. Qué es válido, qué falta y qué se pregunta lo decide el backend (`ReglasExtraccion`) | ✅ Definido |
+| Texto | Obligatorio, máximo 200 caracteres. Con menos de 3 letras no se llama al LLM y se responde `NO_ENTENDIDO` | ✅ Definido |
+| Hora | De hoy, en hora de Bolivia, entre 07:15 y 21:00. «En 20 minutos» se calcula en el servidor. Si no la dice, empieza **ahora** y se avisa en `supuestos`. Una hora que ya pasó (más de 5 min) se vuelve a preguntar | 🟡 Propuesta, a confirmar por Majo y Ariana |
+| Duración | De 10 a 240 minutos, sin pasar de las 21:00 | 🟡 Propuesta, a confirmar por Majo y Ariana |
+| Participantes | De 2 a 30 personas, contando a quien la crea (`ck_com_max` exige 2 o más). Si no lo dice y la actividad tiene un número habitual (cartas = 4), el modelo puede proponerlo | 🟡 Propuesta, a confirmar por Majo y Ariana |
+| Ambigüedad | Un dato que falta o no es válido va en `faltantes`; `mensaje` pregunta **solo por el primero**. Para responder se manda la respuesta y lo ya entendido en `anterior`, sin reescribir todo (HU10, criterio 2) | ✅ Definido |
+| Seguridad | Los mismos guardrails de HU17, antes del LLM (texto y `anterior`) y después (la actividad propuesta). Al LLM no se le envía el id, el nombre ni la ubicación del estudiante | ✅ Definido |
+| Auditoría | Toda extracción queda en `log_auditoria_rag` con tipo `EXTRACCION_COMUNIDAD` y estado `OK`, `INCOMPLETO`, `SIN_RESULTADOS` (no entendida), `RECHAZADO_SEGURIDAD` o `ERROR`. `consultaId` es su `id`: HU10 lo guarda como `comunidad_efimera.log_id` | ✅ Definido |
+| Sin clave de LLM | Se usa un extractor simulado con patrones (frases comunes), para probar sin costo | ✅ Definido |
+
+### `POST /api/actividades/extraer`
+
+Body: `{ "texto": "Quiero jugar cartas a las 4 por una hora", "anterior": null }`. Respuesta **200**:
+
+```json
+{
+  "consultaId": 58,
+  "estado": "COMPLETO",
+  "mensaje": null,
+  "actividad": { "actividad": "jugar cartas", "horaInicio": "16:00", "duracionMin": 60, "maxParticipantes": 4 },
+  "faltantes": [],
+  "supuestos": []
+}
+```
+
+Si falta un dato (`INCOMPLETO`), `mensaje` trae la pregunta y el dato va en `null`:
+
+```json
+{
+  "consultaId": 59,
+  "estado": "INCOMPLETO",
+  "mensaje": "¿Cuánto tiempo va a durar la actividad?",
+  "actividad": { "actividad": "tomar un café", "horaInicio": "17:00", "duracionMin": null, "maxParticipantes": null },
+  "faltantes": ["duracionMin", "maxParticipantes"],
+  "supuestos": []
+}
+```
+
+Para responder: `{ "texto": "una hora con 2 amigos", "anterior": { "actividad": "tomar un café", "horaInicio": "17:00", "duracionMin": null, "maxParticipantes": null } }` (el `actividad` de la respuesta anterior, tal cual).
+
+Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendimos tu actividad, ¿puedes describirla con más detalle?» y `faltantes` es `["actividad"]`.
+
+**Preguntas** (`mensaje` con `INCOMPLETO`)
+
+| Campo | Pregunta |
+|---|---|
+| `horaInicio` | «¿A qué hora quieres empezar?» · fuera de rango: «Las actividades en el campus van de 07:15 a 21:00. ¿A qué hora quieres empezar?» · pasada: «Esa hora ya pasó y las actividades son para hoy. ¿A qué hora quieres empezar?» |
+| `duracionMin` | «¿Cuánto tiempo va a durar la actividad?» · fuera de rango: «La actividad puede durar entre 10 minutos y 4 horas. ¿Cuánto tiempo va a durar?» · pasa las 21:00: «Así terminaría después de las 21:00. ¿Cuánto tiempo va a durar?» |
+| `maxParticipantes` | «¿Cuántas personas pueden participar, contándote a ti?» · fuera de rango: «El grupo puede ser de 2 a 30 personas, contándote a ti. ¿Cuántas personas pueden participar?» |
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta el texto o supera los 200 caracteres (`VALIDACION`), o no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`, con el mismo mensaje que HU17) |
+| 401 | Sin token o token inválido |
+| 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |

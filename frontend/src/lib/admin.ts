@@ -42,7 +42,7 @@ export type ConsultaRag = {
   usuario: string;
   tipo: string;
   entrada: string | null;
-  estado: "OK" | "SIN_RESULTADOS" | "RECHAZADO_SEGURIDAD" | "ERROR";
+  estado: "OK" | "SIN_RESULTADOS" | "RECHAZADO_SEGURIDAD" | "ERROR" | "INCOMPLETO"; // INCOMPLETO: extracción de HU11 a la que le falta un dato
   modelo: string | null;
   latenciaMs: number | null;
   lugaresRecuperados: number;
