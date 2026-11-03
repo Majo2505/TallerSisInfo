@@ -30,6 +30,17 @@ export const extraerActividad = (texto: string, anterior: ActividadExtraida | nu
     body: JSON.stringify({ texto, anterior }),
   });
 
+/**
+ * Revisa los datos que el estudiante corrigió a mano, sin llamar a la IA. Responde igual que `extraerActividad`:
+ * con `COMPLETO`, el `consultaId` nuevo es el que se usa para crear la actividad. `texto` es la descripción original.
+ * Para corregir en palabras («mejor a las 5») se usa `extraerActividad` con lo ya entendido en `anterior`.
+ */
+export const revisarActividad = (texto: string, actividad: ActividadExtraida) =>
+  pedirApi<RespuestaExtraccion>("/api/actividades/revisar", {
+    method: "POST",
+    body: JSON.stringify({ texto, actividad }),
+  });
+
 /** 60 → «1 hora», 90 → «1 h 30 min», 45 → «45 min». */
 export function formatearDuracion(minutos: number): string {
   const horas = Math.floor(minutos / 60);
