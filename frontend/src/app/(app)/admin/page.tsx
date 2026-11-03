@@ -30,7 +30,6 @@ import {
   resolverReporte,
   obtenerMetricas,
   obtenerResumen,
-  validarLugaresPendientes,
 } from "@/lib/admin";
 import { ErrorApi } from "@/lib/api";
 import { useSesion } from "@/lib/useSesion";
@@ -105,8 +104,6 @@ export default function PanelAdmin() {
   const [filtroAuditoria, setFiltroAuditoria] = useState<FiltroAuditoria>("todas");
   const [error, setError] = useState("");
   const [cambiando, setCambiando] = useState<number | null>(null);
-  const [confirmandoValidarTodos, setConfirmandoValidarTodos] = useState(false);
-  const [validandoTodos, setValidandoTodos] = useState(false);
 
   useEffect(() => {
     if (listo && sesion && !esAdmin(sesion)) router.replace("/inicio");
@@ -144,8 +141,6 @@ export default function PanelAdmin() {
     }
   }
 
-  const pendientesDeValidar = lugares?.filter((l) => !l.validado && l.estado === "ACTIVO").length ?? 0;
-
   async function validar(lugar: LugarAdmin) {
     setCambiando(lugar.id);
     try {
@@ -156,20 +151,6 @@ export default function PanelAdmin() {
       aviso.mostrar((e as Error).message);
     } finally {
       setCambiando(null);
-    }
-  }
-
-  async function validarTodos() {
-    setValidandoTodos(true);
-    try {
-      const { validados } = await validarLugaresPendientes();
-      setLugares((ls) => ls?.map((l) => (l.estado === "ACTIVO" ? { ...l, validado: true } : l)) ?? null);
-      aviso.mostrar(validados === 1 ? "1 lugar validado." : `${validados} lugares validados.`);
-    } catch (e) {
-      aviso.mostrar((e as Error).message);
-    } finally {
-      setValidandoTodos(false);
-      setConfirmandoValidarTodos(false);
     }
   }
 
@@ -282,27 +263,7 @@ export default function PanelAdmin() {
           >
             {pestana === "catalogo" && (
               <>
-                <div className={estilos.cabeceraCatalogo}>
-                  <p className={estilos.conteo}>{lugares ? `${lugares.length} lugares en el catálogo` : "Cargando catálogo…"}</p>
-                  {pendientesDeValidar > 0 &&
-                    (confirmandoValidarTodos ? (
-                      <span className={estilos.confirmacion} role="group" aria-label="Confirmar la validación de los lugares pendientes">
-                        <span>
-                          ¿Validar {pendientesDeValidar} {pendientesDeValidar === 1 ? "lugar activo" : "lugares activos"}?
-                        </span>
-                        <button type="button" className={estilos.aprobar} disabled={validandoTodos} onClick={() => void validarTodos()}>
-                          {validandoTodos ? "Validando…" : "Sí, validar"}
-                        </button>
-                        <button type="button" className={estilos.cancelar} disabled={validandoTodos} onClick={() => setConfirmandoValidarTodos(false)}>
-                          Cancelar
-                        </button>
-                      </span>
-                    ) : (
-                      <button type="button" className={estilos.validarTodos} onClick={() => setConfirmandoValidarTodos(true)}>
-                        Validar los {pendientesDeValidar} activos pendientes
-                      </button>
-                    ))}
-                </div>
+                <p className={estilos.conteo}>{lugares ? `${lugares.length} lugares en el catálogo` : "Cargando catálogo…"}</p>
                 <div className={estilos.tabla} role="table" aria-label="Catálogo de lugares">
                   <div className={`${estilos.fila} ${estilos.encabezado}`} role="row">
                     <span role="columnheader">Nombre</span>
