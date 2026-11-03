@@ -29,6 +29,15 @@ public class AdminService
 
     public Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default) => _repo.ListarReportesAsync(ct);
 
+    public async Task ResolverReporteAsync(int reporteId, ResolverReporteDto req, int adminId, CancellationToken ct = default)
+    {
+        var estado = req.Estado.Trim().ToUpperInvariant();
+        if (estado is not ("RESUELTO" or "DESCARTADO"))
+            throw new ReglaNegocioException("VALIDACION", "El estado debe ser RESUELTO o DESCARTADO.");
+        if (await _repo.ResolverReporteAsync(reporteId, estado, adminId, ct) is null)
+            throw new ReglaNegocioException("NO_ENCONTRADO", "El reporte no existe o ya fue revisado.");
+    }
+
     public Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int? limite, CancellationToken ct = default)
         => _repo.ListarConsultasRagAsync(Math.Clamp(limite ?? LimiteConsultasPorDefecto, 1, LimiteConsultasMaximo), ct);
 

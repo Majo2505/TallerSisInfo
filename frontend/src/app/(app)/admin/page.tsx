@@ -25,6 +25,7 @@ import {
   listarConsultasRag,
   listarLugaresAdmin,
   listarReportes,
+  resolverReporte,
   obtenerMetricas,
   obtenerResumen,
 } from "@/lib/admin";
@@ -72,6 +73,7 @@ export default function PanelAdmin() {
   const [resumen, setResumen] = useState<ResumenAdmin | null>(null);
   const [lugares, setLugares] = useState<LugarAdmin[] | null>(null);
   const [reportes, setReportes] = useState<ReporteAdmin[] | null>(null);
+  const [resolviendoReporte, setResolviendoReporte] = useState<number | null>(null);
   const [metricas, setMetricas] = useState<MetricasAdmin | null>(null);
   const [consultas, setConsultas] = useState<ConsultaRag[] | null>(null);
   const [error, setError] = useState("");
@@ -277,6 +279,36 @@ export default function PanelAdmin() {
                       <small>
                         {r.autor} · {fechaCorta(r.creadoEn)}
                       </small>
+                      {r.estado === "PENDIENTE" && (
+                        <span className={estilos.accionesLugar}>
+                          <button
+                            type="button"
+                            className={estilos.aprobar}
+                            disabled={resolviendoReporte === r.id}
+                            onClick={() => {
+                              setResolviendoReporte(r.id);
+                              void resolverReporte(r.id, "RESUELTO")
+                                .then(() => setReportes((actual) => actual ? actual.map((item) => item.id === r.id ? { ...item, estado: "RESUELTO" } : item) : null))
+                                .finally(() => setResolviendoReporte(null));
+                            }}
+                          >
+                            Resolver
+                          </button>
+                          <button
+                            type="button"
+                            className={estilos.desactivar}
+                            disabled={resolviendoReporte === r.id}
+                            onClick={() => {
+                              setResolviendoReporte(r.id);
+                              void resolverReporte(r.id, "DESCARTADO")
+                                .then(() => setReportes((actual) => actual ? actual.map((item) => item.id === r.id ? { ...item, estado: "DESCARTADO" } : item) : null))
+                                .finally(() => setResolviendoReporte(null));
+                            }}
+                          >
+                            Descartar
+                          </button>
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
