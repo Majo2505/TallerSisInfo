@@ -48,6 +48,8 @@ public class ResolverReporteServiceTests
             return Task.FromResult<string?>(anterior);
         }
 
+        public Task<bool?> CambiarValidacionLugarAsync(int lugarId, bool validado, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<int> ValidarPendientesAsync(int adminId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ResumenAdminDto> ResumenAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task<List<LugarAdminDto>> ListarLugaresAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task<string?> CambiarEstadoLugarAsync(int lugarId, string estado, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
