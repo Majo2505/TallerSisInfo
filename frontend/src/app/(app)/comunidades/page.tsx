@@ -10,7 +10,7 @@ import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { ActividadExtraida, RespuestaExtraccion, extraerActividad, formatearDuracion } from "@/lib/actividades";
 import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
-import { ComunidadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
+import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
 import { iniciales } from "@/lib/iniciales";
 import estilos from "./comunidades.module.css";
 
@@ -26,12 +26,6 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
   );
 }
 
-/** «2026-11-03T20:00:00Z» → «16:00», en hora de Bolivia (UTC-4), sin depender de la zona del navegador. */
-function horaLocal(iso: string): string {
-  const d = new Date(new Date(iso).getTime() - 4 * 3_600_000);
-  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
-}
-
 export default function Comunidades() {
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("libres");
@@ -44,7 +38,7 @@ export default function Comunidades() {
   const [error, setError] = useState("");
   // HU10: el estudiante confirmó el resumen y la actividad se creó (o se está creando).
   const [creando, setCreando] = useState(false);
-  const [creada, setCreada] = useState<ComunidadCreada | null>(null);
+  const [creada, setCreada] = useState<ActividadCreada | null>(null);
 
   async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
     setBuscando(true);
@@ -215,7 +209,7 @@ export default function Comunidades() {
                       <div>
                         <strong>¡Actividad creada!</strong>
                         <p>
-                          “{creada.actividad}” quedó creada para hoy, de {horaLocal(creada.inicio)} a {horaLocal(creada.fin)}, con lugar para hasta{" "}
+                          “{creada.actividad}” quedó creada para hoy, de {creada.horaInicio} a {creada.horaFin}, con lugar para hasta{" "}
                           {creada.maxParticipantes} personas.
                         </p>
                       </div>
