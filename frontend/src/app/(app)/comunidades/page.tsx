@@ -7,9 +7,11 @@ import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoPin, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
+import CrearGrupo from "@/components/comunidades/CrearGrupo";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { ActividadExtraida, RespuestaExtraccion, extraerActividad, formatearDuracion } from "@/lib/actividades";
-import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
+import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD, ResultadoComunidad, crearComunidad } from "@/lib/comunidades";
+import { guardarConfiguracionMatching } from "@/lib/matching";
 import { iniciales } from "@/lib/iniciales";
 import estilos from "./comunidades.module.css";
 
@@ -35,10 +37,14 @@ export default function Comunidades() {
   const [respuesta, setRespuesta] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState("");
+  // HU13: el grupo que se armó (o por qué no) con la actividad completa.
+  const [creacion, setCreacion] = useState<ResultadoComunidad | null>(null);
+  const [creando, setCreando] = useState(false);
 
   async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
     setBuscando(true);
     setError("");
+    setCreacion(null);
     try {
       setExtraccion(await extraerActividad(textoAEnviar, anterior));
       setRespuesta("");
@@ -66,12 +72,30 @@ export default function Comunidades() {
 
   function reiniciar() {
     setExtraccion(null);
+    setCreacion(null);
     setTexto("");
     setRespuesta("");
     setError("");
   }
 
   const entendida = extraccion && extraccion.estado !== "NO_ENTENDIDO" ? extraccion : null;
+
+  // HU13: el backend busca a quién le coincide el tiempo libre y crea el grupo solo si hay alguien.
+  async function crearGrupo(aceptarMatching = false) {
+    if (!entendida || entendida.estado !== "COMPLETO" || creando) return;
+    setCreando(true);
+    setError("");
+    try {
+      if (aceptarMatching) await guardarConfiguracionMatching(true);
+      setCreacion(await crearComunidad(entendida.consultaId, texto.trim(), entendida.actividad));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
+    } finally {
+      setCreando(false);
+    }
+  }
+
+  const grupoArmado = creacion?.estado === "CREADA";
 
   function alternarUnion(id: number) {
     setUnido((actual) => {
@@ -183,10 +207,10 @@ export default function Comunidades() {
                       transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
                     >
                       <span className={estilos.resultadoIcono}>
-                        <IconoCheck tamano={22} />
+                        {grupoArmado ? <IconoPersonas tamano={22} /> : <IconoCheck tamano={22} />}
                       </span>
                       <div className={estilos.entendida}>
-                        <strong>{entendida.estado === "COMPLETO" ? "Esto entendimos" : "Ya casi"}</strong>
+                        <strong>{grupoArmado ? "¡Grupo armado!" : entendida.estado === "COMPLETO" ? "Esto entendimos" : "Ya casi"}</strong>
                         <ul className={estilos.datos}>
                           <Dato etiqueta="Actividad" valor={entendida.actividad.actividad} />
                           <Dato
@@ -229,11 +253,16 @@ export default function Comunidades() {
                             </div>
                           </form>
                         ) : (
-                          <p>Pronto podrás confirmar y crear el grupo desde aquí.</p>
+                          <CrearGrupo
+                            resultado={creacion}
+                            creando={creando}
+                            onCrear={() => void crearGrupo()}
+                            onAceptarYCrear={() => void crearGrupo(true)}
+                          />
                         )}
                       </div>
-                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={buscando}>
-                        Escribir otra
+                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={buscando || creando}>
+                        {grupoArmado ? "Crear otro grupo" : "Escribir otra"}
                       </button>
                     </motion.div>
                   ) : (
