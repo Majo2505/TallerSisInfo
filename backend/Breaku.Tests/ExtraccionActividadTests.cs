@@ -281,7 +281,7 @@ public class ExtraccionActividadServiceTests
     {
         var extractor = new ExtractorFalso(responder ?? ExtractorActividadSimulado.Extraer);
         var repo = new RepositorioFalso();
-        return (new ExtraccionActividadService(extractor, repo, new RelojFijo()), extractor, repo);
+        return (new ExtraccionActividadService(extractor, repo, NullLogger<ExtraccionActividadService>.Instance, new RelojFijo()), extractor, repo);
     }
 
     [Fact]
@@ -452,11 +452,11 @@ public class ExtractorActividadLlmTests
         }
     };
 
-    private static async Task<(RespuestaExtractor Respuesta, ServidorFalso Servidor)> Extraer(JsonNode respuestaLlm)
+    private static async Task<(RespuestaExtractor Respuesta, ServidorFalso Servidor)> Extraer(JsonNode respuestaLlm, string? esfuerzo = null)
     {
         var servidor = new ServidorFalso(respuestaLlm);
         var http = new HttpClient(servidor) { BaseAddress = new Uri("http://llm.local/v1/") };
-        var extractor = new ExtractorActividadLlm(http, "modelo-de-prueba", NullLogger<ExtractorActividadLlm>.Instance);
+        var extractor = new ExtractorActividadLlm(http, "modelo-de-prueba", NullLogger<ExtractorActividadLlm>.Instance, esfuerzo);
         var prompt = PromptExtraccion.Construir("jugar cartas por una hora", null, new DateTime(2026, 11, 3, 10, 0, 0));
         return (await extractor.ExtraerAsync(prompt, "jugar cartas por una hora"), servidor);
     }
@@ -471,6 +471,24 @@ public class ExtractorActividadLlmTests
         Assert.True((bool?)pedido["tools"]![0]!["function"]!["strict"]);
         Assert.Equal("registrar_actividad", (string?)pedido["tool_choice"]!["function"]!["name"]);
         Assert.Null(pedido["response_format"]);
+    }
+
+    [Fact]
+    public async Task Sin_configurar_no_envia_reasoning_effort()
+    {
+        var (_, servidor) = await Extraer(Respuesta(ConLlamada(JsonValue.Create(Argumentos))));
+
+        Assert.Null(servidor.Pedido!["reasoning_effort"]);
+    }
+
+    [Fact]
+    public async Task Con_LLM_REASONING_EFFORT_lo_envia_para_poder_usar_herramientas()
+    {
+        // OpenAI: «Function tools with reasoning_effort are not supported ... set reasoning_effort to 'none'».
+        var (_, servidor) = await Extraer(Respuesta(ConLlamada(JsonValue.Create(Argumentos))), "none");
+
+        Assert.Equal("none", (string?)servidor.Pedido!["reasoning_effort"]);
+        Assert.NotNull(servidor.Pedido["tools"]);
     }
 
     [Fact]

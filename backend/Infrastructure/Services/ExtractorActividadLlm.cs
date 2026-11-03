@@ -14,6 +14,8 @@ namespace Breaku.Infrastructure.Services;
 /// Se le ofrece una sola función, <c>registrar_actividad</c>, y se le obliga a llamarla (<c>tool_choice</c>), así la
 /// respuesta siempre llega como argumentos JSON con el esquema de abajo. Qué datos valen lo decide después ReglasExtraccion.
 /// Al LLM solo se envía el prompt: nunca el id, el nombre ni la ubicación del estudiante.
+/// Algunos modelos que razonan (por ejemplo los de OpenAI) no aceptan herramientas en Chat Completions mientras
+/// razonan: con LLM_REASONING_EFFORT=none se les pide no razonar. Sin la variable, el parámetro no se envía.
 /// </summary>
 public class ExtractorActividadLlm : IExtractorActividad
 {
@@ -43,13 +45,16 @@ public class ExtractorActividadLlm : IExtractorActividad
 
     private readonly HttpClient _http;
     private readonly string _modelo;
+    private readonly string? _esfuerzoRazonamiento;
     private readonly ILogger<ExtractorActividadLlm> _logger;
 
-    public ExtractorActividadLlm(HttpClient http, string modelo, ILogger<ExtractorActividadLlm> logger)
+    // esfuerzoRazonamiento: valor de reasoning_effort (LLM_REASONING_EFFORT); null = no se envía.
+    public ExtractorActividadLlm(HttpClient http, string modelo, ILogger<ExtractorActividadLlm> logger, string? esfuerzoRazonamiento = null)
     {
         _http = http;
         _modelo = modelo;
         _logger = logger;
+        _esfuerzoRazonamiento = esfuerzoRazonamiento;
     }
 
     public async Task<RespuestaExtractor> ExtraerAsync(PromptRag prompt, string texto, CancellationToken ct = default)
@@ -82,6 +87,7 @@ public class ExtractorActividadLlm : IExtractorActividad
                 ["function"] = new JsonObject { ["name"] = PromptExtraccion.NombreFuncion }
             }
         };
+        if (_esfuerzoRazonamiento is not null) cuerpo["reasoning_effort"] = _esfuerzoRazonamiento;
 
         using var respuesta = await _http.PostAsJsonAsync("chat/completions", cuerpo, ct);
         if (!respuesta.IsSuccessStatusCode)

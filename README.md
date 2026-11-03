@@ -210,6 +210,7 @@ El texto se normaliza antes de comparar (sin tildes, sin mayúsculas, letras sep
 | `LLM_MODEL` | Si hay `LLM_API_KEY` | Nombre del modelo en ese proveedor |
 | `LLM_MODEL_IMAGEN` | No (por defecto, `LLM_MODEL`) | Modelo con visión para leer la foto del horario (`POST /api/horario/foto`). Sin `LLM_API_KEY`, la foto no está disponible y el registro manual sigue igual |
 | `LLM_TIMEOUT_SECONDS` | No (por defecto 20) | Segundos de espera al LLM antes de responder `503` |
+| `LLM_REASONING_EFFORT` | Con modelos de OpenAI que razonan, como `gpt-6-luna` | Se envía como `reasoning_effort` en la extracción de actividades (HU11). Con `none`, el modelo acepta tool calling en Chat Completions; sin la variable, OpenAI responde `400` y la extracción da `503`. No la pongas con Ollama ni con proveedores que no la conozcan |
 
 Sirve cualquier proveedor con API compatible con OpenAI (Chat Completions) que soporte salida JSON con esquema:
 

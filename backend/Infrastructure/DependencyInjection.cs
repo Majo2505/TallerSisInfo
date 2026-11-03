@@ -100,11 +100,15 @@ public static class DependencyInjection
             modelo,
             sp.GetRequiredService<ILogger<AsistenteLlm>>()));
 
-        // Extracción de actividades (HU11): mismo cliente y modelo que las recomendaciones.
+        // Extracción de actividades (HU11): mismo cliente y modelo que las recomendaciones. Los modelos de OpenAI que
+        // razonan rechazan las herramientas en Chat Completions salvo con LLM_REASONING_EFFORT=none.
+        var esfuerzo = configuration["LLM_REASONING_EFFORT"];
+        esfuerzo = string.IsNullOrWhiteSpace(esfuerzo) ? null : esfuerzo.Trim();
         services.AddScoped<IExtractorActividad>(sp => new ExtractorActividadLlm(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient(AsistenteLlm.NombreCliente),
             modelo,
-            sp.GetRequiredService<ILogger<ExtractorActividadLlm>>()));
+            sp.GetRequiredService<ILogger<ExtractorActividadLlm>>(),
+            esfuerzo));
 
         // Foto del horario (HU2): mismo proveedor y clave; modelo de visión propio (LLM_MODEL_IMAGEN, si no, el de texto)
         // y más tiempo de espera, porque leer una imagen tarda más que una recomendación.

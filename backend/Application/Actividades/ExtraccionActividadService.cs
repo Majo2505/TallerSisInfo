@@ -3,6 +3,7 @@ using Breaku.Application.Horarios;
 using Breaku.Application.Recomendaciones;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
+using Microsoft.Extensions.Logging;
 
 namespace Breaku.Application.Actividades;
 
@@ -15,15 +16,17 @@ public class ExtraccionActividadService
 {
     private readonly IExtractorActividad _extractor;
     private readonly IExtraccionRepository _repo;
+    private readonly ILogger<ExtraccionActividadService> _logger;
     private readonly TimeProvider _reloj;
 
-    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo)
-        : this(extractor, repo, TimeProvider.System) { }
+    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, ILogger<ExtraccionActividadService> logger)
+        : this(extractor, repo, logger, TimeProvider.System) { }
 
-    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, TimeProvider reloj)
+    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, ILogger<ExtraccionActividadService> logger, TimeProvider reloj)
     {
         _extractor = extractor;
         _repo = repo;
+        _logger = logger;
         _reloj = reloj;
     }
 
@@ -64,8 +67,10 @@ public class ExtraccionActividadService
             {
                 respuesta = await _extractor.ExtraerAsync(prompt, texto, ct);
             }
-            catch (Exception) when (!ct.IsCancellationRequested)
+            catch (Exception ex) when (!ct.IsCancellationRequested)
             {
+                // La causa (tiempo de espera, respuesta ilegible, error del proveedor) solo va a la terminal, nunca al estudiante.
+                _logger.LogWarning(ex, "No se pudo extraer la actividad: {Motivo}", ex.Message);
                 log.Estado = LogAuditoriaRag.EstadoError;
                 log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
                 await _repo.GuardarLogAsync(log, ct);
