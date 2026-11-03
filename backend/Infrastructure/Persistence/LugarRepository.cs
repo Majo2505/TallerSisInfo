@@ -12,13 +12,13 @@ public class LugarRepository : ILugarRepository
 
     public Task<Zona?> ObtenerZonaDelUsuarioAsync(int usuarioId, CancellationToken ct = default)
         => _db.Usuarios.AsNoTracking()
-            .Where(u => u.Id == usuarioId && u.ZonaActualId != null)
+            .Where(u => u.Id == usuarioId && u.ZonaActualId != null && u.ZonaActual!.Activa)
             .Select(u => u.ZonaActual)
             .FirstOrDefaultAsync(ct);
 
     public Task<List<Lugar>> ListarActivosAsync(CancellationToken ct = default)
         => _db.Lugares.AsNoTracking()
             .Include(l => l.Categoria)
-            .Where(l => l.Estado == ReglasBusquedaLugares.EstadoActivo)
+            .Where(l => l.Estado == ReglasBusquedaLugares.EstadoActivo && l.Recomendable)
             .ToListAsync(ct);
 }

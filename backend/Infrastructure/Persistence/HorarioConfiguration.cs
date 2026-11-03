@@ -19,10 +19,12 @@ public class HorarioConfiguration : IEntityTypeConfiguration<Horario>
         b.Property(x => x.HoraFin).HasColumnName("hora_fin");
         b.Property(x => x.Aula).HasColumnName("aula").HasMaxLength(30);
         b.Property(x => x.Origen).HasColumnName("origen").HasMaxLength(10).IsRequired();
+        b.Property(x => x.Asiste).HasColumnName("asiste");
+        b.Property(x => x.AutorizacionChoque).HasColumnName("autorizacion_choque");
         b.Property(x => x.CreatedAt).HasColumnName("created_at");
         b.Property(x => x.UpdatedAt).HasColumnName("updated_at");
 
-        b.HasIndex(x => new { x.UsuarioId, x.DiaSemana, x.HoraInicio }).IsUnique().HasDatabaseName("uq_horario_slot");
+        b.HasIndex(x => new { x.UsuarioId, x.DiaSemana, x.HoraInicio, x.Materia }).IsUnique().HasDatabaseName("uq_horario_bloque");
         b.ToTable(t =>
         {
             t.HasCheckConstraint("ck_horario_dia", "dia_semana BETWEEN 1 AND 6");

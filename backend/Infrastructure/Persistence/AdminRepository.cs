@@ -34,13 +34,14 @@ public class AdminRepository : IAdminRepository
         var filas = await _db.Database.SqlQuery<FilaLugarAdmin>($"""
                 SELECT l.id AS Id, l.nombre AS Nombre, c.nombre AS Categoria, l.estado AS Estado,
                        l.duracion_estimada_min AS DuracionEstimadaMin, l.hora_apertura AS HoraApertura,
-                       l.hora_cierre AS HoraCierre,
+                       l.hora_cierre AS HoraCierre, l.validado AS Validado, l.recomendable AS Recomendable,
+                       l.tipo_lugar AS TipoLugar,
                        (SELECT COUNT(*) FROM recomendacion r WHERE r.lugar_id = l.id) AS VecesRecomendado
                 FROM lugar l JOIN categoria c ON c.id = l.categoria_id
                 ORDER BY FIELD(l.estado, 'EN_REVISION', 'ACTIVO', 'INACTIVO'), l.nombre
                 """).ToListAsync(ct);
         return filas.Select(f => new LugarAdminDto(f.Id, f.Nombre, f.Categoria, f.Estado, f.DuracionEstimadaMin,
-            Hora(f.HoraApertura), Hora(f.HoraCierre), (int)f.VecesRecomendado)).ToList();
+            Hora(f.HoraApertura), Hora(f.HoraCierre), (int)f.VecesRecomendado, f.Validado, f.Recomendable, f.TipoLugar)).ToList();
     }
 
     public async Task<string?> CambiarEstadoLugarAsync(int lugarId, string estado, int adminId, CancellationToken ct = default)
@@ -109,7 +110,9 @@ public class AdminRepository : IAdminRepository
                 FROM log_auditoria_rag WHERE created_at >= {desde}
                 """).ToListAsync(ct)).Single();
         var top = await _db.Database.SqlQuery<FilaTop>($"""
-                SELECT l.nombre AS Nombre, c.nombre AS Categoria, COUNT(*) AS Veces
+                SELECT l.nombre AS Nombre, c.nombre AS Categoria, COUNT(*) AS Veces,
+                       COALESCE(SUM(r.feedback = 'LIKE'), 0)    AS MeGusta,
+                       COALESCE(SUM(r.feedback = 'DISLIKE'), 0) AS NoMeSirve
                 FROM recomendacion r
                 JOIN log_auditoria_rag g ON g.id = r.log_id
                 JOIN lugar l ON l.id = r.lugar_id
@@ -119,9 +122,16 @@ public class AdminRepository : IAdminRepository
                 ORDER BY Veces DESC
                 LIMIT 5
                 """).ToListAsync(ct);
+        // HU9: valoraciones registradas en la semana (usa ix_recomendacion_feedback).
+        var votos = (await _db.Database.SqlQuery<FilaVotos>($"""
+                SELECT COALESCE(SUM(feedback = 'LIKE'), 0)    AS MeGusta,
+                       COALESCE(SUM(feedback = 'DISLIKE'), 0) AS NoMeSirve
+                FROM recomendacion WHERE feedback IS NOT NULL AND fecha_feedback >= {desde}
+                """).ToListAsync(ct)).Single();
         return new MetricasAdminDto((int)f.Total, (int)f.Ok, (int)f.SinResultados, (int)f.Rechazadas, (int)f.Errores,
             f.LatenciaPromedio is null ? null : (int)f.LatenciaPromedio,
-            top.Select(t => new LugarTopDto(t.Nombre, t.Categoria, (int)t.Veces)).ToList());
+            top.Select(t => new LugarTopDto(t.Nombre, t.Categoria, (int)t.Veces, (int)t.MeGusta, (int)t.NoMeSirve)).ToList(),
+            (int)votos.MeGusta, (int)votos.NoMeSirve);
     }
 
     private static string? Hora(TimeSpan? t) => t is null ? null : $"{t.Value.Hours:00}:{t.Value.Minutes:00}";
@@ -146,6 +156,9 @@ public class AdminRepository : IAdminRepository
         public int DuracionEstimadaMin { get; set; }
         public TimeSpan? HoraApertura { get; set; }
         public TimeSpan? HoraCierre { get; set; }
+        public bool Validado { get; set; }
+        public bool Recomendable { get; set; }
+        public string? TipoLugar { get; set; }
         public long VecesRecomendado { get; set; }
     }
 
@@ -189,5 +202,13 @@ public class AdminRepository : IAdminRepository
         public string Nombre { get; set; } = "";
         public string Categoria { get; set; } = "";
         public long Veces { get; set; }
+        public decimal MeGusta { get; set; }
+        public decimal NoMeSirve { get; set; }
+    }
+
+    private sealed class FilaVotos
+    {
+        public decimal MeGusta { get; set; }
+        public decimal NoMeSirve { get; set; }
     }
 }

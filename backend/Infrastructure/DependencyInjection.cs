@@ -14,7 +14,9 @@ using Breaku.Application.Notificaciones;
 using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
 using Breaku.Application.Recomendaciones;
+using Breaku.Application.Perfil;
 using Breaku.Application.Admin;
+using Breaku.Application.Matching;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
 {
@@ -48,6 +50,8 @@ public static class DependencyInjection
 
         services.AddHostedService<AvisoPuentesWorker>();
         services.AddScoped<IUbicacionRepository, UbicacionRepository>();
+        services.AddScoped<IPerfilRepository, PerfilRepository>();
+        services.AddScoped<IMatchingRepository, MatchingRepository>();
 
         return services;
     }

@@ -26,5 +26,10 @@ public record LugarCandidato(
     string? Descripcion,
     int DistanciaM,
     int TiempoTrasladoMin,      // ida y vuelta
-    int DuracionEstimadaMin
+    int DuracionEstimadaMin,
+    bool Validado = true,
+    string? TipoLugar = null,
+    List<string>? Modalidad = null,
+    List<string>? NivelEnergia = null,
+    List<string>? ActividadesSugeridas = null
 );

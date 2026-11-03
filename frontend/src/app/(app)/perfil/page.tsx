@@ -16,14 +16,24 @@ import {
   IconoSalir,
 } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
+import { Selector } from "@/components/app/Selectores";
+import { guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
 import { guardarConfiguracion, obtenerConfiguracion } from "@/lib/notificaciones";
-import { CARRERAS, SEMESTRES } from "@/lib/maqueta";
-import { cerrarSesion } from "@/services/authService";
+import { CARRERAS, LARGO_MAXIMO_NOMBRE, Perfil as DatosPerfil, SEMESTRES, actualizarPerfil, obtenerPerfil } from "@/lib/perfil";
+import { actualizarNombreSesion, cerrarSesion } from "@/services/authService";
 import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./perfil.module.css";
 
 type Pestana = "informacion" | "ajustes" | "seguridad" | "reportar";
+
+// Un reporte es un aviso puntual, no un texto largo.
+const LARGO_MAXIMO_REPORTE = 500;
+const TIPOS_REPORTE = [
+  { valor: "error", etiqueta: "Algo no funciona" },
+  { valor: "lugar", etiqueta: "Información incorrecta de un lugar" },
+  { valor: "sugerencia", etiqueta: "Sugerencia" },
+];
 
 const PESTANAS: { id: Pestana; nombre: string; corto: string; Icono: typeof IconoPersona }[] = [
   { id: "informacion", nombre: "Información personal", corto: "Datos", Icono: IconoPersona },
@@ -38,12 +48,69 @@ export default function Perfil() {
   const aviso = useAviso();
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("informacion");
-  const [nombre, setNombre] = useState(sesion?.usuario.nombre ?? "");
-  const [carrera, setCarrera] = useState(CARRERAS[0]);
-  const [semestre, setSemestre] = useState(5);
+  // HU21: datos reales del perfil; el formulario parte de ellos y se compara para saber si hay cambios.
+  const [perfil, setPerfil] = useState<DatosPerfil | null>(null);
+  const [errorPerfil, setErrorPerfil] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [carrera, setCarrera] = useState("");
+  const [semestre, setSemestre] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
+  const [errorGuardar, setErrorGuardar] = useState("");
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
   const [avisosActivos, setAvisosActivos] = useState<boolean | null>(null);
   const [errorAvisos, setErrorAvisos] = useState("");
   const [guardandoAvisos, setGuardandoAvisos] = useState(false);
+  const [tipoReporte, setTipoReporte] = useState("error");
+  const [textoReporte, setTextoReporte] = useState("");
+  const [errorReporte, setErrorReporte] = useState("");
+  // HU12: consentimiento para que compañeros con tiempo libre compatible te encuentren. Desactivado por defecto.
+  const [visibleMatching, setVisibleMatching] = useState<boolean | null>(null);
+  const [errorMatching, setErrorMatching] = useState("");
+  const [guardandoMatching, setGuardandoMatching] = useState(false);
+
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    obtenerPerfil()
+      .then((datos) => {
+        if (!activo) return;
+        setPerfil(datos);
+        setNombre(datos.nombre);
+        setCarrera(datos.carrera ?? "");
+        setSemestre(datos.semestre ? String(datos.semestre) : "");
+      })
+      .catch((e: Error) => {
+        if (activo) setErrorPerfil(e.message);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  const hayCambios =
+    perfil !== null &&
+    (nombre.trim() !== perfil.nombre || (carrera || null) !== perfil.carrera || (semestre ? Number(semestre) : null) !== perfil.semestre);
+
+  async function guardarPerfil(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorGuardar("");
+    const limpio = nombre.trim();
+    if (!limpio) return setErrorNombre("Tu nombre es obligatorio.");
+    if (limpio.length > LARGO_MAXIMO_NOMBRE) return setErrorNombre(`Tu nombre puede tener hasta ${LARGO_MAXIMO_NOMBRE} caracteres.`);
+    setErrorNombre("");
+    setGuardandoPerfil(true);
+    try {
+      const nuevo = await actualizarPerfil({ nombre: limpio, carrera: carrera || null, semestre: semestre ? Number(semestre) : null });
+      setPerfil(nuevo);
+      setNombre(nuevo.nombre);
+      actualizarNombreSesion(nuevo.nombre);
+      aviso.mostrar("Tu perfil se actualizó.");
+    } catch (err) {
+      setErrorGuardar((err as Error).message);
+    } finally {
+      setGuardandoPerfil(false);
+    }
+  }
 
   useEffect(() => {
     if (!sesion) return;
@@ -70,6 +137,34 @@ export default function Perfil() {
       setErrorAvisos((e as Error).message);
     } finally {
       setGuardandoAvisos(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    obtenerConfiguracionMatching()
+      .then((c) => {
+        if (activo) setVisibleMatching(c.visible);
+      })
+      .catch((e: Error) => {
+        if (activo) setErrorMatching(e.message);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  async function cambiarMatching(valor: boolean) {
+    setGuardandoMatching(true);
+    setErrorMatching("");
+    try {
+      const c = await guardarConfiguracionMatching(valor);
+      setVisibleMatching(c.visible);
+    } catch (e) {
+      setErrorMatching((e as Error).message);
+    } finally {
+      setGuardandoMatching(false);
     }
   }
 
@@ -101,8 +196,8 @@ export default function Perfil() {
             <span className={estilos.verificado}>
               <IconoCheck tamano={14} /> Verificado
             </span>
-            <span className={estilos.insignia}>{carrera}</span>
-            <span className={estilos.insignia}>Semestre {semestre}</span>
+            {perfil?.carrera && <span className={estilos.insignia}>{perfil.carrera}</span>}
+            {perfil?.semestre && <span className={estilos.insignia}>Semestre {perfil.semestre}</span>}
           </div>
         </div>
       </Pieza>
@@ -150,46 +245,87 @@ export default function Perfil() {
             transition={{ duration: 0.28, ease: SALIDA }}
           >
             {pestana === "informacion" && (
-              <form
-                className={estilos.formulario}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  aviso.mostrar("Guardar el perfil va a estar disponible pronto.");
-                }}
-              >
+              <form className={estilos.formulario} onSubmit={(e) => void guardarPerfil(e)} noValidate>
                 <h2 className={estilos.seccion}>Información personal</h2>
+                {errorPerfil && (
+                  <p className={estilos.error} role="alert">
+                    {errorPerfil}
+                  </p>
+                )}
+                {errorGuardar && (
+                  <motion.p
+                    key={errorGuardar}
+                    className={estilos.error}
+                    role="alert"
+                    initial={reducir ? false : { x: 0 }}
+                    animate={{ x: [0, -8, 8, -5, 5, 0] }}
+                    transition={{ duration: 0.42 }}
+                  >
+                    {errorGuardar}
+                  </motion.p>
+                )}
                 <label className={estilos.campo}>
                   Nombre completo
-                  <input value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" />
+                  <input
+                    value={nombre}
+                    onChange={(e) => {
+                      setNombre(e.target.value);
+                      if (errorNombre) setErrorNombre("");
+                    }}
+                    autoComplete="name"
+                    maxLength={LARGO_MAXIMO_NOMBRE}
+                    disabled={!perfil}
+                    aria-invalid={!!errorNombre}
+                    aria-describedby={errorNombre ? "error-nombre" : undefined}
+                  />
+                  {errorNombre && (
+                    <motion.small
+                      key={errorNombre}
+                      id="error-nombre"
+                      className={estilos.errorCampo}
+                      initial={reducir ? false : { x: 0 }}
+                      animate={{ x: [0, -6, 6, -3, 3, 0] }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      {errorNombre}
+                    </motion.small>
+                  )}
                 </label>
                 <label className={estilos.campo}>
                   Correo institucional
-                  <input value={usuario?.correo ?? ""} disabled readOnly />
-                  <small>Tu correo institucional está verificado y no se puede cambiar.</small>
+                  <input value={perfil?.correo ?? usuario?.correo ?? ""} disabled readOnly />
+                  <small>Tu correo institucional y tu rol no se pueden cambiar.</small>
                 </label>
                 <div className={estilos.fila}>
-                  <label className={estilos.campo}>
+                  <div className={estilos.campo}>
                     Carrera
-                    <select value={carrera} onChange={(e) => setCarrera(e.target.value)}>
-                      {CARRERAS.map((c) => (
-                        <option key={c}>{c}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className={estilos.campo}>
+                    <Selector
+                      valor={carrera}
+                      etiqueta="Carrera"
+                      deshabilitado={!perfil}
+                      onCambio={setCarrera}
+                      opciones={[
+                        { valor: "", etiqueta: "Sin especificar" },
+                        // Si la carrera guardada no está en la lista, igual se muestra.
+                        ...(carrera && !CARRERAS.includes(carrera) ? [{ valor: carrera, etiqueta: carrera }] : []),
+                        ...CARRERAS.map((c) => ({ valor: c, etiqueta: c })),
+                      ]}
+                    />
+                  </div>
+                  <div className={estilos.campo}>
                     Semestre
-                    <select value={semestre} onChange={(e) => setSemestre(Number(e.target.value))}>
-                      {SEMESTRES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}°
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                    <Selector
+                      valor={semestre}
+                      etiqueta="Semestre"
+                      deshabilitado={!perfil}
+                      onCambio={setSemestre}
+                      opciones={[{ valor: "", etiqueta: "Sin especificar" }, ...SEMESTRES.map((s) => ({ valor: String(s), etiqueta: `${s}.° semestre` }))]}
+                    />
+                  </div>
                 </div>
                 <div className={estilos.acciones}>
-                  <button type="submit" className={estilos.primario}>
-                    Guardar cambios
+                  <button type="submit" className={estilos.primario} disabled={!hayCambios || guardandoPerfil}>
+                    {guardandoPerfil ? "Guardando…" : "Guardar cambios"}
                   </button>
                   <Link href="/horario" className={estilos.secundario}>
                     <IconoCalendario tamano={18} /> Editar mi horario
@@ -233,6 +369,38 @@ export default function Perfil() {
                     {errorAvisos}
                   </motion.p>
                 )}
+                <label className={estilos.interruptor}>
+                  <span className={estilos.interruptorTexto}>
+                    <strong>Dejar que compañeros con tiempo compatible me encuentren</strong>
+                    <small>Tus compañeros de campus verán tu nombre, tu carrera y el tramo libre que comparten. Nunca tu correo.</small>
+                  </span>
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    className={estilos.oculto}
+                    checked={visibleMatching ?? false}
+                    disabled={visibleMatching === null || guardandoMatching}
+                    onChange={(e) => cambiarMatching(e.target.checked)}
+                  />
+                  <span className={visibleMatching ? estilos.rielActivo : estilos.riel} aria-hidden="true">
+                    <motion.span
+                      className={estilos.perilla}
+                      animate={{ x: visibleMatching ? 22 : 0 }}
+                      transition={reducir ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 30 }}
+                    />
+                  </span>
+                </label>
+                {errorMatching && (
+                  <motion.p
+                    className={estilos.error}
+                    role="alert"
+                    initial={reducir ? false : { x: 0 }}
+                    animate={{ x: [0, -8, 8, -5, 5, 0] }}
+                    transition={{ duration: 0.42 }}
+                  >
+                    {errorMatching}
+                  </motion.p>
+                )}
                 <Link href="/configuracion/ubicacion" className={estilos.secundario}>
                   <IconoAjustes tamano={18} /> Configurar campus y permiso de ubicación
                 </Link>
@@ -267,23 +435,57 @@ export default function Perfil() {
             {pestana === "reportar" && (
               <form
                 className={estilos.formulario}
+                noValidate
                 onSubmit={(e) => {
                   e.preventDefault();
+                  const limpio = textoReporte.trim();
+                  if (limpio.length < 10) return setErrorReporte("Cuéntanos un poco más: al menos 10 caracteres.");
+                  if (limpio.length > LARGO_MAXIMO_REPORTE) return setErrorReporte(`Máximo ${LARGO_MAXIMO_REPORTE} caracteres.`);
+                  setErrorReporte("");
                   aviso.mostrar("Enviar reportes va a estar disponible pronto.");
                 }}
               >
                 <h2 className={estilos.seccion}>Reportar un problema</h2>
-                <label className={estilos.campo}>
+                <div className={estilos.campo}>
                   Tipo de reporte
-                  <select defaultValue="error">
-                    <option value="error">Algo no funciona</option>
-                    <option value="lugar">Información incorrecta de un lugar</option>
-                    <option value="sugerencia">Sugerencia</option>
-                  </select>
-                </label>
+                  <Selector valor={tipoReporte} opciones={TIPOS_REPORTE} onCambio={setTipoReporte} etiqueta="Tipo de reporte" />
+                </div>
                 <label className={estilos.campo}>
                   Cuéntanos qué pasó
-                  <textarea rows={4} />
+                  <textarea
+                    rows={4}
+                    value={textoReporte}
+                    maxLength={LARGO_MAXIMO_REPORTE}
+                    placeholder="Ej: la cafetería figura abierta, pero cierra a las 15:00."
+                    aria-invalid={!!errorReporte}
+                    aria-describedby="contador-reporte"
+                    onChange={(e) => {
+                      setTextoReporte(e.target.value);
+                      if (errorReporte) setErrorReporte("");
+                    }}
+                  />
+                  <span className={estilos.pieCampo}>
+                    {errorReporte ? (
+                      <motion.small
+                        key={errorReporte}
+                        className={estilos.errorCampo}
+                        role="alert"
+                        initial={reducir ? false : { x: 0 }}
+                        animate={{ x: [0, -6, 6, -3, 3, 0] }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        {errorReporte}
+                      </motion.small>
+                    ) : (
+                      <small>Un aviso breve y concreto.</small>
+                    )}
+                    <small
+                      id="contador-reporte"
+                      className={textoReporte.length >= LARGO_MAXIMO_REPORTE * 0.9 ? estilos.contadorLimite : estilos.contador}
+                    >
+                      {textoReporte.length}/{LARGO_MAXIMO_REPORTE}
+                    </small>
+                  </span>
                 </label>
                 <button type="submit" className={estilos.primario}>
                   Enviar reporte

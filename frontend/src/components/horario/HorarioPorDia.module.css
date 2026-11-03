@@ -254,3 +254,56 @@
     color: var(--ucb-marino);
   }
 }
+
+/* Clases que coinciden y casilla «Asisto». */
+.fila {
+  display: grid;
+  gap: 6px;
+}
+
+.choque {
+  outline: 2px dashed var(--ucb-amarillo-oscuro);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--ucb-amarillo) 18%, var(--superficie));
+}
+
+.ausente {
+  opacity: 0.6;
+}
+
+.etiquetaChoque,
+.etiquetaAusente {
+  justify-self: start;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.etiquetaChoque {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+.etiquetaAusente {
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+}
+
+.asisto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ucb-marino);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.asisto input {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--ucb-marino);
+}

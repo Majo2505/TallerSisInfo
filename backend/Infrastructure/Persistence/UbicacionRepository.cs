@@ -11,10 +11,10 @@ public sealed class UbicacionRepository : IUbicacionRepository
     public UbicacionRepository(AppDbContext db) => _db = db;
 
     public Task<List<Zona>> ListarZonasAsync(CancellationToken ct = default)
-        => _db.Zonas.AsNoTracking().ToListAsync(ct);
+        => _db.Zonas.AsNoTracking().Where(z => z.Activa).ToListAsync(ct);
 
     public Task<Zona?> ObtenerZonaAsync(int zonaId, CancellationToken ct = default)
-        => _db.Zonas.AsNoTracking().FirstOrDefaultAsync(z => z.Id == zonaId, ct);
+        => _db.Zonas.AsNoTracking().FirstOrDefaultAsync(z => z.Id == zonaId && z.Activa, ct);
 
     public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default)
         => _db.Usuarios.Include(u => u.ZonaActual)

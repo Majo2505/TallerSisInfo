@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { IconoMas, IconoRayo } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
-import { Bloque } from "@/lib/horario";
+import { Bloque, enChoque } from "@/lib/horario";
 import { Puente, duracionMin, hhmm } from "@/lib/puentes";
 import estilos from "./HorarioPorDia.module.css";
 
@@ -19,6 +19,7 @@ type Props = {
   colorDe: (materia: string) => Color;
   onAgregar: (dia: number) => void;
   onEditar: (bloque: Bloque) => void;
+  onAsistencia: (bloque: Bloque) => void;
 };
 
 type Elemento =
@@ -30,7 +31,7 @@ function diaInicial(): number {
   return hoy >= 1 && hoy <= 6 ? hoy : 1;
 }
 
-export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, onEditar }: Props) {
+export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, onEditar, onAsistencia }: Props) {
   const reducir = useReducedMotion();
   const [dia, setDia] = useState(diaInicial);
 
@@ -129,10 +130,10 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
             >
               {elementos.map((el) =>
                 el.tipo === "clase" ? (
-                  <motion.li key={`c${el.bloque.id}`} variants={item}>
+                  <motion.li key={`c${el.bloque.id}`} variants={item} className={estilos.fila}>
                     <button
                       type="button"
-                      className={estilos.clase}
+                      className={[estilos.clase, enChoque(el.bloque) ? estilos.choque : "", el.bloque.asiste ? "" : estilos.ausente].filter(Boolean).join(" ")}
                       style={{ ["--acento" as string]: colorDe(el.bloque.materia).borde }}
                       onClick={() => onEditar(el.bloque)}
                       aria-label={`Editar ${el.bloque.materia}, de ${hhmm(el.bloque.horaInicio)} a ${hhmm(el.bloque.horaFin)}`}
@@ -144,8 +145,16 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
                       <span className={estilos.datosClase}>
                         <strong>{el.bloque.materia}</strong>
                         {el.bloque.aula && <span>{el.bloque.aula}</span>}
+                        {enChoque(el.bloque) && <span className={estilos.etiquetaChoque}>Coincide con otra clase</span>}
+                        {!el.bloque.asiste && <span className={estilos.etiquetaAusente}>No asisto</span>}
                       </span>
                     </button>
+                    {(el.bloque.coincide.length > 0 || !el.bloque.asiste) && (
+                      <label className={estilos.asisto}>
+                        <input type="checkbox" checked={el.bloque.asiste} onChange={() => onAsistencia(el.bloque)} />
+                        <span>Asisto</span>
+                      </label>
+                    )}
                   </motion.li>
                 ) : (
                   <motion.li key={`p${el.puente.id}`} className={estilos.puente} variants={item}>

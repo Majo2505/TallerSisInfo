@@ -20,6 +20,15 @@ public class LugarConfiguration : IEntityTypeConfiguration<Lugar>
         builder.Property(l => l.Longitud).HasColumnName("longitud").HasPrecision(9, 6);
         builder.Property(l => l.DuracionEstimadaMin).HasColumnName("duracion_estimada_min");
         builder.Property(l => l.Estado).HasColumnName("estado").HasMaxLength(15).IsRequired();
+        builder.Property(l => l.TipoLugar).HasColumnName("tipo_lugar").HasMaxLength(30);
+        builder.Property(l => l.Modalidad).HasColumnName("modalidad").HasMaxLength(40);
+        builder.Property(l => l.NivelEnergia).HasColumnName("nivel_energia").HasMaxLength(40);
+        builder.Property(l => l.DuracionMin).HasColumnName("duracion_min");
+        builder.Property(l => l.DuracionMax).HasColumnName("duracion_max");
+        builder.Property(l => l.ActividadesSugeridas).HasColumnName("actividades_sugeridas");
+        builder.Property(l => l.MinAPieDesdeBloqueA).HasColumnName("min_a_pie_desde_bloque_a");
+        builder.Property(l => l.Recomendable).HasColumnName("recomendable");
+        builder.Property(l => l.Validado).HasColumnName("validado");
 
         builder.HasOne(l => l.Categoria).WithMany().HasForeignKey(l => l.CategoriaId);
     }

@@ -5,7 +5,21 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCalendario, IconoCheck, IconoMas } from "@/components/app/Iconos";
 import { Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
-import { Bloque, BloqueInput, crearBloque, editarBloque, eliminarBloque, listarHorario } from "@/lib/horario";
+import { Selector, SelectorHora } from "@/components/app/Selectores";
+import {
+  Bloque,
+  BloqueInput,
+  HORA_MAXIMA,
+  HORA_MINIMA,
+  cambiarAsistencia,
+  columnasPorSolape,
+  crearBloque,
+  editarBloque,
+  eliminarBloque,
+  enChoque,
+  listarHorario,
+  minutosOcupados,
+} from "@/lib/horario";
 import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import ResumenSemanal from "@/components/horario/ResumenSemanal";
@@ -22,6 +36,8 @@ const aMin = (h: string) => {
   return a * 60 + b;
 };
 const pad = (n: number) => String(n).padStart(2, "0");
+const aHora = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+const OPCIONES_DIA = [1, 2, 3, 4, 5, 6].map((d) => ({ valor: String(d), etiqueta: DIAS[d] }));
 
 // Colores de los bloques de clase (paleta UCB). Cada materia usa siempre el mismo color, según su nombre.
 const COLORES_BLOQUE = [
@@ -39,7 +55,7 @@ const colorBloque = (s: string) => {
 };
 
 type ModalState = { bloque?: Bloque; base?: Partial<BloqueInput> } | null;
-type ToastState = { texto: string; tipo: "ok" | "error" } | null;
+type ToastState = { texto: string; tipo: "ok" | "error" | "aviso" } | null;
 
 export default function HorarioPage() {
   const router = useRouter();
@@ -109,10 +125,16 @@ export default function HorarioPage() {
   }, [bloques]);
 
   const horas = Array.from({ length: hasta - desde }, (_, i) => desde + i);
-  const totalHoras = useMemo(
-    () => bloques.reduce((acc, b) => acc + (aMin(b.horaFin) - aMin(b.horaInicio)) / 60, 0),
-    [bloques]
-  );
+  const totalHoras = useMemo(() => minutosOcupados(bloques) / 60, [bloques]);
+  const clasesAsistidas = useMemo(() => bloques.filter((b) => b.asiste).length, [bloques]);
+  const columnasPorDia = useMemo(() => {
+    const mapa = new Map<number, { columna: number; columnas: number }>();
+    for (let d = 1; d <= 6; d++) {
+      const delDia = bloques.filter((b) => b.diaSemana === d);
+      columnasPorSolape(delDia).forEach((v, k) => mapa.set(k, v));
+    }
+    return mapa;
+  }, [bloques]);
 
   const tiempoLibreMin = useMemo(() => puentes.reduce((acc, p) => acc + duracionMin(p), 0), [puentes]);
 
@@ -123,14 +145,25 @@ export default function HorarioPage() {
   const clickEnColumna = (e: React.MouseEvent<HTMLDivElement>, dia: number) => {
     if (e.target !== e.currentTarget) return;
     const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
-    const h = Math.min(desde + Math.floor(y / PX_HORA), 22);
-    setModal({ base: { diaSemana: dia, horaInicio: `${pad(h)}:00`, horaFin: `${pad(h + 1)}:00` } });
+    // La hora tocada, ajustada al horario de clases (07:15 a 21:00) con una clase de 1 hora.
+    const inicio = Math.min(Math.max((desde + Math.floor(y / PX_HORA)) * 60, aMin(HORA_MINIMA)), aMin(HORA_MAXIMA) - 60);
+    setModal({ base: { diaSemana: dia, horaInicio: aHora(inicio), horaFin: aHora(inicio + 60) } });
   };
 
-  const alGuardar = (texto: string) => {
+  const alGuardar = (texto: string, aviso?: string) => {
     setModal(null);
-    setToast({ texto, tipo: "ok" });
+    setToast(aviso ? { texto: `${texto}. ${aviso}`, tipo: "aviso" } : { texto, tipo: "ok" });
     cargar();
+  };
+
+  const alternarAsistencia = async (b: Bloque) => {
+    try {
+      await cambiarAsistencia(b.id, !b.asiste);
+      setToast({ texto: b.asiste ? `Ya no cuentas «${b.materia}» como ocupada` : `Asistes a «${b.materia}»`, tipo: "ok" });
+      cargar();
+    } catch (e) {
+      setToast({ texto: (e as Error).message, tipo: "error" });
+    }
   };
 
   if (!listo || !sesion) {
@@ -173,8 +206,8 @@ export default function HorarioPage() {
         </div>
         <dl className="hz-cifras">
           <div className="hz-cifra">
-            <dt>{bloques.length === 1 ? "clase" : "clases"}</dt>
-            <dd><Odometro valor={bloques.length} /></dd>
+            <dt>{clasesAsistidas === 1 ? "clase" : "clases"}</dt>
+            <dd><Odometro valor={clasesAsistidas} /></dd>
           </div>
           <div className="hz-cifra">
             <dt>{puentes.length === 1 ? "puente" : "puentes"}</dt>
@@ -216,6 +249,7 @@ export default function HorarioPage() {
                   bloques={bloques}
                   puentes={puentes}
                   colorDe={colorBloque}
+                  onAsistencia={(b) => void alternarAsistencia(b)}
                   onAgregar={(dia) => setModal({ base: { diaSemana: dia, horaInicio: "08:00", horaFin: "09:30" } })}
                   onEditar={(b) => setModal({ bloque: b })}
                 />
@@ -255,18 +289,24 @@ export default function HorarioPage() {
                         const top = ((aMin(b.horaInicio) - desde * 60) / 60) * PX_HORA;
                         const alto = ((aMin(b.horaFin) - aMin(b.horaInicio)) / 60) * PX_HORA;
                         const color = colorBloque(b.materia);
+                        const choca = enChoque(b);
+                        const { columna, columnas } = columnasPorDia.get(b.id) ?? { columna: 0, columnas: 1 };
+                        const clases = ["hz-bloque", choca ? "hz-bloque-choque" : "", b.asiste ? "" : "hz-bloque-ausente"].filter(Boolean).join(" ");
                         return (
                           <motion.button
                             key={b.id}
-                            className="hz-bloque"
+                            className={clases}
                             style={{
                               top, height: alto - 2,
+                              left: `calc(4px + (100% - 8px) * ${columna} / ${columnas})`,
+                              right: "auto",
+                              width: `calc((100% - 8px) / ${columnas} - 2px)`,
                               background: color.fondo,
                               color: color.texto,
                               ["--acento" as string]: color.borde,
                             }}
                             onClick={() => setModal({ bloque: b })}
-                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${hhmm(b.horaInicio)} a ${hhmm(b.horaFin)}`}
+                            aria-label={`Editar ${b.materia}, ${DIAS[b.diaSemana]} de ${hhmm(b.horaInicio)} a ${hhmm(b.horaFin)}${choca ? ", coincide con otra clase" : ""}${b.asiste ? "" : ", no asistes"}`}
                             initial={reducir ? false : { opacity: 0, scale: 0.92, y: 8 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.45, ease: SALIDA, delay: 0.05 * d + 0.06 * i }}
@@ -275,6 +315,8 @@ export default function HorarioPage() {
                           >
                             <strong>{b.materia}</strong>
                             <span>{hhmm(b.horaInicio)}–{hhmm(b.horaFin)}</span>
+                            {choca && <span className="hz-etiqueta-choque">Coincide</span>}
+                            {!b.asiste && <span className="hz-etiqueta-ausente">No asisto</span>}
                             {b.aula && alto > 100 && <span>{b.aula}</span>}
                           </motion.button>
                         );
@@ -290,7 +332,7 @@ export default function HorarioPage() {
 
         <aside className="hz-lateral" aria-label="Puentes y resumen semanal">
           <PuentesDetectados puentes={puentes} cargando={cargando} error={errorPuentes} onReintentar={cargar} />
-          <ResumenSemanal clases={bloques.length} puentes={puentes.length} tiempoLibreMin={tiempoLibreMin} cargando={cargando} />
+          <ResumenSemanal bloques={bloques} puentes={puentes} cargando={cargando} />
         </aside>
       </div>
 
@@ -305,6 +347,7 @@ export default function HorarioPage() {
               setToast({ texto: n === 1 ? "1 clase agregada desde la foto" : `${n} clases agregadas desde la foto`, tipo: "ok" });
               cargar();
             }}
+            onActualizado={cargar}
           />
         )}
       </AnimatePresence>
@@ -335,7 +378,7 @@ type Errores = Partial<Record<"materia" | "horaInicio" | "horaFin", string>>;
 function BloqueModal({ estado, onClose, onSaved }: {
   estado: NonNullable<ModalState>;
   onClose: () => void;
-  onSaved: (msg: string) => void;
+  onSaved: (msg: string, aviso?: string) => void;
 }) {
   const reducir = useReducedMotion();
   const editando = estado.bloque;
@@ -345,6 +388,8 @@ function BloqueModal({ estado, onClose, onSaved }: {
     horaInicio: editando?.horaInicio ?? estado.base?.horaInicio ?? "",
     horaFin: editando?.horaFin ?? estado.base?.horaFin ?? "",
     aula: editando?.aula ?? "",
+    asiste: editando?.asiste ?? true,
+    autorizacionCarrera: editando?.autorizacionCarrera ?? false,
   });
   const [errores, setErrores] = useState<Errores>({});
   const [errorServidor, setErrorServidor] = useState("");
@@ -362,15 +407,16 @@ function BloqueModal({ estado, onClose, onSaved }: {
     setErrorServidor("");
   };
 
-  // Validación de formato en el cliente (las reglas reales, incluido el solapamiento, las aplica el backend).
+  // Validación de formato en el cliente (las reglas reales las aplica el backend; un choque con otra clase no impide guardar, solo avisa).
   const validar = (): Errores => {
     const e: Errores = {};
     if (!form.materia.trim()) e.materia = "Escribe el nombre de la materia.";
     else if (form.materia.trim().length > 100) e.materia = "Máximo 100 caracteres.";
     if (!form.horaInicio) e.horaInicio = "Indica la hora de inicio.";
+    else if (form.horaInicio < HORA_MINIMA) e.horaInicio = "Las clases empiezan desde las 07:15.";
     if (!form.horaFin) e.horaFin = "Indica la hora de fin.";
-    if (form.horaInicio && form.horaFin && form.horaFin <= form.horaInicio)
-      e.horaFin = "Tiene que ser posterior a la hora de inicio.";
+    else if (form.horaFin > HORA_MAXIMA) e.horaFin = "Las clases terminan, como muy tarde, a las 21:00.";
+    else if (form.horaInicio && form.horaFin <= form.horaInicio) e.horaFin = "Tiene que ser posterior a la hora de inicio.";
     return e;
   };
 
@@ -383,11 +429,13 @@ function BloqueModal({ estado, onClose, onSaved }: {
     setErrorServidor("");
     try {
       const datos = { ...form, materia: form.materia.trim(), aula: form.aula?.trim() || null };
-      if (editando) await editarBloque(editando.id, datos);
-      else await crearBloque(datos);
-      onSaved(editando ? "Clase actualizada" : "Clase agregada");
+      const guardado = editando ? await editarBloque(editando.id, datos) : await crearBloque(datos);
+      const aviso = guardado.advertencias.length > 0
+        ? `${guardado.advertencias[0]} Marca a cuál asistes con la casilla «Asisto».`
+        : undefined;
+      onSaved(editando ? "Clase actualizada" : "Clase agregada", aviso);
     } catch (err) {
-      setErrorServidor((err as Error).message); // incluye el mensaje de solapamiento
+      setErrorServidor((err as Error).message);
       setGuardando(false);
     }
   };
@@ -444,33 +492,78 @@ function BloqueModal({ estado, onClose, onSaved }: {
           {errores.materia && <small className="hz-err">{errores.materia}</small>}
         </label>
 
-        <label className="hz-campo">
-          <span>Día</span>
-          <select value={form.diaSemana} onChange={(e) => set("diaSemana", Number(e.target.value))}>
-            {[1, 2, 3, 4, 5, 6].map((d) => <option key={d} value={d}>{DIAS[d]}</option>)}
-          </select>
-        </label>
+        <div className="hz-campo">
+          <span id="hz-dia">Día</span>
+          <Selector
+            valor={String(form.diaSemana)}
+            opciones={OPCIONES_DIA}
+            onCambio={(v) => set("diaSemana", Number(v))}
+            etiqueta="Día"
+          />
+        </div>
 
         <div className="hz-fila">
-          <label className="hz-campo">
+          <div className="hz-campo">
             <span>Inicio</span>
-            <input type="time" value={form.horaInicio} aria-invalid={!!errores.horaInicio}
-              onChange={(e) => set("horaInicio", e.target.value)} />
+            <SelectorHora
+              valor={form.horaInicio}
+              min={HORA_MINIMA}
+              // Tiene que quedar al menos 5 minutos de clase antes de las 21:00.
+              max={aHora(aMin(HORA_MAXIMA) - 5)}
+              etiqueta="Hora de inicio"
+              invalido={!!errores.horaInicio}
+              onCambio={(v) => {
+                set("horaInicio", v);
+                if (errores.horaInicio) setErrores((x) => ({ ...x, horaInicio: undefined }));
+              }}
+            />
             {errores.horaInicio && <small className="hz-err">{errores.horaInicio}</small>}
-          </label>
-          <label className="hz-campo">
+          </div>
+          <div className="hz-campo">
             <span>Fin</span>
-            <input type="time" value={form.horaFin} aria-invalid={!!errores.horaFin}
-              onChange={(e) => set("horaFin", e.target.value)} />
+            <SelectorHora
+              valor={form.horaFin}
+              min={form.horaInicio ? aHora(aMin(form.horaInicio) + 5) : aHora(aMin(HORA_MINIMA) + 5)}
+              max={HORA_MAXIMA}
+              etiqueta="Hora de fin"
+              invalido={!!errores.horaFin}
+              onCambio={(v) => {
+                set("horaFin", v);
+                if (errores.horaFin) setErrores((x) => ({ ...x, horaFin: undefined }));
+              }}
+            />
             {errores.horaFin && <small className="hz-err">{errores.horaFin}</small>}
-          </label>
+          </div>
         </div>
+        <p className="hz-nota">Las clases de la UCB van de 07:15 a 21:00.</p>
 
         <label className="hz-campo">
           <span>Aula <em>(opcional)</em></span>
           <input value={form.aula ?? ""} maxLength={30} placeholder="Ej: Bloque B – 204"
             onChange={(e) => set("aula", e.target.value)} />
         </label>
+
+        <label className="hz-check">
+          <input type="checkbox" checked={form.asiste ?? true} onChange={(e) => set("asiste", e.target.checked)} />
+          <span>Asisto a esta clase</span>
+        </label>
+
+        {editando && form.asiste && editando.coincide.some((c) => c.asiste) && (
+          <div className="hz-aviso" role="status">
+            <p>
+              Coincide con {editando.coincide.filter((c) => c.asiste).map((c) => `«${c.materia}» (${hhmm(c.horaInicio)}–${hhmm(c.horaFin)})`).join(", ")}.
+              Si no asistes a una de las dos, desmarca «Asisto» en esa clase.
+            </p>
+            <label className="hz-check">
+              <input
+                type="checkbox"
+                checked={form.autorizacionCarrera ?? false}
+                onChange={(e) => set("autorizacionCarrera", e.target.checked)}
+              />
+              <span>Tengo autorización de mi carrera para cursarlas a la misma hora</span>
+            </label>
+          </div>
+        )}
 
         {errorServidor && <div className="hz-banner" role="alert">{errorServidor}</div>}
 

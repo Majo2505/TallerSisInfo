@@ -271,8 +271,7 @@
   opacity: 0.45;
 }
 
-.fila input,
-.fila select {
+.fila input {
   box-sizing: border-box;
   width: 100%;
   min-height: 44px;
@@ -285,8 +284,7 @@
   font-size: 1rem;
 }
 
-.fila input:focus,
-.fila select:focus {
+.fila input:focus {
   outline: none;
   border-color: var(--ucb-celeste);
   box-shadow: 0 0 0 3px rgba(47, 127, 209, 0.16);
@@ -310,7 +308,7 @@
   font-weight: 700;
 }
 
-.fila select {
+.dia {
   grid-column: 2 / -1;
 }
 
@@ -377,7 +375,7 @@
   }
   .materia,
   .aula,
-  .fila select {
+  .dia {
     grid-column: auto;
   }
 }
@@ -387,4 +385,61 @@
   .velo {
     animation: none;
   }
+}
+
+/* Paso «¿a cuáles asistes?»: clases que coinciden */
+.grupo {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--ucb-amarillo);
+  border-radius: 16px;
+  background: var(--ucb-amarillo-suave);
+  min-width: 0;
+}
+
+.grupoTitulo {
+  padding: 0 4px;
+  color: var(--ucb-amarillo-oscuro);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.opcion input,
+.autorizo input {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--ucb-marino);
+}
+
+.opcion small {
+  display: block;
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.autorizo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--texto-suave);
+  font-size: 0.92rem;
+  line-height: 1.4;
+  cursor: pointer;
 }

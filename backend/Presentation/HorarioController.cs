@@ -58,7 +58,7 @@ public class HorarioController : ControllerBase
     /// <response code="201">Bloque creado. Devuelve el bloque con su <c>id</c> y las horas en <c>HH:mm:ss</c>.</response>
     /// <response code="400">Datos inválidos (<c>codigo</c> = <c>VALIDACION</c>), o cuerpo mal formado / con campos faltantes (en ese caso la respuesta es un <c>ProblemDetails</c> estándar de ASP.NET).</response>
     /// <response code="401">Falta el token, es inválido o está vencido.</response>
-    /// <response code="409">Se solapa con otro bloque del mismo día (<c>codigo</c> = <c>SOLAPAMIENTO</c>); el mensaje indica con cuál.</response>
+    /// <response code="409">Ya existe la misma materia a esa hora ese día (<c>codigo</c> = <c>DUPLICADO</c>).</response>
     [HttpPost]
     [ProducesResponseType(typeof(HorarioDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
@@ -81,7 +81,7 @@ public class HorarioController : ControllerBase
     /// <response code="400">Datos inválidos (<c>codigo</c> = <c>VALIDACION</c>).</response>
     /// <response code="401">Falta el token, es inválido o está vencido.</response>
     /// <response code="404">El bloque no existe o no pertenece al usuario (<c>codigo</c> = <c>NO_ENCONTRADO</c>).</response>
-    /// <response code="409">Se solapa con otro bloque del mismo día (<c>codigo</c> = <c>SOLAPAMIENTO</c>).</response>
+    /// <response code="409">Ya existe la misma materia a esa hora ese día (<c>codigo</c> = <c>DUPLICADO</c>).</response>
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(HorarioDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
@@ -107,6 +107,38 @@ public class HorarioController : ControllerBase
     public Task<IActionResult> Eliminar(int id, CancellationToken ct)
         => Ejecutar(async () => { await _service.EliminarAsync(UsuarioId, id, ct); return NoContent(); });
 
+    /// <summary>Marca si el estudiante asiste a un bloque.</summary>
+    /// <remarks>
+    /// Un bloque con <c>asiste</c> = <c>false</c> no cuenta como tiempo ocupado ni choca con otros.
+    /// Efecto secundario: se recalculan automáticamente los puentes del usuario.
+    /// </remarks>
+    /// <param name="id" example="12">Identificador del bloque.</param>
+    /// <param name="req">Si asiste o no.</param>
+    /// <response code="200">Bloque actualizado.</response>
+    /// <response code="401">Falta el token, es inválido o está vencido.</response>
+    /// <response code="404">El bloque no existe o no pertenece al usuario (<c>codigo</c> = <c>NO_ENCONTRADO</c>).</response>
+    [HttpPatch("{id:int}/asistencia")]
+    [ProducesResponseType(typeof(HorarioDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public Task<IActionResult> CambiarAsistencia(int id, CambiarAsistenciaRequest req, CancellationToken ct)
+        => Ejecutar(async () => Ok(await _service.CambiarAsistenciaAsync(UsuarioId, id, req.Asiste, req.AutorizacionCarrera, ct)));
+
+    /// <summary>Marca la asistencia de varios bloques de una vez (el paso «¿a cuáles asistes?» tras importar la foto).</summary>
+    /// <remarks>Hasta 40 bloques. Si alguno no existe o es de otro usuario no se cambia ninguno (404).</remarks>
+    /// <param name="req">Bloques y si asiste a cada uno.</param>
+    /// <response code="200">Bloques actualizados, con sus coincidencias.</response>
+    /// <response code="400">La lista está vacía o tiene más de 40 bloques (<c>codigo</c> = <c>VALIDACION</c>).</response>
+    /// <response code="401">Falta el token, es inválido o está vencido.</response>
+    /// <response code="404">Algún bloque no existe o no pertenece al usuario (<c>codigo</c> = <c>NO_ENCONTRADO</c>).</response>
+    [HttpPatch("asistencia")]
+    [ProducesResponseType(typeof(List<HorarioDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public Task<IActionResult> CambiarAsistencias(CambiarAsistenciasRequest req, CancellationToken ct)
+        => Ejecutar(async () => Ok(await _service.CambiarAsistenciasAsync(UsuarioId, req.Bloques, ct)));
+
     private async Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion)
     {
         try { return await accion(); }
@@ -115,7 +147,7 @@ public class HorarioController : ControllerBase
             var body = new ErrorNegocioDto(ex.Codigo, ex.Message);
             return ex.Codigo switch
             {
-                "SOLAPAMIENTO" => Conflict(body),
+                "DUPLICADO" => Conflict(body),
                 "NO_ENCONTRADO" => NotFound(body),
                 _ => BadRequest(body)
             };

@@ -39,7 +39,9 @@ public class PuenteService
     }
 
     /// <summary>
-    /// Recorre las clases de cada día y arma un puente por cada hueco que cumple la regla.
+    /// Arma un puente por cada hueco que cumple la regla entre los tramos ocupados de un mismo día.
+    /// Solo cuentan los bloques a los que el estudiante asiste, y el tiempo ocupado es la UNIÓN de sus intervalos:
+    /// si dos clases coinciden (o una contiene a otra) no se generan huecos negativos ni repetidos.
     /// Solo cuentan huecos ENTRE clases del mismo día (antes de la primera y después de la última no).
     /// Es estática y no toca la base de datos, así que se puede probar sola.
     /// </summary>
@@ -47,28 +49,21 @@ public class PuenteService
     {
         var puentes = new List<Puente>();
 
-        foreach (var dia in bloques.GroupBy(b => b.DiaSemana))
+        foreach (var dia in bloques.Where(b => b.Asiste).GroupBy(b => b.DiaSemana))
         {
-            var ordenados = dia.OrderBy(b => b.HoraInicio).ThenBy(b => b.HoraFin).ToList();
+            var ocupado = ReglasHorario.UnirIntervalos(dia.Select(b => new ReglasHorario.Intervalo(b.HoraInicio, b.HoraFin)));
 
-            // Se compara contra el fin MÁS TARDÍO visto hasta ahora (no solo contra la clase anterior),
-            // para no inventar un hueco si hubiera datos solapados.
-            var finMasTardio = ordenados[0].HoraFin;
-
-            foreach (var actual in ordenados.Skip(1))
+            for (var i = 1; i < ocupado.Count; i++)
             {
-                if (ReglasPuente.EsPuente(finMasTardio, actual.HoraInicio))
-                {
-                    puentes.Add(new Puente
-                    {
-                        UsuarioId = usuarioId,
-                        DiaSemana = (short)dia.Key,
-                        HoraInicio = finMasTardio,
-                        HoraFin = actual.HoraInicio
-                    });
-                }
+                if (!ReglasPuente.EsPuente(ocupado[i - 1].Fin, ocupado[i].Inicio)) continue;
 
-                if (actual.HoraFin > finMasTardio) finMasTardio = actual.HoraFin;
+                puentes.Add(new Puente
+                {
+                    UsuarioId = usuarioId,
+                    DiaSemana = (short)dia.Key,
+                    HoraInicio = ocupado[i - 1].Fin,
+                    HoraFin = ocupado[i].Inicio
+                });
             }
         }
 

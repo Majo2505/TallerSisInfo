@@ -10,6 +10,7 @@ export type Recomendacion = {
   tiempoTrasladoMin: number; // ida y vuelta
   duracionEstimadaMin: number;
   explicacion: string;
+  feedback: "LIKE" | "DISLIKE" | null;
 };
 
 export type RespuestaRecomendacion = {
@@ -44,3 +45,13 @@ export const pedirRecomendaciones = (puenteId: number, entrada?: string) =>
     method: "POST",
     body: JSON.stringify({ puenteId, entrada }),
   }).then(soloConMetricas);
+
+/** HU9: una sola valoración por recomendación; votar de nuevo reemplaza la anterior. */
+export type Valoracion = "LIKE" | "DISLIKE";
+export type FeedbackGuardado = { recomendacionId: number; feedback: Valoracion; fechaFeedback: string };
+
+export const guardarFeedback = (id: number, feedback: Valoracion) =>
+  pedirApi<FeedbackGuardado>(`/api/recomendaciones/${id}/feedback`, {
+    method: "PATCH",
+    body: JSON.stringify({ feedback }),
+  });

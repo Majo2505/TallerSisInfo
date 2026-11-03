@@ -10,6 +10,11 @@ namespace Breaku.Application.Lugares;
 /// <param name="DistanciaM" example="120">Distancia en línea recta desde el campus, en metros.</param>
 /// <param name="TiempoTrasladoMin" example="3">Minutos de traslado caminando, de ida y vuelta.</param>
 /// <param name="DuracionEstimadaMin" example="45">Minutos que lleva la actividad en el lugar.</param>
+/// <param name="Validado" example="false"><c>false</c> si el equipo todavía no revisó los datos del lugar: la app lo muestra como «por validar».</param>
+/// <param name="TipoLugar" example="comida">Tipo de lugar según el relevamiento; <c>null</c> si no se cargó.</param>
+/// <param name="Modalidad" example="[&quot;solitario&quot;,&quot;grupal&quot;]">Modalidades del lugar; vacía si no se cargó.</param>
+/// <param name="NivelEnergia" example="[&quot;bajo&quot;,&quot;medio&quot;]">Niveles de energía que pide el lugar; vacía si no se cargó.</param>
+/// <param name="ActividadesSugeridas" example="[&quot;estudiar&quot;,&quot;leer&quot;]">Actividades que se pueden hacer; vacía si no se cargó.</param>
 public record LugarViableDto(
     int LugarId,
     string Nombre,
@@ -17,7 +22,12 @@ public record LugarViableDto(
     string? Descripcion,
     int DistanciaM,
     int TiempoTrasladoMin,
-    int DuracionEstimadaMin);
+    int DuracionEstimadaMin,
+    bool Validado,
+    string? TipoLugar,
+    List<string> Modalidad,
+    List<string> NivelEnergia,
+    List<string> ActividadesSugeridas);
 
 /// <summary>Resultado de buscar lugares viables para un puente.</summary>
 /// <param name="Estado"><c>OK</c> (hay lugares), <c>SIN_RESULTADOS</c> (ninguno cumple) o <c>SIN_ZONA</c> (falta elegir el campus).</param>

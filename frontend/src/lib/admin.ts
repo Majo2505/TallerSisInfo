@@ -21,6 +21,9 @@ export type LugarAdmin = {
   horaApertura: string | null;
   horaCierre: string | null;
   vecesRecomendado: number;
+  validado: boolean; // false: datos del relevamiento que el equipo todavía no revisó
+  recomendable: boolean; // false: punto de referencia, nunca se recomienda
+  tipoLugar: string | null;
 };
 
 export type ReporteAdmin = {
@@ -53,7 +56,9 @@ export type MetricasAdmin = {
   rechazadas: number;
   errores: number;
   latenciaPromedioMs: number | null;
-  masRecomendados: { nombre: string; categoria: string; veces: number }[];
+  masRecomendados: { nombre: string; categoria: string; veces: number; meGusta: number; noMeSirve: number }[];
+  meGusta: number; // HU9: valoraciones de la semana
+  noMeSirve: number;
 };
 
 export const obtenerResumen = () => pedirApi<ResumenAdmin>("/api/admin/resumen");

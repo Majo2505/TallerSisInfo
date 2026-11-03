@@ -28,6 +28,7 @@ public record RespuestaRecomendacionDto(
 /// <param name="TiempoTrasladoMin" example="6">Tiempo de traslado de ida y vuelta, en minutos.</param>
 /// <param name="DuracionEstimadaMin" example="30">Tiempo estimado de la actividad en el lugar, en minutos.</param>
 /// <param name="Explicacion" example="Ideal para repasar en silencio antes de tu próxima clase.">Por qué encaja, redactado por el asistente.</param>
+/// <param name="Feedback" example="LIKE">Valoración del estudiante: <c>LIKE</c>, <c>DISLIKE</c> o <c>null</c> si aún no valoró.</param>
 public record RecomendacionDto(
     long Id,
     int LugarId,
@@ -36,5 +37,16 @@ public record RecomendacionDto(
     int DistanciaM,
     int TiempoTrasladoMin,
     int DuracionEstimadaMin,
-    string Explicacion
+    string Explicacion,
+    string? Feedback = null
 );
+
+/// <summary>Valoración de una recomendación (HU9).</summary>
+/// <param name="Feedback" example="LIKE">Obligatorio: <c>LIKE</c> (me gusta) o <c>DISLIKE</c> (no me sirve). No distingue mayúsculas.</param>
+public record FeedbackRecomendacionDto(string? Feedback);
+
+/// <summary>Valoración guardada. Si ya existía otra, la reemplaza: hay una sola por recomendación.</summary>
+/// <param name="RecomendacionId" example="42">La recomendación valorada.</param>
+/// <param name="Feedback" example="LIKE"><c>LIKE</c> o <c>DISLIKE</c>.</param>
+/// <param name="FechaFeedback" example="2026-10-31T14:00:04.512Z">Cuándo se registró el voto vigente (UTC).</param>
+public record FeedbackGuardadoDto(long RecomendacionId, string Feedback, DateTime FechaFeedback);

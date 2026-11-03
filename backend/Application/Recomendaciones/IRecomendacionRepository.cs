@@ -10,4 +10,8 @@ public interface IRecomendacionRepository
     /// Al volver, <c>log.Id</c> y el <c>Id</c> de cada recomendación ya están asignados.
     /// </summary>
     Task GuardarAsync(LogAuditoriaRag log, IReadOnlyList<Recomendacion> recomendaciones, CancellationToken ct = default);
+
+    Task<Recomendacion?> ObtenerDeUsuarioAsync(long recomendacionId, int usuarioId, CancellationToken ct = default);
+
+    Task GuardarFeedbackAsync(Recomendacion recomendacion, string feedback, CancellationToken ct = default);
 }

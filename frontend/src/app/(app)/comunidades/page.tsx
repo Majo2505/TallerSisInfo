@@ -6,17 +6,18 @@ import { useState } from "react";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoPin, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD } from "@/lib/comunidades";
 import { iniciales } from "@/lib/iniciales";
 import estilos from "./comunidades.module.css";
 
-type Pestana = "crear" | "descubrir";
+type Pestana = "libres" | "crear" | "descubrir";
 type Envio = "nada" | "buscando" | "listo";
 
 export default function Comunidades() {
   const reducir = useReducedMotion();
-  const [pestana, setPestana] = useState<Pestana>("crear");
+  const [pestana, setPestana] = useState<Pestana>("libres");
   const [texto, setTexto] = useState("");
   const [envio, setEnvio] = useState<Envio>("nada");
   const [unido, setUnido] = useState<Set<number>>(new Set());
@@ -76,6 +77,7 @@ export default function Comunidades() {
         <div className={estilos.pestanas} role="tablist" aria-label="Comunidades">
           {(
             [
+              ["libres", "Libres contigo"],
               ["crear", "Crear"],
               ["descubrir", "Descubrir"],
             ] as const
@@ -112,7 +114,9 @@ export default function Comunidades() {
             exit={reducir ? undefined : { opacity: 0, y: -8, filter: "blur(4px)" }}
             transition={{ duration: 0.25, ease: SALIDA }}
           >
-            {pestana === "crear" ? (
+            {pestana === "libres" ? (
+              <CompanerosLibres />
+            ) : pestana === "crear" ? (
               <section className={estilos.crear} aria-labelledby="crear-titulo">
                 <span className={estilos.chip}>Solicitud libre</span>
                 <h2 id="crear-titulo" className={estilos.subtitulo}>
@@ -273,9 +277,11 @@ export default function Comunidades() {
         </AnimatePresence>
       </Pieza>
 
-      <Pieza>
-        <p className={estilos.aviso}>Vista previa con comunidades de ejemplo; la creación real de grupos llega con su historia de usuario.</p>
-      </Pieza>
+      {pestana !== "libres" && (
+        <Pieza>
+          <p className={estilos.aviso}>Vista previa con comunidades de ejemplo; la creación real de grupos llega con su historia de usuario.</p>
+        </Pieza>
+      )}
     </Entrada>
   );
 }

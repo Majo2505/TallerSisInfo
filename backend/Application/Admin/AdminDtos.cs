@@ -19,7 +19,10 @@ public record LugarAdminDto(
     int DuracionEstimadaMin,
     string? HoraApertura,
     string? HoraCierre,
-    int VecesRecomendado
+    int VecesRecomendado,
+    bool Validado = true,
+    bool Recomendable = true,
+    string? TipoLugar = null
 );
 
 /// <summary>Nuevo estado de un lugar: <c>ACTIVO</c>, <c>EN_REVISION</c> o <c>INACTIVO</c>.</summary>
@@ -51,6 +54,8 @@ public record ConsultaRagAdminDto(
 );
 
 /// <summary>Métricas del asistente en los últimos 7 días.</summary>
+/// <param name="MeGusta">Valoraciones «me gusta» (HU9) registradas en los últimos 7 días.</param>
+/// <param name="NoMeSirve">Valoraciones «no me sirve» (HU9) registradas en los últimos 7 días.</param>
 public record MetricasAdminDto(
     int ConsultasTotales,
     int Ok,
@@ -58,7 +63,10 @@ public record MetricasAdminDto(
     int Rechazadas,
     int Errores,
     int? LatenciaPromedioMs,
-    List<LugarTopDto> MasRecomendados
+    List<LugarTopDto> MasRecomendados,
+    int MeGusta,
+    int NoMeSirve
 );
 
-public record LugarTopDto(string Nombre, string Categoria, int Veces);
+/// <summary>Lugar entre los más recomendados, con cómo lo valoraron los estudiantes (HU9).</summary>
+public record LugarTopDto(string Nombre, string Categoria, int Veces, int MeGusta, int NoMeSirve);
