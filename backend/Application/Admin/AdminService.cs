@@ -26,6 +26,18 @@ public class AdminService
         if (anterior is null) throw new ReglaNegocioException("NO_ENCONTRADO", "El lugar no existe.");
     }
 
+    public async Task CambiarValidacionLugarAsync(int lugarId, CambioValidacionLugarDto req, int adminId, CancellationToken ct = default)
+    {
+        if (req.Validado is not bool validado)
+            throw new ReglaNegocioException("VALIDACION", "Indica si el lugar está validado.");
+
+        var anterior = await _repo.CambiarValidacionLugarAsync(lugarId, validado, adminId, ct);
+        if (anterior is null) throw new ReglaNegocioException("NO_ENCONTRADO", "El lugar no existe.");
+    }
+
+    public async Task<ResultadoValidacionMasivaDto> ValidarPendientesAsync(int adminId, CancellationToken ct = default)
+        => new(await _repo.ValidarPendientesAsync(adminId, ct));
+
     public Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default) => _repo.ListarReportesAsync(ct);
 
     public async Task ResolverReporteAsync(int reporteId, ResolverReporteDto req, int adminId, CancellationToken ct = default)

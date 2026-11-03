@@ -53,6 +53,32 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpPatch("lugares/{id:int}/validacion")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CambiarValidacion(int id, CambioValidacionLugarDto req, CancellationToken ct)
+    {
+        try
+        {
+            await _service.CambiarValidacionLugarAsync(id, req, AdminId, ct);
+            return NoContent();
+        }
+        catch (ReglaNegocioException ex)
+        {
+            var body = new ErrorNegocioDto(ex.Codigo, ex.Message);
+            return ex.Codigo == "NO_ENCONTRADO" ? NotFound(body) : BadRequest(body);
+        }
+    }
+
+    [HttpPost("lugares/validar-pendientes")]
+    [ProducesResponseType(typeof(ResultadoValidacionMasivaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ValidarPendientes(CancellationToken ct) => Ok(await _service.ValidarPendientesAsync(AdminId, ct));
+
     [HttpGet("reportes")]
     [ProducesResponseType(typeof(List<ReporteAdminDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
