@@ -9,7 +9,8 @@ namespace Breaku.Api.Controllers;
 
 /// <summary>
 /// Comunidades efímeras. HU13: al crear una actividad (<c>POST /api/actividades</c>, HU10) se invita automáticamente a los
-/// compañeros libres a esa hora y se les avisa; aquí se puede volver a buscar.
+/// compañeros libres a esa hora y se les avisa; aquí se puede volver a buscar. Descubrir (adición a HU11) lista las
+/// comunidades activas de hoy.
 /// </summary>
 [ApiController]
 [Authorize]
@@ -19,12 +20,44 @@ namespace Breaku.Api.Controllers;
 public class ComunidadesController : ControllerBase
 {
     private readonly ComunidadService _service;
-    public ComunidadesController(ComunidadService service) => _service = service;
+    private readonly DescubrirComunidadesService _descubrir;
+
+    public ComunidadesController(ComunidadService service, DescubrirComunidadesService descubrir)
+    {
+        _service = service;
+        _descubrir = descubrir;
+    }
 
     // El usuario sale SIEMPRE del token: nadie invita a la actividad de otro.
     private int UsuarioId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
                   ?? throw new UnauthorizedAccessException());
+
+    /// <summary>Comunidades activas de hoy (Comunidades → Descubrir).</summary>
+    /// <remarks>
+    /// Las que todavía no terminaron y son de hoy (hora de Bolivia), de la más próxima a la más lejana, como máximo 50.
+    /// Siempre aparecen las que creaste y aquellas a las que te invitaron. Las de tus compañeros, solo si elegiste campus y
+    /// aceptaste aparecer en el matching (HU12): es el mismo consentimiento recíproco que usan las invitaciones de HU13
+    /// (<c>SIN_ZONA</c> o <c>NO_VISIBLE</c> explican por qué no ves las de los demás). De quien la creó solo se muestra el
+    /// nombre y la inicial del apellido. Es solo lectura: unirse o confirmar asistencia es de HU14.
+    /// </remarks>
+    /// <param name="ct">Cancelación de la petición.</param>
+    /// <response code="200">Las comunidades y el estado (<c>OK</c>, <c>SIN_RESULTADOS</c>, <c>SIN_ZONA</c> o <c>NO_VISIBLE</c>).</response>
+    /// <response code="401">Falta el token, es inválido o está vencido.</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(ResultadoDescubrirDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Listar(CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _descubrir.ListarAsync(UsuarioId, ct));
+        }
+        catch (ReglaNegocioException ex) when (ex.Codigo == "NO_ENCONTRADO")
+        {
+            return NotFound(new ErrorNegocioDto(ex.Codigo, ex.Message));
+        }
+    }
 
     /// <summary>Vuelve a buscar compañeros libres para tu actividad e invita a los que coincidan.</summary>
     /// <remarks>

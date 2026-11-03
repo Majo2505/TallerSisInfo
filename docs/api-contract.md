@@ -781,6 +781,48 @@ Vuelve a buscar con las mismas reglas (después de aceptar el matching, de elegi
 | 401 | Sin token o token inválido |
 | 404 | La actividad no existe o no es tuya (`NO_ENCONTRADO`) |
 
+## 7f-bis. Descubrir comunidades activas (adición a HU11 — responsable: Majo)
+
+Comunidades → **Descubrir** muestra las actividades reales de hoy, incluida la que el estudiante acaba de crear. **Es solo lectura:** unirse o confirmar asistencia (RSVP) es de HU14 (#22).
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Cuáles | `ACTIVA`, que todavía no terminaron y empiezan hoy (hasta la medianoche de Bolivia). De la más próxima a la más lejana, máximo 50 | ✅ Definido |
+| Siempre visibles | Las que creó el estudiante y aquellas en las que está en `participacion` (lo invitaron) | ✅ Definido |
+| De los demás | Solo si el estudiante eligió campus **y** aceptó el matching (HU12), y de creadores de su misma sede que también lo aceptaron: el mismo consentimiento recíproco que las invitaciones de HU13 | ✅ Definido |
+| Qué se muestra del creador | Nombre e inicial del apellido («Ana P.»), o «Tú». Sin ids ni correos | ✅ Definido |
+| `confirmados` | Personas `CONFIRMADO`, contando siempre a quien la creó | ✅ Definido |
+
+### `GET /api/comunidades`
+
+Respuesta **200**:
+
+```json
+{
+  "estado": "OK",
+  "mensaje": null,
+  "comunidades": [
+    { "id": 12, "actividad": "jugar cartas", "horaInicio": "16:00", "horaFin": "17:00", "maxParticipantes": 4,
+      "confirmados": 1, "creador": "Ana P.", "esMia": false, "miEstado": "PENDIENTE" }
+  ]
+}
+```
+
+| `estado` | Cuándo | `mensaje` |
+|---|---|---|
+| `OK` | Hay comunidades | `null` |
+| `SIN_RESULTADOS` | Campus y matching aceptado, pero hoy no hay ninguna | «Hoy todavía no hay comunidades activas en tu campus. ¡Crea la primera!» |
+| `SIN_ZONA` | No eligió campus (igual ve las suyas y aquellas a las que lo invitaron) | «Elige tu campus para ver las comunidades de tus compañeros.» |
+| `NO_VISIBLE` | No aceptó el matching (igual ve las suyas y aquellas a las que lo invitaron) | «Para ver las comunidades de tus compañeros, primero acepta que ellos también te encuentren.» |
+
+`miEstado`: `PENDIENTE`, `CONFIRMADO` o `RECHAZADO` si al estudiante lo invitaron; `null` si no está en ella o es suya.
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 401 | Sin token o token inválido |
+
 ## 7g. Protección contra prompt injection y solicitudes no permitidas (HU17 — Amira y Ariana; ajustes: Maite)
 
 Todo texto que llega al asistente o sale de él pasa por los guardrails (`ReglasSeguridadIa`). Lo que no pasa se rechaza

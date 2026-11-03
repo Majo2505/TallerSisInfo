@@ -565,42 +565,35 @@
   font-weight: 700;
 }
 
-.unirme,
-.unido {
+/* Descubrir: cómo está el estudiante respecto de la comunidad (unirse llega con HU14). */
+.estadoMio,
+.estadoComunidad {
   flex-shrink: 0;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 12px;
-  font: inherit;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
   font-weight: 800;
-  cursor: pointer;
 }
 
-.unirme {
-  border: 0;
-  background: var(--ucb-marino);
-  color: #ffffff;
-}
-
-.unido {
+.estadoMio {
   border: 1.5px solid #b9e6cb;
   background: #eef9f3;
   color: #17704a;
 }
 
+.estadoComunidad {
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  color: var(--ucb-marino);
+}
+
 .creador {
   color: var(--texto-tenue);
   font-size: 0.8rem;
-}
-
-.aviso {
-  margin: 0;
-  color: var(--texto-tenue);
-  font-size: 0.85rem;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -702,5 +695,51 @@
 
 .secundario:disabled {
   opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Descubrir (adición a HU11): estados de la lista de comunidades reales. */
+.descubrir {
+  display: grid;
+  gap: 14px;
+}
+
+.cargando {
+  margin: 0;
+  color: var(--texto-tenue);
+}
+
+.avisoDescubrir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.accionAviso,
+.reintentar {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid currentColor;
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.accionAviso:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }

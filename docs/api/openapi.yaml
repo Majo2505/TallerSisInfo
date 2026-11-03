@@ -52,7 +52,7 @@ tags:
   - name: Matching
     description: Compañeros de la misma sede con puente compatible (HU12). Requiere JWT. Solo aparece quien aceptó aparecer.
   - name: Comunidades
-    description: Comunidades efímeras (HU13). Requiere JWT. Al crear una actividad (HU10) se invita automáticamente a los compañeros libres a esa hora y se les avisa.
+    description: Comunidades efímeras (HU13). Requiere JWT. Al crear una actividad (HU10) se invita automáticamente a los compañeros libres a esa hora y se les avisa. Descubrir (adición a HU11) lista las activas de hoy.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -1360,6 +1360,32 @@ paths:
           description: Conexión a la base de datos correcta.
         '503':
           description: No se pudo conectar a la base de datos.
+  /api/comunidades:
+    get:
+      tags: [Comunidades]
+      operationId: listarComunidades
+      summary: Comunidades activas de hoy (Comunidades → Descubrir).
+      description: |
+        Las que todavía no terminaron y son de hoy (hora de Bolivia), de la más próxima a la más lejana, como máximo 50.
+        Siempre aparecen las que creaste y aquellas a las que te invitaron. Las de tus compañeros, solo si elegiste campus y
+        aceptaste el matching (HU12), con el mismo consentimiento recíproco que las invitaciones de HU13. Del creador solo se
+        muestra el nombre y la inicial del apellido. Solo lectura: unirse o confirmar asistencia es de HU14.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Las comunidades y el estado (`OK`, `SIN_RESULTADOS`, `SIN_ZONA` o `NO_VISIBLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoDescubrirDto'
+              example:
+                estado: OK
+                mensaje: null
+                comunidades:
+                  - { id: 12, actividad: jugar cartas, horaInicio: '16:00', horaFin: '17:00', maxParticipantes: 4, confirmados: 1, creador: Ana P., esMia: false, miEstado: PENDIENTE }
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
   /api/comunidades/{id}/invitaciones:
     post:
       tags: [Comunidades]
@@ -2256,6 +2282,28 @@ components:
         libreDesde: { type: string, example: '10:30', description: Desde cuándo comparte la actividad (`HH:mm`, hora de Bolivia). }
         libreHasta: { type: string, example: '11:30' }
         minutosEnComun: { type: integer, format: int32, example: 60 }
+    ComunidadDescubrirDto:
+      type: object
+      properties:
+        id: { type: integer, format: int32, example: 12 }
+        actividad: { type: string, example: jugar cartas }
+        horaInicio: { type: string, example: '16:00', description: Hora de inicio de hoy, hora de Bolivia (`HH:mm`). }
+        horaFin: { type: string, example: '17:00' }
+        maxParticipantes: { type: integer, format: int32, example: 4 }
+        confirmados: { type: integer, format: int32, example: 1, description: Personas que ya están dentro, contando a quien la creó. }
+        creador: { type: string, example: Ana P., description: Nombre e inicial del apellido, o «Tú». }
+        esMia: { type: boolean, example: false }
+        miEstado: { type: string, nullable: true, enum: [PENDIENTE, CONFIRMADO, RECHAZADO], description: Si al usuario lo invitaron. }
+    ResultadoDescubrirDto:
+      type: object
+      properties:
+        estado: { type: string, enum: [OK, SIN_RESULTADOS, SIN_ZONA, NO_VISIBLE] }
+        mensaje: { type: string, nullable: true, example: 'Hoy todavía no hay comunidades activas en tu campus. ¡Crea la primera!' }
+        comunidades:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ComunidadDescubrirDto'
     InvitacionDto:
       type: object
       description: HU13. Resultado de invitar automáticamente a una actividad.
