@@ -208,11 +208,11 @@ CREATE TABLE recomendacion (
 CREATE TABLE comunidad_efimera (
   id                INT          NOT NULL AUTO_INCREMENT,
   creador_id        INT          NOT NULL,                -- hace de "created_by"
-  log_id            BIGINT       NULL,
+  log_id            BIGINT       NULL,                    -- HU13: la extracción de HU11 que originó la comunidad (una comunidad por extracción)
   texto_original    TEXT         NOT NULL,
   actividad         VARCHAR(100) NOT NULL,
-  inicio            DATETIME(6)  NOT NULL,
-  fin               DATETIME(6)  NOT NULL,
+  inicio            DATETIME(6)  NOT NULL,                -- UTC, como created_at (Bolivia = UTC-4)
+  fin               DATETIME(6)  NOT NULL,                -- UTC
   max_participantes SMALLINT     NOT NULL,
   lugar_id          INT          NULL,                    -- [CONFIRMAR] I9
   estado            VARCHAR(10)  NOT NULL DEFAULT 'ACTIVA',
@@ -220,9 +220,10 @@ CREATE TABLE comunidad_efimera (
   updated_at        DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   KEY ix_comunidad_estado_fin (estado, fin),
+  CONSTRAINT uq_com_log    UNIQUE (log_id),                                  -- HU13: la misma extracción no crea dos comunidades
   CONSTRAINT ck_com_fechas CHECK (fin > inicio),
   CONSTRAINT ck_com_estado CHECK (estado IN ('ACTIVA','ARCHIVADA')),
-  CONSTRAINT ck_com_max    CHECK (max_participantes >= 2),
+  CONSTRAINT ck_com_max    CHECK (max_participantes BETWEEN 2 AND 30),     -- HU11/HU13: de 2 a 30 personas, contando a quien la crea
   CONSTRAINT fk_com_creador FOREIGN KEY (creador_id) REFERENCES usuario (id),
   CONSTRAINT fk_com_log     FOREIGN KEY (log_id)     REFERENCES log_auditoria_rag (id),
   CONSTRAINT fk_com_lugar   FOREIGN KEY (lugar_id)   REFERENCES lugar (id)
@@ -257,6 +258,7 @@ CREATE TABLE notificacion (
   created_at          DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),   -- momento del envío
   PRIMARY KEY (id),
   CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),   -- HU4: un solo aviso por puente
+  CONSTRAINT uq_notif_comunidad UNIQUE (usuario_id, comunidad_id, tipo),             -- HU13: una sola invitación por comunidad
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
   CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
   CONSTRAINT ck_notif_ref  CHECK ((tipo = 'PUENTE_DISPONIBLE' AND comunidad_id IS NULL
