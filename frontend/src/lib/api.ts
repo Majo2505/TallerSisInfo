@@ -1,7 +1,6 @@
 import { cerrarSesion, obtenerToken } from "@/services/authService";
 import { API_URL } from "./config";
 
-/** Error del backend con el código de negocio (`VALIDACION`, `SOLICITUD_NO_PERMITIDA`…), para decidir qué mostrar. */
 export class ErrorApi extends Error {
   constructor(
     mensaje: string,
@@ -11,11 +10,6 @@ export class ErrorApi extends Error {
   }
 }
 
-/**
- * Petición autenticada al backend: agrega el JWT de la sesión actual y unifica el manejo de errores.
- * Si el servidor responde 401 (token vencido o inválido) cierra la sesión; las pantallas protegidas
- * detectan que ya no hay sesión y llevan al login.
- */
 export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   const token = obtenerToken();
   let res: Response;
@@ -23,7 +17,6 @@ export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise
     res = await fetch(`${API_URL}${ruta}`, {
       ...init,
       headers: {
-        // Con FormData (archivos) el navegador pone el Content-Type multipart con su boundary.
         ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,

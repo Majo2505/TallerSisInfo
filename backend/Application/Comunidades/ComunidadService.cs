@@ -4,12 +4,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Comunidades;
 
-/// <summary>
-/// Caso de uso de HU13: armado automático de la comunidad y notificación. Cuando HU10 crea la actividad, se buscan los
-/// compañeros de la sede que están libres a esa hora (las mismas reglas y el mismo consentimiento que el matching de HU12),
-/// se invita a los más compatibles (uno por lugar libre) y cada uno recibe un aviso (HU4). Quien crea la actividad queda
-/// dentro como confirmado. Si nadie coincide, la actividad sigue creada y se puede volver a buscar más tarde.
-/// </summary>
 public class ComunidadService : IInvitadorComunidad
 {
     public const string EstadoInvitados = "INVITADOS";
@@ -30,10 +24,6 @@ public class ComunidadService : IInvitadorComunidad
         _reloj = reloj;
     }
 
-    /// <summary>
-    /// Vuelve a buscar compañeros para una actividad propia que todavía no terminó (por ejemplo, después de aceptar el
-    /// matching o si antes no había nadie libre). Quien ya fue invitado no se invita de nuevo.
-    /// </summary>
     public async Task<InvitacionDto> InvitarDeNuevoAsync(int usuarioId, int comunidadId, CancellationToken ct = default)
     {
         var comunidad = await _repo.ObtenerComunidadAsync(comunidadId, ct);
@@ -52,7 +42,6 @@ public class ComunidadService : IInvitadorComunidad
                       ?? throw new ReglaNegocioException("NO_ENCONTRADO", "No encontramos tu cuenta.");
         var yaDentro = await _repo.ListarParticipantesAsync(comunidad.Id, ct);
 
-        // Quien crea la actividad está dentro desde el principio: CONFIRMADO, con respondido_en (ck_part_respuesta).
         var participaciones = new List<Participacion>();
         if (!yaDentro.Contains(comunidad.CreadorId))
             participaciones.Add(new Participacion
@@ -61,7 +50,6 @@ public class ComunidadService : IInvitadorComunidad
                 InvitadoEn = ahoraUtc, RespondidoEn = ahoraUtc
             });
 
-        // Mismo consentimiento que HU12: sin campus no hay con quién cruzar, y quien no aparece tampoco invita.
         InvitacionDto? sinInvitar = null;
         if (creador.ZonaActualId is null || creador.ZonaActual is not { Activa: true })
             sinInvitar = Vacia(EstadoSinZona, ReglasComunidad.MensajeSinZona);
@@ -78,7 +66,6 @@ public class ComunidadService : IInvitadorComunidad
             return sinInvitar;
         }
 
-        // Cruce automático con los puentes de hoy de los compañeros.
         var inicioLocal = ReglasNotificacion.AHoraLocal(comunidad.Inicio);
         var finLocal = ReglasNotificacion.AHoraLocal(comunidad.Fin);
         var actividad = new ReglasMatching.Franja(ReglasComunidad.DiaSemana(inicioLocal),
@@ -97,7 +84,7 @@ public class ComunidadService : IInvitadorComunidad
 
         var mensaje = ReglasComunidad.MensajeInvitacion(creador.Nombre, comunidad.Actividad, actividad.Inicio, actividad.Fin);
         var avisos = invitados
-            .Where(i => porId[i.UsuarioId].NotificacionesActivas)   // HU4: quien apagó los avisos queda invitado, pero sin aviso
+            .Where(i => porId[i.UsuarioId].NotificacionesActivas)
             .Select(i => new Notificacion
             {
                 UsuarioId = i.UsuarioId,

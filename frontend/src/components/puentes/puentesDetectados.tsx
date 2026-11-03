@@ -19,7 +19,6 @@ type Props = {
   onReintentar: () => void;
 };
 
-/** Lista de puentes detectados. Los datos los trae la pantalla que lo usa (hoy, el horario). */
 export default function PuentesDetectados({ puentes, cargando, error, onReintentar }: Props) {
   return (
     <section className={estilos.panel} aria-labelledby="puentes-titulo">

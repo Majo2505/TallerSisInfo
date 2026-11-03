@@ -6,15 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Breaku.Infrastructure.Services;
 
-/// <summary>
-/// Lee la foto del horario con un modelo de visión que exponga la API de Chat Completions de OpenAI
-/// (modelo de <c>LLM_MODEL_IMAGEN</c>). Al modelo solo se le envía la imagen y las instrucciones:
-/// nunca el id ni el nombre del estudiante.
-/// </summary>
 public class LectorHorarioLlm : ILectorHorarioFoto
 {
     public const string NombreCliente = "LlmImagen";
-    public const int SegundosMinimos = 60;   // leer una imagen tarda más que una recomendación
+    public const int SegundosMinimos = 60;
 
     private const string Instrucciones = """
         Eres el lector de horarios académicos de BREAKU, una app de la Universidad Católica Boliviana.
@@ -42,7 +37,6 @@ public class LectorHorarioLlm : ILectorHorarioFoto
         Cálculo II de 09:15 a 10:45. Es incorrecto devolver un solo bloque de 07:30 a 10:45 o un bloque para el receso.
         """;
 
-    // strict = true exige additionalProperties = false y que todos los campos estén en required (aula admite null).
     private const string Esquema = """
         {
           "type": "object",
@@ -124,7 +118,6 @@ public class LectorHorarioLlm : ILectorHorarioFoto
             using var respuesta = await _http.PostAsJsonAsync("chat/completions", cuerpo, ct);
             if (!respuesta.IsSuccessStatusCode)
             {
-                // El cuerpo del error no incluye la clave; sirve para saber si es cuota, modelo inválido, etc.
                 _logger.LogWarning("El modelo de imagen respondió {Estado}: {Cuerpo}", (int)respuesta.StatusCode, await respuesta.Content.ReadAsStringAsync(ct));
                 throw NoDisponible();
             }
@@ -159,7 +152,6 @@ public class LectorHorarioLlm : ILectorHorarioFoto
     private sealed record ClaseJson(string? Materia, int DiaSemana, string? HoraInicio, string? HoraFin, string? Aula);
 }
 
-/// <summary>Sin LLM configurado no se pueden leer fotos: el registro manual sigue funcionando.</summary>
 public class LectorHorarioNoDisponible : ILectorHorarioFoto
 {
     public Task<List<ClaseLeidaDto>> LeerAsync(byte[] imagen, string tipoMime, CancellationToken ct = default) =>

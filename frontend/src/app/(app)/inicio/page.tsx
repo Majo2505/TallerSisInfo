@@ -28,7 +28,6 @@ import estilos from "./inicio.module.css";
 
 const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
 
-/** Lo que se dice debajo de las sugerencias: de qué puente son, o por qué no hay ninguna. */
 function textoSugerencias(
   cargando: boolean,
   hayPuente: boolean,
@@ -76,7 +75,6 @@ export default function Inicio() {
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  // Sugerencias rápidas: lugares reales del catálogo que caben en el puente (HU6). `sugeridas` guarda de qué puente son.
   const [sugeridas, setSugeridas] = useState<{ puenteId: number; resultado: ResultadoLugares | null; error: string } | null>(null);
 
   useEffect(() => {
@@ -114,7 +112,6 @@ export default function Inicio() {
 
   const foco = activo ?? proximo;
 
-  // Sin puentes por hoy: el primero de los próximos días (la semana es de lunes a sábado).
   const otroDia = useMemo(() => {
     for (let k = 1; k <= 7; k++) {
       const dia = (diaHoy + k) % 7;
@@ -176,10 +173,8 @@ export default function Inicio() {
   let minutosParaIa = 0;
   if (activo) minutosParaIa = minutosRestantes;
   else if (foco) minutosParaIa = duracionMin(foco);
-  // El puente va en la URL para que la IA pida recomendaciones de ese puente (HU7).
   const rutaIa = foco && minutosParaIa > 0 ? `/recomendaciones?puente=${foco.id}&min=${minutosParaIa}` : "/recomendaciones";
 
-  // Línea del día: de la primera a la última hora con algo (clase o puente).
   const tramos = [
     ...clasesHoy.map((b) => ({ tipo: "clase" as const, id: `c${b.id}`, inicio: aMin(b.horaInicio), fin: aMin(b.horaFin), titulo: b.materia })),
     ...puentesHoy.map((p) => ({ tipo: "puente" as const, id: `p${p.id}`, inicio: aMin(p.horaInicio), fin: aMin(p.horaFin), titulo: `Puente de ${duracionMin(p)} min` })),
@@ -226,7 +221,7 @@ export default function Inicio() {
         </h1>
       </Pieza>
 
-      {/* El puente: la única superficie azul marino de la pantalla. */}
+      {}
       <Pieza as="section" className={estilos.marcoHeroe}>
         {foco ? (
           <HeroePuente

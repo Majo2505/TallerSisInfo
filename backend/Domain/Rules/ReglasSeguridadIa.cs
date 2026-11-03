@@ -4,10 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace Breaku.Domain.Rules;
 
-/// <summary>
-/// Guardrails del asistente (HU17): lo que el estudiante escribe (recomendaciones, extracción, actividad) y lo que responde
-/// la IA pasan por aquí antes de usarse. La categoría del rechazo queda en log_auditoria_rag.motivo_rechazo.
-/// </summary>
 public static class ReglasSeguridadIa
 {
     public const string CategoriaInyeccion = "INYECCION";
@@ -15,7 +11,6 @@ public static class ReglasSeguridadIa
     public const string CategoriaBienestar = "BIENESTAR";
     public const string CategoriaFueraDeReglamento = "FUERA_DE_REGLAMENTO";
 
-    /// <summary>La IA respondió algo que no sale del contexto (un lugar inventado o una explicación no permitida) y se descartó.</summary>
     public const string CategoriaFueraDeContexto = "FUERA_DE_CONTEXTO";
 
     public const string MensajeInyeccion = "La solicitud intenta modificar las instrucciones del asistente.";
@@ -23,7 +18,6 @@ public static class ReglasSeguridadIa
     public const string MensajeBienestar = "Si estás pasando por un momento difícil, habla con alguien de confianza o con el área de bienestar de tu universidad.";
     public const string MensajeFueraDeReglamento = "Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.";
 
-    /// <summary>Por qué se rechazó una entrada: la categoría sirve para el registro y el mensaje se le muestra al estudiante.</summary>
     public sealed record Rechazo(string Categoria, string Mensaje);
 
     private static readonly TimeSpan TiempoMaximo = TimeSpan.FromSeconds(1);
@@ -31,16 +25,12 @@ public static class ReglasSeguridadIa
     private static Regex Patron(string expresion)
         => new(expresion, RegexOptions.CultureInvariant, TiempoMaximo);
 
-    // «DAN» solo cuenta en mayúsculas: «dan» es una palabra común («lugares que dan comida»).
     private static readonly Regex Dan = new(@"\bDAN\b", RegexOptions.CultureInvariant, TiempoMaximo);
 
     private static readonly Regex[] Inyeccion =
     [
-        // Ordenes para cambiar o saltarse las reglas del asistente.
         Patron(@"\b(ignor\w*|olvid\w*|omit\w*|saltar\w*|saltate|desobedec\w*|desobedez\w*|disregard|forget|bypass|override|cambi\w*|reemplaz\w*|sustitu\w*|anul\w*|deshabilit\w*|desactiv\w*|quit\w*|elimin\w*)\b.{0,80}\b(previous|prior|above|anterior\w*|sistema|system|developer|desarrollador|prompt|instruccion\w*|instruction\w*|regla\w*|rule\w*|restriccion\w*|restriction\w*|filtro\w*|limite\w*|guardrail\w*|configuracion|politica\w*|seguridad)\b"),
-        // Intentos de que el asistente revele su prompt o sus instrucciones.
         Patron(@"\b(revel\w*|muestr\w*|mostr\w*|dime|dame|dinos|explic\w*|repit\w*|imprim\w*|copi\w*|ensen\w*|comparte|pasame|escrib\w*|list\w*|cual es|cuales son|cual fue)\b.{0,40}\b(prompt|system prompt|mensaje del sistema|instrucciones (de|del|internas?|iniciales|originales)|configuracion interna|reglas internas|tus instrucciones|tus reglas|tu configuracion)\b"),
-        // Cambios de rol o «modos» sin restricciones.
         Patron(@"\b(actua\w* como|actuar como|finge\w*|fingir|haz de cuenta|hazte pasar|simula\w* (ser|que)|comportate como|eres ahora|ahora eres|a partir de ahora (eres|seras|actua)|pretend\w* (you|to)|you are now|act as|roleplay|juego de roles|modo (desarrollador|dios|developer|sin restricciones|libre)|developer mode|jailbreak|do anything now|sin (restricciones|filtros|censura)|unrestricted|uncensored)\b")
     ];
 
@@ -56,26 +46,15 @@ public static class ReglasSeguridadIa
 
     private static readonly Regex[] FueraDeReglamento =
     [
-        // Alcohol y vida nocturna.
         Patron(@"\b(alcohol\w*|cerveza\w*|chela\w*|birra\w*|vodka|whisk\w*|tequila|ron|pisco|singani|fernet|licor\w*|trago\w*|chupar\w*|borrach\w*|ebri\w*|embriag\w*|curda|resaca|coctel\w*|cocktail\w*|happy hour|vino (tinto|blanco|espumante)|vinoteca|copas? de vino|botellas? de vino|tomar vino|beber vino|discoteca\w*|boliche\w*|antro\w*|pub|rumba\w*|farra|parranda|juerga)\b"),
-        // Sustancias no lícitas y tabaco.
         Patron(@"\b(droga\w*|drogad\w*|marihuana|mariguana|cannabis|weed|porro\w*|mota|cocaina|crack|extasis|lsd|ketamina|heroina|opio|anfetamina\w*|metanfetamina\w*|alucinogen\w*|narcotic\w*|estupefaciente\w*|pasta base|sustancias? (ilicit\w*|ilegal\w*|prohibid\w*|psicoactiv\w*)|fumar\w*|fumo|fumando|cigarr\w*|tabaco|vape\w*|shisha|hookah|narguile)\b"),
-        // Juegos de azar.
         Patron(@"\b(apuest\w*|apostar\w*|casino\w*|tragamonedas|ruleta|blackjack|poker|juegos? de azar)\b"),
-        // Contenido e insinuaciones sexuales.
         Patron(@"\b(sexo|sexual\w*|sexy|sexi|erotic\w*|porn\w*|desnud\w*|prostitu\w*|escort|sensual\w*|lenceri\w*|burdel|cabaret|table dance|strip ?tease|motel|telo|swinger|besar\w*|besos?|ligar\w*|ligue|coquete\w*|seduc\w*|seducir|manosea\w*|toquete\w*|acostarme con|dormir juntos|hacer el amor|tener relaciones|relaciones intimas|citas? romantic\w*)\b"),
-        // Ocultismo y actividades paranormales.
         Patron(@"\b(paranormal\w*|fantasma\w*|ouija|ouiya|brujeri\w*|brujo\w*|bruja\w*|hechiz\w*|embrujad\w*|poltergeist|exorci\w*|demoni\w*|demonio\w*|satan\w*|diablo\w*|ocultis\w*|esoteric\w*|espiritismo|espiritist\w*|invocar\w*|invocacion\w*|sesion(es)? espirita(s)?|tarot|horoscop\w*|astrologi\w*|vidente\w*|adivin\w*|magia negra|maldicion\w*|aparecidos?|almas? en pena|hablar con (los )?(muertos|espiritus|difuntos)|ritual\w* (oscur\w*|satanic\w*|magic\w*)|ovnis?|extraterrestre\w*)\b"),
-        // Violencia, delitos y deshonestidad académica.
         Patron(@"\b(matar(?! (el )?tiempo)\w*|asesin\w*|golpear\w*|pelea\w* callejera\w*|pelearme|armas? de fuego|pistola\w*|cuchillo\w*|explosiv\w*|bomba\w*|terroris\w*|secuestr\w*|robar\w*|hurtar|estafar\w*|extorsi\w*|hackear\w*|hackeo|piratear\w*|plagi\w*|hacer trampa|copiar(me)? en (el |un |los |las )?(examen\w*|prueba\w*|parcial\w*)|chuleta\w*|fraude\w*|falsific\w*|comprar (un |el |mi )?(examen|titulo|tesis|notas)|suplantar\w*)\b"),
-        // Lenguaje vulgar o irrespetuoso.
         Patron(@"\b(mierda|puta|puto|putas|putos|carajo|verga|pendej\w*|cabron\w*|malparid\w*|hijueputa|hdp|gilipollas|imbecil\w*|idiota\w*|estupid\w*|maricon\w*|marica|lacra|culiao|boludo|huevon\w*|weon\w*)\b")
     ];
 
-    /// <summary>
-    /// Pasa el texto a minúsculas y sin tildes, vuelve a unir las letras separadas («i g n o r a»), cambia los números
-    /// que sustituyen letras («t0das») y deja solo letras, números y espacios simples. Así «Ignorá» y «contrasena» se detectan igual.
-    /// </summary>
     public static string Normalizar(string texto)
     {
         var sinTildes = new StringBuilder(texto.Length);
@@ -103,9 +82,6 @@ public static class ReglasSeguridadIa
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Quita lo que permitiría cerrar el bloque de la preferencia en el prompt (los signos &lt; y &gt;) y los caracteres de control.
-    /// </summary>
     public static string Sanear(string entrada)
     {
         var sb = new StringBuilder(entrada.Length);
@@ -118,7 +94,6 @@ public static class ReglasSeguridadIa
         return Regex.Replace(sb.ToString(), @"\s+", " ", RegexOptions.None, TiempoMaximo).Trim();
     }
 
-    /// <summary>Devuelve el rechazo si la entrada no se puede mandar al asistente, o <c>null</c> si se puede.</summary>
     public static Rechazo? Evaluar(string? entrada)
     {
         if (string.IsNullOrWhiteSpace(entrada)) return null;
@@ -140,14 +115,8 @@ public static class ReglasSeguridadIa
         }
     }
 
-    /// <summary>
-    /// true si el texto intenta manipular al asistente (cambiar o ver sus instrucciones) o pedir datos internos.
-    /// Para textos que no escribe el estudiante, como lo que la IA lee en la foto del horario: ahí no se aplica el filtro
-    /// de reglamento, porque una materia real como «Educación Sexual» no es una solicitud.
-    /// </summary>
     public static bool EsManipulacion(string? texto)
         => Evaluar(texto)?.Categoria is CategoriaInyeccion or CategoriaFueraDeAlcance;
 
-    /// <summary>El mensaje del rechazo, o <c>null</c> si la entrada se puede enviar.</summary>
     public static string? MotivoRechazo(string? entrada) => Evaluar(entrada)?.Mensaje;
 }

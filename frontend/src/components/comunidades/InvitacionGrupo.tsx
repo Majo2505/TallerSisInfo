@@ -11,16 +11,10 @@ import estilos from "./InvitacionGrupo.module.css";
 type Props = {
   invitacion: Invitacion;
   buscando: boolean;
-  /** Vuelve a buscar compañeros libres (SIN_COINCIDENCIAS o ERROR). */
   onBuscar: () => void;
-  /** NO_VISIBLE: acepta aparecer en el matching (HU12) y vuelve a buscar. */
   onAceptarYBuscar: () => void;
 };
 
-/**
- * HU13: al crear la actividad se invita automáticamente a los compañeros libres a esa hora. Muestra a quiénes se invitó
- * (ya avisados) o qué falta para poder invitarlos.
- */
 export default function InvitacionGrupo({ invitacion, buscando, onBuscar, onAceptarYBuscar }: Props) {
   const reducir = useReducedMotion();
   const entrada = reducir ? false : { opacity: 0, transform: "translateY(8px)" };
@@ -94,7 +88,6 @@ export default function InvitacionGrupo({ invitacion, buscando, onBuscar, onAcep
           <p className={estilos.texto}>{mensaje}</p>
         </motion.div>
       ) : (
-        // SIN_COINCIDENCIAS o ERROR: la actividad ya existe; se puede volver a buscar más tarde.
         <motion.div key="nadie" className={estilos.bloque} initial={entrada} animate={visible} transition={{ duration: 0.25, ease: SALIDA }}>
           <p className={estilos.nadie} role="status">
             {mensaje}

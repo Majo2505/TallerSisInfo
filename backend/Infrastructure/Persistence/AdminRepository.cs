@@ -3,10 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Breaku.Infrastructure.Persistence;
 
-/// <summary>
-/// Panel de administración. Lee el catálogo, los reportes y el log del RAG con SQL, sin mapear Lugar,
-/// Categoria ni Reporte, para no chocar con las entidades que agregan otras historias (HU6 en adelante).
-/// </summary>
 public class AdminRepository : IAdminRepository
 {
     private readonly AppDbContext _db;
@@ -58,7 +54,6 @@ public class AdminRepository : IAdminRepository
 
         await _db.Database.ExecuteSqlAsync(
             $"UPDATE lugar SET estado = {estado}, updated_at = UTC_TIMESTAMP(6), updated_by = {adminId} WHERE id = {lugarId}", ct);
-        // Auditoría: quién cambió el estado y desde cuál.
         await _db.Database.ExecuteSqlAsync($"""
                 INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
                 VALUES ('LUGAR', {lugarId}, 'UPDATE', JSON_OBJECT('estado', {anterior}), JSON_OBJECT('estado', {estado}), {adminId})
@@ -88,7 +83,7 @@ public class AdminRepository : IAdminRepository
         var anterior = (await _db.Database.SqlQuery<string>(
             $"SELECT estado AS Value FROM reporte WHERE id = {reporteId} FOR UPDATE").ToListAsync(ct)).FirstOrDefault();
         if (anterior is null) return null;
-        if (anterior != "PENDIENTE") return anterior;   // ya revisado: no se toca (el servicio responde YA_REVISADO)
+        if (anterior != "PENDIENTE") return anterior;
 
         await _db.Database.ExecuteSqlAsync($"""
             UPDATE reporte
@@ -139,13 +134,11 @@ public class AdminRepository : IAdminRepository
                 ORDER BY Veces DESC
                 LIMIT 5
                 """).ToListAsync(ct);
-        // HU9: valoraciones registradas en la semana (usa ix_recomendacion_feedback).
         var votos = (await _db.Database.SqlQuery<FilaVotos>($"""
                 SELECT COALESCE(SUM(feedback = 'LIKE'), 0)    AS MeGusta,
                        COALESCE(SUM(feedback = 'DISLIKE'), 0) AS NoMeSirve
                 FROM recomendacion WHERE feedback IS NOT NULL AND fecha_feedback >= {desde}
                 """).ToListAsync(ct)).Single();
-        // HU17: rechazos de la semana por motivo (usa ix_log_motivo). Los anteriores a la HU17 no tienen motivo.
         var rechazos = await _db.Database.SqlQuery<FilaRechazo>($"""
                 SELECT COALESCE(motivo_rechazo, 'SIN_MOTIVO') AS Motivo, COUNT(*) AS Cantidad
                 FROM log_auditoria_rag
@@ -162,7 +155,6 @@ public class AdminRepository : IAdminRepository
 
     private static string? Hora(TimeSpan? t) => t is null ? null : $"{t.Value.Hours:00}:{t.Value.Minutes:00}";
 
-    // Filas para SqlQuery: COUNT y SUM devuelven BIGINT/DECIMAL en MySQL.
     private sealed class FilaResumen
     {
         public long LugaresActivos { get; set; }

@@ -1,13 +1,3 @@
--- BREAKU · Seed de DESARROLLO: un estudiante y un administrador de prueba.
--- SOLO para desarrollo local. NUNCA ejecutar en producción.
---
--- Se ejecuta con la base de datos ya seleccionada (sin USE: el nombre de la BD
--- varía según el DB_NAME de cada integrante). Es idempotente: se puede correr
--- varias veces; si el usuario ya existe (uq_usuario_correo), se restablece.
---
--- Contraseñas de desarrollo: ver README.md (sección "Usuario de prueba").
--- password_hash es un hash BCrypt de cada contraseña.
-
 INSERT INTO usuario
   (correo, password_hash, nombre, rol, correo_verificado, consentimiento_ubicacion, fecha_consentimiento, activo)
 VALUES
@@ -29,7 +19,6 @@ ON DUPLICATE KEY UPDATE
   activo                   = nuevo.activo,
   updated_at               = UTC_TIMESTAMP(6);
 
--- Administrador de prueba (rol ADMIN): entra al panel de administración del campus.
 INSERT INTO usuario
   (correo, password_hash, nombre, rol, correo_verificado, consentimiento_ubicacion, fecha_consentimiento, activo)
 VALUES

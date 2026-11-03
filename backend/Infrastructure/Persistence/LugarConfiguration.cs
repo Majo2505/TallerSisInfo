@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Breaku.Infrastructure.Persistence;
 
-/// <summary>Mapeo de lectura de la tabla lugar: la API no inserta ni modifica el catálogo.</summary>
 public class LugarConfiguration : IEntityTypeConfiguration<Lugar>
 {
     public void Configure(EntityTypeBuilder<Lugar> builder)

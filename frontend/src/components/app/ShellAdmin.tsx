@@ -18,13 +18,10 @@ const SECCIONES = [
   { ruta: "/admin", nombre: "Panel Admin", Icono: IconoAjustes },
 ];
 
-/** Estructura del administrador: barra lateral en laptop y barra superior + inferior en celular. */
 export default function ShellAdmin({ sesion, children }: { sesion: Sesion; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  // "/admin" (el panel) se marca solo en su ruta exacta; si no, también se marcaría en "/admin/inicio".
   const activa = (ruta: string) => pathname === ruta || (ruta !== "/admin" && pathname.startsWith(`${ruta}/`));
-  // Las pantallas del estudiante (horario, puentes, recomendaciones…) no aplican al administrador.
   const fueraDeAdmin = !pathname.startsWith("/admin");
 
   useEffect(() => {
@@ -84,7 +81,7 @@ export default function ShellAdmin({ sesion, children }: { sesion: Sesion; child
         </div>
       </aside>
 
-      {/* Celular: barra superior con marca, avisos y salir. */}
+      {}
       <header className={estilos.barra}>
         <Link href="/admin/inicio" className={estilos.marca} aria-label="BreakU, ir al inicio">
           <span className={estilos.logo}>

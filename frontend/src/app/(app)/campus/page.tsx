@@ -20,7 +20,6 @@ const aMin = (h: string) => {
   return a * 60 + b;
 };
 
-/** Elige el puente más útil ahora: el que está activo o el próximo (hoy primero, luego los siguientes días). */
 function puenteSugerido(puentes: Puente[]): Puente | undefined {
   const ahora = new Date();
   const hoy = ahora.getDay();

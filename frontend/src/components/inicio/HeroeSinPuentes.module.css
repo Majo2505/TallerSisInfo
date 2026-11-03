@@ -145,7 +145,6 @@
   text-anchor: middle;
 }
 
-/* La hoja de "hoy" se levanta desde arriba y deja ver el día del próximo puente. */
 .hoja {
   transform-origin: 50% 0%;
   animation: pasarHoja 4.5s var(--curva-movimiento) 0.6s infinite;
@@ -204,7 +203,6 @@
   .destello {
     animation: none;
   }
-  /* Sin animación, la hoja queda levantada para que se vea el día. */
   .hoja {
     opacity: 0;
   }

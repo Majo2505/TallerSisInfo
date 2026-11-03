@@ -6,7 +6,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Tests;
 
-/// <summary>HU13: a quién se invita y qué dice el aviso.</summary>
 public class ReglasComunidadTests
 {
     private static ReglasMatching.Franja F(int dia, int h1, int m1, int h2, int m2) => new(dia, new TimeOnly(h1, m1), new TimeOnly(h2, m2));
@@ -18,9 +17,9 @@ public class ReglasComunidadTests
         var actividad = F(2, 10, 30, 11, 30);
         var invitados = ReglasComunidad.ElegirInvitados(actividad, 3,
         [
-            P(1, F(2, 11, 0, 12, 0)),     // 30 min
-            P(2, F(2, 9, 30, 11, 30)),    // 60 min
-            P(3, F(2, 10, 0, 11, 15)),    // 45 min
+            P(1, F(2, 11, 0, 12, 0)),
+            P(2, F(2, 9, 30, 11, 30)),
+            P(3, F(2, 10, 0, 11, 15)),
         ]);
 
         Assert.Equal([2, 3, 1], invitados.Select(i => i.UsuarioId));
@@ -45,15 +44,15 @@ public class ReglasComunidadTests
     public void Con_menos_de_30_minutos_en_comun_no_se_invita()
     {
         var actividad = F(2, 10, 0, 11, 0);
-        Assert.Empty(ReglasComunidad.ElegirInvitados(actividad, 3, [P(1, F(2, 10, 40, 12, 0))]));   // 20 min
+        Assert.Empty(ReglasComunidad.ElegirInvitados(actividad, 3, [P(1, F(2, 10, 40, 12, 0))]));
     }
 
     [Fact]
     public void Una_actividad_corta_basta_con_compartirla_entera()
     {
-        var actividad = F(2, 10, 0, 10, 15);   // 15 min
+        var actividad = F(2, 10, 0, 10, 15);
         Assert.Single(ReglasComunidad.ElegirInvitados(actividad, 3, [P(1, F(2, 9, 45, 10, 30))]));
-        Assert.Empty(ReglasComunidad.ElegirInvitados(actividad, 3, [P(1, F(2, 10, 5, 10, 30))]));      // le faltan 5 min
+        Assert.Empty(ReglasComunidad.ElegirInvitados(actividad, 3, [P(1, F(2, 10, 5, 10, 30))]));
     }
 
     [Fact]
@@ -62,8 +61,8 @@ public class ReglasComunidadTests
         var actividad = F(2, 10, 0, 12, 0);
         var invitados = ReglasComunidad.ElegirInvitados(actividad, 3,
         [
-            P(1, F(3, 10, 0, 12, 0)),                                // miércoles: no cuenta
-            P(2, F(2, 10, 0, 10, 40)), P(2, F(2, 11, 0, 12, 0)),     // 40 y 60 min: cuenta 60
+            P(1, F(3, 10, 0, 12, 0)),
+            P(2, F(2, 10, 0, 10, 40)), P(2, F(2, 11, 0, 12, 0)),
         ]);
 
         var unico = Assert.Single(invitados);
@@ -80,10 +79,10 @@ public class ReglasComunidadTests
     }
 
     [Theory]
-    [InlineData(2026, 11, 2, 1)]   // lunes
-    [InlineData(2026, 11, 3, 2)]   // martes
-    [InlineData(2026, 11, 7, 6)]   // sábado
-    [InlineData(2026, 11, 8, 7)]   // domingo
+    [InlineData(2026, 11, 2, 1)]
+    [InlineData(2026, 11, 3, 2)]
+    [InlineData(2026, 11, 7, 6)]
+    [InlineData(2026, 11, 8, 7)]
     public void El_dia_se_cuenta_como_en_horario_y_puente(int a, int m, int d, int esperado)
         => Assert.Equal(esperado, ReglasComunidad.DiaSemana(new DateTime(a, m, d)));
 
@@ -112,10 +111,8 @@ public class ReglasComunidadTests
     }
 }
 
-/// <summary>HU13: el caso de uso completo, con un repositorio falso.</summary>
 public class ComunidadServiceTests
 {
-    // Martes 3 de noviembre de 2026, 10:00 en Bolivia = 14:00 UTC.
     private static readonly DateTimeOffset AhoraUtc = new(2026, 11, 3, 14, 0, 0, TimeSpan.Zero);
     private const int Yo = 7;
 
@@ -165,7 +162,6 @@ public class ComunidadServiceTests
         => new(id, nombre, "Ingeniería", avisos,
             [new Puente { UsuarioId = id, DiaSemana = 2, HoraInicio = TimeOnly.Parse(desde), HoraFin = TimeOnly.Parse(hasta) }]);
 
-    /// <summary>«jugar cartas» hoy de 10:30 a 11:30 en Bolivia (14:30 a 15:30 UTC).</summary>
     private static ComunidadEfimera Actividad(short maximo = 4) => new()
     {
         Id = 12, CreadorId = Yo, Actividad = "jugar cartas", MaxParticipantes = maximo, Estado = ComunidadEfimera.EstadoActiva,
@@ -192,7 +188,6 @@ public class ComunidadServiceTests
         Assert.Equal(["Diego Mamani", "Mateo Vargas"], r.Invitados.Select(i => i.Nombre));
         Assert.Equal(("10:30", "11:00", 30), (r.Invitados[1].LibreDesde, r.Invitados[1].LibreHasta, r.Invitados[1].MinutosEnComun));
 
-        // La hora guardada en UTC se cruza con los puentes en hora de Bolivia (martes 10:30 a 11:30).
         Assert.Equal(new ReglasMatching.Franja(2, new TimeOnly(10, 30), new TimeOnly(11, 30)), repo.UltimaBusqueda);
 
         var mia = Assert.Single(repo.Participaciones, p => p.UsuarioId == Yo);
@@ -216,7 +211,7 @@ public class ComunidadServiceTests
     public async Task Sin_coincidencias_no_invita_pero_quien_crea_queda_dentro()
     {
         var (servicio, repo) = Crear();
-        repo.Candidatos.Add(Companero(20, "Diego Mamani", "11:15", "12:00"));   // 15 min: no alcanza
+        repo.Candidatos.Add(Companero(20, "Diego Mamani", "11:15", "12:00"));
 
         var r = await servicio.InvitarAsync(Actividad());
 
@@ -230,13 +225,13 @@ public class ComunidadServiceTests
     public async Task Invita_solo_a_los_lugares_que_quedan()
     {
         var (servicio, repo) = Crear();
-        repo.YaDentro.AddRange([Yo, 30]);   // ya estaban: quien la creó y un invitado anterior
+        repo.YaDentro.AddRange([Yo, 30]);
         for (var i = 0; i < 5; i++) repo.Candidatos.Add(Companero(20 + i, $"Compañero {i}", "10:00", "12:00"));
 
         var r = await servicio.InvitarAsync(Actividad(maximo: 4));
 
-        Assert.Equal(2, r.Invitados.Count);                                    // 4 - 2 que ya estaban
-        Assert.DoesNotContain(repo.Participaciones, p => p.UsuarioId == Yo);   // no se vuelve a agregar a quien la creó
+        Assert.Equal(2, r.Invitados.Count);
+        Assert.DoesNotContain(repo.Participaciones, p => p.UsuarioId == Yo);
     }
 
     [Fact]
@@ -303,12 +298,11 @@ public class ComunidadServiceTests
     }
 }
 
-/// <summary>HU10 + HU13: al crear la actividad se invita automáticamente.</summary>
 public class CreacionActividadConInvitacionTests
 {
     private sealed class RelojFijo : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => new(2026, 11, 3, 14, 0, 0, TimeSpan.Zero);   // 10:00 en Bolivia
+        public override DateTimeOffset GetUtcNow() => new(2026, 11, 3, 14, 0, 0, TimeSpan.Zero);
     }
 
     private sealed class ActividadesFalsas : IActividadRepository

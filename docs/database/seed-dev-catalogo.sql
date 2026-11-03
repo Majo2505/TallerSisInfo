@@ -1,13 +1,3 @@
--- BREAKU · Seed de DESARROLLO: catálogo mínimo (zona, categorías y lugares) para probar HU6 y HU7.
--- SOLO para desarrollo local. NUNCA ejecutar en producción. Los lugares y coordenadas son de ejemplo.
---
--- Requisito: haber ejecutado antes seed-dev.sql (usa al usuario de prueba como created_by / updated_by).
--- Se ejecuta con la base de datos ya seleccionada (sin USE). Es idempotente: se puede correr varias veces.
---
--- Incluye a propósito dos lugares que NO deben recomendarse:
---   · «Mirador del Sur (fuera del radio)»: está a varios kilómetros del campus.
---   · «Kiosco Nuevo (en revisión)»: estado EN_REVISION, todavía no aprobado por el administrador.
-
 SET @autor := (SELECT id FROM usuario WHERE correo = 'dev.estudiante@ucb.edu.bo');
 
 INSERT INTO zona (nombre, latitud, longitud, radio_max_m, created_by, updated_by)

@@ -3,14 +3,8 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Breaku.Presentation.Documentacion;
 
-/// <summary>
-/// Documentación interactiva de la API (OpenAPI 3 + Swagger UI).
-/// Documento JSON: <c>/swagger/v1/swagger.json</c>. Interfaz: <c>/swagger</c>.
-/// Se publica solo en Development, o en cualquier entorno si SWAGGER_ENABLED=true.
-/// </summary>
 public static class SwaggerExtensions
 {
-    /// <summary>Nombre del esquema de seguridad que usan las operaciones protegidas.</summary>
     internal const string EsquemaJwt = "Bearer";
 
     private const string Descripcion = """
@@ -44,7 +38,6 @@ public static class SwaggerExtensions
                 Contact = new OpenApiContact { Name = "Equipo BREAKU — SIS-227, UCB" }
             });
 
-            // Comentarios /// de controladores, DTOs y ejemplos (archivo generado por <GenerateDocumentationFile>).
             var xml = Path.Combine(AppContext.BaseDirectory, "Breaku.xml");
             if (File.Exists(xml))
             {
@@ -75,7 +68,7 @@ public static class SwaggerExtensions
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "BREAKU API v1");
             options.DocumentTitle = "BREAKU API — Documentación";
             options.DisplayRequestDuration();
-            options.EnablePersistAuthorization(); // el token sobrevive a recargar la página
+            options.EnablePersistAuthorization();
         });
 
         return app;

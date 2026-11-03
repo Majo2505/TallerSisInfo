@@ -55,7 +55,6 @@
   font-weight: 600;
 }
 
-/* Cifras del campus */
 .cifras {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
@@ -116,7 +115,6 @@
   font-weight: 800;
 }
 
-/* Pestañas */
 .pestanas {
   display: inline-flex;
   max-width: 100%;
@@ -169,7 +167,6 @@
   font-weight: 800;
 }
 
-/* Catálogo: tabla en laptop, tarjetas en celular. */
 .tabla {
   display: grid;
   gap: 10px;
@@ -248,7 +245,6 @@
 .aprobar:active, .desactivar:active { transform: scale(0.95); }
 .aprobar:disabled, .desactivar:disabled { opacity: 0.5; cursor: progress; }
 
-/* Reportes */
 .listaReportes,
 .listaConsultas {
   margin: 0;
@@ -297,7 +293,6 @@
   color: var(--ucb-amarillo-oscuro);
 }
 
-/* Métricas */
 .metricas {
   display: grid;
   gap: 14px;
@@ -378,7 +373,6 @@
 .barraError { background: var(--error); }
 .barraTop { background: linear-gradient(90deg, var(--ucb-azul-medio), var(--ucb-marino)); }
 
-/* HU9: valoraciones de los estudiantes. */
 .votosResumen {
   display: flex;
   flex-wrap: wrap;
@@ -422,8 +416,6 @@
   margin-left: 8px;
 }
 
-/* Auditoría RAG */
-/* HU17: filtro de la auditoría y motivo del rechazo. */
 .filtrosAuditoria {
   margin-bottom: 8px;
   display: flex;
@@ -526,7 +518,6 @@
   }
 }
 
-/* Laptop: el catálogo como tabla de verdad. */
 @media (min-width: 1025px) {
   .pagina {
     padding: 32px clamp(16px, 3vw, 48px) 56px;

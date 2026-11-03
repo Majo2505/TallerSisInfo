@@ -5,7 +5,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Tests;
 
-/// <summary>Comunidades → Descubrir (adición a HU11): reglas puras.</summary>
 public class ReglasDescubrirTests
 {
     [Theory]
@@ -45,10 +44,8 @@ public class ReglasDescubrirTests
     }
 }
 
-/// <summary>Comunidades → Descubrir: el caso de uso, con el repositorio falso.</summary>
 public class DescubrirComunidadesServiceTests
 {
-    // 10:00 en Bolivia = 14:00 UTC.
     private static readonly DateTimeOffset AhoraUtc = new(2026, 11, 3, 14, 0, 0, TimeSpan.Zero);
 
     private sealed class RelojFijo : TimeProvider
@@ -79,7 +76,6 @@ public class DescubrirComunidadesServiceTests
         ZonaActual = conZona ? new Zona { Id = 2, Nombre = "Campus UCB Cochabamba", Activa = true } : null
     };
 
-    // 16:00 a 17:00 en Bolivia.
     private static ComunidadActiva Fila(int id, int creador, string nombre = "Ana Pérez", string? miEstado = null, int confirmados = 1) =>
         new(id, creador, nombre, "jugar cartas", new DateTime(2026, 11, 3, 20, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 11, 3, 21, 0, 0, DateTimeKind.Utc), 4, confirmados, true, miEstado);
@@ -145,7 +141,6 @@ public class DescubrirComunidadesServiceTests
         var repo = new RepositorioFalso(Estudiante(), []);
         await new DescubrirComunidadesService(repo, new RelojFijo()).ListarAsync(7);
 
-        // Medianoche del 4 de noviembre en Bolivia = 04:00 UTC.
         Assert.Equal(new DateTime(2026, 11, 4, 4, 0, 0, DateTimeKind.Utc), repo.HastaPedido);
     }
 

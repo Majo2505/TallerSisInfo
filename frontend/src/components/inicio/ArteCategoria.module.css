@@ -6,7 +6,6 @@
   background: var(--fondo-suave);
 }
 
-/* Fondos de color propio por categoría. */
 .comida {
   background: linear-gradient(135deg, #ffe680, #fdd537);
 }
@@ -28,7 +27,6 @@
   transform-origin: center;
 }
 
-/* Comida: vapor que sube y dona que gira */
 .vapor {
   fill: none;
   stroke: #ffffff;
@@ -37,7 +35,6 @@
   opacity: 0.6;
 }
 
-/* Estudio: la página gira sobre el lomo del libro */
 .pagina {
   transform-box: view-box;
   transform-origin: 60px 36px;
@@ -48,13 +45,11 @@
   opacity: 0.7;
 }
 
-/* Descanso: la planta se mece desde la maceta */
 .planta {
   transform-box: view-box;
   transform-origin: 60px 46px;
 }
 
-/* Deporte: la pelota rebota y su sombra respira */
 .pelota {
   transform-box: view-box;
   transform-origin: 66px 54px;
@@ -80,7 +75,6 @@
   :global(.lugar-arte):hover .velocidad { animation: velocidad 0.9s linear infinite; }
 }
 
-/* Sin hover (pantallas táctiles): las escenas viven solas, más lentas. */
 @media (hover: none) {
   .vapor { animation: vapor 2.4s var(--curva-salida) infinite; }
   .v2 { animation-delay: 400ms; }
@@ -133,7 +127,6 @@
   50% { transform: scale(1.12); filter: drop-shadow(0 0 4px rgba(253, 213, 55, 0.9)); }
 }
 
-/* Subida con freno y caída con aceleración, como una pelota real; se aplasta al tocar el piso. */
 @keyframes rebotar {
   0% { transform: translateY(0) scale(1.14, 0.86); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
   12% { transform: translateY(-2px) scale(0.94, 1.06); animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }

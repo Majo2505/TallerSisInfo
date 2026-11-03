@@ -32,7 +32,6 @@
   transform: scale(0.96);
 }
 
-/* Portada azul marino viva con caras que se apilan. */
 .portadaInterior {
   position: relative;
   isolation: isolate;
@@ -111,7 +110,6 @@
   font-weight: 700;
 }
 
-/* Pestañas Crear / Descubrir */
 .pestanas {
   box-sizing: border-box;
   display: inline-grid;
@@ -153,7 +151,6 @@
   position: relative;
 }
 
-/* Crear: misma estructura que el prototipo, con la estética de BreakU. */
 .crear {
   display: grid;
   gap: 10px;
@@ -274,7 +271,6 @@
   box-shadow: none;
 }
 
-/* Radar amarillo mientras se buscan compañeros. */
 .radar {
   position: relative;
   width: 14px;
@@ -351,7 +347,6 @@
   text-align: center;
 }
 
-/* HU11: lo que se entendió del texto libre y la pregunta por el dato que falta. */
 .entendida {
   display: grid;
   gap: 10px;
@@ -476,7 +471,6 @@
   color: var(--error-texto);
 }
 
-/* Descubrir: tarjetas de comunidades activas. */
 .lista {
   margin: 0;
   padding: 0;
@@ -565,7 +559,6 @@
   font-weight: 700;
 }
 
-/* Descubrir: cómo está el estudiante respecto de la comunidad (unirse llega con HU14). */
 .estadoMio,
 .estadoComunidad {
   flex-shrink: 0;
@@ -628,7 +621,6 @@
   }
 }
 
-/* Confirmar el resumen (HU10): botón principal a todo el ancho en el celular. */
 .confirmar {
   justify-self: stretch;
   min-height: 52px;
@@ -664,7 +656,6 @@
   }
 }
 
-/* HU11: casillas que se editan al tocarlas y, en la misma fila, confirmar (HU10) o descartar. */
 .pista {
   color: var(--texto-tenue);
   font-size: 0.82rem;
@@ -698,7 +689,6 @@
   cursor: not-allowed;
 }
 
-/* Descubrir (adición a HU11): estados de la lista de comunidades reales. */
 .descubrir {
   display: grid;
   gap: 14px;

@@ -1,8 +1,3 @@
-/**
- * Iniciales para el avatar: primera y última palabra con mayúscula, para que
- * "María de los Ángeles Quispe de la Fuente" dé "MF" y no "MD" (las partículas "de", "la"… se saltan).
- * Con una sola palabra usa sus dos primeras letras ("Jo" → "JO").
- */
 export function iniciales(nombre: string): string {
   const palabras = nombre.trim().split(/\s+/).filter(Boolean);
   if (palabras.length === 0) return "?";

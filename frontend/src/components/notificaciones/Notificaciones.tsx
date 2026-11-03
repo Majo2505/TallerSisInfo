@@ -40,10 +40,9 @@ function formatearDuracion(min: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
-// "Hoy" o "22/10", seguido del rango del puente.
 function cuando(n: Notificacion): string {
   if (!n.fecha || !n.horaInicio || !n.horaFin) return "";
-  const hoy = new Date().toLocaleDateString("en-CA"); // yyyy-MM-dd en hora local
+  const hoy = new Date().toLocaleDateString("en-CA");
   const [, mes, dia] = n.fecha.split("-");
   const etiquetaDia = n.fecha === hoy ? "Hoy" : `${dia}/${mes}`;
   return `${etiquetaDia} · ${hhmm(n.horaInicio)} – ${hhmm(n.horaFin)}`;
@@ -57,14 +56,12 @@ function IconoCerrar() {
   );
 }
 
-/** Cómo se presenta cada tipo de aviso del backend. */
 const TIPOS = {
   PUENTE_DISPONIBLE: { titulo: "Puente disponible", clase: "puente", Icono: IconoRayoApp },
   INVITACION_COMUNIDAD: { titulo: "Invitación a una comunidad", clase: "invitacion", Icono: IconoPersonas },
   COMUNIDAD_CERRADA: { titulo: "Comunidad cerrada", clase: "cerrada", Icono: IconoPersonas },
 } as const;
 
-/** A dónde lleva "Ver": un puente abre sus recomendaciones; lo demás, Comunidades. */
 function rutaDe(n: Notificacion): string {
   if (n.tipo === "PUENTE_DISPONIBLE") return n.duracionMinutos ? `/recomendaciones?min=${n.duracionMinutos}` : "/recomendaciones";
   return "/comunidades";
@@ -83,23 +80,17 @@ function haceCuanto(iso: string): string {
 const sinSuscripcion = () => () => {};
 
 type Props = {
-  /** Cambia cada vez que se guarda el horario: se vuelve a consultar para retirar avisos de puentes que ya no existen. */
   recarga: number;
 };
 
-/**
- * Avisos de puente disponible (HU4): campana con contador, bandeja lateral (sin leer, marcar todo leído,
- * filtros y la preferencia) y un aviso emergente cuando llega uno nuevo. El backend crea el aviso al empezar el puente;
- * aquí se consulta periódicamente (todavía no hay push).
- */
 export default function Notificaciones({ recarga }: Props) {
   const [lista, setLista] = useState<Notificacion[]>([]);
-  const [activas, setActivas] = useState<boolean | null>(null); // null = aún no se sabe
+  const [activas, setActivas] = useState<boolean | null>(null);
   const [guardandoConfig, setGuardandoConfig] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [emergente, setEmergente] = useState<Notificacion | null>(null);
   const [error, setError] = useState("");
-  const yaMostradas = useRef(new Set<number>()); // para no repetir el aviso emergente
+  const yaMostradas = useRef(new Set<number>());
   const [filtro, setFiltro] = useState<"todas" | "sin-leer">("todas");
   const botonCampana = useRef<HTMLButtonElement>(null);
   const cerrarBoton = useRef<HTMLButtonElement>(null);
@@ -114,22 +105,19 @@ export default function Notificaciones({ recarga }: Props) {
       if (!sigueActivo()) return;
       setLista(datos);
       setError("");
-      // Llegan de la más reciente a la más antigua: se muestra la primera sin leer que no se haya mostrado.
       const nueva = datos.find((n) => !n.leida && !yaMostradas.current.has(n.id));
       datos.forEach((n) => yaMostradas.current.add(n.id));
-      // Si el puente dejó de existir, su aviso ya no viene en la lista y se retira.
       setEmergente((actual) => nueva ?? (actual && datos.some((n) => n.id === actual.id) ? actual : null));
     } catch (e) {
       if (sigueActivo()) setError((e as Error).message);
     }
   }, []);
 
-  // Consulta periódica mientras la pestaña está visible, y al volver a ella.
   useEffect(() => {
     let activo = true;
     const sigueActivo = () => activo;
     const revisar = () => {
-      if (document.visibilityState === "visible") void consultar(sigueActivo); // consultar maneja sus errores
+      if (document.visibilityState === "visible") void consultar(sigueActivo);
     };
     revisar();
     const intervalo = setInterval(revisar, INTERVALO_CONSULTA_MS);
@@ -149,7 +137,6 @@ export default function Notificaciones({ recarga }: Props) {
     return () => { activo = false; };
   }, []);
 
-  // La bandeja se cierra con Escape (el clic afuera lo atiende el fondo).
   useEffect(() => {
     if (!abierto) return;
     const alTeclear = (e: KeyboardEvent) => {
@@ -168,14 +155,13 @@ export default function Notificaciones({ recarga }: Props) {
     try {
       await marcarLeida(id);
     } catch {
-      // Sin efecto visible: la próxima consulta trae el estado real.
     }
   };
 
   const cambiarPreferencia = async () => {
     if (activas === null) return;
     const nueva = !activas;
-    setActivas(nueva); // se refleja al instante; si el servidor falla, se revierte
+    setActivas(nueva);
     if (!nueva) setEmergente(null);
     setGuardandoConfig(true);
     setError("");
@@ -193,14 +179,11 @@ export default function Notificaciones({ recarga }: Props) {
   const noLeidas = lista.filter((n) => !n.leida).length;
   const visibles = filtro === "sin-leer" ? lista.filter((n) => !n.leida) : lista;
 
-  // La campana se balancea cuando llega un aviso nuevo.
   useEffect(() => {
     if (emergente && !reducir) void campana.start({ rotate: [0, -16, 13, -9, 6, 0], transition: { duration: 0.7 } });
   }, [emergente, reducir, campana]);
 
-  // Al abrir, el foco va a "Cerrar"; al cerrar, vuelve a la campana.
   useEffect(() => {
-    // focusVisible: false evita el anillo de foco cuando se abrió con el mouse.
     if (abierto) cerrarBoton.current?.focus({ focusVisible: false } as FocusOptions);
   }, [abierto]);
 
@@ -253,7 +236,7 @@ export default function Notificaciones({ recarga }: Props) {
         </AnimatePresence>
       </motion.button>
 
-      {/* En un portal: la barra superior usa backdrop-filter y atraparía los elementos fijos dentro de ella. */}
+      {}
       {enCliente &&
         createPortal(
           <>

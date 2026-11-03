@@ -29,16 +29,10 @@ type Paso = "elegir" | "leyendo" | "revisar" | "guardando" | "asistencia" | "res
 
 type Props = {
   onCerrar: () => void;
-  /** Se guardó al menos una clase: la pantalla recarga el horario y los puentes. */
   onGuardado: (cantidad: number) => void;
-  /** Cambió a cuáles clases asiste: la pantalla recarga los puentes. */
   onActualizado: () => void;
 };
 
-/**
- * Registro del horario con una foto (HU2): el estudiante elige o toma la foto, el backend la lee con un modelo
- * de visión, el estudiante revisa y corrige las clases detectadas y las guarda de una vez (origen FOTO).
- */
 export default function FotoHorario({ onCerrar, onGuardado, onActualizado }: Props) {
   const reducir = useReducedMotion();
   const [paso, setPaso] = useState<Paso>("elegir");
@@ -57,7 +51,6 @@ export default function FotoHorario({ onCerrar, onGuardado, onActualizado }: Pro
   const camara = useRef<HTMLInputElement>(null);
   const ocupado = paso === "leyendo" || paso === "guardando" || guardandoAsistencia;
 
-  // La vista previa usa una URL temporal: se libera al cambiar de foto y, la última, al cerrar.
   const urlVista = useRef<string | null>(null);
   useEffect(() => () => {
     if (urlVista.current) URL.revokeObjectURL(urlVista.current);

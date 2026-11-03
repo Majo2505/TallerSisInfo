@@ -20,10 +20,8 @@ import {
 import ShellAdmin from "./ShellAdmin";
 import estilos from "./ShellApp.module.css";
 
-// Resorte del indicador de sección: llega rápido y se asienta con un rebote mínimo.
 const RESORTE = { type: "spring", bounce: 0.18, duration: 0.45 } as const;
 
-// `corto` es la etiqueta de la barra inferior del celular, donde no entran nombres largos.
 const SECCIONES = [
   { ruta: "/inicio", nombre: "Inicio", corto: "Inicio", Icono: IconoInicio },
   { ruta: "/horario", nombre: "Horario", corto: "Horario", Icono: IconoCalendario },
@@ -46,7 +44,6 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
     return <div className={estilos.app} aria-busy="true" />;
   }
 
-  // El administrador tiene su propia estructura (barra lateral con Inicio y Panel Admin).
   if (esAdmin(sesion)) return <ShellAdmin sesion={sesion}>{children}</ShellAdmin>;
 
   const activa = (ruta: string) => pathname === ruta || pathname.startsWith(`${ruta}/`);

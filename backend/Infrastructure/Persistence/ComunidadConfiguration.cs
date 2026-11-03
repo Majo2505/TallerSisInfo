@@ -25,7 +25,6 @@ public sealed class ComunidadConfiguration : IEntityTypeConfiguration<ComunidadE
     }
 }
 
-/// <summary>HU13: participaciones (quién fue invitado y si respondió).</summary>
 public sealed class ParticipacionConfiguration : IEntityTypeConfiguration<Participacion>
 {
     public void Configure(EntityTypeBuilder<Participacion> builder)

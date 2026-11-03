@@ -2,7 +2,6 @@
 .titulo { margin: 0 0 14px; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ucb-marino); }
 
 .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-/* Cada puente entra escalonado; el rayo se ilumina al pasar el mouse. */
 .tarjeta { position: relative; overflow: hidden; background: var(--ucb-amarillo-suave); border: 1.5px dashed #e8c94a; border-radius: 18px; padding: 12px 14px; animation: entrar 500ms var(--curva-salida) both; transition: transform 250ms var(--curva-salida), box-shadow 250ms var(--curva-salida); }
 .tarjeta:nth-child(2) { animation-delay: 70ms; }
 .tarjeta:nth-child(3) { animation-delay: 140ms; }

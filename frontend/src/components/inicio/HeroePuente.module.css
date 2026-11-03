@@ -10,7 +10,6 @@
   will-change: transform;
 }
 
-/* ---------- Contenido ---------- */
 .cuerpo {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -130,7 +129,6 @@
   color: #fff;
 }
 
-/* ---------- Anillo con punto en órbita ---------- */
 .anillo {
   position: relative;
   width: 96px;
@@ -199,7 +197,6 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
-/* ---------- Acción principal ---------- */
 .accion {
   grid-column: 1 / -1;
   position: relative;
@@ -228,7 +225,6 @@
   transition: transform 700ms var(--curva-salida);
 }
 
-/* Sin mouse, el destello cruza solo cada tanto para invitar a tocar. */
 @media (hover: none) and (prefers-reduced-motion: no-preference) {
   .accion::before {
     animation: destello 4.5s var(--curva-salida) 1.5s infinite;

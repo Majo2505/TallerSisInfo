@@ -24,10 +24,6 @@ const BENEFICIOS = [
   },
 ];
 
-/**
- * Lado de la marca: azul marino con fondo vivo. En laptop muestra la app funcionando (una mini tarjeta de puente)
- * y los beneficios; en celular queda solo la franja con la marca y el lema, para dejar el formulario a la vista.
- */
 export default function PanelMarca() {
   const reducir = useReducedMotion();
   const entrar = (retraso: number) => ({
@@ -62,7 +58,7 @@ export default function PanelMarca() {
         </span>
       </motion.h1>
 
-      {/* La app funcionando: un puente de ejemplo que flota. */}
+      {}
       <motion.div className={styles.demo} aria-hidden="true" {...entrar(0.35)}>
         <span className={styles.demoEstado}>
           <span className={styles.demoPunto} /> Puente activo

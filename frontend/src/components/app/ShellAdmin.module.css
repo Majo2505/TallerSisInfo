@@ -3,7 +3,6 @@
   color: var(--texto);
 }
 
-/* ---------- Barra lateral (laptop) ---------- */
 .lateral {
   display: none;
 }
@@ -175,7 +174,6 @@
   transform: scale(0.92);
 }
 
-/* ---------- Celular: barra superior + navegación inferior ---------- */
 .barra {
   position: sticky;
   top: 0;

@@ -2,19 +2,13 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Horarios;
 
-/// <summary>
-/// Registro del horario con una foto (HU2): valida el archivo, se lo pasa al lector (modelo de visión) y filtra
-/// lo que devuelve con las mismas reglas de un alta manual. No guarda: el estudiante revisa y confirma con
-/// <see cref="HorarioService.CrearLoteAsync"/>.
-/// </summary>
 public class FotoHorarioService
 {
-    public const long BytesMaximos = 8 * 1024 * 1024;   // 8 MB
+    public const long BytesMaximos = 8 * 1024 * 1024;
     public static readonly string[] TiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
-    private const int LargoMaximoAula = 30;             // horario.aula es VARCHAR(30)
+    private const int LargoMaximoAula = 30;
     private static readonly string[] Formatos = ["HH:mm", "HH:mm:ss", "H:mm"];
 
-    // Pausas que algunos horarios imprimen como si fueran una fila más: nunca son clases.
     private static readonly string[] Pausas = ["receso", "recreo", "descanso", "almuerzo", "break", "intermedio"];
 
     private static bool EsPausa(string materia)
@@ -43,8 +37,6 @@ public class FotoHorarioService
                 !TimeOnly.TryParseExact(c.HoraFin?.Trim(), Formatos, out var fin)) continue;
             if (ReglasHorario.ValidarBloque(c.Materia, c.DiaSemana, ini, fin) is not null) continue;
             if (EsPausa(c.Materia)) continue;
-            // HU17: lo que la IA leyó en la imagen no son instrucciones. Si una «materia» o un «aula» intenta manipular al
-            // asistente (por ejemplo, texto escondido en la foto), esa clase se descarta.
             if (ReglasSeguridadIa.EsManipulacion(c.Materia) || ReglasSeguridadIa.EsManipulacion(c.Aula)) continue;
 
             var materia = ReglasSeguridadIa.Sanear(c.Materia);

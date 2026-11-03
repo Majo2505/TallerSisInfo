@@ -26,7 +26,6 @@
   border-radius: 18px;
 }
 
-/* Cada categoría tiñe su tarjeta con el mismo tono de su escena. */
 .comida {
   --tono: #b8860b;
   --tono-fondo: #fffbea;

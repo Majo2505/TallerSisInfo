@@ -10,7 +10,6 @@ type Props = {
   minutosDisponibles: number;
 };
 
-/** Un lugar viable para el puente: cuánto cuesta llegar, cuánto dura la actividad y cuánto del puente usa. */
 export default function TarjetaLugarViable({ lugar, minutosDisponibles }: Props) {
   const total = lugar.tiempoTrasladoMin + lugar.duracionEstimadaMin;
   const arte = CON_ILUSTRACION.includes(lugar.categoria.toLowerCase()) ? lugar.categoria : "Descanso";

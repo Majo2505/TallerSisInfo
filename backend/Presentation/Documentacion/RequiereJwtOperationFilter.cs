@@ -4,10 +4,6 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Breaku.Presentation.Documentacion;
 
-/// <summary>
-/// Marca con el candado de JWT solo las operaciones que llevan [Authorize]
-/// (y no [AllowAnonymous]); login, registro y health quedan sin candado.
-/// </summary>
 public class RequiereJwtOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)

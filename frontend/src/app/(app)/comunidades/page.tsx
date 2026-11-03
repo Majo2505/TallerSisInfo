@@ -35,7 +35,6 @@ import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
 
-/** Descubrir: cómo está el estudiante respecto de cada comunidad. Unirse o confirmar asistencia llega con HU14. */
 function etiquetaEstado(c: ComunidadActiva): string | null {
   if (c.esMia) return "La creaste tú";
   if (c.miEstado === "PENDIENTE") return "Te invitaron";
@@ -49,21 +48,16 @@ export default function Comunidades() {
   const { sesion } = useSesion();
   const [pestana, setPestana] = useState<Pestana>("libres");
   const [texto, setTexto] = useState("");
-  // Descubrir (adición a HU11): las comunidades reales activas de hoy. Se piden cada vez que se abre la pestaña.
   const [descubrir, setDescubrir] = useState<ResultadoDescubrir | null>(null);
   const [cargandoDescubrir, setCargandoDescubrir] = useState(false);
   const [errorDescubrir, setErrorDescubrir] = useState("");
-  // HU11: lo que el servidor entendió del texto libre y la respuesta a la pregunta por un dato faltante.
   const [extraccion, setExtraccion] = useState<RespuestaExtraccion | null>(null);
   const [respuesta, setRespuesta] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState("");
-  // HU11: la casilla del resumen que se está editando ahí mismo (solo una a la vez).
   const [editando, setEditando] = useState<CampoActividad | null>(null);
-  // HU10: el estudiante confirmó el resumen y la actividad se creó (o se está creando).
   const [creando, setCreando] = useState(false);
   const [creada, setCreada] = useState<ActividadCreada | null>(null);
-  // HU13: volver a buscar compañeros para la actividad recién creada.
   const [invitando, setInvitando] = useState(false);
 
   async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
@@ -73,7 +67,6 @@ export default function Comunidades() {
       setExtraccion(await extraerActividad(textoAEnviar, anterior));
       setRespuesta("");
     } catch (e) {
-      // Incluye el rechazo de los guardrails (SOLICITUD_NO_PERMITIDA): el servidor ya manda el texto para mostrar.
       setError(e instanceof Error ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
     } finally {
       setBuscando(false);
@@ -83,19 +76,16 @@ export default function Comunidades() {
   function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!texto.trim() || buscando) return;
-    setExtraccion(null); // una descripción nueva: el aviso de la anterior («no entendimos») ya no aplica
+    setExtraccion(null);
     void consultar(texto.trim(), null);
   }
 
-  // Solo se manda la respuesta (o la corrección) y lo ya entendido: no hace falta reescribir toda la descripción.
   function responder(e: React.FormEvent) {
     e.preventDefault();
     if (!extraccion || !respuesta.trim() || buscando) return;
     void consultar(respuesta.trim(), extraccion.actividad);
   }
 
-  // HU11: el estudiante editó una casilla. El servidor revisa los datos sin llamar a la IA y devuelve una consulta nueva,
-  // que es la que se usa para crear la actividad.
   async function guardarDato(campo: CampoActividad, valor: string) {
     setEditando(null);
     if (!extraccion) return;
@@ -104,7 +94,7 @@ export default function Comunidades() {
       ...actual,
       [campo]: campo === "duracionMin" || campo === "maxParticipantes" ? Number(valor) : valor,
     };
-    if (cambiada[campo] === actual[campo]) return; // no cambió nada: no hace falta revisar
+    if (cambiada[campo] === actual[campo]) return;
     setBuscando(true);
     setError("");
     try {
@@ -116,7 +106,6 @@ export default function Comunidades() {
     }
   }
 
-  // Solo con todos los datos y solo al confirmar: si el estudiante descarta el resumen, no se crea nada.
   async function confirmar() {
     if (!extraccion || extraccion.estado !== "COMPLETO" || creando) return;
     const completa = comoCompleta(extraccion.actividad);
@@ -132,7 +121,6 @@ export default function Comunidades() {
     }
   }
 
-  // HU13: la primera búsqueda es automática al crear; esto la repite (y, si hace falta, acepta antes el matching).
   async function invitar(aceptarMatching = false) {
     if (!creada || invitando) return;
     setInvitando(true);
@@ -172,7 +160,6 @@ export default function Comunidades() {
     }
   }
 
-  // El banner de arriba cuenta las comunidades reales de hoy: se piden al entrar, sin esperar a abrir «Descubrir».
   useEffect(() => {
     if (!sesion) return;
     let activo = true;
@@ -287,7 +274,7 @@ export default function Comunidades() {
                   Escríbelo en tus palabras
                 </h2>
                 <p className={estilos.texto}>Cuéntanos qué, a qué hora, cuánto dura y con cuántas personas. Si falta algo, te preguntamos.</p>
-                {/* Arriba del formulario: en el celular, debajo del botón quedaría tapado por la barra inferior. */}
+                {}
                 {error && (
                   <p className={estilos.error} role="alert">
                     {error}
@@ -392,7 +379,7 @@ export default function Comunidades() {
                         </ul>
                         <small className={estilos.pista}>Toca un dato para corregirlo ahí mismo.</small>
 
-                        {/* Siempre a la vista: responder la pregunta por el dato que falta o corregir en palabras. */}
+                        {}
                         <form className={estilos.respuesta} onSubmit={responder}>
                           <label htmlFor="respuesta-dato" className={estilos.pregunta}>
                             {entendida.estado === "INCOMPLETO" ? entendida.mensaje : "¿Quieres cambiar algo? Dilo en tus palabras"}

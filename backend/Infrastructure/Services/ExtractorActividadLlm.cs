@@ -9,17 +9,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Breaku.Infrastructure.Services;
 
-/// <summary>
-/// HU11: extracción por tool calling con un LLM que exponga la API de Chat Completions de OpenAI (OpenAI, Groq, Ollama…).
-/// Se le ofrece una sola función, <c>registrar_actividad</c>, y se le obliga a llamarla (<c>tool_choice</c>), así la
-/// respuesta siempre llega como argumentos JSON con el esquema de abajo. Qué datos valen lo decide después ReglasExtraccion.
-/// Al LLM solo se envía el prompt: nunca el id, el nombre ni la ubicación del estudiante.
-/// </summary>
 public class ExtractorActividadLlm : IExtractorActividad
 {
-    private const int LargoColumnaModelo = 40;   // log_auditoria_rag.modelo es VARCHAR(40)
+    private const int LargoColumnaModelo = 40;
 
-    // strict = true exige additionalProperties = false y que cada campo esté en required (los opcionales admiten null).
     private const string EsquemaParametros = """
         {
           "type": "object",
@@ -38,7 +31,7 @@ public class ExtractorActividadLlm : IExtractorActividad
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
-        NumberHandling = JsonNumberHandling.AllowReadingFromString   // algunos modelos locales mandan "60" en vez de 60
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
 
     private readonly HttpClient _http;
@@ -83,16 +76,11 @@ public class ExtractorActividadLlm : IExtractorActividad
             }
         };
 
-        // Los modelos de razonamiento de OpenAI (gpt-6-luna) lo traen encendido por defecto, y en /v1/chat/completions no
-        // aceptan tools con razonamiento: responden 400 «Function tools with reasoning_effort are not supported».
-        // Extraer cuatro datos no necesita razonar, así que se apaga. Solo con OpenAI: otros proveedores (Groq, Ollama)
-        // podrían rechazar el campo.
         if (EsOpenAi(_http.BaseAddress)) cuerpo["reasoning_effort"] = "none";
 
         using var respuesta = await _http.PostAsJsonAsync("chat/completions", cuerpo, ct);
         if (!respuesta.IsSuccessStatusCode)
         {
-            // El cuerpo del error no incluye la clave; sirve para saber si es cuota, modelo inválido, etc.
             _logger.LogWarning("El LLM respondió {Estado}: {Cuerpo}", (int)respuesta.StatusCode, await respuesta.Content.ReadAsStringAsync(ct));
             throw new HttpRequestException($"El LLM respondió {(int)respuesta.StatusCode}.");
         }
@@ -119,14 +107,9 @@ public class ExtractorActividadLlm : IExtractorActividad
         return new RespuestaExtractor(modelo.Length > LargoColumnaModelo ? modelo[..LargoColumnaModelo] : modelo, argumentos, extraidos);
     }
 
-    /// <summary>true si el proveedor es la API de OpenAI (la única a la que se le manda <c>reasoning_effort</c>).</summary>
     public static bool EsOpenAi(Uri? urlBase)
         => urlBase is not null && urlBase.Host.Equals("api.openai.com", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Los argumentos de la llamada a la función. Si el modelo no hizo tool calling (algunos modelos locales ignoran
-    /// <c>tool_choice</c>) pero respondió el mismo JSON como texto, también se acepta. null si no hay ninguno de los dos.
-    /// </summary>
     private static string? LeerArgumentos(JsonElement mensaje)
     {
         if (mensaje.TryGetProperty("tool_calls", out var llamadas) && llamadas.ValueKind == JsonValueKind.Array)
@@ -137,7 +120,6 @@ public class ExtractorActividadLlm : IExtractorActividad
                 if (funcion.GetProperty("name").GetString() != PromptExtraccion.NombreFuncion) continue;
 
                 var args = funcion.GetProperty("arguments");
-                // OpenAI manda los argumentos como texto JSON; Ollama a veces como objeto.
                 return args.ValueKind == JsonValueKind.String ? args.GetString() : args.GetRawText();
             }
         }

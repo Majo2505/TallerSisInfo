@@ -34,7 +34,6 @@
   transform: scale(0.96);
 }
 
-/* Portada azul marino con el campus actual. */
 .portadaInterior {
   position: relative;
   isolation: isolate;
@@ -121,7 +120,6 @@
   color: var(--ucb-marino);
 }
 
-/* Avisos */
 .error,
 .exito {
   margin: 0;
@@ -142,7 +140,6 @@
   color: var(--exito);
 }
 
-/* Las dos formas de elegir el campus. */
 .tarjetas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
@@ -213,7 +210,6 @@
   font-weight: 700;
 }
 
-/* Casilla de consentimiento con el estilo de la app. */
 .consentimiento {
   position: relative;
   display: flex;
@@ -259,7 +255,6 @@
   outline-offset: 2px;
 }
 
-/* Botones (mismos que el resto de la app). */
 .primario,
 .secundario,
 .revocar {

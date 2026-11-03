@@ -1,21 +1,17 @@
 import { pedirApi } from "./api";
 import { Puente } from "./puentes";
 
-/**
- * Matching de compañeros con puente compatible (HU12). El backend cruza tu puente con los de tu sede (mismo día,
- * 30 minutos o más en común) y los devuelve ordenados por compatibilidad. Solo aparece quien aceptó aparecer.
- */
 export type ConfiguracionMatching = { visible: boolean; desde: string | null };
 
 export type CompaneroCompatible = {
   nombre: string;
   carrera: string | null;
   semestre: number | null;
-  horaInicio: string; // tramo en común, "HH:mm:ss"
+  horaInicio: string;
   horaFin: string;
   minutosEnComun: number;
-  porcentaje: number; // qué parte de tu puente cubre, 1 a 100
-  franjasCompartidas: number; // en cuántos de tus puentes de la semana coinciden
+  porcentaje: number;
+  franjasCompartidas: number;
 };
 
 export type EstadoMatching = "OK" | "SIN_RESULTADOS" | "SIN_ZONA" | "NO_VISIBLE";

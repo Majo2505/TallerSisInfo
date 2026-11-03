@@ -6,12 +6,10 @@ import { ESTADOS_ANIMO, EstadoAnimo } from "@/lib/maqueta";
 import { SALIDA, seguirPuntero } from "./Movimiento";
 import estilos from "./SelectorAnimo.module.css";
 
-/** Tiempo que se ve la elección (onda y realce) antes de pasar a las recomendaciones. */
 const PAUSA_ELECCION_MS = 420;
 
 type Onda = { x: number; y: number };
 
-/** Estado de cada tarjeta tras elegir; todos los valores van completos para que Motion no vuelva al estado oculto. */
 function animacionTarjeta(esElegido: boolean, apartado: boolean) {
   if (esElegido) {
     return {
@@ -32,11 +30,6 @@ function animacionTarjeta(esElegido: boolean, apartado: boolean) {
   return undefined;
 }
 
-/**
- * Elección del ánimo (HU7): cuatro tarjetas que entran escalonadas. Cada una trae un personaje animado
- * (alguien que se duerme, alguien concentrado, alguien que corre y amigos conversando).
- * Al elegir, una onda nace desde el punto tocado y las demás tarjetas se apartan.
- */
 export default function SelectorAnimo({ onElegir }: { onElegir: (estado: EstadoAnimo) => void }) {
   const reducir = useReducedMotion();
   const [elegido, setElegido] = useState<EstadoAnimo | null>(null);
@@ -49,7 +42,6 @@ export default function SelectorAnimo({ onElegir }: { onElegir: (estado: EstadoA
       return;
     }
     const caja = evento.currentTarget.getBoundingClientRect();
-    // Con teclado no hay coordenadas: la onda nace del centro.
     const x = evento.clientX ? evento.clientX - caja.left : caja.width / 2;
     const y = evento.clientY ? evento.clientY - caja.top : caja.height / 2;
     setOnda({ x, y });
@@ -111,7 +103,6 @@ export default function SelectorAnimo({ onElegir }: { onElegir: (estado: EstadoA
   );
 }
 
-/** Cara simple: ojos y sonrisa, reutilizada por los personajes. */
 function Cara({ x, y, ojos = "abiertos", boca = "sonrisa" }: { x: number; y: number; ojos?: "abiertos" | "cerrados"; boca?: "sonrisa" | "recta" | "risa" }) {
   return (
     <g>
@@ -130,14 +121,9 @@ function Cara({ x, y, ojos = "abiertos", boca = "sonrisa" }: { x: number; y: num
   );
 }
 
-/**
- * Escenas con personajes (120×64). Las animaciones viven en el CSS y se disparan con hover, foco,
- * al elegir o, en pantallas táctiles, solas y más lentas.
- */
 function Escena({ estado }: { estado: EstadoAnimo }) {
   switch (estado) {
     case "cansado":
-      // Se queda dormido sobre el escritorio: bosteza, cabecea y vuelve a despertar.
       return (
         <svg viewBox="0 0 120 64" className={estilos.svg}>
           <path d="M22 10a6 6 0 1 0 6 9 5 5 0 0 1-6-9Z" className={estilos.decoTinte} />
@@ -160,7 +146,6 @@ function Escena({ estado }: { estado: EstadoAnimo }) {
         </svg>
       );
     case "enfocado":
-      // Con audífonos frente a la laptop: teclea, parpadea y la lámpara ilumina.
       return (
         <svg viewBox="0 0 120 64" className={estilos.svg}>
           <path className={estilos.luz} d="M100 30 84 55h24Z" />
@@ -185,7 +170,6 @@ function Escena({ estado }: { estado: EstadoAnimo }) {
         </svg>
       );
     case "energia":
-      // Sale a correr: brazos y piernas alternan, el cuerpo rebota y vuela una gota de sudor.
       return (
         <svg viewBox="0 0 120 64" className={estilos.svg}>
           <path d="M22 57h76" className={estilos.suelo} />
@@ -209,7 +193,6 @@ function Escena({ estado }: { estado: EstadoAnimo }) {
         </svg>
       );
     case "social":
-      // Tres amigos en una mesa: uno cuenta algo, otro asiente y el tercero se ríe.
       return (
         <svg viewBox="0 0 120 64" className={estilos.svg}>
           <g className={estilos.burbuja1}>

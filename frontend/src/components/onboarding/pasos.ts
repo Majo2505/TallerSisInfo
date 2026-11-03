@@ -6,7 +6,7 @@ export type Paso = {
   nota: string;
   boton: string;
   icono: NombreIcono;
-  brillo: string; // color de la luz del ícono, sobre el azul marino
+  brillo: string;
 };
 
 export const PASOS: Paso[] = [

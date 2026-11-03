@@ -1,8 +1,3 @@
-/**
- * Estados de ánimo que el estudiante puede elegir para pedir una recomendación (HU7).
- * Es la lista de opciones del selector, no datos del servidor: los lugares y las recomendaciones salen siempre de la API.
- */
-
 export type EstadoAnimo = "cansado" | "enfocado" | "energia" | "social";
 
 export const ESTADOS_ANIMO: { id: EstadoAnimo; nombre: string; descripcion: string }[] = [

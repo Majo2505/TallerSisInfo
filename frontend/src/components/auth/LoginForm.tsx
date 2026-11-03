@@ -18,7 +18,6 @@ import styles from "./LoginForm.module.css";
 
 const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DOMINIO_INSTITUCIONAL = "@ucb.edu.bo";
-// Pendiente: el backend no define reglas de contraseña; este mínimo es solo del formulario.
 const LARGO_MINIMO_PASSWORD = 8;
 
 type Modo = "login" | "registro";
@@ -125,7 +124,6 @@ export default function LoginForm() {
 
   const esRegistro = modo === "registro";
 
-  // Si ya hay sesión, se va directo a la entrada de su rol (estudiante: Inicio; administrador: el panel).
   useEffect(() => {
     if (sesion) router.replace(rutaDeEntrada(sesion));
   }, [sesion, router]);
@@ -207,7 +205,6 @@ export default function LoginForm() {
 
       <form className={styles.formulario} onSubmit={alEnviar} noValidate>
         {errorServidor && (
-          // El error "tiembla" al aparecer: se nota sin tener que leerlo primero.
           <motion.p
             key={errorServidor}
             className={styles.aviso}
@@ -290,7 +287,7 @@ export default function LoginForm() {
                   aria-invalid={errores.terminos ? true : undefined}
                   aria-describedby={errores.terminos ? "error-terminos" : undefined}
                 />
-                {/* Pendiente: aún no existe una página de términos de uso a la que enlazar. */}
+                {}
                 <label htmlFor="terminos">
                   Acepto los <strong>términos de uso</strong> y entiendo que BREAKU solo utiliza mi ubicación para
                   generar recomendaciones activas, nunca la almacena ni la comparte.

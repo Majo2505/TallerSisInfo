@@ -3,7 +3,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Admin;
 
-/// <summary>Casos de uso del panel de administración del campus (solo rol ADMIN).</summary>
 public class AdminService
 {
     public static readonly string[] EstadosLugar = ["ACTIVO", "EN_REVISION", "INACTIVO"];
@@ -17,7 +16,6 @@ public class AdminService
 
     public Task<List<LugarAdminDto>> ListarLugaresAsync(CancellationToken ct = default) => _repo.ListarLugaresAsync(ct);
 
-    /// <summary>Activa, pone en revisión o desactiva un lugar. Solo los ACTIVO se pueden recomendar.</summary>
     public async Task CambiarEstadoLugarAsync(int lugarId, CambioEstadoLugarDto req, int adminId, CancellationToken ct = default)
     {
         var estado = req.Estado?.Trim().ToUpperInvariant() ?? "";
@@ -30,10 +28,6 @@ public class AdminService
 
     public Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default) => _repo.ListarReportesAsync(ct);
 
-    /// <summary>
-    /// HU16: el administrador cierra un reporte pendiente como RESUELTO o DESCARTADO; queda quién lo revisó y cuándo.
-    /// Una decisión no se cambia: un reporte ya revisado responde YA_REVISADO (por ejemplo, si otro admin se adelantó).
-    /// </summary>
     public async Task ResolverReporteAsync(int reporteId, ResolverReporteDto req, int adminId, CancellationToken ct = default)
     {
         var decision = ReglasReporte.LeerDecision(req.Estado)

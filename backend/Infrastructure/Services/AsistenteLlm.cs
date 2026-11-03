@@ -6,20 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Breaku.Infrastructure.Services;
 
-/// <summary>
-/// HU7: asistente con un LLM que exponga la API de Chat Completions de OpenAI (Gemini, Groq, Ollama, OpenAI…),
-/// con salida en JSON según esquema. El esquema obliga al modelo a responder solo con pares (lugarId, explicacion);
-/// que esos lugares sean del contexto lo verifica después ReglasRecomendacion.
-/// Al LLM solo se envía el prompt (catálogo recuperado y preferencia): nunca la ubicación ni el id del estudiante.
-/// </summary>
 public class AsistenteLlm : IAsistenteIa
 {
     public const string NombreCliente = "Llm";
-    public const int SegundosMaximosPorDefecto = 20;   // se cambia con LLM_TIMEOUT_SECONDS (un LLM local en CPU necesita más)
+    public const int SegundosMaximosPorDefecto = 20;
 
-    private const int LargoColumnaModelo = 40;   // log_auditoria_rag.modelo es VARCHAR(40)
+    private const int LargoColumnaModelo = 40;
 
-    // Mismo formato que pide PromptRecomendacion.Sistema. strict = true exige additionalProperties = false y que cada campo esté en required.
     private const string EsquemaRespuesta = """
         {
           "type": "object",
@@ -80,7 +73,6 @@ public class AsistenteLlm : IAsistenteIa
         using var respuesta = await _http.PostAsJsonAsync("chat/completions", cuerpo, ct);
         if (!respuesta.IsSuccessStatusCode)
         {
-            // El cuerpo del error no incluye la clave; sirve para saber si es cuota, modelo inválido, etc.
             _logger.LogWarning("El LLM respondió {Estado}: {Cuerpo}", (int)respuesta.StatusCode, await respuesta.Content.ReadAsStringAsync(ct));
             throw new HttpRequestException($"El LLM respondió {(int)respuesta.StatusCode}.");
         }

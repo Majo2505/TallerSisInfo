@@ -1,7 +1,3 @@
--- Lleva una base creada con la versión anterior de schema.sql a la actual.
-
--- Se ejecuta UNA sola vez, con la base de datos ya seleccionada (sin USE, como seed-dev.sql).
--- Si una sentencia falla con "Duplicate column name", la migración ya estaba aplicada.
 ALTER TABLE usuario
   ADD COLUMN notificaciones_activas BOOLEAN NOT NULL DEFAULT TRUE AFTER fecha_consentimiento;
 

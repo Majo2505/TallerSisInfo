@@ -1,4 +1,3 @@
-/* HU13: a quiénes se invitó al crear la actividad (vive dentro de la tarjeta verde de la pestaña Crear). */
 .bloque {
   display: grid;
   gap: 10px;
@@ -73,7 +72,6 @@
   outline-offset: 2px;
 }
 
-/* Radar amarillo mientras se busca (el mismo de «Enviar solicitud»). */
 .radar {
   position: relative;
   width: 12px;
@@ -96,7 +94,6 @@
   to { transform: scale(2.6); opacity: 0; }
 }
 
-/* Grupo armado: a quiénes se invitó. */
 .bloque .mensaje {
   margin: 0;
   color: #17704a;
@@ -144,7 +141,6 @@
   min-width: 0;
 }
 
-/* El nombre se lee completo (es quien va a ir); la carrera se puede cortar. */
 .quien strong {
   color: var(--ucb-marino);
   font-size: 0.98rem;
@@ -188,7 +184,6 @@
 }
 
 @container (max-width: 400px) {
-  /* Si la lista es angosta, la hora baja debajo del nombre en vez de apretarlo. */
   .invitado {
     grid-template-columns: auto minmax(0, 1fr);
     row-gap: 6px;

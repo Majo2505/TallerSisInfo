@@ -6,11 +6,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Matching;
 
-/// <summary>
-/// Casos de uso de HU12: encontrar compañeros de la misma sede con un puente compatible y ordenarlos por compatibilidad.
-/// Mostrar cuándo está libre otro estudiante es un dato personal: solo aparece quien lo aceptó, y para ver a otros
-/// hay que aceptar aparecer también. Cada cambio del consentimiento queda en historial_cambio.
-/// </summary>
 public class MatchingService
 {
     public const string EstadoOk = "OK";
@@ -36,7 +31,7 @@ public class MatchingService
         if (req.Visible is null) throw new ReglaNegocioException("VALIDACION", "Indica si quieres aparecer (visible: true o false).");
 
         var usuario = await ObtenerUsuarioAsync(usuarioId, ct);
-        if (usuario.VisibleMatching == req.Visible) return AConfiguracion(usuario);   // sin cambios: no se escribe ni se audita
+        if (usuario.VisibleMatching == req.Visible) return AConfiguracion(usuario);
 
         var antes = Valores(usuario);
         usuario.VisibleMatching = req.Visible.Value;

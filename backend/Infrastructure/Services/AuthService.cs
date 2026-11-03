@@ -81,7 +81,6 @@ public class AuthService : IAuthService
         };
     }
 
-    /// <summary>Solo se acepta usuario@ucb.edu.bo (HU1); cualquier otro dominio se rechaza.</summary>
     private static void ValidarCorreoInstitucional(string? correo)
     {
         var valor = correo?.Trim() ?? string.Empty;
@@ -109,7 +108,6 @@ public class AuthService : IAuthService
             new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
             new Claim("nombre", usuario.Nombre),
-            // Rol para [Authorize(Roles = "ADMIN")]; se serializa como "role" en el JWT.
             new Claim(ClaimTypes.Role, usuario.Rol)
         };
 

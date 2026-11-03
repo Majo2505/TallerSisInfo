@@ -22,12 +22,6 @@ function duracion(min: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
-/**
- * La semana de un vistazo: cuánto pesa cada día (horas de clase y tiempo libre en puentes) y los datos que no
- * están en otro lado (día más cargado, día más libre, entrada más temprana y salida más tarde). Los totales
- * (clases, puentes y minutos libres) ya están arriba, en la portada, así que aquí no se repiten.
- * Solo cuentan las clases a las que el estudiante asiste.
- */
 export default function ResumenSemanal({ bloques, puentes, cargando }: Props) {
   const reducir = useReducedMotion();
   const asistidas = bloques.filter((b) => b.asiste);

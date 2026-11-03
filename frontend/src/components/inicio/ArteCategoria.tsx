@@ -2,12 +2,6 @@ import estilos from "./ArteCategoria.module.css";
 
 type Props = { categoria: string };
 
-/**
- * Escena animada por categoría sobre un fondo de color propio. No hay fotos reales de los lugares,
- * así que cada categoría cuenta una pequeña historia: la taza humea, el libro pasa la página,
- * la planta se mece con la nube y la pelota rebota. Se anima al pasar el mouse por la tarjeta
- * (el padre usa la clase global "lugar-arte"); en pantallas táctiles se mueve suave todo el tiempo.
- */
 export default function ArteCategoria({ categoria }: Props) {
   const tipo = categoria.toLowerCase();
   return (

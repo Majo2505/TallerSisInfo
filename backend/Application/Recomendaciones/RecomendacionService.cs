@@ -6,11 +6,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Recomendaciones;
 
-/// <summary>
-/// Caso de uso de HU7: recomendación con asistente RAG de contexto estricto.
-/// Recupera lugares reales del catálogo (HU6), le pide al asistente que los explique y descarta todo lo que
-/// no salga de ese contexto. Cada consulta queda en el log de auditoría, con los lugares que la respaldan.
-/// </summary>
 public class RecomendacionService
 {
     public const string EstadoRespuestaOk = "OK";
@@ -34,12 +29,10 @@ public class RecomendacionService
     {
         var entrada = LimpiarEntrada(req.Entrada);
 
-        // Solo puentes del propio usuario: uno ajeno responde igual que si no existiera (BOLA).
         var puente = (await _puentes.ListarPorUsuarioAsync(usuarioId, ct)).FirstOrDefault(p => p.Id == req.PuenteId)
                      ?? throw new ReglaNegocioException("NO_ENCONTRADO", "El puente no existe.");
         var minutosDisponibles = (int)(puente.HoraFin - puente.HoraInicio).TotalMinutes;
 
-        // Antes de buscar lugares o llamar al asistente: lo que no se puede enviar queda registrado y se rechaza (HU17).
         var rechazo = ReglasSeguridadIa.Evaluar(entrada);
         if (rechazo is not null)
         {
@@ -80,7 +73,6 @@ public class RecomendacionService
             }).ToList()
         };
 
-        // Sin contexto no se llama al LLM: no hay nada real que recomendar (criterio 4).
         if (candidatos.Count == 0) return await SinResultadosAsync(log, ct);
 
         var prompt = PromptRecomendacion.Construir(candidatos, minutosDisponibles, entrada);
@@ -105,15 +97,12 @@ public class RecomendacionService
         log.RespuestaLlm = respuesta.TextoCrudo;
         log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
 
-        // Contexto estricto: se descarta todo lugar que no se haya recuperado y toda explicación con datos externos (criterios 1 y 2)
-        // o que no pase los guardrails (HU17: la respuesta de la IA se revisa igual que la entrada).
         var sugerencias = respuesta.Sugerencias.Select(s => (s.LugarId, s.Explicacion)).ToList();
         var recuperados = candidatos.ToDictionary(l => l.LugarId, l => l.Nombre);
         var validas = ReglasRecomendacion.FiltrarSoloRecuperados(sugerencias, recuperados);
 
         if (validas.Count == 0)
         {
-            // Si el asistente propuso algo y todo se descartó, queda constancia como rechazo por seguridad, con el motivo.
             if (respuesta.Sugerencias.Count > 0)
             {
                 log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
@@ -130,7 +119,6 @@ public class RecomendacionService
             LugarRecuperado = log.LugaresRecuperados.Single(l => l.LugarId == v.LugarId)
         }).ToList();
 
-        // Se registra ANTES de responder: nada se muestra sin quedar en el log (criterio 3).
         await _repo.GuardarAsync(log, recomendaciones, ct);
 
         var porId = candidatos.ToDictionary(l => l.LugarId);
@@ -156,20 +144,14 @@ public class RecomendacionService
         return saneada.Length == 0 ? null : saneada;
     }
 
-    // Las métricas salen del catálogo (candidato), no del texto del asistente.
     private static RecomendacionDto ADto(Recomendacion r, LugarCandidato l) =>
         new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion, r.Feedback);
 
-    /// <summary>
-    /// HU9: guarda la valoración del estudiante sobre una de SUS recomendaciones. Hay una sola por recomendación:
-    /// un voto nuevo reemplaza al anterior y repetir el mismo voto no escribe nada.
-    /// </summary>
     public async Task<FeedbackGuardadoDto> GuardarFeedbackAsync(int usuarioId, long recomendacionId, string? feedback, CancellationToken ct = default)
     {
         var valor = ReglasFeedback.Normalizar(feedback)
             ?? throw new ReglaNegocioException("VALIDACION", ReglasFeedback.MensajeInvalido);
 
-        // Solo las recomendaciones del propio usuario: la de otro responde igual que una inexistente.
         var recomendacion = await _repo.ObtenerDeUsuarioAsync(recomendacionId, usuarioId, ct)
             ?? throw new ReglaNegocioException("NO_ENCONTRADO", "La recomendación no existe.");
 

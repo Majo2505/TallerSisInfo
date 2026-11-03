@@ -3,16 +3,12 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Recomendaciones;
 
-/// <summary>
-/// Arma el prompt de contexto estricto (HU7). El modelo solo ve los lugares recuperados del catálogo:
-/// nunca las coordenadas del estudiante ni datos de otros usuarios (HU5, criterio 4).
-/// </summary>
 public static class PromptRecomendacion
 {
     private static readonly JsonSerializerOptions Json = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping   // tildes legibles en el log
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     public static readonly string Sistema = $$"""

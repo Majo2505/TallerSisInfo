@@ -4,11 +4,6 @@ using Breaku.Application.Puentes;
 
 namespace Breaku.Application.Horarios;
 
-/// <summary>
-/// Casos de uso de HU2: alta, edición y eliminación de bloques, con persistencia por usuario.
-/// Dos clases pueden coincidir en la misma franja (el horario oficial lo permite): el choque no se bloquea, se avisa,
-/// y el estudiante marca a cuáles asiste. Solo los bloques a los que asiste cuentan como tiempo ocupado.
-/// </summary>
 public class HorarioService
 {
     public const int MaximoBloquesPorLote = 40;
@@ -37,7 +32,7 @@ public class HorarioService
         var ahora = DateTime.UtcNow;
         var h = new Horario
         {
-            UsuarioId = usuarioId, // siempre del JWT, nunca del body
+            UsuarioId = usuarioId,
             Materia = req.Materia.Trim(), DiaSemana = req.DiaSemana,
             HoraInicio = ini, HoraFin = fin, Aula = LimpiarAula(req.Aula),
             Origen = "MANUAL", Asiste = req.Asiste ?? true, AutorizacionChoque = req.AutorizacionCarrera ?? false,
@@ -49,12 +44,6 @@ public class HorarioService
         return ADto(h, await _repo.ListarPorUsuarioAsync(usuarioId, ct));
     }
 
-    /// <summary>
-    /// Guarda varios bloques de una vez (los confirmados desde la foto del horario, con origen <c>FOTO</c>).
-    /// Cada uno se valida igual que un alta manual; los inválidos o repetidos se devuelven como rechazados y el resto
-    /// se guarda. Los que coinciden con otra clase se guardan igual: cada bloque guardado trae sus coincidencias y
-    /// advertencias. Los puentes se recalculan una sola vez.
-    /// </summary>
     public async Task<ResultadoLoteDto> CrearLoteAsync(int usuarioId, GuardarLoteRequest req, CancellationToken ct = default)
     {
         if (req.Bloques is null || req.Bloques.Count == 0)
@@ -80,7 +69,7 @@ public class HorarioService
 
                 nuevos.Add(new Horario
                 {
-                    UsuarioId = usuarioId, // siempre del JWT, nunca del body
+                    UsuarioId = usuarioId,
                     Materia = materia, DiaSemana = b.DiaSemana,
                     HoraInicio = ini, HoraFin = fin, Aula = LimpiarAula(b.Aula),
                     Origen = "FOTO", Asiste = b.Asiste ?? true, AutorizacionChoque = b.AutorizacionCarrera ?? false,
@@ -120,14 +109,12 @@ public class HorarioService
         return ADto(h, await _repo.ListarPorUsuarioAsync(usuarioId, ct));
     }
 
-    /// <summary>Marca si el estudiante asiste a un bloque. Los puentes se recalculan con los bloques a los que asiste.</summary>
     public async Task<HorarioDto> CambiarAsistenciaAsync(int usuarioId, int id, bool asiste, bool? autorizacionCarrera = null, CancellationToken ct = default)
     {
         var resultado = await CambiarAsistenciasAsync(usuarioId, [new AsistenciaBloqueRequest(id, asiste, autorizacionCarrera)], ct);
         return resultado.Single();
     }
 
-    /// <summary>Cambia la asistencia de varios bloques de una vez (el paso «¿a cuáles asistes?» tras importar la foto).</summary>
     public async Task<List<HorarioDto>> CambiarAsistenciasAsync(int usuarioId, List<AsistenciaBloqueRequest> cambios, CancellationToken ct = default)
     {
         if (cambios is null || cambios.Count == 0)
@@ -136,7 +123,6 @@ public class HorarioService
             throw new ReglaNegocioException("VALIDACION", $"Se pueden cambiar hasta {MaximoBloquesPorLote} bloques a la vez.");
 
         var propios = (await _repo.ListarPorUsuarioAsync(usuarioId, ct)).ToDictionary(b => b.Id);
-        // Solo bloques del propio usuario: uno ajeno responde igual que si no existiera (BOLA). Si falta alguno no se cambia ninguno.
         if (cambios.Any(c => !propios.ContainsKey(c.Id))) throw new ReglaNegocioException("NO_ENCONTRADO", "El bloque no existe.");
 
         var ahora = DateTime.UtcNow;
@@ -156,7 +142,6 @@ public class HorarioService
 
     public async Task EliminarAsync(int usuarioId, int id, CancellationToken ct = default)
     {
-        // ObtenerAsync filtra por usuario: nadie borra bloques ajenos (BOLA).
         var h = await _repo.ObtenerAsync(id, usuarioId, ct)
                 ?? throw new ReglaNegocioException("NO_ENCONTRADO", "El bloque no existe.");
         _repo.Eliminar(h);
@@ -164,10 +149,8 @@ public class HorarioService
         await _puentes.RecalcularAsync(usuarioId, ct);
     }
 
-    // ---------- helpers ----------
     private static (TimeOnly, TimeOnly) ParsearYValidar(GuardarHorarioRequest req)
     {
-        // Se acepta HH:mm y HH:mm:ss; se responde siempre HH:mm:ss (contrato).
         if (!TimeOnly.TryParseExact(req.HoraInicio, Formatos, out var ini) ||
             !TimeOnly.TryParseExact(req.HoraFin, Formatos, out var fin))
             throw new ReglaNegocioException("VALIDACION", "Las horas deben tener formato HH:mm o HH:mm:ss.");
@@ -182,7 +165,6 @@ public class HorarioService
 
     private static string MensajeDuplicado(string materia) => $"Ya registraste «{materia}» a esa hora ese día.";
 
-    /// <summary>Dos clases distintas pueden empezar a la misma hora; lo que no se repite es la misma materia el mismo día y hora.</summary>
     private async Task VerificarDuplicadoAsync(int usuarioId, int dia, TimeOnly ini, string materia, int? ignorarId, CancellationToken ct)
     {
         var existentes = await _repo.ListarPorUsuarioAsync(usuarioId, ct);

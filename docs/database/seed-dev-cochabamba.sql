@@ -1,20 +1,3 @@
--- BREAKU · Seed de DESARROLLO: sede UCB Cochabamba (zona, categoría de referencia y 13 lugares).
--- Generado con docs/datos/generar_seed_cochabamba.py a partir de docs/datos/lugares_ucb_cochabamba.json. No lo edites a mano.
--- SOLO para desarrollo local. NUNCA ejecutar en producción.
---
--- Requisitos: haber ejecutado seed-dev.sql (usa al usuario de prueba como created_by / updated_by) y la
--- migración 005-sede-cochabamba.sql (o haber creado la base con el schema.sql actual).
--- Se ejecuta con la base de datos ya seleccionada (sin USE). Es idempotente: se puede correr varias veces.
---
--- Qué hace:
---   · Crea (o actualiza) la sede «Campus UCB Cochabamba» como sede activa, con un radio de 500 m.
---   · Deja las demás sedes (La Paz) guardadas pero inactivas: no aparecen para elegir ni reciben recomendaciones.
---   · No crea categorías: usa Comida, Estudio, Descanso y Deporte (las categorías de la app). Si no existen, las crea.
---   · Carga los lugares con validado = FALSE: el equipo tiene que revisarlos. Los puntos de referencia
---     (campus, parqueo, bloques) quedan con recomendable = FALSE y nunca se recomiendan.
---
--- Para volver a La Paz: UPDATE zona SET activa = (nombre = 'Campus UCB La Paz');
-
 SET @autor := (SELECT id FROM usuario WHERE correo = 'dev.estudiante@ucb.edu.bo');
 
 INSERT INTO zona (nombre, latitud, longitud, radio_max_m, activa, created_by, updated_by)

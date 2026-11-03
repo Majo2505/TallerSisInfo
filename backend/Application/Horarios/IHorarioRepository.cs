@@ -2,7 +2,6 @@ using Breaku.Domain;
 
 namespace Breaku.Application.Horarios;
 
-/// <summary>Puerto: lo implementa Infrastructure.</summary>
 public interface IHorarioRepository
 {
     Task<List<Horario>> ListarPorUsuarioAsync(int usuarioId, CancellationToken ct = default);

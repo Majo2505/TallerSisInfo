@@ -6,11 +6,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Infrastructure.Services;
 
-/// <summary>
-/// Extractor sin LLM: se usa cuando no hay LLM_API_KEY (ver DependencyInjection). Reconoce con patrones simples las
-/// frases más comunes («jugar cartas por una hora», «café en 20 minutos con 2 amigos»), así HU11 se puede probar
-/// sin clave y sin costo. Devuelve lo mismo que el LLM: argumentos sin validar, que después revisa ReglasExtraccion.
-/// </summary>
 public class ExtractorActividadSimulado : IExtractorActividad
 {
     public const string NombreModelo = "simulado";
@@ -19,7 +14,7 @@ public class ExtractorActividadSimulado : IExtractorActividad
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping   // tildes legibles en el log
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     private static readonly Dictionary<string, int> NumerosEnPalabras = new()
@@ -31,7 +26,6 @@ public class ExtractorActividadSimulado : IExtractorActividad
 
     private const string Numero = @"(\d{1,3}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|quince|veinte|treinta|cuarenta)";
 
-    // Actividades conocidas: patrón sobre el texto normalizado → (nombre, cupo habitual o null).
     private static readonly (Regex Patron, string Nombre, int? Cupo)[] Conocidas =
     [
         (Patron(@"\bcartas?\b|\bnaipes?\b|\bcacho\b"), "jugar cartas", 4),
@@ -45,7 +39,6 @@ public class ExtractorActividadSimulado : IExtractorActividad
         (Patron(@"\bcaminar\b|\bcaminata\b|\bpasear\b"), "caminar", null)
     ];
 
-    // Si no es una actividad conocida: verbo + lo que sigue («ver una peli» → «ver peli»).
     private static readonly Regex VerboConObjeto =
         Patron(@"\b(jugar|estudiar|repasar|practicar|tomar|comer|caminar|leer|ver|hacer|armar|charlar|conversar)\b(?: (?:un|una|el|la|los|las|unos|unas))?(?: (?!por\b|en\b|a\b|con\b|para\b|hasta\b|de\b|y\b|durante\b)(\w+))?");
 
@@ -62,7 +55,6 @@ public class ExtractorActividadSimulado : IExtractorActividad
     private static readonly Regex Minutos = Patron(@"(?<!\ben )\b" + Numero + @" (min|mins|minuto|minutos)\b");
 
     private static readonly Regex ConAmigos = Patron(@"\bcon (otros? |otras? )?" + Numero + @" (amig\w*|compa\w*|personas?|mas|chicos|chicas)\b");
-    // «para» solo cuenta con sustantivo («para 5 personas»); sin él, «para un café» se leería como cupo de 1.
     private static readonly Regex CupoTotal = Patron(@"\b(?:somos|seriamos|hasta|maximo|max) " + Numero + @"(?: personas?| participantes?| jugadores?)?\b");
     private static readonly Regex Personas = Patron(@"\b" + Numero + @" (personas|participantes|jugadores)\b");
 
@@ -74,11 +66,8 @@ public class ExtractorActividadSimulado : IExtractorActividad
         return Task.FromResult(new RespuestaExtractor(NombreModelo, JsonSerializer.Serialize(argumentos, Json), argumentos));
     }
 
-    /// <summary>Lee la actividad del texto con patrones. Público para poder probarlo solo.</summary>
     public static ArgumentosExtraidos Extraer(string texto)
     {
-        // Se separan números y letras pegados («20min», «3pm») antes de normalizar: si no, Normalizar los toma como
-        // letras disfrazadas de números («2omin») y se pierde la cifra.
         var separado = Regex.Replace(texto, @"(?<=\d)(?=\p{L})|(?<=\p{L})(?=\d)", " ", RegexOptions.None, TiempoMaximo);
         var n = ReglasSeguridadIa.Normalizar(separado);
         var (actividad, cupoHabitual) = LeerActividad(n);
@@ -112,7 +101,6 @@ public class ExtractorActividadSimulado : IExtractorActividad
             var sufijo = a.Groups[4].Value.Trim();
             var esTarde = sufijo is "de la tarde" or "de la noche" or "pm";
             var esManana = sufijo is "de la manana" or "am";
-            // Sin aclarar mañana o tarde, una hora antes de las 07:15 en el campus es de la tarde: «a las 3» o «a las 7» son 15:00 y 19:00.
             if (hora < 12 && (esTarde || (!esManana && hora * 60 + minutos < 7 * 60 + 15))) hora += 12;
             if (hora > 23 || minutos > 59) return (null, null);
             return ($"{hora:00}:{minutos:00}", null);
@@ -133,7 +121,7 @@ public class ExtractorActividadSimulado : IExtractorActividad
 
     private static int? LeerParticipantes(string n)
     {
-        if (ConAmigos.Match(n) is { Success: true } c) return Valor(c.Groups[2].Value) + 1;   // + quien escribe
+        if (ConAmigos.Match(n) is { Success: true } c) return Valor(c.Groups[2].Value) + 1;
         if (CupoTotal.Match(n) is { Success: true } t) return Valor(t.Groups[1].Value);
         if (Personas.Match(n) is { Success: true } p) return Valor(p.Groups[1].Value);
         return null;

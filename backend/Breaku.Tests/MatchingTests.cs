@@ -68,9 +68,9 @@ public class OrdenPorCompatibilidadTests
     public void Primero_quien_comparte_mas_minutos()
     {
         var resultado = Calcular(Mia, [Mia], [
-            De(7, 1, "10:00", "11:30"),   // 60 min
-            De(8, 1, "09:30", "11:00"),   // 90 min
-            De(9, 1, "09:00", "10:30"),   // 60 min
+            De(7, 1, "10:00", "11:30"),
+            De(8, 1, "09:30", "11:00"),
+            De(9, 1, "09:00", "10:30"),
         ]);
 
         Assert.Equal(8, resultado[0].UsuarioId);
@@ -83,8 +83,8 @@ public class OrdenPorCompatibilidadTests
     {
         var miMiercoles = F(3, "10:00", "12:00");
         var resultado = Calcular(Mia, [Mia, miMiercoles], [
-            De(7, 1, "10:00", "11:30"),                                // 60 min el lunes, nada más
-            De(9, 1, "09:00", "10:30"), De(9, 3, "10:30", "12:30"),     // 60 min el lunes y también el miércoles
+            De(7, 1, "10:00", "11:30"),
+            De(9, 1, "09:00", "10:30"), De(9, 3, "10:30", "12:30"),
         ]);
 
         Assert.Equal([9, 7], resultado.Select(c => c.UsuarioId));
@@ -96,9 +96,9 @@ public class OrdenPorCompatibilidadTests
     public void Quien_no_se_cruza_o_comparte_menos_del_minimo_no_aparece()
     {
         var resultado = Calcular(Mia, [Mia], [
-            De(7, 2, "09:30", "11:00"),   // otro día
-            De(8, 1, "10:45", "12:00"),   // 15 min
-            De(9, 1, "11:00", "12:00"),   // solo se toca
+            De(7, 2, "09:30", "11:00"),
+            De(8, 1, "10:45", "12:00"),
+            De(9, 1, "11:00", "12:00"),
         ]);
 
         Assert.Empty(resultado);

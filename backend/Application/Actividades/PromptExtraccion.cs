@@ -4,11 +4,6 @@ using Breaku.Domain.Rules;
 
 namespace Breaku.Application.Actividades;
 
-/// <summary>
-/// Arma el prompt de la extracción estructurada (HU11). El modelo no responde con texto: tiene que llamar a la función
-/// <see cref="NombreFuncion"/> con los datos que entienda. Solo ve el texto del estudiante, la hora actual y lo ya
-/// entendido: nunca su id, su nombre ni su ubicación.
-/// </summary>
 public static class PromptExtraccion
 {
     public const string NombreFuncion = "registrar_actividad";
@@ -16,7 +11,7 @@ public static class PromptExtraccion
     private static readonly JsonSerializerOptions Json = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping   // tildes legibles en el log
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     public static readonly string Sistema = $$"""
@@ -45,9 +40,6 @@ public static class PromptExtraccion
            devuelve esos datos y completa o corrige solo lo que el texto agrega.
         """;
 
-    /// <param name="texto">Texto del estudiante, ya saneado (sin &lt; ni &gt;).</param>
-    /// <param name="anterior">Lo ya entendido, si el texto responde a una pregunta. null en la primera consulta.</param>
-    /// <param name="ahoraLocal">Hora actual en Bolivia, para interpretar «a las 3» o «en 20 minutos».</param>
     public static PromptRag Construir(string texto, DatosActividad? anterior, DateTime ahoraLocal)
     {
         var yaEntendidos = anterior is null

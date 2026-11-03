@@ -1,17 +1,15 @@
 import { pedirApi } from "./api";
 
-/** Horario de clases de la UCB: la más temprana empieza a las 07:15 y la más tarde termina a las 21:00 (mismo límite que el backend). */
 export const HORA_MINIMA = "07:15";
 export const HORA_MAXIMA = "21:00";
 
-/** Otro bloque del mismo día que se cruza con éste, asista o no el estudiante. */
 export type Coincidencia = { id: number; materia: string; horaInicio: string; horaFin: string; asiste: boolean };
 
 export type Bloque = {
   id: number;
   materia: string;
   diaSemana: number;
-  horaInicio: string; // "HH:mm"
+  horaInicio: string;
   horaFin: string;
   aula: string | null;
   origen: string;
@@ -21,7 +19,6 @@ export type Bloque = {
   advertencias: string[];
 };
 
-/** Lo que se envía para crear o editar un bloque. `asiste` y `autorizacionCarrera` se omiten para conservar lo que ya tenía. */
 export type BloqueInput = {
   materia: string;
   diaSemana: number;
@@ -32,7 +29,6 @@ export type BloqueInput = {
   autorizacionCarrera?: boolean;
 };
 
-/** El estudiante asiste a este bloque y también a otro que se cruza con él. */
 export const enChoque = (b: Bloque) => b.asiste && b.coincide.some((c) => c.asiste);
 
 export const listarHorario = () => pedirApi<Bloque[]>("/api/horario");
@@ -40,17 +36,14 @@ export const crearBloque = (b: BloqueInput) => pedirApi<Bloque>("/api/horario", 
 export const editarBloque = (id: number, b: BloqueInput) => pedirApi<Bloque>(`/api/horario/${id}`, { method: "PUT", body: JSON.stringify(b) });
 export const eliminarBloque = (id: number) => pedirApi<void>(`/api/horario/${id}`, { method: "DELETE" });
 
-/** Marca si el estudiante asiste a un bloque; el backend recalcula los puentes con los bloques a los que asiste. */
 export const cambiarAsistencia = (id: number, asiste: boolean) =>
   pedirApi<Bloque>(`/api/horario/${id}/asistencia`, { method: "PATCH", body: JSON.stringify({ asiste }) });
 
 export type CambioAsistencia = { id: number; asiste: boolean; autorizacionCarrera?: boolean };
 
-/** Cambia la asistencia de varios bloques de una vez (el paso «¿a cuáles asistes?» tras importar la foto). */
 export const cambiarAsistencias = (bloques: CambioAsistencia[]) =>
   pedirApi<Bloque[]>("/api/horario/asistencia", { method: "PATCH", body: JSON.stringify({ bloques }) });
 
-/** Foto del horario (HU2): el backend la lee con un modelo de visión y devuelve las clases sin guardarlas. */
 export type ClaseLeida = Pick<BloqueInput, "materia" | "diaSemana" | "horaInicio" | "horaFin" | "aula">;
 export type LecturaFoto = { clases: ClaseLeida[]; descartadas: number };
 export type ResultadoLote = { guardados: Bloque[]; rechazados: { indice: number; materia: string; motivo: string }[] };
@@ -64,7 +57,6 @@ export function leerFotoHorario(foto: File) {
   return pedirApi<LecturaFoto>("/api/horario/foto", { method: "POST", body: datos });
 }
 
-/** Guarda las clases confirmadas con origen FOTO; las que coinciden con otra se guardan igual y traen sus coincidencias. */
 export const guardarLote = (bloques: ClaseLeida[]) =>
   pedirApi<ResultadoLote>("/api/horario/lote", { method: "POST", body: JSON.stringify({ bloques }) });
 
@@ -73,10 +65,6 @@ const aMinutos = (h: string) => {
   return a * 60 + b;
 };
 
-/**
- * Reparte los bloques de un día en columnas para dibujar lado a lado los que se cruzan.
- * Devuelve, por id, la columna del bloque y cuántas columnas tiene su grupo de solapes.
- */
 export function columnasPorSolape(bloques: Bloque[]): Map<number, { columna: number; columnas: number }> {
   const resultado = new Map<number, { columna: number; columnas: number }>();
   const ordenados = [...bloques].sort((a, b) => aMinutos(a.horaInicio) - aMinutos(b.horaInicio) || aMinutos(b.horaFin) - aMinutos(a.horaFin));
@@ -103,10 +91,6 @@ export function columnasPorSolape(bloques: Bloque[]): Map<number, { columna: num
 
 export type OpcionAsistencia = { id: number; materia: string; diaSemana: number; horaInicio: string; horaFin: string; asiste: boolean };
 
-/**
- * Agrupa los bloques recién guardados que coinciden entre sí (y con clases que ya tenías), para preguntar a cuáles
- * asiste el estudiante. Cada grupo es un conjunto de clases del mismo día que se cruzan; los grupos de una sola clase no se incluyen.
- */
 export function gruposEnChoque(guardados: Bloque[]): OpcionAsistencia[][] {
   const padre = new Map<number, number>();
   const raiz = (id: number): number => {
@@ -140,7 +124,6 @@ export function gruposEnChoque(guardados: Bloque[]): OpcionAsistencia[][] {
     .sort((a, b) => a[0].diaSemana - b[0].diaSemana || a[0].horaInicio.localeCompare(b[0].horaInicio));
 }
 
-/** Minutos de clase por semana: es la unión de lo ocupado en cada día, solo con los bloques a los que asiste. */
 export function minutosOcupados(bloques: Bloque[]): number {
   let total = 0;
   for (let dia = 1; dia <= 6; dia++) {

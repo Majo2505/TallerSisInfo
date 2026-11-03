@@ -24,9 +24,6 @@ public sealed class ComunidadRepository : IComunidadRepository
     {
         var (diaSemana, inicio, fin) = (actividad.DiaSemana, actividad.Inicio, actividad.Fin);
 
-        // Mismo filtro que el matching de HU12 (sede, consentimiento, puente que se solapa; usa ix_usuario_matching e
-        // ix_puente_matching). Además: nadie que ya esté en esta comunidad ni en otra a esa hora.
-        // El mínimo de minutos en común lo aplica ReglasComunidad.
         var ocupados = from p in _db.Set<Participacion>()
                        join c in _db.Comunidades on p.ComunidadId equals c.Id
                        where c.Id != comunidad.Id && p.Estado == Participacion.EstadoConfirmado
@@ -58,7 +55,6 @@ public sealed class ComunidadRepository : IComunidadRepository
     {
         if (participaciones.Count == 0 && avisos.Count == 0) return;
 
-        // Participaciones y avisos van juntos: nadie queda invitado sin su aviso (ni al revés).
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         _db.Set<Participacion>().AddRange(participaciones);
         _db.Notificaciones.AddRange(avisos);
