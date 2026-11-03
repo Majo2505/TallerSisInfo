@@ -51,6 +51,8 @@ tags:
     description: Gestión del perfil (HU21). Requiere JWT; solo opera sobre el perfil del usuario del token.
   - name: Matching
     description: Compañeros de la misma sede con puente compatible (HU12). Requiere JWT. Solo aparece quien aceptó aparecer.
+  - name: Comunidades
+    description: Comunidades efímeras (HU13). Requiere JWT. Se crean automáticamente solo si hay compañeros libres a la hora de la actividad, y se les avisa.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -1217,6 +1219,67 @@ paths:
           description: Conexión a la base de datos correcta.
         '503':
           description: No se pudo conectar a la base de datos.
+  /api/comunidades:
+    post:
+      tags: [Comunidades]
+      operationId: crearComunidad
+      summary: Crea la comunidad automáticamente si hay compañeros libres a esa hora, y les avisa.
+      description: |
+        Parte de una actividad que `POST /api/actividades/extraer` (HU11) dejó `COMPLETO`: se manda su `consultaId` y su
+        `actividad` tal cual. El servidor vuelve a validar los datos con las reglas de HU11 (hora de hoy entre 07:15 y 21:00
+        que no haya pasado, de 10 a 240 minutos, de 2 a 30 personas).
+
+        **Coincidencias:** cruza la hora de la actividad con los puentes de hoy de los compañeros de tu sede que aceptaron
+        aparecer en el matching (HU12). Cuenta quien comparte 30 minutos o más (o la actividad entera, si dura menos) y no
+        está ya en otra comunidad a esa hora.
+
+        **Creación automática:** solo si hay al menos una coincidencia. Invita a los más compatibles, uno por plaza
+        (`maxParticipantes - 1`), y cada uno recibe un aviso `INVITACION_COMUNIDAD` en `GET /api/notificaciones` (salvo quien
+        apagó los avisos). Comunidad, invitaciones y avisos se guardan en una sola transacción.
+
+        `SIN_COINCIDENCIAS`, `SIN_ZONA` y `NO_VISIBLE` responden 200 y no crean nada.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearComunidadRequest'
+      responses:
+        '201':
+          description: Comunidad creada (`CREADA`), con los invitados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoComunidadDto'
+        '200':
+          description: No se creó (`SIN_COINCIDENCIAS`, `SIN_ZONA` o `NO_VISIBLE`); `mensaje` dice qué hacer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoComunidadDto'
+              example: { estado: SIN_COINCIDENCIAS, mensaje: Nadie de tu campus está libre a esa hora. Prueba con otra hora o vuelve a intentarlo más tarde., comunidad: null }
+        '400':
+          description: Faltan datos o no son válidos (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La extracción no existe, no es tuya, no es de hoy o no estaba completa (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: Esa extracción ya creó una comunidad (`YA_CREADA`) o ya estás en otra a esa hora (`EN_OTRA_COMUNIDAD`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
 components:
   securitySchemes:
     Bearer:
@@ -1535,7 +1598,7 @@ components:
           example: '10:30:00'
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. Hoy solo existe el tipo `PUENTE_DISPONIBLE` (HU4).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` (HU4) o `INVITACION_COMUNIDAD` (HU13).
       properties:
         id:
           type: integer
@@ -1582,6 +1645,12 @@ components:
           format: date-time
           description: Momento del envío (UTC).
           example: '2026-10-22T14:00:04.512Z'
+        comunidadId:
+          type: integer
+          format: int32
+          nullable: true
+          description: HU13. La comunidad a la que invita (`INVITACION_COMUNIDAD`). `null` en los avisos de puente.
+          example: null
     ConfiguracionNotificacionesDto:
       type: object
       description: Preferencia de avisos del usuario.
@@ -2008,3 +2077,43 @@ components:
           type: array
           description: Campos que completó el sistema porque el estudiante no los dijo (hoy solo `horaInicio`, «ahora»).
           items: { type: string, enum: [horaInicio] }
+    CrearComunidadRequest:
+      type: object
+      required: [consultaId, actividad]
+      properties:
+        consultaId: { type: integer, format: int64, example: 58, description: El `consultaId` de una extracción `COMPLETO` de hoy. }
+        texto: { type: string, nullable: true, maxLength: 200, example: Quiero jugar cartas a las 10:30 por una hora, description: Lo que escribió el estudiante. Si falta, se guarda la actividad. }
+        actividad:
+          $ref: '#/components/schemas/ActividadExtraidaDto'
+    InvitadoDto:
+      type: object
+      description: Compañero invitado. Sin correo ni id.
+      properties:
+        nombre: { type: string, example: Diego Mamani }
+        carrera: { type: string, nullable: true, example: Ingeniería Industrial }
+        libreDesde: { type: string, example: '10:30', description: Desde cuándo comparte la actividad (`HH:mm`, hora de Bolivia). }
+        libreHasta: { type: string, example: '11:30' }
+        minutosEnComun: { type: integer, format: int32, example: 60 }
+    ComunidadCreadaDto:
+      type: object
+      properties:
+        id: { type: integer, format: int32, example: 12 }
+        actividad: { type: string, example: jugar cartas }
+        horaInicio: { type: string, example: '10:30', description: Hoy, hora de Bolivia (`HH:mm`). }
+        horaFin: { type: string, example: '11:30' }
+        maxParticipantes: { type: integer, format: int32, example: 4, description: Personas en total, contando a quien la creó. }
+        invitados:
+          type: array
+          description: Del más al menos compatible.
+          items:
+            $ref: '#/components/schemas/InvitadoDto'
+    ResultadoComunidadDto:
+      type: object
+      properties:
+        estado: { type: string, enum: [CREADA, SIN_COINCIDENCIAS, SIN_ZONA, NO_VISIBLE], example: CREADA }
+        mensaje: { type: string, example: ¡Grupo armado! Invitamos a 3 compañeros libres a esa hora. }
+        comunidad:
+          allOf:
+            - $ref: '#/components/schemas/ComunidadCreadaDto'
+          nullable: true
+          description: La comunidad creada. `null` si no se creó.

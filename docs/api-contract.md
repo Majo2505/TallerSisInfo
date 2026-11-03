@@ -657,6 +657,73 @@ Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendim
 | 401 | Sin token o token inválido |
 | 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
 
+## 7e. Creación automática de comunidades y notificación (HU13 — responsable: Maite)
+
+Une HU11, HU12 y HU4: cuando la actividad que describió el estudiante está completa, el sistema busca **solo** a quién le
+coincide el tiempo libre y, si encuentra a alguien, crea la comunidad y le avisa. Sin IA: la IA ya trabajó en HU11.
+
+### Reglas
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Punto de partida | Una extracción de HU11 con estado `COMPLETO`, **del mismo estudiante y de hoy** (`consultaId`). Los datos se vuelven a validar con `ReglasExtraccion` (07:15 a 21:00, hora no pasada, 10 a 240 min, 2 a 30 personas) | ✅ Definido |
+| Coincidencias | Compañeros de la misma sede activa que aceptaron el matching (`visible_matching`), con un puente **hoy** que comparta **30 min o más** con la actividad (si dura menos de 30, la actividad entera). Mismo cruce que HU12 | ✅ Definido |
+| Solo si hay coincidencias | Sin nadie libre no se crea nada (`SIN_COINCIDENCIAS`) | ✅ Definido |
+| A quién se invita | A los más compatibles (más minutos en común; en empate, por id), **uno por plaza**: `maxParticipantes - 1` | 🟡 Propuesta (Maite) |
+| Ocupados | No se invita a quien ya creó o confirmó otra comunidad activa que se cruza con ese horario; y quien crea tampoco puede estar en otra (`EN_OTRA_COMUNIDAD`) | ✅ Definido |
+| Reciprocidad | Sin campus → `SIN_ZONA`; sin aceptar el matching → `NO_VISIBLE` (quien no aparece tampoco invita) | ✅ Definido |
+| Notificación | Un aviso `INVITACION_COMUNIDAD` por invitado, con `comunidadId`, en `GET /api/notificaciones`. Quien apagó los avisos (HU4) queda invitado pero sin aviso. Uno por comunidad (`uq_notif_comunidad`) | ✅ Definido |
+| Participaciones | Quien crea queda `CONFIRMADO` (con `respondido_en`); los invitados, `PENDIENTE` | ✅ Definido |
+| Atomicidad | Comunidad, participaciones y avisos en una sola transacción. Una extracción crea como mucho una comunidad (`uq_com_log`) | ✅ Definido |
+| Horas | `inicio` y `fin` se guardan en UTC; la API responde en hora de Bolivia (`HH:mm`) | ✅ Definido |
+
+### `POST /api/comunidades`
+
+Body (lo que devolvió la extracción, tal cual):
+
+```json
+{
+  "consultaId": 58,
+  "texto": "Quiero jugar cartas a las 10:30 por una hora, somos 4",
+  "actividad": { "actividad": "jugar cartas", "horaInicio": "10:30", "duracionMin": 60, "maxParticipantes": 4 }
+}
+```
+
+Respuesta **201** (`CREADA`):
+
+```json
+{
+  "estado": "CREADA",
+  "mensaje": "¡Grupo armado! Invitamos a 2 compañeros libres a esa hora.",
+  "comunidad": {
+    "id": 12, "actividad": "jugar cartas", "horaInicio": "10:30", "horaFin": "11:30", "maxParticipantes": 4,
+    "invitados": [
+      { "nombre": "Diego Mamani", "carrera": "Ingeniería Industrial", "libreDesde": "10:30", "libreHasta": "11:30", "minutosEnComun": 60 },
+      { "nombre": "Mateo Vargas", "carrera": "Arquitectura", "libreDesde": "10:30", "libreHasta": "11:00", "minutosEnComun": 30 }
+    ]
+  }
+}
+```
+
+Cada invitado recibe: «Camila te invita a «jugar cartas» hoy de 10:30 a 11:30. Coincide con tu tiempo libre.»
+
+Respuesta **200** cuando **no** se crea (`comunidad: null`):
+
+| `estado` | Cuándo | `mensaje` |
+|---|---|---|
+| `SIN_COINCIDENCIAS` | Nadie libre a esa hora | `Nadie de tu campus está libre a esa hora. Prueba con otra hora o vuelve a intentarlo más tarde.` |
+| `SIN_ZONA` | No elegiste campus | `Elige tu campus para encontrar compañeros libres a esa hora.` |
+| `NO_VISIBLE` | No aceptaste el matching | `Para invitar a tus compañeros, primero acepta que ellos también te encuentren.` |
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta la extracción o un dato no es válido (`VALIDACION`; `mensaje` es la misma pregunta de HU11) |
+| 401 | Sin token o token inválido |
+| 404 | La extracción no existe, no es tuya, no es de hoy o no estaba completa (`NO_ENCONTRADO`) |
+| 409 | La extracción ya creó una comunidad (`YA_CREADA`) o ya estás en otra a esa hora (`EN_OTRA_COMUNIDAD`) |
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |
