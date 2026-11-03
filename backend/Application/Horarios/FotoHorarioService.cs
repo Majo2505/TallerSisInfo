@@ -43,9 +43,12 @@ public class FotoHorarioService
                 !TimeOnly.TryParseExact(c.HoraFin?.Trim(), Formatos, out var fin)) continue;
             if (ReglasHorario.ValidarBloque(c.Materia, c.DiaSemana, ini, fin) is not null) continue;
             if (EsPausa(c.Materia)) continue;
+            // HU17: lo que la IA leyó en la imagen no son instrucciones. Si una «materia» o un «aula» intenta manipular al
+            // asistente (por ejemplo, texto escondido en la foto), esa clase se descarta.
+            if (ReglasSeguridadIa.EsManipulacion(c.Materia) || ReglasSeguridadIa.EsManipulacion(c.Aula)) continue;
 
-            var materia = c.Materia.Trim();
-            var aula = string.IsNullOrWhiteSpace(c.Aula) ? null : c.Aula.Trim();
+            var materia = ReglasSeguridadIa.Sanear(c.Materia);
+            var aula = string.IsNullOrWhiteSpace(c.Aula) ? null : ReglasSeguridadIa.Sanear(c.Aula);
             if (aula is { Length: > LargoMaximoAula }) aula = aula[..LargoMaximoAula];
 
             var clase = new ClaseLeidaDto(materia, c.DiaSemana, ini.ToString("HH:mm"), fin.ToString("HH:mm"), aula);
