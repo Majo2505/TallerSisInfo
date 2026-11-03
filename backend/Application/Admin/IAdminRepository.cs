@@ -8,7 +8,6 @@ public interface IAdminRepository
     Task<string?> CambiarEstadoLugarAsync(int lugarId, string estado, int adminId, CancellationToken ct = default);
 
     Task<bool?> CambiarValidacionLugarAsync(int lugarId, bool validado, int adminId, CancellationToken ct = default);
-    Task<int> ValidarPendientesAsync(int adminId, CancellationToken ct = default);
 
     Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default);
     Task<string?> ResolverReporteAsync(int reporteId, string estado, int adminId, CancellationToken ct = default);

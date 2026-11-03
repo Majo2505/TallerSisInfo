@@ -87,20 +87,6 @@ public class AdminRepository : IAdminRepository
         return anterior;
     }
 
-    public async Task<int> ValidarPendientesAsync(int adminId, CancellationToken ct = default)
-    {
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
-        await _db.Database.ExecuteSqlAsync($"""
-                INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
-                SELECT 'LUGAR', id, 'UPDATE', JSON_OBJECT('validado', false), JSON_OBJECT('validado', true), {adminId}
-                FROM lugar WHERE validado = FALSE AND estado = 'ACTIVO'
-                """, ct);
-        var validados = await _db.Database.ExecuteSqlAsync(
-            $"UPDATE lugar SET validado = TRUE, updated_at = UTC_TIMESTAMP(6), updated_by = {adminId} WHERE validado = FALSE AND estado = 'ACTIVO'", ct);
-        await tx.CommitAsync(ct);
-        return validados;
-    }
-
     public async Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default)
     {
         var filas = await _db.Database.SqlQuery<FilaReporte>($"""

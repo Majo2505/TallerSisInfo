@@ -10,7 +10,6 @@ public class ValidarLugarTests
     private sealed class RepositorioFalso : IAdminRepository
     {
         public Dictionary<int, bool> Validados { get; } = new() { [1] = false, [2] = true };
-        public int Pendientes { get; set; } = 3;
         public int? AdminQueValido { get; private set; }
 
         public Task<bool?> CambiarValidacionLugarAsync(int lugarId, bool validado, int adminId, CancellationToken ct = default)
@@ -19,14 +18,6 @@ public class ValidarLugarTests
             Validados[lugarId] = validado;
             AdminQueValido = adminId;
             return Task.FromResult<bool?>(anterior);
-        }
-
-        public Task<int> ValidarPendientesAsync(int adminId, CancellationToken ct = default)
-        {
-            AdminQueValido = adminId;
-            var validados = Pendientes;
-            Pendientes = 0;
-            return Task.FromResult(validados);
         }
 
         public Task<ResumenAdminDto> ResumenAsync(CancellationToken ct = default) => throw new NotSupportedException();
@@ -79,28 +70,5 @@ public class ValidarLugarTests
         Assert.Equal("VALIDACION", error.Codigo);
         Assert.False(repo.Validados[1]);
         Assert.Null(repo.AdminQueValido);
-    }
-
-    [Fact]
-    public async Task Validar_los_pendientes_devuelve_cuantos_se_validaron()
-    {
-        var repo = new RepositorioFalso { Pendientes = 13 };
-
-        var resultado = await new AdminService(repo).ValidarPendientesAsync(Admin);
-
-        Assert.Equal(13, resultado.Validados);
-        Assert.Equal(Admin, repo.AdminQueValido);
-    }
-
-    [Fact]
-    public async Task Validar_los_pendientes_otra_vez_no_encuentra_ninguno()
-    {
-        var repo = new RepositorioFalso { Pendientes = 5 };
-        var servicio = new AdminService(repo);
-
-        await servicio.ValidarPendientesAsync(Admin);
-        var segunda = await servicio.ValidarPendientesAsync(Admin);
-
-        Assert.Equal(0, segunda.Validados);
     }
 }
