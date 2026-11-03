@@ -25,25 +25,39 @@ export type Invitacion = {
 export const buscarDeNuevo = (comunidadId: number) =>
   pedirApi<Invitacion>(`/api/comunidades/${comunidadId}/invitaciones`, { method: "POST" });
 
-/** Descubrir todavía usa datos de ejemplo (llega con su historia de usuario). */
-export type Comunidad = {
+/** Una comunidad activa de hoy (Comunidades → Descubrir). Las horas son de hoy, en hora de Bolivia. */
+export type ComunidadActiva = {
   id: number;
   actividad: string;
-  lugar: string;
-  categoria: "Comida" | "Estudio" | "Descanso" | "Deporte";
-  inicio: string; // "10:30"
-  fin: string;
-  participantes: string[]; // nombres de pila
-  maximo: number;
-  creador: string;
+  horaInicio: string; // "HH:mm"
+  horaFin: string;
+  maxParticipantes: number;
+  confirmados: number; // contando a quien la creó
+  creador: string; // «Ana P.» o «Tú»
+  esMia: boolean;
+  miEstado: "PENDIENTE" | "CONFIRMADO" | "RECHAZADO" | null; // si me invitaron
 };
 
-export const COMUNIDADES_EJEMPLO: Comunidad[] = [
-  { id: 1, actividad: "Estudiar para el parcial de Redes", lugar: "Biblioteca Norte", categoria: "Estudio", inicio: "10:30", fin: "12:00", participantes: ["Carlos", "Ana", "Luis"], maximo: 5, creador: "Carlos R." },
-  { id: 2, actividad: "Café y plática entre clases", lugar: "Cafetería Central", categoria: "Comida", inicio: "11:00", fin: "11:45", participantes: ["Sofía", "Diego"], maximo: 4, creador: "Sofía M." },
-  { id: 3, actividad: "Partido rápido de fútbol", lugar: "Cancha Polideportiva", categoria: "Deporte", inicio: "13:00", fin: "14:00", participantes: ["Marco", "Iván", "Pablo", "Rocío", "Jorge"], maximo: 10, creador: "Marco T." },
-  { id: 4, actividad: "Descanso al aire libre", lugar: "Jardín de las Ciencias", categoria: "Descanso", inicio: "15:30", fin: "16:15", participantes: ["Valeria"], maximo: 6, creador: "Valeria P." },
-];
+export type ResultadoDescubrir = {
+  estado: "OK" | "SIN_RESULTADOS" | "SIN_ZONA" | "NO_VISIBLE";
+  mensaje: string | null; // solo si el estado no es OK
+  comunidades: ComunidadActiva[];
+};
+
+/**
+ * Comunidades activas de hoy: las mías, aquellas a las que me invitaron y las de mi campus (si acepté el matching,
+ * igual que las invitaciones de HU13). Solo lectura: unirse o confirmar asistencia llega con HU14.
+ */
+export const listarComunidades = () => pedirApi<ResultadoDescubrir>("/api/comunidades");
+
+/** Solo para el dibujo de la tarjeta: la categoría que sugiere el texto de la actividad. */
+export function categoriaDe(actividad: string): "Comida" | "Estudio" | "Descanso" | "Deporte" {
+  const texto = actividad.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (/cafe|almorz|comer|merend|desayun|cena|snack|\bte\b/.test(texto)) return "Comida";
+  if (/estudi|repas|tarea|leer|biblioteca|practic|proyecto/.test(texto)) return "Estudio";
+  if (/futbol|fulbito|basquet|voley|cancha|deporte|correr|ping ?pong|ajedrez|cartas|jugar/.test(texto)) return "Deporte";
+  return "Descanso";
+}
 
 export const EJEMPLOS_SOLICITUD = [
   "¿Alguien libre para un café en 20 minutos?",

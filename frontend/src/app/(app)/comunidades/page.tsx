@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import FondoVivo from "@/components/app/FondoVivo";
-import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoPin, IconoReloj } from "@/components/app/Iconos";
+import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import DatoEditable from "@/components/comunidades/DatoEditable";
@@ -18,7 +18,15 @@ import {
   formatearDuracion,
   revisarActividad,
 } from "@/lib/actividades";
-import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD, buscarDeNuevo } from "@/lib/comunidades";
+import {
+  ComunidadActiva,
+  EJEMPLOS_SOLICITUD,
+  MAXIMO_SOLICITUD,
+  ResultadoDescubrir,
+  buscarDeNuevo,
+  categoriaDe,
+  listarComunidades,
+} from "@/lib/comunidades";
 import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
 import { iniciales } from "@/lib/iniciales";
 import { guardarConfiguracionMatching } from "@/lib/matching";
@@ -26,11 +34,23 @@ import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
 
+/** Descubrir: cómo está el estudiante respecto de cada comunidad. Unirse o confirmar asistencia llega con HU14. */
+function etiquetaEstado(c: ComunidadActiva): string | null {
+  if (c.esMia) return "La creaste tú";
+  if (c.miEstado === "PENDIENTE") return "Te invitaron";
+  if (c.miEstado === "CONFIRMADO") return "Vas";
+  if (c.miEstado === "RECHAZADO") return "No vas";
+  return c.confirmados >= c.maxParticipantes ? "Completa" : null;
+}
+
 export default function Comunidades() {
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>("libres");
   const [texto, setTexto] = useState("");
-  const [unido, setUnido] = useState<Set<number>>(new Set());
+  // Descubrir (adición a HU11): las comunidades reales activas de hoy. Se piden cada vez que se abre la pestaña.
+  const [descubrir, setDescubrir] = useState<ResultadoDescubrir | null>(null);
+  const [cargandoDescubrir, setCargandoDescubrir] = useState(false);
+  const [errorDescubrir, setErrorDescubrir] = useState("");
   // HU11: lo que el servidor entendió del texto libre y la respuesta a la pregunta por un dato faltante.
   const [extraccion, setExtraccion] = useState<RespuestaExtraccion | null>(null);
   const [respuesta, setRespuesta] = useState("");
@@ -137,13 +157,22 @@ export default function Comunidades() {
 
   const entendida = extraccion && extraccion.estado !== "NO_ENTENDIDO" ? extraccion : null;
 
-  function alternarUnion(id: number) {
-    setUnido((actual) => {
-      const nuevo = new Set(actual);
-      if (nuevo.has(id)) nuevo.delete(id);
-      else nuevo.add(id);
-      return nuevo;
-    });
+  async function cargarDescubrir(aceptarMatching = false) {
+    setCargandoDescubrir(true);
+    setErrorDescubrir("");
+    try {
+      if (aceptarMatching) await guardarConfiguracionMatching(true);
+      setDescubrir(await listarComunidades());
+    } catch (e) {
+      setErrorDescubrir(e instanceof Error ? e.message : "No pudimos cargar las comunidades. Inténtalo de nuevo.");
+    } finally {
+      setCargandoDescubrir(false);
+    }
+  }
+
+  function elegirPestana(id: Pestana) {
+    setPestana(id);
+    if (id === "descubrir") void cargarDescubrir();
   }
 
   return (
@@ -195,7 +224,7 @@ export default function Comunidades() {
               role="tab"
               aria-selected={pestana === id}
               className={pestana === id ? estilos.pestanaActiva : estilos.pestana}
-              onClick={() => setPestana(id)}
+              onClick={() => elegirPestana(id)}
               whileTap={{ scale: 0.96 }}
               transition={RESORTE_TOQUE}
             >
@@ -429,80 +458,93 @@ export default function Comunidades() {
                 <p className={estilos.nota}>Sin historial de conversación · Solicitud puntual · Sin chat grupal</p>
               </section>
             ) : (
-              <motion.ul
-                className={estilos.lista}
-                initial={reducir ? false : "oculto"}
-                animate="visible"
-                variants={{ oculto: {}, visible: { transition: { staggerChildren: 0.07 } } }}
-              >
-                {COMUNIDADES_EJEMPLO.map((c) => {
-                  const dentro = unido.has(c.id);
-                  const total = c.participantes.length + (dentro ? 1 : 0);
-                  return (
-                    <motion.li
-                      key={c.id}
-                      className={`${estilos.comunidad} lugar-arte`}
-                      variants={{
-                        oculto: { opacity: 0, y: 16, filter: "blur(4px)" },
-                        visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: SALIDA } },
-                      }}
-                      whileHover={reducir ? undefined : { y: -4 }}
-                    >
-                      <ArteCategoria categoria={c.categoria} />
-                      <div className={estilos.comunidadCuerpo}>
-                        <h3>{c.actividad}</h3>
-                        <p className={estilos.meta}>
-                          <span>
-                            <IconoPin tamano={14} /> {c.lugar}
-                          </span>
-                          <span>
-                            <IconoReloj tamano={14} /> {c.inicio}–{c.fin}
-                          </span>
-                        </p>
-                        <div className={estilos.pieComunidad}>
-                          <span className={estilos.miembros}>
-                            {c.participantes.slice(0, 3).map((n) => (
-                              <span key={n} className={estilos.miembro}>
-                                {iniciales(n)}
+              <section className={estilos.descubrir} aria-label="Comunidades activas de hoy" aria-busy={cargandoDescubrir}>
+                {errorDescubrir && (
+                  <div className={estilos.error} role="alert">
+                    <span>{errorDescubrir}</span>{" "}
+                    <button type="button" className={estilos.reintentar} onClick={() => void cargarDescubrir()}>
+                      Reintentar
+                    </button>
+                  </div>
+                )}
+                {cargandoDescubrir && !descubrir && (
+                  <p className={estilos.cargando} role="status">
+                    Buscando las comunidades de hoy…
+                  </p>
+                )}
+                {descubrir?.mensaje && (
+                  <div className={estilos.avisoDescubrir} role="status">
+                    <span>{descubrir.mensaje}</span>
+                    {descubrir.estado === "SIN_ZONA" && (
+                      <Link href="/campus" className={estilos.accionAviso}>
+                        Elegir mi campus
+                      </Link>
+                    )}
+                    {descubrir.estado === "NO_VISIBLE" && (
+                      <button type="button" className={estilos.accionAviso} onClick={() => void cargarDescubrir(true)} disabled={cargandoDescubrir}>
+                        Aceptar y ver
+                      </button>
+                    )}
+                    {descubrir.estado === "SIN_RESULTADOS" && (
+                      <button type="button" className={estilos.accionAviso} onClick={() => elegirPestana("crear")}>
+                        Crear una
+                      </button>
+                    )}
+                  </div>
+                )}
+                {descubrir && descubrir.comunidades.length > 0 && (
+                  <motion.ul
+                    className={estilos.lista}
+                    initial={reducir ? false : "oculto"}
+                    animate="visible"
+                    variants={{ oculto: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+                  >
+                    {descubrir.comunidades.map((c) => {
+                      const estado = etiquetaEstado(c);
+                      return (
+                        <motion.li
+                          key={c.id}
+                          className={`${estilos.comunidad} lugar-arte`}
+                          variants={{
+                            oculto: { opacity: 0, y: 16, filter: "blur(4px)" },
+                            visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: SALIDA } },
+                          }}
+                          whileHover={reducir ? undefined : { y: -4 }}
+                        >
+                          <ArteCategoria categoria={categoriaDe(c.actividad)} />
+                          <div className={estilos.comunidadCuerpo}>
+                            <h3>{c.actividad}</h3>
+                            <p className={estilos.meta}>
+                              <span>
+                                <IconoReloj tamano={14} /> Hoy, {c.horaInicio}–{c.horaFin}
                               </span>
-                            ))}
-                            <small>
-                              {total}/{c.maximo}
-                            </small>
-                          </span>
-                          <motion.button
-                            type="button"
-                            className={dentro ? estilos.unido : estilos.unirme}
-                            onClick={() => alternarUnion(c.id)}
-                            whileTap={{ scale: 0.95 }}
-                            transition={RESORTE_TOQUE}
-                            aria-pressed={dentro}
-                          >
-                            {dentro ? (
-                              <>
-                                <IconoCheck tamano={16} /> Te uniste
-                              </>
-                            ) : (
-                              "Unirme"
-                            )}
-                          </motion.button>
-                        </div>
-                        <small className={estilos.creador}>Creada por {c.creador}</small>
-                      </div>
-                    </motion.li>
-                  );
-                })}
-              </motion.ul>
+                            </p>
+                            <div className={estilos.pieComunidad}>
+                              <span className={estilos.miembros} aria-label={`${c.confirmados} de ${c.maxParticipantes} personas`}>
+                                <IconoPersonas tamano={16} />
+                                <small>
+                                  {c.confirmados}/{c.maxParticipantes}
+                                </small>
+                              </span>
+                              {estado && (
+                                <span className={c.esMia || c.miEstado === "CONFIRMADO" ? estilos.estadoMio : estilos.estadoComunidad}>
+                                  {estado}
+                                </span>
+                              )}
+                            </div>
+                            <small className={estilos.creador}>{c.esMia ? "Creada por ti" : `Creada por ${c.creador}`}</small>
+                          </div>
+                        </motion.li>
+                      );
+                    })}
+                  </motion.ul>
+                )}
+              </section>
             )}
           </motion.div>
         </AnimatePresence>
       </Pieza>
 
-      {pestana === "descubrir" && (
-        <Pieza>
-          <p className={estilos.aviso}>Vista previa con comunidades de ejemplo; la creación real de grupos llega con su historia de usuario.</p>
-        </Pieza>
-      )}
     </Entrada>
   );
 }
