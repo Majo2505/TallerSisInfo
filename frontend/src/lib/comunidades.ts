@@ -1,10 +1,9 @@
 import { pedirApi } from "./api";
-import { ActividadExtraida } from "./actividades";
 
 /**
- * HU13: creación automática de la comunidad. Con la actividad que HU11 dejó completa, el backend busca a los compañeros
- * de tu campus libres a esa hora (las reglas del matching de HU12) y, solo si encuentra a alguien, crea el grupo,
- * invita a los más compatibles (uno por plaza) y les avisa.
+ * HU13: armado automático de la comunidad. Cuando se crea la actividad (HU10), el backend busca a los compañeros de tu
+ * campus libres a esa hora (las reglas del matching de HU12), invita a los más compatibles (uno por lugar libre) y les avisa.
+ * El resultado llega en `invitacion` de la actividad creada.
  */
 export type Invitado = {
   nombre: string;
@@ -14,29 +13,17 @@ export type Invitado = {
   minutosEnComun: number;
 };
 
-export type ComunidadCreada = {
-  id: number;
-  actividad: string;
-  horaInicio: string; // "HH:mm"
-  horaFin: string;
-  maxParticipantes: number; // contando a quien la crea
-  invitados: Invitado[];
-};
+export type EstadoInvitacion = "INVITADOS" | "SIN_COINCIDENCIAS" | "SIN_ZONA" | "NO_VISIBLE" | "COMPLETA" | "ERROR";
 
-export type EstadoCreacion = "CREADA" | "SIN_COINCIDENCIAS" | "SIN_ZONA" | "NO_VISIBLE";
-
-export type ResultadoComunidad = {
-  estado: EstadoCreacion;
+export type Invitacion = {
+  estado: EstadoInvitacion;
   mensaje: string;
-  comunidad: ComunidadCreada | null; // null si no se creó
+  invitados: Invitado[]; // los de este intento
 };
 
-/** Se manda la extracción tal cual: el backend vuelve a validar los datos. */
-export const crearComunidad = (consultaId: number, texto: string, actividad: ActividadExtraida) =>
-  pedirApi<ResultadoComunidad>("/api/comunidades", {
-    method: "POST",
-    body: JSON.stringify({ consultaId, texto, actividad }),
-  });
+/** Vuelve a buscar compañeros para tu actividad (después de aceptar el matching o si antes no había nadie). */
+export const buscarDeNuevo = (comunidadId: number) =>
+  pedirApi<Invitacion>(`/api/comunidades/${comunidadId}/invitaciones`, { method: "POST" });
 
 /** Descubrir todavía usa datos de ejemplo (llega con su historia de usuario). */
 export type Comunidad = {
