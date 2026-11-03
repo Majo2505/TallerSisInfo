@@ -162,15 +162,21 @@ CREATE TABLE log_auditoria_rag (
   prompt_enviado         TEXT         NULL,               -- NULL si nunca se llamó al LLM
   respuesta_llm          TEXT         NULL,
   estado                 VARCHAR(20)  NOT NULL,
+  motivo_rechazo         VARCHAR(20)  NULL,               -- HU17: por qué se rechazó (solo con estado RECHAZADO_SEGURIDAD)
   modelo                 VARCHAR(40)  NULL,
   latencia_ms            INT          NULL,               -- evidencia de RNF02
   created_at             DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   KEY ix_log_created (created_at),
   KEY ix_log_usuario (usuario_id, created_at),
+  KEY ix_log_motivo (motivo_rechazo, created_at),                     -- HU17: el admin filtra los intentos por motivo
   CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD')),
   -- HU11: INCOMPLETO = se entendió la actividad, pero falta algún dato (el estudiante tiene que responder una pregunta)
   CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
+  -- HU17: INYECCION (intentó cambiar o ver las instrucciones), FUERA_DE_ALCANCE (pidió datos internos), BIENESTAR (riesgo
+  -- para la persona), FUERA_DE_REGLAMENTO (alcohol, apuestas…), FUERA_DE_CONTEXTO (la IA respondió algo que no salió del catálogo)
+  CONSTRAINT ck_log_motivo CHECK (motivo_rechazo IN ('INYECCION','FUERA_DE_ALCANCE','BIENESTAR','FUERA_DE_REGLAMENTO','FUERA_DE_CONTEXTO')),
+  CONSTRAINT ck_log_motivo_estado CHECK (motivo_rechazo IS NULL OR estado = 'RECHAZADO_SEGURIDAD'),
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
   CONSTRAINT fk_log_zona    FOREIGN KEY (zona_id)    REFERENCES zona (id),
   CONSTRAINT fk_log_puente  FOREIGN KEY (puente_id)  REFERENCES puente (id) ON DELETE SET NULL
