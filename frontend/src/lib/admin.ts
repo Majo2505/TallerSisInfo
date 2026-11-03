@@ -68,6 +68,9 @@ export const obtenerResumen = () => pedirApi<ResumenAdmin>("/api/admin/resumen")
 export const listarLugaresAdmin = () => pedirApi<LugarAdmin[]>("/api/admin/lugares");
 export const cambiarEstadoLugar = (id: number, estado: EstadoLugar) =>
   pedirApi<void>(`/api/admin/lugares/${id}/estado`, { method: "PATCH", body: JSON.stringify({ estado }) });
+export const cambiarValidacionLugar = (id: number, validado: boolean) =>
+  pedirApi<void>(`/api/admin/lugares/${id}/validacion`, { method: "PATCH", body: JSON.stringify({ validado }) });
+export const validarLugaresPendientes = () => pedirApi<{ validados: number }>("/api/admin/lugares/validar-pendientes", { method: "POST" });
 export const listarReportes = () => pedirApi<ReporteAdmin[]>("/api/admin/reportes");
 export const resolverReporte = (id: number, estado: "RESUELTO" | "DESCARTADO") =>
   pedirApi<void>(`/api/admin/reportes/${id}`, { method: "PATCH", body: JSON.stringify({ estado }) });
