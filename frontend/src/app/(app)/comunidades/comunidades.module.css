@@ -634,3 +634,39 @@
     animation: none;
   }
 }
+
+/* Confirmar el resumen (HU10): botón principal a todo el ancho en el celular. */
+.confirmar {
+  justify-self: stretch;
+  min-height: 52px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #ffffff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
+}
+
+.confirmar:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.confirmar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.confirmar:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+@media (min-width: 720px) {
+  .confirmar {
+    justify-self: start;
+  }
+}

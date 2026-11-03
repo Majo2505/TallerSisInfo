@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Puente> Puentes => Set<Puente>();
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
     public DbSet<LogAuditoriaRag> LogsAuditoriaRag => Set<LogAuditoriaRag>();
+    public DbSet<ComunidadEfimera> Comunidades => Set<ComunidadEfimera>();
     public DbSet<LugarRecuperado> LugaresRecuperados => Set<LugarRecuperado>();
     public DbSet<Recomendacion> Recomendaciones => Set<Recomendacion>();
 

@@ -80,6 +80,7 @@ builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
 builder.Services.AddScoped<ComunidadService>();
+builder.Services.AddScoped<CreacionActividadService>();
 
 var app = builder.Build();
 
