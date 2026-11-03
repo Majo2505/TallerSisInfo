@@ -25,6 +25,8 @@ public record LugarAdminDto(
 
 public record CambioEstadoLugarDto(string Estado);
 
+public record CambioValidacionLugarDto(bool? Validado);
+
 public record ReporteAdminDto(
     int Id,
     string Motivo,

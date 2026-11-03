@@ -62,6 +62,31 @@ public class AdminRepository : IAdminRepository
         return anterior;
     }
 
+    public async Task<bool?> CambiarValidacionLugarAsync(int lugarId, bool validado, int adminId, CancellationToken ct = default)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+        var filas = await _db.Database.SqlQuery<long>(
+            $"SELECT CAST(validado AS SIGNED) AS Value FROM lugar WHERE id = {lugarId} FOR UPDATE").ToListAsync(ct);
+        if (filas.Count == 0) return null;
+        var anterior = filas[0] != 0;
+        if (anterior == validado)
+        {
+            await tx.CommitAsync(ct);
+            return anterior;
+        }
+
+        await _db.Database.ExecuteSqlAsync(
+            $"UPDATE lugar SET validado = {validado}, updated_at = UTC_TIMESTAMP(6), updated_by = {adminId} WHERE id = {lugarId}", ct);
+        var textoAnterior = anterior ? "true" : "false";
+        var textoNuevo = validado ? "true" : "false";
+        await _db.Database.ExecuteSqlAsync($"""
+                INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
+                VALUES ('LUGAR', {lugarId}, 'UPDATE', JSON_OBJECT('validado', CAST({textoAnterior} AS JSON)), JSON_OBJECT('validado', CAST({textoNuevo} AS JSON)), {adminId})
+                """, ct);
+        await tx.CommitAsync(ct);
+        return anterior;
+    }
+
     public async Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default)
     {
         var filas = await _db.Database.SqlQuery<FilaReporte>($"""

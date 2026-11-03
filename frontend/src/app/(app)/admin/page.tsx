@@ -23,6 +23,7 @@ import {
   ReporteAdmin,
   ResumenAdmin,
   cambiarEstadoLugar,
+  cambiarValidacionLugar,
   listarConsultasRag,
   listarLugaresAdmin,
   listarReportes,
@@ -133,6 +134,19 @@ export default function PanelAdmin() {
       setLugares((ls) => ls?.map((l) => (l.id === lugar.id ? { ...l, estado } : l)) ?? null);
       aviso.mostrar(`${lugar.nombre}: ${ETIQUETA_ESTADO[estado].toLowerCase()}.`);
       void obtenerResumen().then(setResumen).catch(() => undefined);
+    } catch (e) {
+      aviso.mostrar((e as Error).message);
+    } finally {
+      setCambiando(null);
+    }
+  }
+
+  async function validar(lugar: LugarAdmin) {
+    setCambiando(lugar.id);
+    try {
+      await cambiarValidacionLugar(lugar.id, true);
+      setLugares((ls) => ls?.map((l) => (l.id === lugar.id ? { ...l, validado: true } : l)) ?? null);
+      aviso.mostrar(`${lugar.nombre}: validado.`);
     } catch (e) {
       aviso.mostrar((e as Error).message);
     } finally {
@@ -288,6 +302,11 @@ export default function PanelAdmin() {
                         {l.vecesRecomendado} {l.vecesRecomendado === 1 ? "vez" : "veces"}
                       </span>
                       <span role="cell" className={estilos.accionesFila}>
+                        {!l.validado && (
+                          <button type="button" className={estilos.validar} disabled={cambiando === l.id} onClick={() => void validar(l)}>
+                            Validar
+                          </button>
+                        )}
                         {l.estado === "EN_REVISION" && (
                           <>
                             <button type="button" className={estilos.aprobar} disabled={cambiando === l.id} onClick={() => void cambiar(l, "ACTIVO")}>

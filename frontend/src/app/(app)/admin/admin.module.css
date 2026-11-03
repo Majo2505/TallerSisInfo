@@ -578,3 +578,31 @@
     transition: none;
   }
 }
+
+.validar {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ucb-azul-medio);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--ucb-azul-medio);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
+}
+
+.validar:active {
+  transform: scale(0.95);
+}
+
+.validar:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.validar:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
