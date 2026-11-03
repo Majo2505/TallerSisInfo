@@ -1,27 +1,24 @@
-/* HU13: crear el grupo con la actividad que se entendió (vive dentro de la tarjeta verde de la pestaña Crear). */
-.crear,
-.creada,
-.falta {
+/* HU13: a quiénes se invitó al crear la actividad (vive dentro de la tarjeta verde de la pestaña Crear). */
+.bloque {
   display: grid;
   gap: 10px;
   justify-items: start;
   min-width: 0;
 }
 
-.ayuda,
-.falta p {
+.bloque .texto {
   margin: 0;
   color: var(--texto-suave);
   line-height: 1.5;
 }
 
-.falta small {
+.bloque .privacidad {
   color: var(--texto-tenue);
   font-size: 0.82rem;
   line-height: 1.45;
 }
 
-.nadie {
+.bloque .nadie {
   margin: 0;
   padding: 10px 12px;
   border-radius: 14px;
@@ -100,7 +97,7 @@
 }
 
 /* Grupo armado: a quiénes se invitó. */
-.mensaje {
+.bloque .mensaje {
   margin: 0;
   color: #17704a;
   font-weight: 800;
@@ -177,7 +174,7 @@
   white-space: nowrap;
 }
 
-.pie {
+.bloque .pie {
   margin: 0;
   color: var(--texto-tenue);
   font-size: 0.85rem;
