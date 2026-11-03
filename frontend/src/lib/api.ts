@@ -1,6 +1,16 @@
 import { cerrarSesion, obtenerToken } from "@/services/authService";
 import { API_URL } from "./config";
 
+/** Error del backend con el código de negocio (`VALIDACION`, `SOLICITUD_NO_PERMITIDA`…), para decidir qué mostrar. */
+export class ErrorApi extends Error {
+  constructor(
+    mensaje: string,
+    readonly codigo?: string,
+  ) {
+    super(mensaje);
+  }
+}
+
 /**
  * Petición autenticada al backend: agrega el JWT de la sesión actual y unifica el manejo de errores.
  * Si el servidor responde 401 (token vencido o inválido) cierra la sesión; las pantallas protegidas
@@ -29,6 +39,6 @@ export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.mensaje ?? `Hubo un error inesperado (${res.status}).`);
+  if (!res.ok) throw new ErrorApi(data?.mensaje ?? `Hubo un error inesperado (${res.status}).`, data?.codigo);
   return data as T;
 }

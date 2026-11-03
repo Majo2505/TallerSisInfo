@@ -1,7 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import FondoVivo from "@/components/app/FondoVivo";
+import { IconoCheck, IconoFlechaIzquierda, IconoObjetivo, IconoPin } from "@/components/app/Iconos";
+import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import { Selector } from "@/components/app/Selectores";
 import {
   EstadoUbicacion,
   listarZonas,
@@ -13,7 +18,10 @@ import {
 } from "@/lib/ubicacion";
 import styles from "./ConfiguracionUbicacion.module.css";
 
+/** HU5: elegir el campus a mano o compartir la ubicación una vez (con consentimiento), y revocarlo. */
 export default function ConfiguracionUbicacion() {
+  const router = useRouter();
+  const reducir = useReducedMotion();
   const [estado, setEstado] = useState<EstadoUbicacion | null>(null);
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [zonaSeleccionada, setZonaSeleccionada] = useState("");
@@ -65,6 +73,12 @@ export default function ConfiguracionUbicacion() {
     }
   }
 
+  function mensajeGeolocalizacion(codigo: number, e: GeolocationPositionError) {
+    if (codigo === e.PERMISSION_DENIED) return "No se concedió el permiso del navegador. Puedes elegir tu campus manualmente.";
+    if (codigo === e.TIMEOUT) return "No pudimos obtener tu ubicación a tiempo. Inténtalo de nuevo o elige tu campus manualmente.";
+    return "No pudimos obtener tu ubicación. Puedes elegir tu campus manualmente.";
+  }
+
   function solicitarUbicacion() {
     if (!aceptaCompartir) {
       setError("Confirma que aceptas compartir tu ubicación antes de continuar.");
@@ -82,19 +96,14 @@ export default function ConfiguracionUbicacion() {
       ({ coords }) => {
         void conGuardado(
           () => compartirUbicacion(coords.latitude, coords.longitude),
-          "Tu campus quedó actualizado. BREAKU guarda solo la zona, no tus coordenadas."
+          "Tu campus quedó actualizado. BREAKU guarda solo el campus, no tus coordenadas.",
         );
       },
-      (geolocationError) => {
+      (e) => {
         setGuardando(false);
-        const texto = geolocationError.code === geolocationError.PERMISSION_DENIED
-          ? "No se concedió el permiso del navegador. Puedes continuar eligiendo tu campus manualmente."
-          : geolocationError.code === geolocationError.TIMEOUT
-            ? "No pudimos obtener tu ubicación a tiempo. Inténtalo de nuevo o elige tu campus manualmente."
-            : "No pudimos obtener tu ubicación. Puedes elegir tu campus manualmente.";
-        setError(texto);
+        setError(mensajeGeolocalizacion(e.code, e));
       },
-      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 0 },
     );
   }
 
@@ -103,111 +112,146 @@ export default function ConfiguracionUbicacion() {
       setError("Selecciona un campus para continuar.");
       return;
     }
-    void conGuardado(
-      () => seleccionarZona(Number(zonaSeleccionada)),
-      "Campus guardado manualmente. No se comparte la ubicación del dispositivo."
-    );
+    void conGuardado(() => seleccionarZona(Number(zonaSeleccionada)), "Campus guardado. No se compartió la ubicación del dispositivo.");
   }
 
-  if (cargando) {
-    return <main className={styles.contenedor} aria-busy="true">Cargando configuración de ubicación…</main>;
+  // Se llega desde Perfil, Campus o Comunidades: «Volver» regresa a donde estaba.
+  function volver() {
+    if (window.history.length > 1) router.back();
+    else router.push("/perfil");
   }
+
+  if (cargando) return <main className={styles.pagina} aria-busy="true" />;
+
+  const opciones = zonas.map((z) => ({ valor: String(z.id), etiqueta: z.nombre }));
+  const cambioPendiente = zonaSeleccionada !== "" && zonaSeleccionada !== String(estado?.zonaActual?.id ?? "");
 
   return (
-    <main className={styles.contenedor}>
-      <Link className={styles.volver} href="/horario">← Volver a mi horario</Link>
-      <section className={styles.tarjeta}>
-        <p className={styles.etiqueta}>Privacidad y recomendaciones</p>
-        <h1>Campus o zona actual</h1>
-        <p>
-          Tu ubicación sirve para encontrar un campus cercano y preparar recomendaciones relevantes.
-          Solo se utiliza para recomendaciones activas; no compartimos tus coordenadas con terceros.
-        </p>
+    <Entrada as="main" className={styles.pagina}>
+      <Pieza>
+        <button type="button" className={styles.volver} onClick={volver}>
+          <IconoFlechaIzquierda tamano={18} /> Volver
+        </button>
+      </Pieza>
 
-        <div className={styles.estado} role="status">
-          <strong>{estado?.consentimientoActivo ? "Consentimiento de ubicación activo" : "Ubicación del dispositivo desactivada"}</strong>
-          <span>
-            {estado?.zonaActual
-              ? `Campus actual: ${estado.zonaActual.nombre}`
-              : "Aún no hay un campus seleccionado."}
+      <Pieza as="header" className={styles.portada}>
+        <div className={styles.portadaInterior} onPointerMove={seguirPuntero}>
+          <FondoVivo />
+          <span className={styles.chip}>
+            <IconoPin tamano={14} /> Privacidad y recomendaciones
           </span>
+          <h1 className={styles.titulo}>Tu campus</h1>
+          <p className={styles.bajada}>
+            Con tu campus buscamos lugares cercanos y compañeros con tiempo libre. Nunca guardamos tus coordenadas ni las compartimos.
+          </p>
+          <div className={styles.estado} role="status">
+            <span className={estado?.zonaActual ? styles.estadoIconoOk : styles.estadoIcono} aria-hidden="true">
+              {estado?.zonaActual ? <IconoCheck tamano={18} /> : <IconoPin tamano={18} />}
+            </span>
+            <span>
+              <strong>{estado?.zonaActual ? estado.zonaActual.nombre : "Todavía no elegiste tu campus"}</strong>
+              <small>{estado?.consentimientoActivo ? "Elegido con tu ubicación (consentimiento activo)" : "Ubicación del dispositivo desactivada"}</small>
+            </span>
+          </div>
         </div>
+      </Pieza>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
-        {mensaje && <p className={styles.exito} role="status">{mensaje}</p>}
+      <AnimatePresence mode="wait" initial={false}>
+        {(error || mensaje) && (
+          <motion.p
+            key={error || mensaje}
+            className={error ? styles.error : styles.exito}
+            role={error ? "alert" : "status"}
+            initial={reducir ? false : { opacity: 0, y: -6 }}
+            animate={error && !reducir ? { opacity: 1, y: 0, x: [0, -8, 8, -5, 5, 0] } : { opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: SALIDA }}
+          >
+            {error || mensaje}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
-        <section className={styles.seccion} aria-labelledby="titulo-compartir">
-          <h2 id="titulo-compartir">Compartir ubicación del dispositivo</h2>
-          <p>
-            Al aceptar, el navegador comparte tu ubicación una vez. El servidor la compara con el catálogo
-            de campus y guarda únicamente el campus coincidente, nunca latitud ni longitud.
+      <div className={styles.tarjetas}>
+        <Pieza as="section" className={styles.tarjeta}>
+          <span className={styles.recomendado}>Recomendado</span>
+          <h2 className={styles.tarjetaTitulo}>Elegir mi campus</h2>
+          <p className={styles.texto}>No se pide ni se comparte la ubicación del dispositivo.</p>
+          {zonas.length === 0 ? (
+            <p className={styles.aviso}>Todavía no hay campus disponibles. El administrador tiene que agregar al menos uno.</p>
+          ) : (
+            <>
+              <div className={styles.campo}>
+                <span id="etiqueta-campus">Campus</span>
+                <Selector
+                  valor={zonaSeleccionada}
+                  opciones={opciones}
+                  onCambio={setZonaSeleccionada}
+                  etiqueta="Campus"
+                  placeholder="Selecciona tu campus"
+                />
+              </div>
+              <motion.button
+                type="button"
+                className={styles.primario}
+                disabled={guardando || !cambioPendiente}
+                onClick={guardarZonaManual}
+                whileTap={{ scale: 0.97 }}
+                transition={RESORTE_TOQUE}
+              >
+                {cambioPendiente || !estado?.zonaActual ? "Guardar campus" : "Campus guardado"}
+              </motion.button>
+            </>
+          )}
+        </Pieza>
+
+        <Pieza as="section" className={styles.tarjeta}>
+          <span className={styles.tarjetaIcono} aria-hidden="true">
+            <IconoObjetivo tamano={20} />
+          </span>
+          <h2 className={styles.tarjetaTitulo}>Usar mi ubicación</h2>
+          <p className={styles.texto}>
+            El navegador comparte tu ubicación una sola vez. La comparamos con los campus y guardamos solo el que coincide, nunca la latitud ni la
+            longitud.
           </p>
           <label className={styles.consentimiento}>
-            <input
-              type="checkbox"
-              checked={aceptaCompartir}
-              onChange={(event) => setAceptaCompartir(event.target.checked)}
-            />
+            <input type="checkbox" checked={aceptaCompartir} onChange={(e) => setAceptaCompartir(e.target.checked)} />
+            <span className={styles.casilla} aria-hidden="true">
+              <IconoCheck tamano={14} />
+            </span>
             <span>Entiendo el uso y autorizo obtener mi ubicación para actualizar mi campus.</span>
           </label>
-          <button
+          <motion.button
             type="button"
-            className={styles.primario}
+            className={styles.secundario}
             disabled={guardando}
             onClick={solicitarUbicacion}
+            whileTap={{ scale: 0.97 }}
+            transition={RESORTE_TOQUE}
           >
-            {guardando ? "Procesando…" : "Aceptar y compartir una vez"}
+            {guardando ? "Procesando…" : "Compartir una vez"}
+          </motion.button>
+        </Pieza>
+      </div>
+
+      {estado?.consentimientoActivo && (
+        <Pieza as="section" className={styles.revocarTarjeta}>
+          <div>
+            <h2 className={styles.tarjetaTitulo}>Revocar permiso</h2>
+            <p className={styles.texto}>
+              Desactivamos el consentimiento y borramos el campus guardado. El permiso del navegador se administra desde su configuración.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={styles.revocar}
+            disabled={guardando}
+            onClick={() => void conGuardado(revocarUbicacion, "Permiso revocado y campus eliminado.")}
+          >
+            Dejar de compartir
           </button>
-        </section>
-
-        <section className={styles.seccion} aria-labelledby="titulo-manual">
-          <h2 id="titulo-manual">Elegir campus manualmente</h2>
-          <p>Esta opción no solicita ni comparte la ubicación del dispositivo.</p>
-          {zonas.length === 0 ? (
-            <p className={styles.aviso}>
-              Aún no hay campus disponibles en el catálogo. Contacta al administrador para que agregue zonas.
-            </p>
-          ) : (
-            <div className={styles.formulario}>
-              <label htmlFor="zona">Campus o zona</label>
-              <select
-                id="zona"
-                value={zonaSeleccionada}
-                onChange={(event) => setZonaSeleccionada(event.target.value)}
-              >
-                <option value="">Selecciona un campus</option>
-                {zonas.map((zona) => <option key={zona.id} value={zona.id}>{zona.nombre}</option>)}
-              </select>
-              <button
-                type="button"
-                className={styles.secundario}
-                disabled={guardando || !zonaSeleccionada}
-                onClick={guardarZonaManual}
-              >
-                Guardar selección manual
-              </button>
-            </div>
-          )}
-        </section>
-
-        {estado?.consentimientoActivo && (
-          <section className={styles.seccion}>
-            <h2>Revocar permiso</h2>
-            <p>
-              Al revocar, BREAKU desactiva el consentimiento y elimina el campus guardado.
-              El permiso del navegador también puede administrarse desde la configuración del navegador.
-            </p>
-            <button
-              type="button"
-              className={styles.revocar}
-              disabled={guardando}
-              onClick={() => void conGuardado(revocarUbicacion, "Permiso revocado y campus eliminado.")}
-            >
-              Dejar de compartir y eliminar mi campus
-            </button>
-          </section>
-        )}
-      </section>
-    </main>
+        </Pieza>
+      )}
+    </Entrada>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import { useEffect } from "react";
 import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
 import { iniciales } from "@/lib/iniciales";
@@ -13,7 +14,7 @@ import estilos from "./ShellAdmin.module.css";
 const RESORTE = { type: "spring", bounce: 0.18, duration: 0.45 } as const;
 
 const SECCIONES = [
-  { ruta: "/inicio", nombre: "Inicio", Icono: IconoInicio },
+  { ruta: "/admin/inicio", nombre: "Inicio", Icono: IconoInicio },
   { ruta: "/admin", nombre: "Panel Admin", Icono: IconoAjustes },
 ];
 
@@ -21,7 +22,14 @@ const SECCIONES = [
 export default function ShellAdmin({ sesion, children }: { sesion: Sesion; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const activa = (ruta: string) => pathname === ruta || pathname.startsWith(`${ruta}/`);
+  // "/admin" (el panel) se marca solo en su ruta exacta; si no, también se marcaría en "/admin/inicio".
+  const activa = (ruta: string) => pathname === ruta || (ruta !== "/admin" && pathname.startsWith(`${ruta}/`));
+  // Las pantallas del estudiante (horario, puentes, recomendaciones…) no aplican al administrador.
+  const fueraDeAdmin = !pathname.startsWith("/admin");
+
+  useEffect(() => {
+    if (fueraDeAdmin) router.replace("/admin/inicio");
+  }, [fueraDeAdmin, router]);
 
   function salir() {
     cerrarSesion();
@@ -31,7 +39,7 @@ export default function ShellAdmin({ sesion, children }: { sesion: Sesion; child
   return (
     <div className={estilos.app}>
       <aside className={estilos.lateral} aria-label="Administración">
-        <Link href="/admin" className={estilos.marca} aria-label="BreakU, ir al panel">
+        <Link href="/admin/inicio" className={estilos.marca} aria-label="BreakU, ir al inicio">
           <span className={estilos.logo}>
             <Logo tamano={20} />
           </span>
@@ -78,7 +86,7 @@ export default function ShellAdmin({ sesion, children }: { sesion: Sesion; child
 
       {/* Celular: barra superior con marca, avisos y salir. */}
       <header className={estilos.barra}>
-        <Link href="/admin" className={estilos.marca} aria-label="BreakU, ir al panel">
+        <Link href="/admin/inicio" className={estilos.marca} aria-label="BreakU, ir al inicio">
           <span className={estilos.logo}>
             <Logo tamano={20} />
           </span>
@@ -95,7 +103,9 @@ export default function ShellAdmin({ sesion, children }: { sesion: Sesion; child
         </div>
       </header>
 
-      <div className={estilos.contenido}>{children}</div>
+      <div className={estilos.contenido} aria-busy={fueraDeAdmin || undefined}>
+        {fueraDeAdmin ? null : children}
+      </div>
 
       <nav className={estilos.navInferior} aria-label="Administración">
         {SECCIONES.map(({ ruta, nombre, Icono }) => (

@@ -7,13 +7,14 @@ info:
 
     Este archivo es una copia estática de la documentación que el backend publica en `/swagger`
     (documento vivo: `GET /swagger/v1/swagger.json`). Cubre autenticación (HU1), horario (HU2),
-    puentes (HU3), notificaciones (HU4), ubicación (HU5), recomendaciones con asistente RAG (HU7) y health.
+    puentes (HU3), notificaciones (HU4), ubicación (HU5), recomendaciones con asistente RAG (HU7),
+    extracción de actividades por tool calling (HU11) y health.
 
     ### Cómo probar los endpoints protegidos
     1. Ejecuta `POST /api/auth/login` (o `POST /api/auth/register`) con un correo `@ucb.edu.bo`.
     2. Copia el valor de `token` de la respuesta.
     3. Pulsa **Authorize**, pega el token (sin escribir `Bearer`) y confirma.
-    4. Ya puedes usar `/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/ubicacion` y `/api/recomendaciones`.
+    4. Ya puedes usar `/api/horario`, `/api/puentes`, `/api/notificaciones`, `/api/ubicacion`, `/api/recomendaciones` y `/api/actividades`.
 
     ### Convenciones
     - JSON en `camelCase`. Mensajes de error en español.
@@ -42,6 +43,8 @@ tags:
     description: Lugares del catálogo viables para un puente según tiempo, cercanía y zona verificada (HU6). Requiere JWT. Solo muestra lugares aprobados por el administrador.
   - name: Recomendaciones
     description: Recomendación inteligente con asistente RAG de contexto estricto (HU7). Requiere JWT. Solo recomienda lugares reales del catálogo.
+  - name: Actividades
+    description: Extracción estructurada de actividades por tool calling (HU11). Requiere JWT. Solo extrae y valida; la creación es de HU10.
   - name: Administración
     description: Panel de administración del campus. Requiere JWT con rol `ADMIN` (claim `role`); con otro rol responde 403.
   - name: Perfil
@@ -893,14 +896,22 @@ paths:
                     mensaje: No encontramos opciones cercanas para este tiempo disponible.
                     recomendaciones: []
         '400':
-          description: La preferencia supera los 300 caracteres (`codigo` = `VALIDACION`) o el cuerpo está mal formado (`ProblemDetails` estándar de ASP.NET).
+          description: La preferencia supera los 300 caracteres (`codigo` = `VALIDACION`), no se puede enviar al asistente porque intenta cambiar sus instrucciones, pide datos internos o está fuera del reglamento (`codigo` = `SOLICITUD_NO_PERMITIDA`, queda en la auditoría como `RECHAZADO_SEGURIDAD`), o el cuerpo está mal formado (`ProblemDetails` estándar de ASP.NET).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
-              example:
-                codigo: VALIDACION
-                mensaje: La preferencia puede tener como máximo 300 caracteres.
+              examples:
+                demasiadoLarga:
+                  summary: La preferencia es demasiado larga
+                  value:
+                    codigo: VALIDACION
+                    mensaje: La preferencia puede tener como máximo 300 caracteres.
+                solicitudNoPermitida:
+                  summary: La preferencia no se puede enviar al asistente (HU17)
+                  value:
+                    codigo: SOLICITUD_NO_PERMITIDA
+                    mensaje: Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.
         '401':
           $ref: '#/components/responses/NoAutorizado'
         '404':
@@ -914,6 +925,137 @@ paths:
                 mensaje: El puente no existe.
         '503':
           description: El asistente no respondió (`codigo` = `ASISTENTE_NO_DISPONIBLE`). La consulta queda registrada como `ERROR`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: ASISTENTE_NO_DISPONIBLE
+                mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+  /api/recomendaciones/{id}/feedback:
+    patch:
+      tags: [Recomendaciones]
+      operationId: valorarRecomendacion
+      summary: Valora una recomendación con me gusta (LIKE) o no me sirve (DISLIKE) (HU9).
+      description: |
+        El voto queda asociado a la recomendación y, por su consulta, al usuario del token: solo se valoran las
+        recomendaciones propias. Hay una sola valoración por recomendación: votar de nuevo reemplaza la anterior
+        (no se duplica) y repetir el mismo voto no cambia nada. Las valoraciones aparecen en `GET /api/admin/metricas`.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id de la recomendación (viene en cada recomendación de `POST /api/recomendaciones`).
+          schema: { type: integer, format: int64, example: 87 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRecomendacionDto'
+      responses:
+        '200':
+          description: Valoración guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackGuardadoDto'
+        '400':
+          description: El voto no es `LIKE` ni `DISLIKE` (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La recomendación no existe o no es tuya (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/actividades/extraer:
+    post:
+      tags: [Actividades]
+      operationId: extraerActividad
+      summary: Extrae los datos de una actividad descrita en lenguaje natural.
+      description: |
+        El modelo recibe una sola función, `registrar_actividad`, y está obligado a llamarla: sus argumentos son el JSON con la
+        actividad. Qué datos son válidos lo decide el servidor: hora de hoy entre 07:15 y 21:00 (hora de Bolivia), duración de
+        10 a 240 minutos que no pase de las 21:00, y de 2 a 30 personas contando a quien la crea. Un dato que falta o no es
+        válido va en `faltantes` y `mensaje` trae la pregunta por el primero. Si no dice la hora, empieza ahora y `supuestos` lo indica.
+
+        Para responder la pregunta se vuelve a llamar con `texto` = la respuesta y `anterior` = el campo `actividad` de la
+        respuesta anterior. El texto pasa por los guardrails de HU17 y toda extracción queda en la auditoría con tipo `EXTRACCION_COMUNIDAD`.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudExtraccionDto'
+            examples:
+              primeraConsulta:
+                summary: Primera consulta
+                value:
+                  texto: Quiero jugar cartas a las 4 por una hora
+                  anterior: null
+              respuesta:
+                summary: Respuesta a la pregunta por un dato faltante
+                value:
+                  texto: una hora con 2 amigos
+                  anterior: { actividad: tomar un café, horaInicio: '17:00', duracionMin: null, maxParticipantes: null }
+      responses:
+        '200':
+          description: Datos extraídos (`COMPLETO`, `INCOMPLETO` o `NO_ENTENDIDO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaExtraccionDto'
+              examples:
+                completa:
+                  summary: Están todos los datos
+                  value:
+                    consultaId: 58
+                    estado: COMPLETO
+                    mensaje: null
+                    actividad: { actividad: jugar cartas, horaInicio: '16:00', duracionMin: 60, maxParticipantes: 4 }
+                    faltantes: []
+                    supuestos: []
+                incompleta:
+                  summary: Falta algún dato
+                  value:
+                    consultaId: 59
+                    estado: INCOMPLETO
+                    mensaje: '¿Cuánto tiempo va a durar la actividad?'
+                    actividad: { actividad: tomar un café, horaInicio: '17:00', duracionMin: null, maxParticipantes: null }
+                    faltantes: [duracionMin, maxParticipantes]
+                    supuestos: []
+                noEntendida:
+                  summary: No se reconoce ninguna actividad
+                  value:
+                    consultaId: 60
+                    estado: NO_ENTENDIDO
+                    mensaje: 'No entendimos tu actividad, ¿puedes describirla con más detalle?'
+                    actividad: { actividad: null, horaInicio: null, duracionMin: null, maxParticipantes: null }
+                    faltantes: [actividad]
+                    supuestos: []
+        '400':
+          description: Falta el texto o supera los 200 caracteres (`codigo` = `VALIDACION`), o no pasa los guardrails de HU17 (`codigo` = `SOLICITUD_NO_PERMITIDA`, queda en la auditoría como `RECHAZADO_SEGURIDAD`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example:
+                codigo: SOLICITUD_NO_PERMITIDA
+                mensaje: Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '503':
+          description: El modelo no respondió (`codigo` = `ASISTENTE_NO_DISPONIBLE`). La extracción queda registrada como `ERROR`.
           content:
             application/json:
               schema:
@@ -1208,8 +1350,8 @@ components:
       properties:
         codigo:
           type: string
-          enum: [VALIDACION, DUPLICADO, NO_ENCONTRADO, ASISTENTE_NO_DISPONIBLE]
-          description: '`VALIDACION` (400), `DUPLICADO` (409), `NO_ENCONTRADO` (404) o `ASISTENTE_NO_DISPONIBLE` (503).'
+          enum: [VALIDACION, DUPLICADO, NO_ENCONTRADO, SOLICITUD_NO_PERMITIDA, ASISTENTE_NO_DISPONIBLE]
+          description: '`VALIDACION` (400), `DUPLICADO` (409), `NO_ENCONTRADO` (404), `SOLICITUD_NO_PERMITIDA` (400) o `ASISTENTE_NO_DISPONIBLE` (503).'
           example: DUPLICADO
         mensaje:
           type: string
@@ -1262,12 +1404,12 @@ components:
         horaInicio:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`).
+          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). Desde las 07:15 (horario de clases de la UCB).
           example: '08:00'
         horaFin:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). Debe ser posterior a la hora de inicio.
+          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). Debe ser posterior a la hora de inicio y no pasar de las 21:00.
           example: '09:30'
         aula:
           type: string
@@ -1530,6 +1672,23 @@ components:
           type: string
           description: Por qué encaja, redactado por el asistente.
           example: Ideal para repasar en silencio antes de tu próxima clase.
+        feedback:
+          type: string
+          nullable: true
+          enum: [LIKE, DISLIKE]
+          description: Valoración del estudiante (HU9), o `null` si todavía no valoró.
+          example: null
+    FeedbackRecomendacionDto:
+      type: object
+      required: [feedback]
+      properties:
+        feedback: { type: string, enum: [LIKE, DISLIKE], description: No distingue mayúsculas., example: LIKE }
+    FeedbackGuardadoDto:
+      type: object
+      properties:
+        recomendacionId: { type: integer, format: int64, example: 87 }
+        feedback: { type: string, enum: [LIKE, DISLIKE], example: LIKE }
+        fechaFeedback: { type: string, format: date-time, example: '2026-10-31T14:00:04.512Z' }
     ZonaDto:
       type: object
       required: [id, nombre]
@@ -1731,6 +1890,10 @@ components:
               nombre: { type: string, example: Biblioteca Central }
               categoria: { type: string, example: Estudio }
               veces: { type: integer, format: int32, example: 15 }
+              meGusta: { type: integer, format: int32, example: 6, description: Valoraciones LIKE del lugar (HU9). }
+              noMeSirve: { type: integer, format: int32, example: 1, description: Valoraciones DISLIKE del lugar (HU9). }
+        meGusta: { type: integer, format: int32, example: 9, description: Valoraciones LIKE registradas en los últimos 7 días (HU9). }
+        noMeSirve: { type: integer, format: int32, example: 2, description: Valoraciones DISLIKE registradas en los últimos 7 días (HU9). }
     ClaseLeidaDto:
       type: object
       properties:
@@ -1813,3 +1976,35 @@ components:
           maxItems: 20
           items:
             $ref: '#/components/schemas/CompaneroCompatibleDto'
+    ActividadExtraidaDto:
+      type: object
+      description: Datos de la actividad. Un campo en `null` es un dato que falta (ver `faltantes`).
+      properties:
+        actividad: { type: string, nullable: true, maxLength: 100, example: jugar cartas }
+        horaInicio: { type: string, nullable: true, example: '16:00', description: Hora de inicio de hoy, hora de Bolivia (`HH:mm`), entre 07:15 y 21:00. }
+        duracionMin: { type: integer, format: int32, nullable: true, minimum: 10, maximum: 240, example: 60 }
+        maxParticipantes: { type: integer, format: int32, nullable: true, minimum: 2, maximum: 30, example: 4, description: Personas en total contando a quien la crea. }
+    SolicitudExtraccionDto:
+      type: object
+      properties:
+        texto: { type: string, maxLength: 200, example: Quiero jugar cartas por una hora, description: Lo que quiere hacer, o solo la respuesta a la pregunta por un dato faltante. }
+        anterior:
+          allOf:
+            - $ref: '#/components/schemas/ActividadExtraidaDto'
+          nullable: true
+          description: Lo ya entendido (el campo `actividad` de la respuesta anterior). `null` en la primera consulta.
+    RespuestaExtraccionDto:
+      type: object
+      properties:
+        consultaId: { type: integer, format: int64, example: 58, description: Id del registro de auditoría (sirve como `log_id` de la comunidad que se cree). }
+        estado: { type: string, enum: [COMPLETO, INCOMPLETO, NO_ENTENDIDO] }
+        mensaje: { type: string, nullable: true, example: '¿Cuánto tiempo va a durar la actividad?' }
+        actividad:
+          $ref: '#/components/schemas/ActividadExtraidaDto'
+        faltantes:
+          type: array
+          items: { type: string, enum: [actividad, horaInicio, duracionMin, maxParticipantes] }
+        supuestos:
+          type: array
+          description: Campos que completó el sistema porque el estudiante no los dijo (hoy solo `horaInicio`, «ahora»).
+          items: { type: string, enum: [horaInicio] }

@@ -15,6 +15,7 @@ public class RecomendacionService
 {
     public const string EstadoRespuestaOk = "OK";
     public const string EstadoRespuestaSinResultados = "SIN_RESULTADOS";
+    public const string CodigoSolicitudNoPermitida = "SOLICITUD_NO_PERMITIDA";
 
     private readonly IPuenteRepository _puentes;
     private readonly IRecuperadorLugares _recuperador;
@@ -37,6 +38,23 @@ public class RecomendacionService
         var puente = (await _puentes.ListarPorUsuarioAsync(usuarioId, ct)).FirstOrDefault(p => p.Id == req.PuenteId)
                      ?? throw new ReglaNegocioException("NO_ENCONTRADO", "El puente no existe.");
         var minutosDisponibles = (int)(puente.HoraFin - puente.HoraInicio).TotalMinutes;
+
+        // Antes de buscar lugares o llamar al asistente: lo que no se puede enviar queda registrado y se rechaza (HU17).
+        var rechazo = ReglasSeguridadIa.Evaluar(entrada);
+        if (rechazo is not null)
+        {
+            await _repo.GuardarAsync(new LogAuditoriaRag
+            {
+                UsuarioId = usuarioId,
+                Tipo = LogAuditoriaRag.TipoRecomendacion,
+                PuenteId = puente.Id,
+                TiempoDisponibleMin = (short)minutosDisponibles,
+                EntradaUsuario = entrada,
+                Estado = LogAuditoriaRag.EstadoRechazadoSeguridad,
+                CreatedAt = DateTime.UtcNow
+            }, [], ct);
+            throw new ReglaNegocioException(CodigoSolicitudNoPermitida, rechazo.Mensaje);
+        }
 
         var contexto = await _recuperador.RecuperarAsync(usuarioId, puente, ct);
         var candidatos = contexto.Lugares.DistinctBy(l => l.LugarId).ToList();
@@ -127,10 +145,30 @@ public class RecomendacionService
         if (limpia.Length > ReglasRecomendacion.MaximoLargoEntrada)
             throw new ReglaNegocioException("VALIDACION",
                 $"La preferencia puede tener como máximo {ReglasRecomendacion.MaximoLargoEntrada} caracteres.");
-        return limpia;
+
+        var saneada = ReglasSeguridadIa.Sanear(limpia);
+        return saneada.Length == 0 ? null : saneada;
     }
 
     // Las métricas salen del catálogo (candidato), no del texto del asistente.
     private static RecomendacionDto ADto(Recomendacion r, LugarCandidato l) =>
-        new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion);
+        new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion, r.Feedback);
+
+    /// <summary>
+    /// HU9: guarda la valoración del estudiante sobre una de SUS recomendaciones. Hay una sola por recomendación:
+    /// un voto nuevo reemplaza al anterior y repetir el mismo voto no escribe nada.
+    /// </summary>
+    public async Task<FeedbackGuardadoDto> GuardarFeedbackAsync(int usuarioId, long recomendacionId, string? feedback, CancellationToken ct = default)
+    {
+        var valor = ReglasFeedback.Normalizar(feedback)
+            ?? throw new ReglaNegocioException("VALIDACION", ReglasFeedback.MensajeInvalido);
+
+        // Solo las recomendaciones del propio usuario: la de otro responde igual que una inexistente.
+        var recomendacion = await _repo.ObtenerDeUsuarioAsync(recomendacionId, usuarioId, ct)
+            ?? throw new ReglaNegocioException("NO_ENCONTRADO", "La recomendación no existe.");
+
+        if (ReglasFeedback.CambiaElVoto(recomendacion.Feedback, valor))
+            await _repo.GuardarFeedbackAsync(recomendacion, valor, ct);
+        return new FeedbackGuardadoDto(recomendacion.Id, recomendacion.Feedback!, recomendacion.FechaFeedback!.Value);
+    }
 }

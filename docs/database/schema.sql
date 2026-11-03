@@ -69,6 +69,7 @@ CREATE TABLE categoria (
   updated_by  INT         NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_categoria_nombre UNIQUE (nombre),
+  CONSTRAINT ck_categoria_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT fk_categoria_created_by FOREIGN KEY (created_by) REFERENCES usuario (id),
   CONSTRAINT fk_categoria_updated_by FOREIGN KEY (updated_by) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -102,6 +103,7 @@ CREATE TABLE lugar (
   KEY ix_lugar_recomendable (recomendable, estado),
   CONSTRAINT ck_lugar_estado   CHECK (estado IN ('ACTIVO','EN_REVISION','INACTIVO')),
   CONSTRAINT ck_lugar_duracion CHECK (duracion_estimada_min > 0),
+  CONSTRAINT ck_lugar_nombre   CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
   CONSTRAINT ck_lugar_rango_duracion CHECK (duracion_min IS NULL OR duracion_max IS NULL OR duracion_min <= duracion_max),
   CONSTRAINT ck_lugar_lat      CHECK (latitud  BETWEEN -90  AND 90),
   CONSTRAINT ck_lugar_lng      CHECK (longitud BETWEEN -180 AND 180),
@@ -128,6 +130,7 @@ CREATE TABLE horario (
   CONSTRAINT uq_horario_bloque UNIQUE (usuario_id, dia_semana, hora_inicio, materia),
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
+  CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),   -- HU2: horario de clases de la UCB
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
   CONSTRAINT fk_horario_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -166,7 +169,8 @@ CREATE TABLE log_auditoria_rag (
   KEY ix_log_created (created_at),
   KEY ix_log_usuario (usuario_id, created_at),
   CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD')),
-  CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR')),
+  -- HU11: INCOMPLETO = se entendió la actividad, pero falta algún dato (el estudiante tiene que responder una pregunta)
+  CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
   CONSTRAINT fk_log_zona    FOREIGN KEY (zona_id)    REFERENCES zona (id),
   CONSTRAINT fk_log_puente  FOREIGN KEY (puente_id)  REFERENCES puente (id) ON DELETE SET NULL
@@ -193,6 +197,7 @@ CREATE TABLE recomendacion (
   fecha_feedback DATETIME(6) NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_reco_log_lugar UNIQUE (log_id, lugar_id),
+  KEY ix_recomendacion_feedback (feedback, fecha_feedback),   -- HU9: métricas de valoraciones (me gusta / no me sirve)
   CONSTRAINT ck_reco_feedback  CHECK (feedback IN ('LIKE','DISLIKE')),
   CONSTRAINT ck_reco_fecha     CHECK ((feedback IS NULL) = (fecha_feedback IS NULL)),
   -- RN04 / RNF06: solo se puede recomendar un lugar recuperado en ESA misma consulta

@@ -241,24 +241,6 @@
   font-weight: 700;
 }
 
-.selector select {
-  min-height: 52px;
-  padding: 0 14px;
-  border: 1.5px solid var(--borde);
-  border-radius: 14px;
-  background: var(--superficie);
-  color: var(--texto);
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.selector select:focus {
-  outline: none;
-  border-color: var(--ucb-celeste);
-  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
-}
-
 .estado {
   margin: 0;
   padding: 18px;

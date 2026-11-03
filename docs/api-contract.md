@@ -180,8 +180,8 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
 | `id` | entero | Solo en respuestas | ✅ Definido |
 | `materia` | string | Obligatorio, hasta 100 caracteres | ✅ Definido (schema) |
 | `diaSemana` | entero | 1 a 6 (1 = lunes … 6 = sábado) | ✅ Definido (`ck_horario_dia`) |
-| `horaInicio` | hora | Obligatoria | ✅ Definido (schema) |
-| `horaFin` | hora | Obligatoria, posterior a `horaInicio` | ✅ Definido (`ck_horario_horas`) |
+| `horaInicio` | hora | Obligatoria, desde las **07:15** (la clase más temprana de la UCB). Antes: 400 «Las clases empiezan desde las 07:15.» | ✅ Definido (`ck_horario_rango`) |
+| `horaFin` | hora | Obligatoria, posterior a `horaInicio` y hasta las **21:00** (la más tarde). Después: 400 «Las clases terminan, como muy tarde, a las 21:00.» | ✅ Definido (`ck_horario_horas`, `ck_horario_rango`) |
 | `aula` | string o `null` | Opcional, hasta 30 caracteres | ✅ Definido (schema) |
 | `origen` | string | Solo en respuestas. `MANUAL` (alta a mano) o `FOTO` (confirmado desde la foto del horario); valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores); 🟡 Propuesta (que el cliente no lo envíe) |
 | `asiste` | booleano | Opcional al enviar: al crear, `true` si no se envía; al editar, se conserva el valor actual. En respuestas siempre viene. `false` = el estudiante no asiste a ese bloque: no cuenta como tiempo ocupado y no choca con otros | ✅ Definido |
@@ -461,6 +461,7 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
   3. El traslado de ida y vuelta más la actividad no supera la duración del puente. Si suman exactamente lo mismo, sí cabe.
 - ✅ **Definido:** la sede activa se elige con el campo `zona.activa`. Solo las sedes activas se ofrecen en `GET /api/ubicacion/zonas` y reciben búsquedas: si la zona del estudiante quedó inactiva, la búsqueda responde `SIN_ZONA` hasta que elija otra. Hoy la sede activa es **UCB Cochabamba** y La Paz queda guardada pero inactiva (`docs/database/seed-dev-cochabamba.sql`).
 - ✅ **Definido:** `validado = false` significa que el equipo todavía no revisó los datos del lugar. Se sigue mostrando, con la etiqueta «Por validar».
+- ✅ **Definido** (HU8, #16): un lugar sin nombre, categoría, distancia o duración válida no se devuelve, ni en `GET /api/lugares/viables` ni en las recomendaciones.
 - 🟡 **Propuesta:** el traslado se calcula con la distancia en línea recta desde el centro de la zona y una velocidad de 80 m por minuto (unos 4,8 km/h), redondeando hacia arriba. La actividad dura `duracion_estimada_min` (RN03).
 - 🟡 **Propuesta:** orden por distancia, del más cercano al más lejano. Máximo 50 lugares.
 - 🔴 **Pendiente:** si el catálogo debe considerar `hora_apertura` y `hora_cierre` (hoy están como [CONFIRMAR] en el esquema y no se usan).
@@ -563,6 +564,98 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 ### `GET /api/matching/configuracion` y `PUT /api/matching/configuracion`
 
 `GET` devuelve `{ "visible": false, "desde": null }`. `PUT` recibe `{ "visible": true }` (obligatorio; sin él responde 400 `VALIDACION`) y devuelve lo mismo con la fecha del consentimiento. Al retirarlo, `desde` vuelve a `null`.
+
+## 7c. Valoración de recomendaciones (HU9 — responsable: Amira)
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Valores | `LIKE` (me gusta) o `DISLIKE` (no me sirve); no distingue mayúsculas ni espacios | ✅ Definido (`ck_reco_feedback`) |
+| Asociación | El voto va en la fila de `recomendacion`, que pertenece a una consulta (`log_auditoria_rag.usuario_id`). Solo se valoran recomendaciones propias; la de otro responde 404 | ✅ Definido |
+| Sin duplicados | Una sola valoración por recomendación: votar de nuevo reemplaza la anterior y actualiza `fecha_feedback`; repetir el mismo voto no escribe | ✅ Definido |
+| Para qué sirve | `GET /api/admin/metricas` muestra me gusta y no me sirve de la semana, en total y por lugar | ✅ Definido |
+
+### `PATCH /api/recomendaciones/{id}/feedback`
+
+Body: `{ "feedback": "LIKE" }`. Respuesta **200**:
+
+```json
+{ "recomendacionId": 87, "feedback": "LIKE", "fechaFeedback": "2026-10-31T14:00:04.512Z" }
+```
+
+Cada recomendación de `POST /api/recomendaciones` trae `feedback` (`LIKE`, `DISLIKE` o `null`).
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | El voto no es `LIKE` ni `DISLIKE` (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | La recomendación no existe o no es del usuario (`NO_ENCONTRADO`) |
+
+## 7d. Extracción estructurada de actividades (HU11 — responsable: Majo)
+
+Convierte lo que el estudiante escribe en sus palabras en datos consistentes de una actividad. **Solo extrae y valida: no crea nada.** La pantalla de resumen, la confirmación y la creación de la comunidad son de HU10 (Ariana), que llama a este endpoint.
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Tool calling | Se ofrece al LLM una sola función, `registrar_actividad`, con esquema estricto, y se le obliga a llamarla (`tool_choice`). Si un modelo local no hace tool calling pero responde el mismo JSON como texto, también se acepta | ✅ Definido |
+| Quién decide | El LLM solo propone. Qué es válido, qué falta y qué se pregunta lo decide el backend (`ReglasExtraccion`) | ✅ Definido |
+| Texto | Obligatorio, máximo 200 caracteres. Con menos de 3 letras no se llama al LLM y se responde `NO_ENTENDIDO` | ✅ Definido |
+| Hora | De hoy, en hora de Bolivia, entre 07:15 y 21:00. «En 20 minutos» se calcula en el servidor. Si no la dice, empieza **ahora** y se avisa en `supuestos`. Una hora que ya pasó (más de 5 min) se vuelve a preguntar | 🟡 Propuesta, a confirmar por Majo y Ariana |
+| Duración | De 10 a 240 minutos, sin pasar de las 21:00 | 🟡 Propuesta, a confirmar por Majo y Ariana |
+| Participantes | De 2 a 30 personas, contando a quien la crea (`ck_com_max` exige 2 o más). Si no lo dice y la actividad tiene un número habitual (cartas = 4), el modelo puede proponerlo | 🟡 Propuesta, a confirmar por Majo y Ariana |
+| Ambigüedad | Un dato que falta o no es válido va en `faltantes`; `mensaje` pregunta **solo por el primero**. Para responder se manda la respuesta y lo ya entendido en `anterior`, sin reescribir todo (HU10, criterio 2) | ✅ Definido |
+| Seguridad | Los mismos guardrails de HU17, antes del LLM (texto y `anterior`) y después (la actividad propuesta). Al LLM no se le envía el id, el nombre ni la ubicación del estudiante | ✅ Definido |
+| Auditoría | Toda extracción queda en `log_auditoria_rag` con tipo `EXTRACCION_COMUNIDAD` y estado `OK`, `INCOMPLETO`, `SIN_RESULTADOS` (no entendida), `RECHAZADO_SEGURIDAD` o `ERROR`. `consultaId` es su `id`: HU10 lo guarda como `comunidad_efimera.log_id` | ✅ Definido |
+| Sin clave de LLM | Se usa un extractor simulado con patrones (frases comunes), para probar sin costo | ✅ Definido |
+
+### `POST /api/actividades/extraer`
+
+Body: `{ "texto": "Quiero jugar cartas a las 4 por una hora", "anterior": null }`. Respuesta **200**:
+
+```json
+{
+  "consultaId": 58,
+  "estado": "COMPLETO",
+  "mensaje": null,
+  "actividad": { "actividad": "jugar cartas", "horaInicio": "16:00", "duracionMin": 60, "maxParticipantes": 4 },
+  "faltantes": [],
+  "supuestos": []
+}
+```
+
+Si falta un dato (`INCOMPLETO`), `mensaje` trae la pregunta y el dato va en `null`:
+
+```json
+{
+  "consultaId": 59,
+  "estado": "INCOMPLETO",
+  "mensaje": "¿Cuánto tiempo va a durar la actividad?",
+  "actividad": { "actividad": "tomar un café", "horaInicio": "17:00", "duracionMin": null, "maxParticipantes": null },
+  "faltantes": ["duracionMin", "maxParticipantes"],
+  "supuestos": []
+}
+```
+
+Para responder: `{ "texto": "una hora con 2 amigos", "anterior": { "actividad": "tomar un café", "horaInicio": "17:00", "duracionMin": null, "maxParticipantes": null } }` (el `actividad` de la respuesta anterior, tal cual).
+
+Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendimos tu actividad, ¿puedes describirla con más detalle?» y `faltantes` es `["actividad"]`.
+
+**Preguntas** (`mensaje` con `INCOMPLETO`)
+
+| Campo | Pregunta |
+|---|---|
+| `horaInicio` | «¿A qué hora quieres empezar?» · fuera de rango: «Las actividades en el campus van de 07:15 a 21:00. ¿A qué hora quieres empezar?» · pasada: «Esa hora ya pasó y las actividades son para hoy. ¿A qué hora quieres empezar?» |
+| `duracionMin` | «¿Cuánto tiempo va a durar la actividad?» · fuera de rango: «La actividad puede durar entre 10 minutos y 4 horas. ¿Cuánto tiempo va a durar?» · pasa las 21:00: «Así terminaría después de las 21:00. ¿Cuánto tiempo va a durar?» |
+| `maxParticipantes` | «¿Cuántas personas pueden participar, contándote a ti?» · fuera de rango: «El grupo puede ser de 2 a 30 personas, contándote a ti. ¿Cuántas personas pueden participar?» |
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta el texto o supera los 200 caracteres (`VALIDACION`), o no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`, con el mismo mensaje que HU17) |
+| 401 | Sin token o token inválido |
+| 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
 
 ## 8. Resumen de decisiones por responsable
 

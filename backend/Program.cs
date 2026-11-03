@@ -12,6 +12,7 @@ using Breaku.Application.Comunidades;
 using Breaku.Presentation.Documentacion;
 using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
+using Breaku.Application.Actividades;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -78,6 +79,7 @@ builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<Busq
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ComunidadService>();
+builder.Services.AddScoped<ExtraccionActividadService>();
 
 var app = builder.Build();
 

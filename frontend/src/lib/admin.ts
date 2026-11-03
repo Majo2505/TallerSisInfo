@@ -42,7 +42,7 @@ export type ConsultaRag = {
   usuario: string;
   tipo: string;
   entrada: string | null;
-  estado: "OK" | "SIN_RESULTADOS" | "RECHAZADO_SEGURIDAD" | "ERROR";
+  estado: "OK" | "SIN_RESULTADOS" | "RECHAZADO_SEGURIDAD" | "ERROR" | "INCOMPLETO"; // INCOMPLETO: extracción de HU11 a la que le falta un dato
   modelo: string | null;
   latenciaMs: number | null;
   lugaresRecuperados: number;
@@ -56,7 +56,9 @@ export type MetricasAdmin = {
   rechazadas: number;
   errores: number;
   latenciaPromedioMs: number | null;
-  masRecomendados: { nombre: string; categoria: string; veces: number }[];
+  masRecomendados: { nombre: string; categoria: string; veces: number; meGusta: number; noMeSirve: number }[];
+  meGusta: number; // HU9: valoraciones de la semana
+  noMeSirve: number;
 };
 
 export const obtenerResumen = () => pedirApi<ResumenAdmin>("/api/admin/resumen");

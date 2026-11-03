@@ -87,7 +87,7 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 Necesitas una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden, `005-sede-cochabamba.sql` para la sede activa, `006-hu12-matching.sql` para el matching de compañeros y `010-hu13-comunidades.sql` para comunidades efímeras), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
+> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden, `005-sede-cochabamba.sql` para la sede activa, `006-hu12-matching.sql` para matching, `007-hu9-feedback.sql` para feedback, `008-hu2-rango-horario.sql` para el rango horario, `009-hu8-metricas.sql` para métricas, `010-hu11-extraccion.sql` para extracción de actividades y `010-hu13-comunidades.sql` para comunidades efímeras), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
@@ -189,6 +189,17 @@ Gratis, sin límite de consultas y sin enviar datos fuera de tu computadora.
 Sin tarjeta gráfica dedicada el modelo corre en el procesador: cada recomendación tarda entre 10 y 40 segundos, y la primera más, porque carga el modelo en memoria. Por eso `LLM_TIMEOUT_SECONDS=90`.
 
 Para cerrar Ollama: ícono de la llama junto al reloj → **Quit Ollama**, o `Get-Process ollama* | Stop-Process` en PowerShell. Con Ollama cerrado (y el LLM configurado), `POST /api/recomendaciones` responde `503` con `codigo` = `ASISTENTE_NO_DISPONIBLE`.
+
+#### Protección del asistente (HU17)
+
+Antes de llamar al modelo, la preferencia que escribe el estudiante pasa por unos guardrails (`backend/Domain/Rules/ReglasSeguridadIa.cs`). Se rechaza con `400` y el código `SOLICITUD_NO_PERMITIDA`, sin llamar al asistente, si:
+
+- intenta cambiar las instrucciones del asistente o hacerlo actuar como otro (prompt injection);
+- pide datos internos: contraseñas, claves, tokens de acceso, el prompt o el código fuente;
+- habla de algo fuera del reglamento universitario: alcohol, drogas y tabaco, apuestas, contenido sexual, ocultismo, violencia, deshonestidad académica o lenguaje vulgar;
+- menciona temas de bienestar (por ejemplo, hacerse daño): se responde con un mensaje de apoyo.
+
+El texto se normaliza antes de comparar (sin tildes, sin mayúsculas, letras separadas vueltas a unir), y los signos `<` y `>` se quitan para que nadie pueda cerrar el bloque de la preferencia dentro del prompt. Cada intento rechazado queda en el registro de auditoría con el estado `RECHAZADO_SEGURIDAD`. Es una primera barrera: la validación de la respuesta del modelo (solo lugares del catálogo, sin cifras) sigue siendo la protección principal. Las pruebas están en `backend/Breaku.Tests`.
 
 #### Variables y otros proveedores
 

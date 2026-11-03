@@ -4,10 +4,13 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { IconoCamara, IconoCheck, IconoDestello } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
+import { Selector, SelectorHora } from "@/components/app/Selectores";
 import {
   ClaseLeida,
   FOTO_BYTES_MAXIMOS,
   FOTO_TIPOS,
+  HORA_MAXIMA,
+  HORA_MINIMA,
   OpcionAsistencia,
   ResultadoLote,
   cambiarAsistencias,
@@ -18,6 +21,7 @@ import {
 import estilos from "./FotoHorario.module.css";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const OPCIONES_DIA = [1, 2, 3, 4, 5, 6].map((d) => ({ valor: String(d), etiqueta: DIAS[d] }));
 const MENSAJES = ["Buscando tus materias…", "Leyendo días y horas…", "Revisando las aulas…", "Ordenando tu semana…"];
 
 type Fila = ClaseLeida & { clave: number; incluir: boolean };
@@ -318,15 +322,30 @@ export default function FotoHorario({ onCerrar, onGuardado, onActualizado }: Pro
                           onChange={(e) => cambiarFila(f.clave, { materia: e.target.value })}
                           aria-label="Materia"
                         />
-                        <select value={f.diaSemana} onChange={(e) => cambiarFila(f.clave, { diaSemana: Number(e.target.value) })} aria-label="Día">
-                          {[1, 2, 3, 4, 5, 6].map((d) => (
-                            <option key={d} value={d}>
-                              {DIAS[d]}
-                            </option>
-                          ))}
-                        </select>
-                        <input type="time" value={f.horaInicio} onChange={(e) => cambiarFila(f.clave, { horaInicio: e.target.value })} aria-label="Inicio" />
-                        <input type="time" value={f.horaFin} onChange={(e) => cambiarFila(f.clave, { horaFin: e.target.value })} aria-label="Fin" />
+                        <Selector
+                          compacto
+                          clase={estilos.dia}
+                          valor={String(f.diaSemana)}
+                          opciones={OPCIONES_DIA}
+                          onCambio={(v) => cambiarFila(f.clave, { diaSemana: Number(v) })}
+                          etiqueta="Día"
+                        />
+                        <SelectorHora
+                          compacto
+                          valor={f.horaInicio}
+                          min={HORA_MINIMA}
+                          max={HORA_MAXIMA}
+                          onCambio={(v) => cambiarFila(f.clave, { horaInicio: v })}
+                          etiqueta="Inicio"
+                        />
+                        <SelectorHora
+                          compacto
+                          valor={f.horaFin}
+                          min={HORA_MINIMA}
+                          max={HORA_MAXIMA}
+                          onCambio={(v) => cambiarFila(f.clave, { horaFin: v })}
+                          etiqueta="Fin"
+                        />
                         <input
                           className={estilos.aula}
                           value={f.aula ?? ""}
