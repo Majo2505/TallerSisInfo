@@ -5,17 +5,19 @@ using Breaku.Domain.Rules;
 namespace Breaku.Application.Comunidades;
 
 /// <summary>
-/// Caso de uso de HU13: creación automática de una comunidad efímera y notificación. Parte de una actividad que HU11 ya
-/// entendió, busca a los compañeros de la sede que están libres a esa hora (las mismas reglas y el mismo consentimiento
-/// que el matching de HU12) y, solo si encuentra coincidencias, crea la comunidad, invita a los más compatibles (uno por
-/// plaza) y le envía a cada uno un aviso (HU4). Si nadie está libre, no crea nada.
+/// Caso de uso de HU13: armado automático de la comunidad y notificación. Cuando HU10 crea la actividad, se buscan los
+/// compañeros de la sede que están libres a esa hora (las mismas reglas y el mismo consentimiento que el matching de HU12),
+/// se invita a los más compatibles (uno por lugar libre) y cada uno recibe un aviso (HU4). Quien crea la actividad queda
+/// dentro como confirmado. Si nadie coincide, la actividad sigue creada y se puede volver a buscar más tarde.
 /// </summary>
-public class ComunidadService
+public class ComunidadService : IInvitadorComunidad
 {
-    public const string EstadoCreada = "CREADA";
+    public const string EstadoInvitados = "INVITADOS";
     public const string EstadoSinCoincidencias = "SIN_COINCIDENCIAS";
     public const string EstadoSinZona = "SIN_ZONA";
     public const string EstadoNoVisible = "NO_VISIBLE";
+    public const string EstadoCompleta = "COMPLETA";
+    public const string EstadoError = "ERROR";
 
     private readonly IComunidadRepository _repo;
     private readonly TimeProvider _reloj;
@@ -28,123 +30,95 @@ public class ComunidadService
         _reloj = reloj;
     }
 
-    public async Task<ResultadoComunidadDto> CrearAsync(int usuarioId, CrearComunidadRequest req, CancellationToken ct = default)
+    /// <summary>
+    /// Vuelve a buscar compañeros para una actividad propia que todavía no terminó (por ejemplo, después de aceptar el
+    /// matching o si antes no había nadie libre). Quien ya fue invitado no se invita de nuevo.
+    /// </summary>
+    public async Task<InvitacionDto> InvitarDeNuevoAsync(int usuarioId, int comunidadId, CancellationToken ct = default)
+    {
+        var comunidad = await _repo.ObtenerComunidadAsync(comunidadId, ct);
+        if (comunidad is null || comunidad.CreadorId != usuarioId)
+            throw new ReglaNegocioException("NO_ENCONTRADO", "La actividad no existe.");
+        if (comunidad.Estado != ComunidadEfimera.EstadoActiva || comunidad.Fin <= _reloj.GetUtcNow().UtcDateTime)
+            throw new ReglaNegocioException("VALIDACION", "La actividad ya terminó.");
+
+        return await InvitarAsync(comunidad, ct);
+    }
+
+    public async Task<InvitacionDto> InvitarAsync(ComunidadEfimera comunidad, CancellationToken ct = default)
     {
         var ahoraUtc = _reloj.GetUtcNow().UtcDateTime;
-        var ahoraLocal = ReglasNotificacion.AHoraLocal(ahoraUtc);
-
-        // 1. Los datos llegan del cliente: se vuelven a validar con las mismas reglas de HU11.
-        var datos = Validar(req, ahoraLocal);
-        var consultaId = req.ConsultaId!.Value;
-        var hora = datos.HoraInicio!.Value;
-        var duracion = datos.DuracionMin!.Value;
-        var maximo = datos.MaxParticipantes!.Value;
-
-        var usuario = await _repo.ObtenerUsuarioAsync(usuarioId, ct)
+        var creador = await _repo.ObtenerUsuarioAsync(comunidad.CreadorId, ct)
                       ?? throw new ReglaNegocioException("NO_ENCONTRADO", "No encontramos tu cuenta.");
+        var yaDentro = await _repo.ListarParticipantesAsync(comunidad.Id, ct);
 
-        // 2. La extracción tiene que ser suya, de hoy y completa, y no haber creado ya una comunidad.
-        var log = await _repo.ObtenerExtraccionAsync(consultaId, ct);
-        if (log is null || log.UsuarioId != usuarioId || log.Tipo != LogAuditoriaRag.TipoExtraccionComunidad
-            || log.Estado != LogAuditoriaRag.EstadoOk || ReglasNotificacion.AHoraLocal(log.CreatedAt).Date != ahoraLocal.Date)
-            throw new ReglaNegocioException("NO_ENCONTRADO", "No encontramos esa actividad. Vuelve a escribirla.");
-        if (await _repo.ExisteComunidadDeConsultaAsync(consultaId, ct))
-            throw new ReglaNegocioException("YA_CREADA", "Ya creaste una comunidad con esta actividad.");
+        // Quien crea la actividad está dentro desde el principio: CONFIRMADO, con respondido_en (ck_part_respuesta).
+        var participaciones = new List<Participacion>();
+        if (!yaDentro.Contains(comunidad.CreadorId))
+            participaciones.Add(new Participacion
+            {
+                ComunidadId = comunidad.Id, UsuarioId = comunidad.CreadorId, Estado = Participacion.EstadoConfirmado,
+                InvitadoEn = ahoraUtc, RespondidoEn = ahoraUtc
+            });
 
-        // 3. Mismo consentimiento que HU12: sin campus no hay con quién cruzar, y quien no aparece tampoco invita.
-        if (usuario.ZonaActualId is not int zonaId || usuario.ZonaActual is not { Activa: true })
-            return new ResultadoComunidadDto(EstadoSinZona, ReglasComunidad.MensajeSinZona, null);
-        if (!usuario.VisibleMatching)
-            return new ResultadoComunidadDto(EstadoNoVisible, ReglasComunidad.MensajeNoVisible, null);
+        // Mismo consentimiento que HU12: sin campus no hay con quién cruzar, y quien no aparece tampoco invita.
+        InvitacionDto? sinInvitar = null;
+        if (creador.ZonaActualId is null || creador.ZonaActual is not { Activa: true })
+            sinInvitar = Vacia(EstadoSinZona, ReglasComunidad.MensajeSinZona);
+        else if (!creador.VisibleMatching)
+            sinInvitar = Vacia(EstadoNoVisible, ReglasComunidad.MensajeNoVisible);
 
-        var inicioLocal = ahoraLocal.Date + hora.ToTimeSpan();
-        var inicioUtc = ReglasComunidad.AUtc(inicioLocal);
-        var finUtc = inicioUtc.AddMinutes(duracion);
-        var actividad = new ReglasMatching.Franja(ReglasComunidad.DiaSemana(inicioLocal), hora, hora.AddMinutes(duracion));
+        var plazas = comunidad.MaxParticipantes - yaDentro.Union([comunidad.CreadorId]).Count();
+        if (sinInvitar is null && plazas <= 0)
+            sinInvitar = Vacia(EstadoCompleta, ReglasComunidad.MensajeCompleta);
 
-        if (await _repo.EstaEnOtraComunidadAsync(usuarioId, inicioUtc, finUtc, ct))
-            throw new ReglaNegocioException("EN_OTRA_COMUNIDAD", "Ya estás en una comunidad a esa hora.");
+        if (sinInvitar is not null)
+        {
+            await _repo.GuardarInvitacionesAsync(participaciones, [], ct);
+            return sinInvitar;
+        }
 
-        // 4. Cruce automático con los puentes de los compañeros.
-        var candidatos = await _repo.ListarCandidatosAsync(usuarioId, zonaId, actividad, inicioUtc, finUtc, ct);
+        // Cruce automático con los puentes de hoy de los compañeros.
+        var inicioLocal = ReglasNotificacion.AHoraLocal(comunidad.Inicio);
+        var finLocal = ReglasNotificacion.AHoraLocal(comunidad.Fin);
+        var actividad = new ReglasMatching.Franja(ReglasComunidad.DiaSemana(inicioLocal),
+            TimeOnly.FromDateTime(inicioLocal), TimeOnly.FromDateTime(finLocal));
+
+        var candidatos = await _repo.ListarCandidatosAsync(comunidad, creador.ZonaActualId!.Value, actividad, ct);
         var porId = candidatos.ToDictionary(c => c.UsuarioId);
         var puentes = candidatos.SelectMany(c => c.Puentes.Select(p =>
             new ReglasMatching.PuenteDe(c.UsuarioId, new ReglasMatching.Franja(p.DiaSemana, p.HoraInicio, p.HoraFin))));
-        var invitados = ReglasComunidad.ElegirInvitados(actividad, maximo, puentes);
+        var invitados = ReglasComunidad.ElegirInvitados(actividad, plazas, puentes);
 
-        if (invitados.Count == 0)
-            return new ResultadoComunidadDto(EstadoSinCoincidencias, ReglasComunidad.MensajeSinCoincidencias, null);
-
-        // 5. Hay coincidencias: se crea la comunidad, se invita y se avisa, todo junto.
-        var comunidad = new ComunidadEfimera
+        participaciones.AddRange(invitados.Select(i => new Participacion
         {
-            CreadorId = usuarioId,
-            LogId = consultaId,
-            TextoOriginal = TextoOriginal(req.Texto, datos.Actividad!),
-            Actividad = datos.Actividad!,
-            Inicio = inicioUtc,
-            Fin = finUtc,
-            MaxParticipantes = (short)maximo,
-            Estado = ComunidadEfimera.EstadoActiva,
-            CreatedAt = ahoraUtc,
-            UpdatedAt = ahoraUtc
-        };
+            ComunidadId = comunidad.Id, UsuarioId = i.UsuarioId, Estado = Participacion.EstadoPendiente, InvitadoEn = ahoraUtc
+        }));
 
-        // Quien la crea ya está dentro: CONFIRMADO, con respondido_en (ck_part_respuesta).
-        var participaciones = new List<Participacion>
-        {
-            new() { UsuarioId = usuarioId, Estado = Participacion.EstadoConfirmado, InvitadoEn = ahoraUtc, RespondidoEn = ahoraUtc }
-        };
-        participaciones.AddRange(invitados.Select(i =>
-            new Participacion { UsuarioId = i.UsuarioId, Estado = Participacion.EstadoPendiente, InvitadoEn = ahoraUtc }));
-
-        var mensaje = ReglasComunidad.MensajeInvitacion(usuario.Nombre, comunidad.Actividad, actividad.Inicio, actividad.Fin);
+        var mensaje = ReglasComunidad.MensajeInvitacion(creador.Nombre, comunidad.Actividad, actividad.Inicio, actividad.Fin);
         var avisos = invitados
-            .Where(i => porId[i.UsuarioId].NotificacionesActivas)   // HU4: quien apagó los avisos no los recibe
+            .Where(i => porId[i.UsuarioId].NotificacionesActivas)   // HU4: quien apagó los avisos queda invitado, pero sin aviso
             .Select(i => new Notificacion
             {
                 UsuarioId = i.UsuarioId,
                 Tipo = Notificacion.TipoInvitacionComunidad,
+                ComunidadId = comunidad.Id,
                 Mensaje = mensaje,
                 CreatedAt = ahoraUtc
             })
             .ToList();
 
-        await _repo.CrearAsync(comunidad, participaciones, avisos, ct);
+        await _repo.GuardarInvitacionesAsync(participaciones, avisos, ct);
 
-        var creada = new ComunidadCreadaDto(comunidad.Id, comunidad.Actividad, Hora(actividad.Inicio), Hora(actividad.Fin), maximo,
-            invitados.Select(i => new InvitadoDto(porId[i.UsuarioId].Nombre, porId[i.UsuarioId].Carrera,
-                Hora(i.EnComun.Inicio), Hora(i.EnComun.Fin), i.MinutosEnComun)).ToList());
-        var texto = invitados.Count == 1
-            ? "¡Grupo armado! Invitamos a 1 compañero libre a esa hora."
-            : $"¡Grupo armado! Invitamos a {invitados.Count} compañeros libres a esa hora.";
-        return new ResultadoComunidadDto(EstadoCreada, texto, creada);
+        if (invitados.Count == 0)
+            return Vacia(EstadoSinCoincidencias, ReglasComunidad.MensajeSinCoincidencias);
+
+        var lista = invitados.Select(i => new InvitadoDto(porId[i.UsuarioId].Nombre, porId[i.UsuarioId].Carrera,
+            Hora(i.EnComun.Inicio), Hora(i.EnComun.Fin), i.MinutosEnComun)).ToList();
+        return new InvitacionDto(EstadoInvitados, ReglasComunidad.MensajeInvitados(lista.Count), lista);
     }
 
-    /// <summary>Valida el pedido con <see cref="ReglasExtraccion"/>: hora de hoy entre 07:15 y 21:00, duración y personas.</summary>
-    private static DatosActividad Validar(CrearComunidadRequest req, DateTime ahoraLocal)
-    {
-        if (req.ConsultaId is null || req.Actividad is null)
-            throw new ReglaNegocioException("VALIDACION", "Primero describe tu actividad para que la entendamos.");
-        if (req.Texto?.Trim().Length > ReglasExtraccion.MaximoLargoTexto)
-            throw new ReglaNegocioException("VALIDACION", $"El texto puede tener hasta {ReglasExtraccion.MaximoLargoTexto} caracteres.");
-
-        var a = req.Actividad;
-        var hora = ReglasExtraccion.LeerHora(a.HoraInicio);
-        if (hora is null)
-            throw new ReglaNegocioException("VALIDACION", ReglasExtraccion.PreguntaHora);
-
-        var resultado = ReglasExtraccion.Interpretar(null, new DatosActividad(a.Actividad, hora, a.DuracionMin, a.MaxParticipantes), ahoraLocal);
-        if (resultado.Estado != ReglasExtraccion.EstadoCompleto)
-            throw new ReglaNegocioException("VALIDACION", resultado.Mensaje ?? ReglasExtraccion.MensajeNoEntendido);
-        return resultado.Datos;
-    }
-
-    private static string TextoOriginal(string? texto, string actividad)
-    {
-        var limpio = string.IsNullOrWhiteSpace(texto) ? null : ReglasSeguridadIa.Sanear(texto).Trim();
-        return string.IsNullOrEmpty(limpio) ? actividad : limpio;
-    }
+    private static InvitacionDto Vacia(string estado, string mensaje) => new(estado, mensaje, []);
 
     private static string Hora(TimeOnly t) => t.ToString("HH:mm");
 }

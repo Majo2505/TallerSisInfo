@@ -1,9 +1,9 @@
 namespace Breaku.Domain.Rules;
 
 /// <summary>
-/// Reglas puras de la creación automática de comunidades (HU13). No dependen de nada.
-/// Una comunidad solo se crea si hay al menos un compañero libre a la hora de la actividad: si no, no tiene sentido
-/// armar un grupo. Se invita a los más compatibles, uno por plaza libre, y cada uno recibe un aviso.
+/// Reglas puras del armado automático de la comunidad (HU13). No dependen de nada.
+/// Cuando se crea una actividad (HU10), se invita a los compañeros libres a esa hora más compatibles, uno por lugar
+/// libre del grupo, y cada uno recibe un aviso.
 /// </summary>
 public static class ReglasComunidad
 {
@@ -13,9 +13,15 @@ public static class ReglasComunidad
     /// <summary>notificacion.mensaje es VARCHAR(200).</summary>
     public const int MaximoLargoMensaje = 200;
 
-    public const string MensajeSinZona = "Elige tu campus para encontrar compañeros libres a esa hora.";
+    public const string MensajeSinZona = "Elige tu campus para invitar a compañeros libres a esa hora.";
     public const string MensajeNoVisible = "Para invitar a tus compañeros, primero acepta que ellos también te encuentren.";
-    public const string MensajeSinCoincidencias = "Nadie de tu campus está libre a esa hora. Prueba con otra hora o vuelve a intentarlo más tarde.";
+    public const string MensajeSinCoincidencias = "Por ahora nadie de tu campus está libre a esa hora. Puedes volver a buscar más tarde.";
+    public const string MensajeCompleta = "El grupo ya está completo.";
+
+    /// <summary>«Invitamos a 1 compañero libre…» o «Invitamos a 3 compañeros libres…».</summary>
+    public static string MensajeInvitados(int cantidad) => cantidad == 1
+        ? "Invitamos a 1 compañero libre a esa hora."
+        : $"Invitamos a {cantidad} compañeros libres a esa hora.";
 
     /// <summary>Día de la semana como en horario y puente: 1 = lunes … 7 = domingo.</summary>
     public static int DiaSemana(DateTime fecha) => fecha.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)fecha.DayOfWeek;
@@ -26,19 +32,16 @@ public static class ReglasComunidad
     /// </summary>
     public static int MinutosExigidos(int duracionMin) => Math.Min(MinutosMinimosEnComun, duracionMin);
 
-    /// <summary>Plazas para invitar: el grupo ya cuenta a quien lo crea.</summary>
-    public static int Plazas(int maxParticipantes) => Math.Max(0, maxParticipantes - 1);
-
     /// <summary>Compañero elegido para la invitación y cuánto tiempo comparte con la actividad.</summary>
     public readonly record struct Invitado(int UsuarioId, ReglasMatching.Franja EnComun, int MinutosEnComun);
 
     /// <summary>
     /// Elige a quién invitar: compañeros con un puente el mismo día que se cruce con la actividad al menos
     /// <see cref="MinutosExigidos"/> minutos. Primero quien comparte más tiempo; en empate, por <c>UsuarioId</c>
-    /// para que el resultado sea siempre el mismo. Uno por plaza libre.
+    /// para que el resultado sea siempre el mismo. Como mucho <paramref name="plazas"/> (los lugares libres del grupo).
     /// Si un compañero tiene dos puentes que tocan la actividad, cuenta el tramo más largo.
     /// </summary>
-    public static List<Invitado> ElegirInvitados(ReglasMatching.Franja actividad, int maxParticipantes,
+    public static List<Invitado> ElegirInvitados(ReglasMatching.Franja actividad, int plazas,
         IEnumerable<ReglasMatching.PuenteDe> puentesDeOtros)
     {
         var minimo = MinutosExigidos(actividad.Minutos);
@@ -57,12 +60,9 @@ public static class ReglasComunidad
             .Select(i => i!.Value)
             .OrderByDescending(i => i.MinutosEnComun)
             .ThenBy(i => i.UsuarioId)
-            .Take(Plazas(maxParticipantes))
+            .Take(Math.Max(0, plazas))
             .ToList();
     }
-
-    /// <summary>Hora local de Bolivia → UTC (Bolivia es UTC-4 todo el año).</summary>
-    public static DateTime AUtc(DateTime local) => DateTime.SpecifyKind(local - ReglasNotificacion.DesfaseBolivia, DateTimeKind.Utc);
 
     /// <summary>Solo el primer nombre: en un aviso basta para saber quién invita.</summary>
     public static string PrimerNombre(string nombre)
