@@ -58,11 +58,44 @@ public class ActividadesController : ControllerBase
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> Extraer(SolicitudExtraccionDto req, CancellationToken ct)
+    public Task<IActionResult> Extraer(SolicitudExtraccionDto req, CancellationToken ct)
+        => Ejecutar(async () => Ok(await _service.ExtraerAsync(UsuarioId, req, ct)));
+
+    /// <summary>Revisa los datos de una actividad que el estudiante corrigió a mano, sin llamar a la IA.</summary>
+    /// <remarks>
+    /// Sirve cuando la IA entendió mal y el estudiante edita las casillas del resumen. Se aplican las mismas reglas que en
+    /// <c>POST /api/actividades/extraer</c> y la respuesta tiene el mismo formato: con <c>COMPLETO</c>, su <c>consultaId</c>
+    /// es el que se manda a <c>POST /api/actividades</c> para crear la actividad (HU10). Si un dato no es válido responde
+    /// <c>INCOMPLETO</c> con la pregunta en <c>mensaje</c>. Queda en la auditoría con modelo <c>manual</c>.
+    ///
+    /// Para corregir <b>en palabras</b> («mejor a las 5») no hace falta este endpoint: se usa <c>POST /api/actividades/extraer</c>
+    /// con <c>texto</c> = la corrección y <c>anterior</c> = lo ya entendido.
+    ///
+    /// Ejemplo de petición:
+    /// <code>
+    /// {
+    ///   "texto": "Quiero jugar cartas por una hora",
+    ///   "actividad": { "actividad": "jugar cartas", "horaInicio": "17:00", "duracionMin": 90, "maxParticipantes": 6 }
+    /// }
+    /// </code>
+    /// </remarks>
+    /// <param name="req">La descripción original y los datos corregidos.</param>
+    /// <param name="ct">Cancelación de la petición.</param>
+    /// <response code="200">Datos revisados: <c>COMPLETO</c> o <c>INCOMPLETO</c> (con la pregunta en <c>mensaje</c>).</response>
+    /// <response code="400">Falta la descripción o la actividad (<c>codigo</c> = <c>VALIDACION</c>), o no pasa los guardrails (<c>codigo</c> = <c>SOLICITUD_NO_PERMITIDA</c>).</response>
+    /// <response code="401">Falta el token, es inválido o está vencido.</response>
+    [HttpPost("revisar")]
+    [ProducesResponseType(typeof(RespuestaExtraccionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public Task<IActionResult> Revisar(RevisionActividadDto req, CancellationToken ct)
+        => Ejecutar(async () => Ok(await _service.RevisarAsync(UsuarioId, req, ct)));
+
+    private async Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion)
     {
         try
         {
-            return Ok(await _service.ExtraerAsync(UsuarioId, req, ct));
+            return await accion();
         }
         catch (ReglaNegocioException ex)
         {

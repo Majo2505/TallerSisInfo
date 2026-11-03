@@ -112,8 +112,8 @@ public class ExtractorActividadSimulado : IExtractorActividad
             var sufijo = a.Groups[4].Value.Trim();
             var esTarde = sufijo is "de la tarde" or "de la noche" or "pm";
             var esManana = sufijo is "de la manana" or "am";
-            // Sin aclarar mañana o tarde, «a las 3» en el campus es de la tarde (las clases van de 07:15 a 21:00).
-            if (hora < 12 && (esTarde || (!esManana && hora < 7))) hora += 12;
+            // Sin aclarar mañana o tarde, una hora antes de las 07:15 en el campus es de la tarde: «a las 3» o «a las 7» son 15:00 y 19:00.
+            if (hora < 12 && (esTarde || (!esManana && hora * 60 + minutos < 7 * 60 + 15))) hora += 12;
             if (hora > 23 || minutos > 59) return (null, null);
             return ($"{hora:00}:{minutos:00}", null);
         }

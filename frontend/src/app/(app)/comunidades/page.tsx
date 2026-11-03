@@ -7,9 +7,17 @@ import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoPin, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
+import DatoEditable from "@/components/comunidades/DatoEditable";
 import InvitacionGrupo from "@/components/comunidades/InvitacionGrupo";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
-import { ActividadExtraida, RespuestaExtraccion, extraerActividad, formatearDuracion } from "@/lib/actividades";
+import {
+  ActividadExtraida,
+  CampoActividad,
+  RespuestaExtraccion,
+  extraerActividad,
+  formatearDuracion,
+  revisarActividad,
+} from "@/lib/actividades";
 import { COMUNIDADES_EJEMPLO, EJEMPLOS_SOLICITUD, MAXIMO_SOLICITUD, buscarDeNuevo } from "@/lib/comunidades";
 import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActividad";
 import { iniciales } from "@/lib/iniciales";
@@ -17,16 +25,6 @@ import { guardarConfiguracionMatching } from "@/lib/matching";
 import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
-
-/** Un dato extraído (HU11). Si falta, se muestra «Falta» para que se vea qué se va a preguntar. */
-function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
-  return (
-    <li className={valor ? estilos.dato : estilos.datoFalta}>
-      <span>{etiqueta}</span>
-      <strong>{valor ?? "Falta"}</strong>
-    </li>
-  );
-}
 
 export default function Comunidades() {
   const reducir = useReducedMotion();
@@ -38,6 +36,8 @@ export default function Comunidades() {
   const [respuesta, setRespuesta] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState("");
+  // HU11: la casilla del resumen que se está editando ahí mismo (solo una a la vez).
+  const [editando, setEditando] = useState<CampoActividad | null>(null);
   // HU10: el estudiante confirmó el resumen y la actividad se creó (o se está creando).
   const [creando, setCreando] = useState(false);
   const [creada, setCreada] = useState<ActividadCreada | null>(null);
@@ -65,11 +65,33 @@ export default function Comunidades() {
     void consultar(texto.trim(), null);
   }
 
-  // Solo se manda la respuesta y lo ya entendido: no hace falta reescribir toda la descripción.
+  // Solo se manda la respuesta (o la corrección) y lo ya entendido: no hace falta reescribir toda la descripción.
   function responder(e: React.FormEvent) {
     e.preventDefault();
     if (!extraccion || !respuesta.trim() || buscando) return;
     void consultar(respuesta.trim(), extraccion.actividad);
+  }
+
+  // HU11: el estudiante editó una casilla. El servidor revisa los datos sin llamar a la IA y devuelve una consulta nueva,
+  // que es la que se usa para crear la actividad.
+  async function guardarDato(campo: CampoActividad, valor: string) {
+    setEditando(null);
+    if (!extraccion) return;
+    const actual = extraccion.actividad;
+    const cambiada: ActividadExtraida = {
+      ...actual,
+      [campo]: campo === "duracionMin" || campo === "maxParticipantes" ? Number(valor) : valor,
+    };
+    if (cambiada[campo] === actual[campo]) return; // no cambió nada: no hace falta revisar
+    setBuscando(true);
+    setError("");
+    try {
+      setExtraccion(await revisarActividad(texto.trim(), cambiada));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos revisar el cambio. Inténtalo de nuevo.");
+    } finally {
+      setBuscando(false);
+    }
   }
 
   // Solo con todos los datos y solo al confirmar: si el estudiante descarta el resumen, no se crea nada.
@@ -106,6 +128,7 @@ export default function Comunidades() {
 
   function reiniciar() {
     setExtraccion(null);
+    setEditando(null);
     setCreada(null);
     setTexto("");
     setRespuesta("");
@@ -259,55 +282,93 @@ export default function Comunidades() {
                       <div className={estilos.entendida}>
                         <strong>{entendida.estado === "COMPLETO" ? "Esto entendimos" : "Ya casi"}</strong>
                         <ul className={estilos.datos}>
-                          <Dato etiqueta="Actividad" valor={entendida.actividad.actividad} />
-                          <Dato
+                          <DatoEditable
+                            etiqueta="Actividad"
+                            tipo="texto"
+                            largoMaximo={100}
+                            mostrar={entendida.actividad.actividad}
+                            inicial={entendida.actividad.actividad ?? ""}
+                            editando={editando === "actividad"}
+                            deshabilitado={buscando || creando}
+                            onEditar={() => setEditando("actividad")}
+                            onGuardar={(v) => void guardarDato("actividad", v)}
+                            onCancelar={() => setEditando(null)}
+                          />
+                          <DatoEditable
                             etiqueta="Hora"
-                            valor={
+                            tipo="hora"
+                            mostrar={
                               entendida.actividad.horaInicio &&
                               `${entendida.actividad.horaInicio}${entendida.supuestos.includes("horaInicio") ? " (ahora)" : ""}`
                             }
+                            inicial={entendida.actividad.horaInicio ?? ""}
+                            editando={editando === "horaInicio"}
+                            deshabilitado={buscando || creando}
+                            onEditar={() => setEditando("horaInicio")}
+                            onGuardar={(v) => void guardarDato("horaInicio", v)}
+                            onCancelar={() => setEditando(null)}
                           />
-                          <Dato
+                          <DatoEditable
                             etiqueta="Duración"
-                            valor={entendida.actividad.duracionMin ? formatearDuracion(entendida.actividad.duracionMin) : null}
+                            tipo="numero"
+                            sufijo="min"
+                            mostrar={entendida.actividad.duracionMin ? formatearDuracion(entendida.actividad.duracionMin) : null}
+                            inicial={entendida.actividad.duracionMin?.toString() ?? ""}
+                            editando={editando === "duracionMin"}
+                            deshabilitado={buscando || creando}
+                            onEditar={() => setEditando("duracionMin")}
+                            onGuardar={(v) => void guardarDato("duracionMin", v)}
+                            onCancelar={() => setEditando(null)}
                           />
-                          <Dato
+                          <DatoEditable
                             etiqueta="Participantes"
-                            valor={entendida.actividad.maxParticipantes ? `hasta ${entendida.actividad.maxParticipantes}` : null}
+                            tipo="numero"
+                            sufijo="personas"
+                            mostrar={entendida.actividad.maxParticipantes ? `hasta ${entendida.actividad.maxParticipantes}` : null}
+                            inicial={entendida.actividad.maxParticipantes?.toString() ?? ""}
+                            editando={editando === "maxParticipantes"}
+                            deshabilitado={buscando || creando}
+                            onEditar={() => setEditando("maxParticipantes")}
+                            onGuardar={(v) => void guardarDato("maxParticipantes", v)}
+                            onCancelar={() => setEditando(null)}
                           />
                         </ul>
+                        <small className={estilos.pista}>Toca un dato para corregirlo ahí mismo.</small>
 
-                        {entendida.estado === "INCOMPLETO" ? (
-                          <form className={estilos.respuesta} onSubmit={responder}>
-                            <label htmlFor="respuesta-dato" className={estilos.pregunta}>
-                              {entendida.mensaje}
-                            </label>
-                            <div className={estilos.respuestaFila}>
-                              <input
-                                id="respuesta-dato"
-                                className={estilos.respuestaCampo}
-                                value={respuesta}
-                                maxLength={MAXIMO_SOLICITUD}
-                                onChange={(e) => setRespuesta(e.target.value)}
-                                placeholder="Tu respuesta"
-                                autoComplete="off"
-                                autoFocus
-                                disabled={buscando}
-                              />
-                              <button type="submit" className={estilos.responder} disabled={!respuesta.trim() || buscando}>
-                                {buscando ? "Revisando…" : "Responder"}
-                              </button>
-                            </div>
-                          </form>
-                        ) : (
-                          <button type="button" className={estilos.confirmar} onClick={() => void confirmar()} disabled={creando}>
-                            {creando ? "Creando…" : "Confirmar y crear"}
+                        {/* Siempre a la vista: responder la pregunta por el dato que falta o corregir en palabras. */}
+                        <form className={estilos.respuesta} onSubmit={responder}>
+                          <label htmlFor="respuesta-dato" className={estilos.pregunta}>
+                            {entendida.estado === "INCOMPLETO" ? entendida.mensaje : "¿Quieres cambiar algo? Dilo en tus palabras"}
+                          </label>
+                          <div className={estilos.respuestaFila}>
+                            <input
+                              id="respuesta-dato"
+                              className={estilos.respuestaCampo}
+                              value={respuesta}
+                              maxLength={MAXIMO_SOLICITUD}
+                              onChange={(e) => setRespuesta(e.target.value)}
+                              placeholder={entendida.estado === "INCOMPLETO" ? "Tu respuesta" : "Ej: mejor a las 5 y somos 6"}
+                              autoComplete="off"
+                              autoFocus={entendida.estado === "INCOMPLETO"}
+                              disabled={buscando}
+                            />
+                            <button type="submit" className={estilos.responder} disabled={!respuesta.trim() || buscando}>
+                              {buscando ? "Revisando…" : entendida.estado === "INCOMPLETO" ? "Responder" : "Aplicar"}
+                            </button>
+                          </div>
+                        </form>
+
+                        <div className={estilos.acciones}>
+                          {entendida.estado === "COMPLETO" && (
+                            <button type="button" className={estilos.confirmar} onClick={() => void confirmar()} disabled={creando || buscando}>
+                              {creando ? "Creando…" : "Confirmar y crear"}
+                            </button>
+                          )}
+                          <button type="button" className={estilos.secundario} onClick={reiniciar} disabled={buscando || creando}>
+                            {entendida.estado === "COMPLETO" ? "Descartar" : "Escribir otra"}
                           </button>
-                        )}
+                        </div>
                       </div>
-                      <button type="button" className={estilos.otra} onClick={reiniciar} disabled={buscando || creando}>
-                        {entendida.estado === "COMPLETO" ? "Descartar" : "Escribir otra"}
-                      </button>
                     </motion.div>
                   ) : (
                     <motion.form key="form" className={estilos.formulario} onSubmit={enviar} exit={{ opacity: 0 }}>

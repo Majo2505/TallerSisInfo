@@ -218,6 +218,8 @@ public class ExtractorActividadSimuladoTests
     [InlineData("fulbito a las 3 de la tarde", "15:00")]
     [InlineData("fulbito a las 3pm", "15:00")]
     [InlineData("fulbito a las 10", "10:00")]
+    [InlineData("fulbito a las 7", "19:00")]
+    [InlineData("fulbito a las 7 de la mañana", "07:00")]
     [InlineData("fulbito a las 16:30", "16:30")]
     [InlineData("fulbito a la una y media", "13:30")]
     public void Entiende_la_hora_de_inicio(string texto, string hora)
@@ -409,6 +411,82 @@ public class ExtraccionActividadServiceTests
             servicio.ExtraerAsync(7, new SolicitudExtraccionDto("jugar cartas " + new string('a', 200), null)));
 
         Assert.Equal("VALIDACION", ex.Codigo);
+    }
+
+    // ---------- corregir lo que la IA entendió mal ----------
+
+    [Fact]
+    public async Task Se_puede_corregir_en_palabras_una_actividad_ya_completa()
+    {
+        var (servicio, _, _) = Crear();
+        var completa = new ActividadExtraidaDto("jugar cartas", "16:00", 60, 4);
+
+        var r = await servicio.ExtraerAsync(7, new SolicitudExtraccionDto("mejor a las 5", completa));
+
+        Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
+        Assert.Equal(new ActividadExtraidaDto("jugar cartas", "17:00", 60, 4), r.Actividad);   // solo cambia la hora
+    }
+
+    [Fact]
+    public async Task Los_datos_editados_a_mano_se_revisan_sin_llamar_al_modelo()
+    {
+        var (servicio, extractor, repo) = Crear();
+
+        var r = await servicio.ExtraerAsync(7, new SolicitudExtraccionDto("Quiero jugar cartas por una hora", null));
+        var revisada = await servicio.RevisarAsync(7, new RevisionActividadDto("Quiero jugar cartas por una hora",
+            new ActividadExtraidaDto("jugar ajedrez", "17:00", 90, 2)));
+
+        Assert.Equal(ReglasExtraccion.EstadoCompleto, revisada.Estado);
+        Assert.Equal(new ActividadExtraidaDto("jugar ajedrez", "17:00", 90, 2), revisada.Actividad);
+        Assert.NotEqual(r.ConsultaId, revisada.ConsultaId);   // HU10 crea con la consulta nueva
+        Assert.Equal(1, extractor.Llamadas);                  // solo la extracción inicial llamó al modelo
+
+        var log = repo.Logs.Single(l => l.Id == revisada.ConsultaId);
+        Assert.Equal(LogAuditoriaRag.TipoExtraccionComunidad, log.Tipo);
+        Assert.Equal(LogAuditoriaRag.EstadoOk, log.Estado);
+        Assert.Equal(ExtraccionActividadService.ModeloCorreccionManual, log.Modelo);
+        Assert.Null(log.PromptEnviado);
+    }
+
+    [Fact]
+    public async Task Un_dato_editado_que_no_es_valido_se_vuelve_a_preguntar()
+    {
+        var (servicio, _, repo) = Crear();
+
+        var r = await servicio.RevisarAsync(7, new RevisionActividadDto("cartas", new ActividadExtraidaDto("jugar cartas", "17:00", 300, 4)));
+
+        Assert.Equal(ReglasExtraccion.EstadoIncompleto, r.Estado);
+        Assert.Equal([ReglasExtraccion.CampoDuracion], r.Faltantes);
+        Assert.Equal(ReglasExtraccion.PreguntaDuracionFueraDeRango, r.Mensaje);
+        Assert.Equal(LogAuditoriaRag.EstadoIncompleto, Assert.Single(repo.Logs).Estado);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("  ")]
+    [InlineData("!")]
+    public async Task Sin_actividad_la_edicion_manual_da_un_error_de_validacion(string? actividad)
+    {
+        var (servicio, _, repo) = Crear();
+
+        var ex = await Assert.ThrowsAsync<ReglaNegocioException>(() =>
+            servicio.RevisarAsync(7, new RevisionActividadDto("cartas", new ActividadExtraidaDto(actividad, "17:00", 60, 4))));
+
+        Assert.Equal("VALIDACION", ex.Codigo);
+        Assert.Equal(ExtraccionActividadService.MensajeFaltaActividad, ex.Message);
+        Assert.Empty(repo.Logs);
+    }
+
+    [Fact]
+    public async Task Lo_escrito_a_mano_tambien_pasa_por_los_guardrails()
+    {
+        var (servicio, _, repo) = Crear();
+
+        var ex = await Assert.ThrowsAsync<ReglaNegocioException>(() =>
+            servicio.RevisarAsync(7, new RevisionActividadDto("cartas", new ActividadExtraidaDto("tomar cerveza", "17:00", 60, 4))));
+
+        Assert.Equal("SOLICITUD_NO_PERMITIDA", ex.Codigo);
+        Assert.Equal(LogAuditoriaRag.EstadoRechazadoSeguridad, Assert.Single(repo.Logs).Estado);
     }
 }
 

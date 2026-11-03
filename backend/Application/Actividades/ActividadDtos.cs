@@ -5,6 +5,11 @@ namespace Breaku.Application.Actividades;
 /// <param name="Anterior">Lo que ya se había entendido (el campo <c>actividad</c> de la respuesta anterior). Se envía solo para responder la pregunta por un dato faltante; en la primera consulta va <c>null</c>.</param>
 public record SolicitudExtraccionDto(string? Texto, ActividadExtraidaDto? Anterior);
 
+/// <summary>Datos de la actividad corregidos a mano por el estudiante, para revisarlos sin llamar a la IA.</summary>
+/// <param name="Texto" example="Quiero jugar cartas por una hora">La descripción original del estudiante (máximo 200 caracteres). Se guarda en la auditoría.</param>
+/// <param name="Actividad">Los cuatro datos tal como los dejó el estudiante. La actividad es obligatoria; un dato en <c>null</c> se pregunta.</param>
+public record RevisionActividadDto(string? Texto, ActividadExtraidaDto? Actividad);
+
 /// <summary>Datos de la actividad. Un campo en <c>null</c> es un dato que falta (ver <c>faltantes</c>).</summary>
 /// <param name="Actividad" example="jugar cartas">Qué se va a hacer, en pocas palabras (máximo 100 caracteres).</param>
 /// <param name="HoraInicio" example="16:00">Hora de inicio de hoy, en hora de Bolivia (<c>HH:mm</c>, 24 h), entre 07:15 y 21:00.</param>
