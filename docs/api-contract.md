@@ -657,6 +657,47 @@ Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendim
 | 401 | Sin token o token inválido |
 | 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
 
+## 7e. Crear la actividad (HU10 — responsable: Ariana)
+
+Cuando el estudiante revisa el resumen que dejó `POST /api/actividades/extraer` (estado `COMPLETO`) y pulsa **Confirmar y crear**, se llama a este endpoint. Si no confirma, no se llama y no se crea nada.
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Qué se crea | Una fila en `comunidad_efimera` con `creador_id` = el usuario del token, `log_id` = el `consultaId` de la extracción, `texto_original`, `actividad`, `inicio` y `fin` en UTC, `max_participantes` y `estado` = `ACTIVA` | ✅ Definido |
+| Validación | Se vuelven a aplicar las reglas de la extracción (`ReglasExtraccion`): hora de hoy entre 07:15 y 21:00 en hora de Bolivia, duración de 10 a 240 minutos que no pase de las 21:00, y de 2 a 30 personas. Una hora que ya pasó hace más de 5 minutos se rechaza | ✅ Definido |
+| La extracción | Tiene que ser del propio usuario (una ajena responde igual que si no existiera), estar `COMPLETA` (`log_auditoria_rag.estado` = `OK`) y no haberse usado antes | ✅ Definido |
+| Guardrails | El texto y la actividad pasan por los guardrails de HU17 | ✅ Definido |
+| Quién la invita | Esta historia solo crea la actividad. Avisar a compañeros compatibles y las confirmaciones son de HU13 y HU14 | 🟡 Propuesta, a confirmar por Amira |
+
+### `POST /api/actividades`
+
+Body (los datos son los del resumen de la extracción):
+
+```json
+{
+  "texto": "quiero jugar cartas por una hora",
+  "actividad": "jugar cartas",
+  "horaInicio": "16:00",
+  "duracionMin": 60,
+  "maxParticipantes": 4,
+  "consultaId": 58
+}
+```
+
+Respuesta **201**:
+
+```json
+{ "id": 12, "actividad": "jugar cartas", "horaInicio": "16:00", "horaFin": "17:00", "duracionMin": 60, "maxParticipantes": 4, "estado": "ACTIVA" }
+```
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Datos que no cumplen las reglas, texto vacío o de más de 200 caracteres, o consulta inexistente, ajena o incompleta (`VALIDACION`); o texto que no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`) |
+| 401 | Sin token o token inválido |
+| 409 | Esa consulta ya se usó para crear una actividad (`DUPLICADO`) |
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |
