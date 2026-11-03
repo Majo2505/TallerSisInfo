@@ -461,6 +461,7 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
   3. El traslado de ida y vuelta más la actividad no supera la duración del puente. Si suman exactamente lo mismo, sí cabe.
 - ✅ **Definido:** la sede activa se elige con el campo `zona.activa`. Solo las sedes activas se ofrecen en `GET /api/ubicacion/zonas` y reciben búsquedas: si la zona del estudiante quedó inactiva, la búsqueda responde `SIN_ZONA` hasta que elija otra. Hoy la sede activa es **UCB Cochabamba** y La Paz queda guardada pero inactiva (`docs/database/seed-dev-cochabamba.sql`).
 - ✅ **Definido:** `validado = false` significa que el equipo todavía no revisó los datos del lugar. Se sigue mostrando, con la etiqueta «Por validar».
+- ✅ **Definido** (HU8, #16): un lugar sin nombre, categoría, distancia o duración válida no se devuelve, ni en `GET /api/lugares/viables` ni en las recomendaciones.
 - 🟡 **Propuesta:** el traslado se calcula con la distancia en línea recta desde el centro de la zona y una velocidad de 80 m por minuto (unos 4,8 km/h), redondeando hacia arriba. La actividad dura `duracion_estimada_min` (RN03).
 - 🟡 **Propuesta:** orden por distancia, del más cercano al más lejano. Máximo 50 lugares.
 - 🔴 **Pendiente:** si el catálogo debe considerar `hora_apertura` y `hora_cierre` (hoy están como [CONFIRMAR] en el esquema y no se usan).

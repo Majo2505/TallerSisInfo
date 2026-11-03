@@ -41,6 +41,13 @@ public static class ReglasBusquedaLugares
 
     /// <summary>El lugar está dentro del radio de la zona (criterios 1 y 2). El radio justo cuenta como dentro.</summary>
     public static bool EstaDentroDelRadio(int distanciaM, int radioMaxM) => distanciaM <= radioMaxM;
+    
+        /// <summary>HU8 (criterio 4): un lugar solo se muestra si se pueden mostrar todas sus métricas.</summary>
+    public static bool TieneMetricasCompletas(string? nombre, string? categoria, int distanciaM, int duracionActividadMin)
+        => !string.IsNullOrWhiteSpace(nombre)
+           && !string.IsNullOrWhiteSpace(categoria)
+           && distanciaM >= 0
+           && duracionActividadMin > 0;
 
     /// <summary>
     /// Traslado de ida y vuelta más la actividad caben en el puente (criterio 3).

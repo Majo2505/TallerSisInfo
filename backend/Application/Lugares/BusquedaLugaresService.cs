@@ -69,6 +69,7 @@ public class BusquedaLugaresService : IRecuperadorLugares
                     l.Validado, l.TipoLugar, ListasLugar.SepararPorComas(l.Modalidad), ListasLugar.SepararPorComas(l.NivelEnergia),
                     ListasLugar.LeerJson(l.ActividadesSugeridas));
             })
+            .Where(c => ReglasBusquedaLugares.TieneMetricasCompletas(c.Nombre, c.Categoria, c.DistanciaM, c.DuracionEstimadaMin))
             .Where(c => ReglasBusquedaLugares.EstaDentroDelRadio(c.DistanciaM, zona.RadioMaxM))
             .Where(c => ReglasBusquedaLugares.CabeEnElPuente(c.TiempoTrasladoMin, c.DuracionEstimadaMin, disponible))
             .OrderBy(c => c.DistanciaM)
