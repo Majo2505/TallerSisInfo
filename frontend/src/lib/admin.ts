@@ -36,6 +36,9 @@ export type ReporteAdmin = {
   creadoEn: string;
 };
 
+/** HU17: por qué los guardrails rechazaron una consulta. SIN_MOTIVO = rechazos anteriores a la HU17. */
+export type MotivoRechazo = "INYECCION" | "FUERA_DE_ALCANCE" | "BIENESTAR" | "FUERA_DE_REGLAMENTO" | "FUERA_DE_CONTEXTO";
+
 export type ConsultaRag = {
   id: number;
   fecha: string;
@@ -47,6 +50,7 @@ export type ConsultaRag = {
   latenciaMs: number | null;
   lugaresRecuperados: number;
   recomendados: number;
+  motivoRechazo?: MotivoRechazo | null; // HU17: solo con RECHAZADO_SEGURIDAD
 };
 
 export type MetricasAdmin = {
@@ -59,6 +63,7 @@ export type MetricasAdmin = {
   masRecomendados: { nombre: string; categoria: string; veces: number; meGusta: number; noMeSirve: number }[];
   meGusta: number; // HU9: valoraciones de la semana
   noMeSirve: number;
+  rechazosPorMotivo?: { motivo: MotivoRechazo | "SIN_MOTIVO"; cantidad: number }[]; // HU17
 };
 
 export const obtenerResumen = () => pedirApi<ResumenAdmin>("/api/admin/resumen");

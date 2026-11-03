@@ -19,6 +19,7 @@ import {
   EstadoLugar,
   LugarAdmin,
   MetricasAdmin,
+  MotivoRechazo,
   ReporteAdmin,
   ResumenAdmin,
   cambiarEstadoLugar,
@@ -51,6 +52,24 @@ const ESTADO_REPORTE: Record<ReporteAdmin["estado"], { etiqueta: string; clase: 
   RESUELTO: { etiqueta: "Resuelto", clase: "estado_ACTIVO" },
   DESCARTADO: { etiqueta: "Descartado", clase: "estado_INACTIVO" },
 };
+
+/** HU17: cómo se nombra cada motivo de rechazo en el panel. */
+const MOTIVO_RECHAZO: Record<MotivoRechazo | "SIN_MOTIVO", { etiqueta: string; ayuda: string }> = {
+  INYECCION: { etiqueta: "Prompt injection", ayuda: "Intentó cambiar las instrucciones del asistente o ver su prompt" },
+  FUERA_DE_ALCANCE: { etiqueta: "Datos internos", ayuda: "Pidió contraseñas, tokens, código o datos personales" },
+  BIENESTAR: { etiqueta: "Bienestar", ayuda: "Mencionó un riesgo para sí: se le derivó a bienestar universitario" },
+  FUERA_DE_REGLAMENTO: { etiqueta: "Fuera del reglamento", ayuda: "Alcohol, apuestas, contenido sexual, violencia…" },
+  FUERA_DE_CONTEXTO: { etiqueta: "Respuesta descartada", ayuda: "La IA respondió algo que no sale del catálogo" },
+  SIN_MOTIVO: { etiqueta: "Sin clasificar", ayuda: "Rechazos anteriores a la HU17" },
+};
+
+type FiltroAuditoria = "todas" | "rechazadas" | "inyeccion";
+
+const FILTROS_AUDITORIA: [FiltroAuditoria, string][] = [
+  ["todas", "Todas"],
+  ["rechazadas", "Rechazadas"],
+  ["inyeccion", "Prompt injection"],
+];
 
 const ETIQUETA_CONSULTA: Record<ConsultaRag["estado"], string> = {
   OK: "OK",
@@ -85,6 +104,7 @@ export default function PanelAdmin() {
   const [resolviendoReporte, setResolviendoReporte] = useState<number | null>(null);
   const [metricas, setMetricas] = useState<MetricasAdmin | null>(null);
   const [consultas, setConsultas] = useState<ConsultaRag[] | null>(null);
+  const [filtroAuditoria, setFiltroAuditoria] = useState<FiltroAuditoria>("todas");
   const [error, setError] = useState("");
   const [cambiando, setCambiando] = useState<number | null>(null);
 
@@ -143,6 +163,15 @@ export default function PanelAdmin() {
       setResolviendoReporte(null);
     }
   }
+
+  // HU17: el admin puede ver solo los rechazos, o solo los intentos de prompt injection.
+  const consultasFiltradas = (consultas ?? []).filter((c) =>
+    filtroAuditoria === "todas"
+      ? true
+      : filtroAuditoria === "rechazadas"
+        ? c.estado === "RECHAZADO_SEGURIDAD"
+        : c.motivoRechazo === "INYECCION",
+  );
 
   if (!esAdmin(sesion)) return <main className={estilos.pagina} aria-busy="true" />;
 
@@ -408,6 +437,31 @@ export default function PanelAdmin() {
                       : "Todavía nadie valoró una recomendación esta semana."}
                   </p>
                 </div>
+                <div className={estilos.tarjetaMetrica}>
+                  <h2>Solicitudes bloqueadas · 7 días</h2>
+                  <p className={estilos.grande}>
+                    <Odometro valor={metricas.rechazadas} /> <small>{metricas.rechazadas === 1 ? "bloqueada" : "bloqueadas"}</small>
+                  </p>
+                  {(metricas.rechazosPorMotivo ?? []).length === 0 ? (
+                    <p className={estilos.ayuda}>Nadie intentó nada fuera de lugar esta semana.</p>
+                  ) : (
+                    (metricas.rechazosPorMotivo ?? []).map((r, i) => (
+                      <div key={r.motivo} className={estilos.barraFila} title={MOTIVO_RECHAZO[r.motivo].ayuda}>
+                        <span>{MOTIVO_RECHAZO[r.motivo].etiqueta}</span>
+                        <span className={estilos.barraPista}>
+                          <motion.span
+                            className={`${estilos.barra} ${r.motivo === "INYECCION" ? estilos.barraError : estilos.barraRechazo}`}
+                            initial={reducir ? false : { scaleX: 0 }}
+                            animate={{ scaleX: metricas.rechazadas ? r.cantidad / metricas.rechazadas : 0 }}
+                            transition={{ duration: 0.8, ease: SALIDA, delay: 0.1 + i * 0.08 }}
+                          />
+                        </span>
+                        <strong>{r.cantidad}</strong>
+                      </div>
+                    ))
+                  )}
+                  <p className={estilos.ayuda}>Se rechazan antes de llegar a la IA: no gastan consultas.</p>
+                </div>
                 <div className={`${estilos.tarjetaMetrica} ${estilos.ancha}`}>
                   <h2>Lugares más recomendados</h2>
                   {metricas.masRecomendados.length === 0 && <p className={estilos.ayuda}>Todavía no hay recomendaciones esta semana.</p>}
@@ -442,12 +496,42 @@ export default function PanelAdmin() {
 
             {pestana === "auditoria" && (
               <>
-                <p className={estilos.conteo}>Últimas {consultas?.length ?? 0} consultas al asistente</p>
+                <div className={estilos.filtrosAuditoria} role="group" aria-label="Filtrar consultas">
+                  {FILTROS_AUDITORIA.map(([id, nombre]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={filtroAuditoria === id ? estilos.filtroActivo : estilos.filtro}
+                      aria-pressed={filtroAuditoria === id}
+                      onClick={() => setFiltroAuditoria(id)}
+                    >
+                      {nombre}
+                    </button>
+                  ))}
+                </div>
+                <p className={estilos.conteo}>
+                  {filtroAuditoria === "todas"
+                    ? `Últimas ${consultas?.length ?? 0} consultas al asistente`
+                    : `${consultasFiltradas.length} de las últimas ${consultas?.length ?? 0} consultas`}
+                </p>
+                {consultasFiltradas.length === 0 && consultas && (
+                  <p className={estilos.ayuda}>
+                    {filtroAuditoria === "inyeccion" ? "Ningún intento de prompt injection entre estas consultas." : "Ninguna consulta rechazada entre estas."}
+                  </p>
+                )}
                 <ul className={estilos.listaConsultas}>
-                  {consultas?.map((c) => (
+                  {consultasFiltradas.map((c) => (
                     <li key={c.id} className={estilos.consulta}>
                       <div className={estilos.consultaCabecera}>
                         <span className={`${estilos.estado} ${estilos[`consulta_${c.estado}`]}`}>{ETIQUETA_CONSULTA[c.estado]}</span>
+                        {c.estado === "RECHAZADO_SEGURIDAD" && (
+                          <span
+                            className={c.motivoRechazo === "INYECCION" ? estilos.motivoInyeccion : estilos.motivo}
+                            title={MOTIVO_RECHAZO[c.motivoRechazo ?? "SIN_MOTIVO"].ayuda}
+                          >
+                            {MOTIVO_RECHAZO[c.motivoRechazo ?? "SIN_MOTIVO"].etiqueta}
+                          </span>
+                        )}
                         <small>
                           #{c.id} · {fechaCorta(c.fecha)} · {c.usuario}
                         </small>
