@@ -27,3 +27,17 @@ public class ComunidadEfimera
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
+
+/// <summary>Quién está en una comunidad y si respondió (tabla participacion). HU13 la llena al invitar.</summary>
+public class Participacion
+{
+    public const string EstadoPendiente = "PENDIENTE";
+    public const string EstadoConfirmado = "CONFIRMADO";
+    public const string EstadoRechazado = "RECHAZADO";
+
+    public int ComunidadId { get; set; }
+    public int UsuarioId { get; set; }
+    public string Estado { get; set; } = EstadoPendiente;
+    public DateTime InvitadoEn { get; set; }         // UTC
+    public DateTime? RespondidoEn { get; set; }      // obligatorio si ya no está PENDIENTE (ck_part_respuesta)
+}

@@ -31,4 +31,6 @@ public record CrearActividadRequest(string Texto, string Actividad, string HoraI
 /// <param name="DuracionMin" example="60">Duración en minutos.</param>
 /// <param name="MaxParticipantes" example="4">Personas en total, contando a quien la crea.</param>
 /// <param name="Estado" example="ACTIVA">Estado de la comunidad.</param>
-public record ActividadCreadaDto(int Id, string Actividad, string HoraInicio, string HoraFin, int DuracionMin, int MaxParticipantes, string Estado);
+/// <param name="Invitacion">HU13: a quiénes se invitó automáticamente (compañeros libres a esa hora) o por qué no se invitó a nadie.</param>
+public record ActividadCreadaDto(int Id, string Actividad, string HoraInicio, string HoraFin, int DuracionMin, int MaxParticipantes, string Estado,
+    Breaku.Application.Comunidades.InvitacionDto? Invitacion = null);

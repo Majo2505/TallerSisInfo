@@ -24,3 +24,22 @@ public sealed class ComunidadConfiguration : IEntityTypeConfiguration<ComunidadE
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").HasColumnType("datetime(6)");
     }
 }
+
+/// <summary>HU13: participaciones (quién fue invitado y si respondió).</summary>
+public sealed class ParticipacionConfiguration : IEntityTypeConfiguration<Participacion>
+{
+    public void Configure(EntityTypeBuilder<Participacion> builder)
+    {
+        builder.ToTable("participacion");
+        builder.HasKey(p => new { p.ComunidadId, p.UsuarioId });
+
+        builder.Property(p => p.ComunidadId).HasColumnName("comunidad_id");
+        builder.Property(p => p.UsuarioId).HasColumnName("usuario_id");
+        builder.Property(p => p.Estado).HasColumnName("estado").HasMaxLength(10).IsRequired();
+        builder.Property(p => p.InvitadoEn).HasColumnName("invitado_en").HasColumnType("datetime(6)");
+        builder.Property(p => p.RespondidoEn).HasColumnName("respondido_en").HasColumnType("datetime(6)");
+
+        builder.HasOne<ComunidadEfimera>().WithMany().HasForeignKey(p => p.ComunidadId);
+        builder.HasOne<Usuario>().WithMany().HasForeignKey(p => p.UsuarioId);
+    }
+}

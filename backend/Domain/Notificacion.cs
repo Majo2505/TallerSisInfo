@@ -1,9 +1,10 @@
 namespace Breaku.Domain;
 
-/// <summary>Aviso para el estudiante (tabla notificacion). HU4 usa el tipo PUENTE_DISPONIBLE.</summary>
+/// <summary>Aviso para el estudiante (tabla notificacion). HU4 usa el tipo PUENTE_DISPONIBLE y HU13, INVITACION_COMUNIDAD.</summary>
 public class Notificacion
 {
     public const string TipoPuenteDisponible = "PUENTE_DISPONIBLE";
+    public const string TipoInvitacionComunidad = "INVITACION_COMUNIDAD";
 
     public long Id { get; set; }
     public int UsuarioId { get; set; }

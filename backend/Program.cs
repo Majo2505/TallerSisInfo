@@ -12,6 +12,7 @@ using Breaku.Presentation.Documentacion;
 using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
 using Breaku.Application.Actividades;
+using Breaku.Application.Comunidades;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -78,7 +79,10 @@ builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<Busq
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
-builder.Services.AddScoped<CreacionActividadService>();
+builder.Services.AddScoped<ComunidadService>();
+// HU10 crea la actividad y HU13 invita automáticamente a los compañeros libres a esa hora.
+builder.Services.AddScoped(sp => new CreacionActividadService(
+    sp.GetRequiredService<IActividadRepository>(), TimeProvider.System, sp.GetRequiredService<ComunidadService>()));
 
 var app = builder.Build();
 

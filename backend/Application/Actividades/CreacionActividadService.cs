@@ -1,3 +1,4 @@
+using Breaku.Application.Comunidades;
 using Breaku.Application.Horarios;
 using Breaku.Application.Recomendaciones;
 using Breaku.Domain;
@@ -14,13 +15,17 @@ public class CreacionActividadService
 {
     private readonly IActividadRepository _repo;
     private readonly TimeProvider _reloj;
+    private readonly IInvitadorComunidad? _invitador;   // HU13: invita automáticamente a los compañeros libres a esa hora
 
     public CreacionActividadService(IActividadRepository repo) : this(repo, TimeProvider.System) { }
 
-    public CreacionActividadService(IActividadRepository repo, TimeProvider reloj)
+    public CreacionActividadService(IActividadRepository repo, TimeProvider reloj) : this(repo, reloj, null) { }
+
+    public CreacionActividadService(IActividadRepository repo, TimeProvider reloj, IInvitadorComunidad? invitador)
     {
         _repo = repo;
         _reloj = reloj;
+        _invitador = invitador;
     }
 
     public async Task<ActividadCreadaDto> CrearAsync(int usuarioId, CrearActividadRequest req, CancellationToken ct = default)
@@ -69,7 +74,25 @@ public class CreacionActividadService
 
         return new ActividadCreadaDto(
             comunidad.Id, comunidad.Actividad, hora.ToString("HH:mm"), hora.AddMinutes(datos.DuracionMin.Value).ToString("HH:mm"),
-            datos.DuracionMin.Value, comunidad.MaxParticipantes, comunidad.Estado);
+            datos.DuracionMin.Value, comunidad.MaxParticipantes, comunidad.Estado, await InvitarAsync(comunidad, ct));
+    }
+
+    /// <summary>
+    /// HU13: recién creada la actividad, se invita y se avisa a los compañeros libres a esa hora. Si algo falla, la actividad
+    /// ya quedó creada: se informa y el estudiante puede volver a buscar (<c>POST /api/comunidades/{id}/invitaciones</c>).
+    /// </summary>
+    private async Task<InvitacionDto?> InvitarAsync(ComunidadEfimera comunidad, CancellationToken ct)
+    {
+        if (_invitador is null) return null;
+        try
+        {
+            return await _invitador.InvitarAsync(comunidad, ct);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return new InvitacionDto(ComunidadService.EstadoError,
+                "Tu actividad quedó creada, pero no pudimos invitar a tus compañeros. Vuelve a buscar en un momento.", []);
+        }
     }
 
     private static string LimpiarTexto(string? texto)

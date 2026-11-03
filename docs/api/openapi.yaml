@@ -51,6 +51,8 @@ tags:
     description: Gestión del perfil (HU21). Requiere JWT; solo opera sobre el perfil del usuario del token.
   - name: Matching
     description: Compañeros de la misma sede con puente compatible (HU12). Requiere JWT. Solo aparece quien aceptó aparecer.
+  - name: Comunidades
+    description: Comunidades efímeras (HU13). Requiere JWT. Al crear una actividad (HU10) se invita automáticamente a los compañeros libres a esa hora y se les avisa.
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -1073,6 +1075,9 @@ paths:
         Guarda una comunidad con `log_id` = `consultaId`. El servidor vuelve a validar con las reglas de la extracción (hora de hoy entre
         07:15 y 21:00 en hora de Bolivia, duración de 10 a 240 minutos que no pase de las 21:00, de 2 a 30 personas), comprueba que la
         extracción sea del propio usuario y esté completa, y que no se haya usado antes. El texto y la actividad pasan por los guardrails de HU17.
+
+        HU13: recién creada, se invita automáticamente a los compañeros de la sede libres a esa hora (reglas del matching de
+        HU12), uno por lugar libre, y cada uno recibe un aviso `INVITACION_COMUNIDAD`. El resultado viene en `invitacion`.
       security:
         - Bearer: []
       requestBody:
@@ -1262,6 +1267,46 @@ paths:
           description: Conexión a la base de datos correcta.
         '503':
           description: No se pudo conectar a la base de datos.
+  /api/comunidades/{id}/invitaciones:
+    post:
+      tags: [Comunidades]
+      operationId: invitarDeNuevo
+      summary: Vuelve a buscar compañeros libres para tu actividad e invita a los que coincidan (HU13).
+      description: |
+        La primera búsqueda es automática al crear la actividad (`POST /api/actividades` devuelve `invitacion`). Este endpoint
+        sirve para intentarlo de nuevo: después de aceptar el matching (`NO_VISIBLE`), de elegir campus (`SIN_ZONA`) o si
+        antes no había nadie libre (`SIN_COINCIDENCIAS`). Mismas reglas: compañeros de tu sede que aceptaron el matching (HU12),
+        con un puente hoy que comparta 30 minutos o más con la actividad (o la actividad entera, si dura menos) y que no
+        estén en otra comunidad a esa hora. Se invita solo a los lugares que quedan y nunca dos veces a la misma persona.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id de tu actividad (el `id` que devolvió `POST /api/actividades`).
+          schema: { type: integer, format: int32, example: 12 }
+      responses:
+        '200':
+          description: Resultado de la búsqueda (`estado` dice qué pasó).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitacionDto'
+        '400':
+          description: La actividad ya terminó (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La actividad no existe o no es tuya (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
 components:
   securitySchemes:
     Bearer:
@@ -1580,7 +1625,7 @@ components:
           example: '10:30:00'
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. Hoy solo existe el tipo `PUENTE_DISPONIBLE` (HU4).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` (HU4) o `INVITACION_COMUNIDAD` (HU13).
       properties:
         id:
           type: integer
@@ -1627,6 +1672,12 @@ components:
           format: date-time
           description: Momento del envío (UTC).
           example: '2026-10-22T14:00:04.512Z'
+        comunidadId:
+          type: integer
+          format: int32
+          nullable: true
+          description: HU13. La comunidad a la que invita (`INVITACION_COMUNIDAD`). `null` en los avisos de puente.
+          example: null
     ConfiguracionNotificacionesDto:
       type: object
       description: Preferencia de avisos del usuario.
@@ -2058,6 +2109,11 @@ components:
         duracionMin: { type: integer, format: int32, example: 60 }
         maxParticipantes: { type: integer, format: int32, example: 4 }
         estado: { type: string, example: ACTIVA }
+        invitacion:
+          allOf:
+            - $ref: '#/components/schemas/InvitacionDto'
+          nullable: true
+          description: HU13. A quiénes se invitó automáticamente o por qué no se invitó a nadie.
     RespuestaExtraccionDto:
       type: object
       properties:
@@ -2073,3 +2129,30 @@ components:
           type: array
           description: Campos que completó el sistema porque el estudiante no los dijo (hoy solo `horaInicio`, «ahora»).
           items: { type: string, enum: [horaInicio] }
+    InvitadoDto:
+      type: object
+      description: Compañero invitado. Sin correo ni id.
+      properties:
+        nombre: { type: string, example: Diego Mamani }
+        carrera: { type: string, nullable: true, example: Ingeniería Industrial }
+        libreDesde: { type: string, example: '10:30', description: Desde cuándo comparte la actividad (`HH:mm`, hora de Bolivia). }
+        libreHasta: { type: string, example: '11:30' }
+        minutosEnComun: { type: integer, format: int32, example: 60 }
+    InvitacionDto:
+      type: object
+      description: HU13. Resultado de invitar automáticamente a una actividad.
+      properties:
+        estado:
+          type: string
+          enum: [INVITADOS, SIN_COINCIDENCIAS, SIN_ZONA, NO_VISIBLE, COMPLETA, ERROR]
+          example: INVITADOS
+          description: |
+            `INVITADOS`: se invitó y avisó a compañeros libres. `SIN_COINCIDENCIAS`: nadie de la sede está libre a esa hora.
+            `SIN_ZONA`: falta elegir campus. `NO_VISIBLE`: falta aceptar el matching (es recíproco). `COMPLETA`: no quedan lugares.
+            `ERROR`: la actividad quedó creada pero no se pudo invitar (se puede volver a buscar).
+        mensaje: { type: string, example: Invitamos a 3 compañeros libres a esa hora. }
+        invitados:
+          type: array
+          description: A quiénes se invitó en este intento, del más al menos compatible.
+          items:
+            $ref: '#/components/schemas/InvitadoDto'
