@@ -10,7 +10,7 @@ public class LogAuditoriaRag
 
     public const string EstadoOk = "OK";
     public const string EstadoSinResultados = "SIN_RESULTADOS";
-    public const string EstadoRechazadoSeguridad = "RECHAZADO_SEGURIDAD";   // el asistente propuso algo fuera del contexto
+    public const string EstadoRechazadoSeguridad = "RECHAZADO_SEGURIDAD";   // la entrada no se pudo enviar (guardrails) o el asistente propuso algo fuera del contexto
     public const string EstadoError = "ERROR";
 
     public long Id { get; set; }

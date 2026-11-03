@@ -15,6 +15,7 @@ public class RecomendacionService
 {
     public const string EstadoRespuestaOk = "OK";
     public const string EstadoRespuestaSinResultados = "SIN_RESULTADOS";
+    public const string CodigoSolicitudNoPermitida = "SOLICITUD_NO_PERMITIDA";
 
     private readonly IPuenteRepository _puentes;
     private readonly IRecuperadorLugares _recuperador;
@@ -37,6 +38,23 @@ public class RecomendacionService
         var puente = (await _puentes.ListarPorUsuarioAsync(usuarioId, ct)).FirstOrDefault(p => p.Id == req.PuenteId)
                      ?? throw new ReglaNegocioException("NO_ENCONTRADO", "El puente no existe.");
         var minutosDisponibles = (int)(puente.HoraFin - puente.HoraInicio).TotalMinutes;
+
+        // Antes de buscar lugares o llamar al asistente: lo que no se puede enviar queda registrado y se rechaza (HU17).
+        var rechazo = ReglasSeguridadIa.Evaluar(entrada);
+        if (rechazo is not null)
+        {
+            await _repo.GuardarAsync(new LogAuditoriaRag
+            {
+                UsuarioId = usuarioId,
+                Tipo = LogAuditoriaRag.TipoRecomendacion,
+                PuenteId = puente.Id,
+                TiempoDisponibleMin = (short)minutosDisponibles,
+                EntradaUsuario = entrada,
+                Estado = LogAuditoriaRag.EstadoRechazadoSeguridad,
+                CreatedAt = DateTime.UtcNow
+            }, [], ct);
+            throw new ReglaNegocioException(CodigoSolicitudNoPermitida, rechazo.Mensaje);
+        }
 
         var contexto = await _recuperador.RecuperarAsync(usuarioId, puente, ct);
         var candidatos = contexto.Lugares.DistinctBy(l => l.LugarId).ToList();
@@ -128,11 +146,8 @@ public class RecomendacionService
             throw new ReglaNegocioException("VALIDACION",
                 $"La preferencia puede tener como máximo {ReglasRecomendacion.MaximoLargoEntrada} caracteres.");
 
-        var motivo = ReglasSeguridadIa.MotivoRechazo(limpia);
-        if (motivo is not null)
-            throw new ReglaNegocioException("SOLICITUD_NO_PERMITIDA", motivo);
-
-        return limpia;
+        var saneada = ReglasSeguridadIa.Sanear(limpia);
+        return saneada.Length == 0 ? null : saneada;
     }
 
     // Las métricas salen del catálogo (candidato), no del texto del asistente.
