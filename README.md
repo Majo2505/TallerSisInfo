@@ -116,7 +116,7 @@ curl -i http://localhost:5092/health/ready
 curl -i http://localhost:5092/health/metrics
 ```
 
-`/health/ready` comprueba la conexión a la base de datos con un límite de 2 segundos y devuelve `503` si la instancia todavía no está lista. `/health/metrics` devuelve métricas Prometheus de solicitudes, errores 5xx y latencia media/P95 por ruta. Las métricas se mantienen en memoria y se reinician al reiniciar la API.
+`/health/ready` comprueba la conexión a la base de datos con un límite de 2 segundos y devuelve `503` si la instancia todavía no está lista o la base no contesta a tiempo; además indica con `operativo` si es horario de servicio (07:00 a 21:00, hora de Bolivia). `/health/metrics` devuelve métricas Prometheus de solicitudes, errores 5xx y latencia media, P50 y P95 por ruta (agrupadas por plantilla, por ejemplo `GET api/comunidades/{id}`). El objetivo de la recomendación es un P95 menor a 3500 ms en `POST api/recomendaciones`. Las métricas se mantienen en memoria y se reinician al reiniciar la API.
 
 #### Base compartida del equipo en Aiven (opcional)
 
