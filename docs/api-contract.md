@@ -833,7 +833,7 @@ Vuelve a buscar con las mismas reglas (después de aceptar el matching, de elegi
 
 ## 7f-bis. Descubrir comunidades activas (adición a HU11 — responsable: Majo)
 
-Comunidades → **Descubrir** muestra las actividades reales de hoy, incluida la que el estudiante acaba de crear. **Es solo lectura:** unirse o confirmar asistencia (RSVP) es de HU14 (#22).
+Comunidades → **Descubrir** muestra las actividades reales de hoy, incluida la que el estudiante acaba de crear. Unirse o responder una invitación (RSVP) es de HU14: ver la sección 7f-ter.
 
 | Regla | Valor | Estado |
 |---|---|---|
@@ -865,13 +865,78 @@ Respuesta **200**:
 | `SIN_ZONA` | No eligió campus (igual ve las suyas y aquellas a las que lo invitaron) | «Elige tu campus para ver las comunidades de tus compañeros.» |
 | `NO_VISIBLE` | No aceptó el matching (igual ve las suyas y aquellas a las que lo invitaron) | «Para ver las comunidades de tus compañeros, primero acepta que ellos también te encuentren.» |
 
-`miEstado`: `PENDIENTE`, `CONFIRMADO` o `RECHAZADO` si al estudiante lo invitaron; `null` si no está en ella o es suya.
+`miEstado`: `PENDIENTE`, `CONFIRMADO` o `RECHAZADO` si al estudiante lo invitaron o se unió (HU14); `null` si no está en ella o es suya.
 
 **Errores**
 
 | Código | Caso |
 |---|---|
 | 401 | Sin token o token inválido |
+
+## 7f-ter. Confirmar o rechazar la asistencia (RSVP) (HU14 — responsable: Maite)
+
+Cierra el ciclo de HU13: el invitado (`PENDIENTE`) dice si va o no, y quien creó la actividad ve con claridad quiénes van.
+También permite **unirse** desde Descubrir a una comunidad de un compañero sin haber sido invitado.
+
+### Reglas
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Quién responde | Quien fue invitado (`PENDIENTE`), quien ya respondió (puede cambiar de idea) y quien la ve en Descubrir (mismo campus y matching aceptado por los dos: el mismo consentimiento recíproco que HU13). Una comunidad que el estudiante no puede ver responde 404, igual que si no existiera | ✅ Definido |
+| Quien la creó | Siempre va (`CONFIRMADO`); no responde (400) | ✅ Definido |
+| Cambiar de idea | `PENDIENTE` → `CONFIRMADO` o `RECHAZADO`; `CONFIRMADO` → `RECHAZADO` (se baja); `RECHAZADO` → `CONFIRMADO` (si queda lugar). Cada cambio actualiza `respondido_en`. Responder lo mismo otra vez no escribe nada | ✅ Definido |
+| Cupo | No más confirmados que `max_participantes`, contando a quien la creó. Si dos confirman a la vez el último lugar, la comunidad se bloquea (`SELECT … FOR UPDATE`) y entra solo uno; el otro recibe 409 `COMPLETA` | ✅ Definido |
+| Cruce | No se confirma si a esa hora el estudiante ya creó o confirmó otra comunidad activa (409 `CRUCE`, dice cuál y a qué hora). Bajarse siempre se puede | ✅ Definido |
+| Hasta cuándo | Mientras la actividad no haya terminado (también si ya empezó) | ✅ Definido |
+| Avisos | Al responder, sus avisos de esa comunidad quedan leídos. Cuando el grupo se llena, los invitados que siguen `PENDIENTE` (y tienen los avisos encendidos) reciben `COMUNIDAD_CERRADA`: ««jugar cartas» ya se llenó. Si alguien se baja, todavía puedes confirmar desde Comunidades.» Si alguien se baja y se libera un lugar, ese aviso se apaga | ✅ Definido |
+| Privacidad de la lista | Quien la creó ve a todos (confirmados, pendientes y los que no van) con nombre completo y carrera. Un invitado o participante ve solo a quienes van, con nombre e inicial del apellido, y a sí mismo («Tú»). Los demás, 404 | ✅ Definido |
+| Base de datos | `participacion` ya tenía los tres estados y `ck_part_respuesta` (`respondido_en` solo cuando no está `PENDIENTE`). Migración 015: índice `ix_part_usuario_estado` para revisar el cruce | ✅ Definido |
+
+### `PUT /api/comunidades/{id}/asistencia`
+
+Body: `{ "asisto": true }` (voy) o `{ "asisto": false }` (no voy). Respuesta **200**:
+
+```json
+{ "comunidadId": 12, "miEstado": "CONFIRMADO", "confirmados": 3, "maxParticipantes": 4,
+  "mensaje": "¡Listo! Te esperamos en «jugar cartas» hoy de 16:00 a 17:00." }
+```
+
+Con `asisto: false`, `miEstado` = `RECHAZADO` y `mensaje` = «Listo, quedó registrado que no vas.».
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 400 | Falta `asisto` («Indica si vas o no.»), eres quien la creó, la actividad ya terminó o rechazas una comunidad en la que no estás (`VALIDACION`) |
+| 401 | Sin token o token inválido |
+| 404 | La comunidad no existe, está archivada o no la puedes ver (`NO_ENCONTRADO`) |
+| 409 | No quedan lugares (`COMPLETA`) o a esa hora ya vas a otra comunidad (`CRUCE`: «A esa hora ya vas a «estudiar Redes» (10:30–11:30).») |
+
+### `GET /api/comunidades/{id}/participantes`
+
+Respuesta **200** (vista de quien la creó):
+
+```json
+{
+  "comunidadId": 12, "actividad": "jugar cartas", "horaInicio": "16:00", "horaFin": "17:00",
+  "confirmados": 3, "maxParticipantes": 4, "esMia": true,
+  "participantes": [
+    { "nombre": "Tú", "carrera": null, "estado": "CONFIRMADO", "esCreador": true, "esTu": true },
+    { "nombre": "Lucía Rojas", "carrera": "Derecho", "estado": "CONFIRMADO", "esCreador": false, "esTu": false },
+    { "nombre": "Mateo Vargas", "carrera": "Arquitectura", "estado": "PENDIENTE", "esCreador": false, "esTu": false },
+    { "nombre": "Diego Mamani", "carrera": "Ingeniería Industrial", "estado": "RECHAZADO", "esCreador": false, "esTu": false }
+  ]
+}
+```
+
+Orden: quien la creó, después los que van, los pendientes y los que no van (cada grupo por orden de respuesta).
+
+**Errores**
+
+| Código | Caso |
+|---|---|
+| 401 | Sin token o token inválido |
+| 404 | La comunidad no existe, está archivada o no estás en ella (`NO_ENCONTRADO`) |
 
 ## 7g. Protección contra prompt injection y solicitudes no permitidas (HU17 — Amira y Ariana; ajustes: Maite)
 
