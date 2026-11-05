@@ -158,6 +158,31 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | 401 | Correo no registrado | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (mismo mensaje de #9 criterio 3; decisión de Ariana, base, según OWASP Authentication Cheat Sheet: no revelar qué correos existen) |
 | 401 | Usuario con `activo = 0` (el login exige `activo = 1`) | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (decisión de Ariana, base; borrado lógico con `activo`) |
 
+### `POST /api/auth/google`
+
+Requiere JWT: **no**. Opcional: el acceso con correo y contraseña sigue siendo el principal. Solo para cuentas `@ucb.edu.bo`.
+
+**Request**
+
+| Campo | Tipo | Validación |
+|---|---|---|
+| `idToken` | string | Obligatorio. El ID token (credential) que entrega Google Identity Services en el navegador |
+
+**Respuesta 200:** igual que el login (`token`, `userId`, `nombre`, `email`, `rol`). Si el correo no tiene cuenta, se crea una de `ESTUDIANTE` sin contraseña y con el correo verificado; si ya existe, se entra a esa misma cuenta.
+
+**Errores**
+
+| Código | Caso | Mensaje |
+|---|---|---|
+| 400 | Sin `idToken` | `No recibimos la credencial de Google.` |
+| 400 | Correo fuera de `@ucb.edu.bo` | `Solo se permite el acceso con un correo institucional (@ucb.edu.bo)` |
+| 401 | Token que Google no valida (firma, vencido o de otro `client id`) | `No pudimos verificar tu cuenta de Google.` |
+| 401 | Correo de Google sin verificar | `Tu correo de Google no está verificado.` |
+| 401 | Cuenta con `activo = 0` | `Tu cuenta está desactivada.` |
+| 503 | El backend no tiene `GOOGLE_CLIENT_ID` | `El acceso con Google todavía no está disponible.` |
+
+El backend valida el token con Google y exige que el `aud` sea su `GOOGLE_CLIENT_ID`. Las cuentas creadas con Google no tienen contraseña: `POST /api/auth/login` responde `401` para ellas.
+
 ### Decisiones de auth
 
 | Duda | Valor por defecto | Estado |

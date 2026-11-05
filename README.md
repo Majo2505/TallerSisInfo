@@ -97,6 +97,8 @@ cp backend/.env.example backend/.env
 
 Completa `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`, más `FRONTEND_ORIGIN` (el origen del frontend que permite CORS; ejemplo: `http://localhost:3000`) y `JWT_SECRET` (una clave de 32 caracteres o más para firmar los tokens). No hay valores por defecto: si falta alguna, la API no arranca y te dice cuál falta. El archivo `.env` se busca en la carpeta del proyecto (`backend/`), así que puedes ejecutar desde cualquier carpeta.
 
+**Acceso con Google (opcional).** Para mostrar el botón «Continuar con Google» en el login, crea un ID de cliente OAuth de tipo *Aplicación web* en Google Cloud, agrega `http://localhost:3000` a los orígenes autorizados y pon el mismo ID en `GOOGLE_CLIENT_ID` (`backend/.env`) y en `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (`frontend/.env.local`). Solo entran correos `@ucb.edu.bo`. Sin esas variables el botón no aparece y el login con correo y contraseña funciona igual.
+
 > **Ojo al actualizar:** cada uno tiene que agregar `FRONTEND_ORIGIN` y `JWT_SECRET` a su `backend/.env` (mira `backend/.env.example`); sin esas claves la API no arranca.
 
 La ubicación de HU5 utiliza el catálogo `zona` de `docs/database/schema.sql`. Antes de usar la selección de campus, el catálogo tiene que incluir las zonas oficiales con centro (`latitud`, `longitud`) y radio (`radio_max_m`) configurados por el equipo administrador. La plataforma no incluye coordenadas de campus inventadas. Una base que ya tenías tiene que aplicar `docs/database/migraciones/002-hu5-ubicacion.sql`; una base nueva ya incluye estos cambios en `schema.sql`.
