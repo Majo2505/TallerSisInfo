@@ -37,8 +37,13 @@ public class CreacionActividadTests
     private static (CreacionActividadService Servicio, RepositorioFalso Repo) Armar(string estadoExtraccion = LogAuditoriaRag.EstadoOk)
     {
         var repo = new RepositorioFalso();
-        repo.Extracciones[(Consulta, Usuario)] = new LogAuditoriaRag { Id = Consulta, UsuarioId = Usuario, Tipo = LogAuditoriaRag.TipoExtraccionComunidad, Estado = estadoExtraccion };
         var reloj = new RelojFijo(new DateTimeOffset(2026, 11, 3, 19, 0, 0, TimeSpan.Zero));
+        // La extracción es de hoy (unos minutos antes): un resumen de otro día ya no sirve para crear la actividad.
+        repo.Extracciones[(Consulta, Usuario)] = new LogAuditoriaRag
+        {
+            Id = Consulta, UsuarioId = Usuario, Tipo = LogAuditoriaRag.TipoExtraccionComunidad, Estado = estadoExtraccion,
+            CreatedAt = new DateTime(2026, 11, 3, 18, 55, 0, DateTimeKind.Utc)
+        };
         return (new CreacionActividadService(repo, reloj), repo);
     }
 
@@ -71,7 +76,7 @@ public class CreacionActividadTests
 
         var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.CrearAsync(99, Solicitud()));
 
-        Assert.Equal("VALIDACION", error.Codigo);
+        Assert.Equal("NO_ENCONTRADO", error.Codigo);
         Assert.Empty(repo.Creadas);
     }
 
@@ -82,7 +87,7 @@ public class CreacionActividadTests
 
         var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.CrearAsync(Usuario, Solicitud(consulta: 12345)));
 
-        Assert.Equal("VALIDACION", error.Codigo);
+        Assert.Equal("NO_ENCONTRADO", error.Codigo);
         Assert.Empty(repo.Creadas);
     }
 
