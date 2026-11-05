@@ -23,6 +23,7 @@ public class LogAuditoriaRag
     public string? RespuestaLlm { get; set; }
     public string Estado { get; set; } = "";
     public string? MotivoRechazo { get; set; }
+    public string? DatosExtraidos { get; set; }         // HU10: resumen validado de la extracción (JSON); con él se crea la actividad
     public string? Modelo { get; set; }
     public int? LatenciaMs { get; set; }
     public DateTime CreatedAt { get; set; }

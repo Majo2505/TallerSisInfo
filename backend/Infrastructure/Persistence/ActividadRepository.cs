@@ -1,6 +1,8 @@
 using Breaku.Application.Actividades;
+using Breaku.Application.Horarios;
 using Breaku.Domain;
 using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace Breaku.Infrastructure.Persistence;
 
@@ -19,6 +21,16 @@ public class ActividadRepository : IActividadRepository
     public async Task AgregarAsync(ComunidadEfimera comunidad, CancellationToken ct = default)
     {
         _db.Comunidades.Add(comunidad);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is MySqlException { ErrorCode: MySqlErrorCode.DuplicateKeyEntry } m
+                                           && m.Message.Contains("uq_com_log"))
+        {
+            // Doble clic en «Confirmar y crear»: los dos pedidos pasan la comprobación previa y la base deja entrar uno solo.
+            _db.Entry(comunidad).State = EntityState.Detached;
+            throw new ReglaNegocioException("DUPLICADO", "Esa actividad ya se creó.");
+        }
     }
 }

@@ -310,7 +310,8 @@ public class CreacionActividadConInvitacionTests
         public Task<LogAuditoriaRag?> ObtenerExtraccionAsync(long consultaId, int usuarioId, CancellationToken ct = default)
             => Task.FromResult<LogAuditoriaRag?>(new LogAuditoriaRag
             {
-                Id = consultaId, UsuarioId = usuarioId, Tipo = LogAuditoriaRag.TipoExtraccionComunidad, Estado = LogAuditoriaRag.EstadoOk
+                Id = consultaId, UsuarioId = usuarioId, Tipo = LogAuditoriaRag.TipoExtraccionComunidad, Estado = LogAuditoriaRag.EstadoOk,
+                CreatedAt = new DateTime(2026, 11, 3, 13, 55, 0, DateTimeKind.Utc)   // de hoy (HU10)
             });
         public Task<bool> ConsultaYaUsadaAsync(long consultaId, CancellationToken ct = default) => Task.FromResult(false);
         public Task AgregarAsync(ComunidadEfimera comunidad, CancellationToken ct = default)

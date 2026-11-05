@@ -31,15 +31,19 @@ public class CreacionActividadService
         if (rechazo is not null)
             throw new ReglaNegocioException(RecomendacionService.CodigoSolicitudNoPermitida, rechazo.Mensaje);
 
+        // Ajena o inexistente: 404, igual (no se revela si existe una consulta de otro estudiante).
         var extraccion = await _repo.ObtenerExtraccionAsync(req.ConsultaId, usuarioId, ct)
-                         ?? throw new ReglaNegocioException("VALIDACION", "La consulta de la actividad no existe.");
+                         ?? throw new ReglaNegocioException("NO_ENCONTRADO", "La consulta de la actividad no existe.");
         if (extraccion.Estado != LogAuditoriaRag.EstadoOk)
             throw new ReglaNegocioException("VALIDACION", "Esa actividad todavía tiene datos por completar.");
-        if (await _repo.ConsultaYaUsadaAsync(req.ConsultaId, ct))
-            throw new ReglaNegocioException("DUPLICADO", "Esa actividad ya se creó.");
 
         var ahoraUtc = _reloj.GetUtcNow().UtcDateTime;
         var ahoraLocal = ReglasNotificacion.AHoraLocal(ahoraUtc);
+        // Las actividades son para hoy: un resumen de ayer no sirve para crear una actividad hoy.
+        if (!ReglasResumenActividad.EsDeHoy(extraccion.CreatedAt, ahoraUtc))
+            throw new ReglaNegocioException("VALIDACION", ReglasResumenActividad.MensajeOtroDia);
+        if (await _repo.ConsultaYaUsadaAsync(req.ConsultaId, ct))
+            throw new ReglaNegocioException("DUPLICADO", "Esa actividad ya se creó.");
         var hora = ReglasExtraccion.LeerHora(req.HoraInicio)
                    ?? throw new ReglaNegocioException("VALIDACION", ReglasExtraccion.PreguntaHora);
 
@@ -48,6 +52,14 @@ public class CreacionActividadService
             throw new ReglaNegocioException("VALIDACION", revisada.Mensaje ?? ReglasExtraccion.MensajeNoEntendido);
 
         var datos = revisada.Datos;
+
+        // Se crea lo que el estudiante confirmó: el resumen que guardó la extracción. Si lo que llega es distinto (por ejemplo,
+        // alguien cambió los datos fuera de la pantalla), no se crea. Las extracciones anteriores a la migración 013 no tienen
+        // resumen guardado: para ellas se usan los datos ya validados del pedido, como antes.
+        var resumen = ReglasResumenActividad.Leer(extraccion.DatosExtraidos);
+        if (resumen is not null && !ReglasResumenActividad.Coinciden(resumen, datos))
+            throw new ReglaNegocioException("RESUMEN_DISTINTO", ReglasResumenActividad.MensajeResumenDistinto);
+        if (resumen is not null) datos = resumen;   // se guarda el resumen tal cual (por ejemplo, la actividad con su escritura)
         var inicioUtc = ahoraLocal.Date.Add(hora.ToTimeSpan()) - ReglasNotificacion.DesfaseBolivia;
         var comunidad = new ComunidadEfimera
         {
