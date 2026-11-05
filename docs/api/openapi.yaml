@@ -47,6 +47,8 @@ tags:
     description: Extracción estructurada de actividades por tool calling (HU11). Requiere JWT. Solo extrae y valida; la creación es de HU10.
   - name: Administración
     description: Panel de administración del campus. Requiere JWT con rol `ADMIN` (claim `role`); con otro rol responde 403.
+  - name: Reportes
+    description: Reportes de los estudiantes (algo no funciona, sugerencias, información incorrecta de un lugar). Requiere JWT.
   - name: Perfil
     description: Gestión del perfil (HU21). Requiere JWT; solo opera sobre el perfil del usuario del token.
   - name: Matching
@@ -656,6 +658,183 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '403':
           description: El usuario no tiene rol `ADMIN`.
+    post:
+      tags: [Administración]
+      operationId: crearLugarAdmin
+      summary: Crea un lugar en el catálogo (queda activo y validado).
+      description: |
+        El lugar tiene que quedar dentro del radio de un campus activo (`GET /api/admin/campus`), con un nombre único, una
+        duración de 1 a 240 minutos y, si tiene horario, apertura y cierre (el cierre después). Queda `CREATE` en `historial_cambio`.
+      security: [{ Bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarLugarDto'
+      responses:
+        '201':
+          description: Lugar creado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer, format: int32, example: 21 }
+        '400':
+          description: Algún dato no es válido (`VALIDACION`; el mensaje dice cuál).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '409':
+          description: Ya hay un lugar con ese nombre (`NOMBRE_REPETIDO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/admin/lugares/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int32, example: 21 }
+    get:
+      tags: [Administración]
+      operationId: obtenerLugarAdmin
+      summary: Un lugar con todos sus datos editables.
+      security: [{ Bearer: [] }]
+      responses:
+        '200':
+          description: El lugar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LugarDetalleAdminDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+    put:
+      tags: [Administración]
+      operationId: editarLugarAdmin
+      summary: Edita un lugar (mismas reglas que al crearlo). Queda el antes y el después en historial_cambio.
+      security: [{ Bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarLugarDto'
+      responses:
+        '204':
+          description: Lugar actualizado.
+        '400':
+          description: Algún dato no es válido (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: Ya hay otro lugar con ese nombre (`NOMBRE_REPETIDO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+    delete:
+      tags: [Administración]
+      operationId: eliminarLugarAdmin
+      summary: Elimina un lugar que nunca se usó.
+      description: |
+        Si el lugar ya aparece en recomendaciones, reportes o comunidades, borrarlo rompería ese historial: responde 409 `EN_USO`
+        y hay que desactivarlo con `PATCH /api/admin/lugares/{id}/estado`. Queda `DELETE` en `historial_cambio`.
+      security: [{ Bearer: [] }]
+      responses:
+        '204':
+          description: Lugar eliminado.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: El lugar ya se usó (`EN_USO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/admin/categorias:
+    get:
+      tags: [Administración]
+      operationId: listarCategoriasAdmin
+      summary: Categorías del catálogo.
+      security: [{ Bearer: [] }]
+      responses:
+        '200':
+          description: Categorías por nombre.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, format: int32, example: 2 }
+                    nombre: { type: string, example: Estudio }
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+  /api/admin/campus:
+    get:
+      tags: [Administración]
+      operationId: listarCampusAdmin
+      summary: Campus activos con su centro y su radio (un lugar tiene que quedar dentro de alguno).
+      security: [{ Bearer: [] }]
+      responses:
+        '200':
+          description: Campus activos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, format: int32, example: 3 }
+                    nombre: { type: string, example: Campus UCB Cochabamba }
+                    latitud: { type: number, example: -17.371672 }
+                    longitud: { type: number, example: -66.143916 }
+                    radioMaxM: { type: integer, format: int32, example: 500 }
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
   /api/admin/lugares/{id}/estado:
     patch:
       tags: [Administración]
@@ -757,7 +936,7 @@ paths:
     patch:
       tags: [Administración]
       operationId: resolverReporteAdmin
-      summary: Resuelve o descarta un reporte pendiente y registra al administrador que lo revisó (HU16).
+      summary: Resuelve o descarta un reporte pendiente y registra al administrador que lo revisó.
       description: |
         Un reporte se revisa una sola vez: queda `RESUELTO` (se atendió) o `DESCARTADO` (no correspondía), con el administrador
         del token en `revisor_id` y la fecha en `revisado_en`. La fila se bloquea mientras se revisa: si dos administradores lo
@@ -1474,6 +1653,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/reportes/lugares:
+    get:
+      tags: [Reportes]
+      operationId: listarLugaresReportables
+      summary: Lugares activos que se pueden reportar (para el selector del formulario).
+      security: [{ Bearer: [] }]
+      responses:
+        '200':
+          description: Lugares por nombre.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer, format: int32, example: 4 }
+                    nombre: { type: string, example: Biblioteca Central }
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+  /api/reportes:
+    post:
+      tags: [Reportes]
+      operationId: crearReporte
+      summary: Envía un reporte (queda pendiente y lo revisa un administrador).
+      description: |
+        `ERROR_APP` y `SUGERENCIA` van sin lugar; `LUGAR_INCORRECTO` lleva `lugarId`. La descripción tiene de 10 a 500
+        caracteres. Un mismo lugar no se reporta otra vez mientras siga pendiente, y cada estudiante tiene como mucho 3 pendientes.
+      security: [{ Bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NuevoReporteDto'
+      responses:
+        '201':
+          description: Reporte recibido.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer, format: int32, example: 12 }
+                  estado: { type: string, example: PENDIENTE }
+        '400':
+          description: Falta un dato o no es válido (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: El lugar no existe (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: Ya reportaste ese lugar y sigue pendiente (`YA_REPORTADO`), o ya tienes 3 pendientes (`DEMASIADOS_PENDIENTES`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
 components:
   securitySchemes:
     Bearer:
@@ -2094,6 +2338,34 @@ components:
         comunidadesHoy: { type: integer, format: int32, example: 0 }
         consultasRagSemana: { type: integer, format: int32, example: 18 }
         reportesPendientes: { type: integer, format: int32, example: 0 }
+    GuardarLugarDto:
+      type: object
+      required: [nombre, categoriaId, latitud, longitud, duracionEstimadaMin]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 100, example: Sala de Estudio Norte, description: Único en el catálogo. }
+        descripcion: { type: string, nullable: true, maxLength: 500, example: Mesas grandes y enchufes }
+        categoriaId: { type: integer, format: int32, example: 2 }
+        latitud: { type: number, example: -17.3716, description: Dentro del radio de un campus activo. }
+        longitud: { type: number, example: -66.1439 }
+        duracionEstimadaMin: { type: integer, format: int32, minimum: 1, maximum: 240, example: 40 }
+        horaApertura: { type: string, nullable: true, example: '08:00', description: '`HH:mm`; va junto con `horaCierre`.' }
+        horaCierre: { type: string, nullable: true, example: '20:00', description: Después de la apertura. }
+        minAPieDesdeBloqueA: { type: integer, format: int32, nullable: true, minimum: 0, maximum: 60, example: 3 }
+    LugarDetalleAdminDto:
+      allOf:
+        - $ref: '#/components/schemas/GuardarLugarDto'
+        - type: object
+          properties:
+            id: { type: integer, format: int32, example: 21 }
+            estado: { type: string, enum: [ACTIVO, EN_REVISION, INACTIVO], example: ACTIVO }
+            validado: { type: boolean, example: true }
+    NuevoReporteDto:
+      type: object
+      required: [motivo, descripcion]
+      properties:
+        motivo: { type: string, enum: [ERROR_APP, SUGERENCIA, LUGAR_INCORRECTO], example: LUGAR_INCORRECTO }
+        lugarId: { type: integer, format: int32, nullable: true, example: 4, description: Solo con `LUGAR_INCORRECTO`. }
+        descripcion: { type: string, minLength: 10, maxLength: 500, example: El horario dice que abre a las 7, pero abre a las 9. }
     LugarAdminDto:
       type: object
       properties:

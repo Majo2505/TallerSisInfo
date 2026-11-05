@@ -1,3 +1,7 @@
+using System.Text.Json;
+using Breaku.Application.Horarios;
+using Breaku.Domain.Rules;
+using MySqlConnector;
 using Breaku.Application.Admin;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,11 +91,150 @@ public class AdminRepository : IAdminRepository
         return anterior;
     }
 
+    public async Task<List<CategoriaAdminDto>> ListarCategoriasAsync(CancellationToken ct = default)
+    {
+        var filas = await _db.Database.SqlQuery<FilaCategoria>($"SELECT id AS Id, nombre AS Nombre FROM categoria ORDER BY nombre")
+            .ToListAsync(ct);
+        return filas.Select(f => new CategoriaAdminDto(f.Id, f.Nombre)).ToList();
+    }
+
+    public async Task<List<CampusAdminDto>> ListarCampusActivosAsync(CancellationToken ct = default)
+    {
+        var filas = await _db.Database.SqlQuery<FilaCampus>($"""
+                SELECT id AS Id, nombre AS Nombre, latitud AS Latitud, longitud AS Longitud, radio_max_m AS RadioMaxM
+                FROM zona WHERE activa = TRUE ORDER BY nombre
+                """).ToListAsync(ct);
+        return filas.Select(f => new CampusAdminDto(f.Id, f.Nombre, f.Latitud, f.Longitud, f.RadioMaxM)).ToList();
+    }
+
+    public async Task<LugarDetalleAdminDto?> ObtenerLugarAsync(int lugarId, CancellationToken ct = default)
+    {
+        var f = await LeerLugarAsync(lugarId, bloquear: false, ct);
+        return f is null ? null : new LugarDetalleAdminDto(f.Id, f.Nombre, f.Descripcion, f.CategoriaId, f.Latitud, f.Longitud,
+            f.DuracionEstimadaMin, Hora(f.HoraApertura), Hora(f.HoraCierre), f.MinAPieDesdeBloqueA, f.Estado, f.Validado);
+    }
+
+    public async Task<bool> NombreEnUsoAsync(string nombre, int? excluirId, CancellationToken ct = default)
+        => (await _db.Database.SqlQuery<long>($"""
+                SELECT COUNT(*) AS Value FROM lugar WHERE nombre = {nombre} AND ({excluirId} IS NULL OR id <> {excluirId})
+                """).ToListAsync(ct)).Single() > 0;
+
+    public async Task<int> CrearLugarAsync(DatosLugar d, int adminId, CancellationToken ct = default)
+    {
+        try
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            await _db.Database.ExecuteSqlAsync($"""
+                    INSERT INTO lugar (nombre, descripcion, categoria_id, latitud, longitud, duracion_estimada_min, hora_apertura,
+                                       hora_cierre, min_a_pie_desde_bloque_a, estado, recomendable, validado, created_by, updated_by)
+                    VALUES ({d.Nombre}, {d.Descripcion}, {d.CategoriaId}, {d.Latitud}, {d.Longitud}, {d.DuracionEstimadaMin},
+                            {d.HoraApertura?.ToTimeSpan()}, {d.HoraCierre?.ToTimeSpan()}, {d.MinAPieDesdeBloqueA},
+                            'ACTIVO', TRUE, TRUE, {adminId}, {adminId})
+                    """, ct);
+            var id = (int)(await _db.Database.SqlQuery<ulong>($"SELECT LAST_INSERT_ID() AS Value").ToListAsync(ct)).Single();
+            await HistorialLugarAsync(id, "CREATE", null, JsonLugar(d), adminId, ct);
+            await tx.CommitAsync(ct);
+            return id;
+        }
+        catch (Exception ex) when (EsNombreRepetido(ex))
+        {
+            // Dos admins guardan el mismo nombre a la vez: la base (uq_lugar_nombre) deja pasar solo uno.
+            throw new ReglaNegocioException("NOMBRE_REPETIDO", ReglasLugar.MensajeNombreRepetido);
+        }
+    }
+
+    public async Task<bool> EditarLugarAsync(int lugarId, DatosLugar d, int adminId, CancellationToken ct = default)
+    {
+        try
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            var antes = await LeerLugarAsync(lugarId, bloquear: true, ct);
+            if (antes is null) return false;
+
+            await _db.Database.ExecuteSqlAsync($"""
+                    UPDATE lugar SET nombre = {d.Nombre}, descripcion = {d.Descripcion}, categoria_id = {d.CategoriaId},
+                           latitud = {d.Latitud}, longitud = {d.Longitud}, duracion_estimada_min = {d.DuracionEstimadaMin},
+                           hora_apertura = {d.HoraApertura?.ToTimeSpan()}, hora_cierre = {d.HoraCierre?.ToTimeSpan()},
+                           min_a_pie_desde_bloque_a = {d.MinAPieDesdeBloqueA}, updated_at = UTC_TIMESTAMP(6), updated_by = {adminId}
+                    WHERE id = {lugarId}
+                    """, ct);
+            await HistorialLugarAsync(lugarId, "UPDATE", JsonLugar(antes.ADatos()), JsonLugar(d), adminId, ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
+        catch (Exception ex) when (EsNombreRepetido(ex))
+        {
+            throw new ReglaNegocioException("NOMBRE_REPETIDO", ReglasLugar.MensajeNombreRepetido);
+        }
+    }
+
+    public async Task<bool> LugarEnUsoAsync(int lugarId, CancellationToken ct = default)
+        => (await _db.Database.SqlQuery<long>($"""
+                SELECT (SELECT COUNT(*) FROM lugar_recuperado WHERE lugar_id = {lugarId})
+                     + (SELECT COUNT(*) FROM recomendacion     WHERE lugar_id = {lugarId})
+                     + (SELECT COUNT(*) FROM reporte           WHERE lugar_id = {lugarId})
+                     + (SELECT COUNT(*) FROM comunidad_efimera WHERE lugar_id = {lugarId}) AS Value
+                """).ToListAsync(ct)).Single() > 0;
+
+    public async Task<bool> EliminarLugarAsync(int lugarId, int adminId, CancellationToken ct = default)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+        var antes = await LeerLugarAsync(lugarId, bloquear: true, ct);
+        if (antes is null) return false;
+
+        await _db.Database.ExecuteSqlAsync($"DELETE FROM lugar WHERE id = {lugarId}", ct);
+        await HistorialLugarAsync(lugarId, "DELETE", JsonLugar(antes.ADatos()), null, adminId, ct);
+        await tx.CommitAsync(ct);
+        return true;
+    }
+
+    private async Task<FilaLugarDetalle?> LeerLugarAsync(int lugarId, bool bloquear, CancellationToken ct)
+    {
+        var consulta = bloquear
+            ? _db.Database.SqlQuery<FilaLugarDetalle>($"""
+                SELECT id AS Id, nombre AS Nombre, descripcion AS Descripcion, categoria_id AS CategoriaId, latitud AS Latitud,
+                       longitud AS Longitud, duracion_estimada_min AS DuracionEstimadaMin, hora_apertura AS HoraApertura,
+                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado
+                FROM lugar WHERE id = {lugarId} FOR UPDATE
+                """)
+            : _db.Database.SqlQuery<FilaLugarDetalle>($"""
+                SELECT id AS Id, nombre AS Nombre, descripcion AS Descripcion, categoria_id AS CategoriaId, latitud AS Latitud,
+                       longitud AS Longitud, duracion_estimada_min AS DuracionEstimadaMin, hora_apertura AS HoraApertura,
+                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado
+                FROM lugar WHERE id = {lugarId}
+                """);
+        return (await consulta.ToListAsync(ct)).FirstOrDefault();
+    }
+
+    // El historial sobrevive al lugar (entidad_id sin FK): queda quién lo creó, editó o eliminó y con qué datos.
+    private Task<int> HistorialLugarAsync(int lugarId, string accion, string? antes, string? despues, int adminId, CancellationToken ct)
+        => _db.Database.ExecuteSqlAsync($"""
+                INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
+                VALUES ('LUGAR', {lugarId}, {accion}, CAST({antes} AS JSON), CAST({despues} AS JSON), {adminId})
+                """, ct);
+
+    private static string JsonLugar(DatosLugar d) => JsonSerializer.Serialize(new
+    {
+        nombre = d.Nombre,
+        descripcion = d.Descripcion,
+        categoria_id = d.CategoriaId,
+        latitud = d.Latitud,
+        longitud = d.Longitud,
+        duracion_estimada_min = d.DuracionEstimadaMin,
+        hora_apertura = d.HoraApertura?.ToString("HH:mm"),
+        hora_cierre = d.HoraCierre?.ToString("HH:mm"),
+        min_a_pie_desde_bloque_a = d.MinAPieDesdeBloqueA
+    });
+
+    private static bool EsNombreRepetido(Exception ex)
+        => (ex as MySqlException ?? ex.InnerException as MySqlException) is { ErrorCode: MySqlErrorCode.DuplicateKeyEntry } m
+           && m.Message.Contains("uq_lugar_nombre");
+
     public async Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default)
     {
         var filas = await _db.Database.SqlQuery<FilaReporte>($"""
                 SELECT r.id AS Id, r.motivo AS Motivo, r.descripcion AS Descripcion, r.estado AS Estado,
-                       COALESCE(l.nombre, c.actividad, '—') AS Objeto, u.nombre AS Autor, r.created_at AS CreadoEn
+                       COALESCE(l.nombre, c.actividad, 'General') AS Objeto, u.nombre AS Autor, r.created_at AS CreadoEn
                 FROM reporte r
                 JOIN usuario u ON u.id = r.usuario_id
                 LEFT JOIN lugar l ON l.id = r.lugar_id
@@ -203,6 +346,41 @@ public class AdminRepository : IAdminRepository
         public bool Recomendable { get; set; }
         public string? TipoLugar { get; set; }
         public long VecesRecomendado { get; set; }
+    }
+
+    private sealed class FilaCategoria
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+    }
+
+    private sealed class FilaCampus
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public decimal Latitud { get; set; }
+        public decimal Longitud { get; set; }
+        public int RadioMaxM { get; set; }
+    }
+
+    private sealed class FilaLugarDetalle
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string? Descripcion { get; set; }
+        public int CategoriaId { get; set; }
+        public decimal Latitud { get; set; }
+        public decimal Longitud { get; set; }
+        public short DuracionEstimadaMin { get; set; }
+        public TimeSpan? HoraApertura { get; set; }
+        public TimeSpan? HoraCierre { get; set; }
+        public short? MinAPieDesdeBloqueA { get; set; }
+        public string Estado { get; set; } = "";
+        public bool Validado { get; set; }
+
+        public DatosLugar ADatos() => new(Nombre, Descripcion, CategoriaId, Latitud, Longitud, DuracionEstimadaMin,
+            HoraApertura is { } a ? TimeOnly.FromTimeSpan(a) : null, HoraCierre is { } c ? TimeOnly.FromTimeSpan(c) : null,
+            MinAPieDesdeBloqueA);
     }
 
     private sealed class FilaReporte
