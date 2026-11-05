@@ -87,6 +87,7 @@ public class ExtraccionActividadService
             resultado = ReglasExtraccion.Interpretar(respuesta.Argumentos, anterior, ahoraLocal);
         }
 
+        log.DatosExtraidos = ResumenSiEstaCompleto(resultado);   // HU10: lo que se va a confirmar
         log.Estado = resultado.Estado switch
         {
             ReglasExtraccion.EstadoCompleto => LogAuditoriaRag.EstadoOk,
@@ -119,10 +120,15 @@ public class ExtraccionActividadService
 
         var resultado = ReglasExtraccion.Interpretar(null, datos, ReglasNotificacion.AHoraLocal(ahoraUtc));
         log.Estado = resultado.Estado == ReglasExtraccion.EstadoCompleto ? LogAuditoriaRag.EstadoOk : LogAuditoriaRag.EstadoIncompleto;
+        log.DatosExtraidos = ResumenSiEstaCompleto(resultado);   // HU10: lo que se va a confirmar
 
         await _repo.GuardarLogAsync(log, ct);
         return ADto(log.Id, resultado);
     }
+
+    /// <summary>HU10: solo un resumen completo se puede confirmar; se guarda tal como se le muestra al estudiante.</summary>
+    private static string? ResumenSiEstaCompleto(ResultadoExtraccion r)
+        => r.Estado == ReglasExtraccion.EstadoCompleto ? ReglasResumenActividad.Serializar(r.Datos) : null;
 
     private async Task RechazarAsync(LogAuditoriaRag log, ReglasSeguridadIa.Rechazo rechazo, CancellationToken ct)
     {
