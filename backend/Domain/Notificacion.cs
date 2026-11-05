@@ -4,6 +4,7 @@ public class Notificacion
 {
     public const string TipoPuenteDisponible = "PUENTE_DISPONIBLE";
     public const string TipoInvitacionComunidad = "INVITACION_COMUNIDAD";
+    public const string TipoComunidadCerrada = "COMUNIDAD_CERRADA";
 
     public long Id { get; set; }
     public int UsuarioId { get; set; }

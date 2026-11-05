@@ -54,7 +54,7 @@ tags:
   - name: Matching
     description: Compañeros de la misma sede con puente compatible (HU12). Requiere JWT. Solo aparece quien aceptó aparecer.
   - name: Comunidades
-    description: Comunidades efímeras (HU13). Requiere JWT. Al crear una actividad (HU10) se invita automáticamente a los compañeros libres a esa hora y se les avisa. Descubrir (adición a HU11) lista las activas de hoy.
+    description: Comunidades efímeras (HU13). Requiere JWT. Al crear una actividad (HU10) se invita automáticamente a los compañeros libres a esa hora y se les avisa. Descubrir (adición a HU11) lista las activas de hoy. Cada estudiante confirma o rechaza su asistencia y ve quiénes van (HU14).
   - name: Health
     description: Estado del servicio. Sin autenticación y sin cuerpo de respuesta.
 paths:
@@ -1596,7 +1596,7 @@ paths:
         Las que todavía no terminaron y son de hoy (hora de Bolivia), de la más próxima a la más lejana, como máximo 50.
         Siempre aparecen las que creaste y aquellas a las que te invitaron. Las de tus compañeros, solo si elegiste campus y
         aceptaste el matching (HU12), con el mismo consentimiento recíproco que las invitaciones de HU13. Del creador solo se
-        muestra el nombre y la inicial del apellido. Solo lectura: unirse o confirmar asistencia es de HU14.
+        muestra el nombre y la inicial del apellido. Para unirse o responder, `PUT /api/comunidades/{id}/asistencia` (HU14).
       security:
         - Bearer: []
       responses:
@@ -1649,6 +1649,93 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '404':
           description: La actividad no existe o no es tuya (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/comunidades/{id}/asistencia:
+    put:
+      tags: [Comunidades]
+      operationId: responderAsistencia
+      summary: Confirma o rechaza tu asistencia a una comunidad, o te une desde Descubrir (HU14).
+      description: |
+        Responde una invitación (`PENDIENTE`), cambia de idea (`CONFIRMADO` ↔ `RECHAZADO`) o te une a una comunidad que ves en
+        Descubrir. Quien la creó siempre va y no responde. No se confirma si no quedan lugares (contando a quien la creó) ni si
+        a esa hora ya vas a otra comunidad; bajarse siempre se puede mientras la actividad no haya terminado. Responder lo mismo
+        otra vez no cambia nada. Tus avisos de esa comunidad quedan leídos; si el grupo se llena, los invitados pendientes
+        reciben `COMUNIDAD_CERRADA`, que se apaga si alguien se baja.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id de la comunidad (el `id` de `GET /api/comunidades` o el `comunidadId` del aviso).
+          schema: { type: integer, format: int32, example: 12 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResponderAsistenciaDto'
+            examples:
+              voy: { value: { asisto: true } }
+              noVoy: { value: { asisto: false } }
+      responses:
+        '200':
+          description: Tu respuesta quedó guardada (o ya era esa).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsistenciaDto'
+        '400':
+          description: Falta `asisto`, eres quien la creó, la actividad ya terminó o rechazas una comunidad en la que no estás (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La comunidad no existe, está archivada o no la puedes ver (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: No quedan lugares (`COMPLETA`) o a esa hora ya vas a otra comunidad (`CRUCE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+              example: { codigo: CRUCE, mensaje: 'A esa hora ya vas a «estudiar Redes» (10:30–11:30).' }
+  /api/comunidades/{id}/participantes:
+    get:
+      tags: [Comunidades]
+      operationId: listarParticipantes
+      summary: Quiénes van a una comunidad (HU14).
+      description: |
+        Quien la creó ve a todos (los que van, los pendientes y los que no van) con nombre completo y carrera. Un invitado o
+        participante ve solo a quienes van, con nombre e inicial del apellido, y a sí mismo («Tú»). Orden: quien la creó, los
+        que van, los pendientes y los que no van.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int32, example: 12 }
+      responses:
+        '200':
+          description: La lista de participantes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantesDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La comunidad no existe, está archivada o no estás en ella (`NO_ENCONTRADO`).
           content:
             application/json:
               schema:
@@ -2618,7 +2705,7 @@ components:
         confirmados: { type: integer, format: int32, example: 1, description: Personas que ya están dentro, contando a quien la creó. }
         creador: { type: string, example: Ana P., description: Nombre e inicial del apellido, o «Tú». }
         esMia: { type: boolean, example: false }
-        miEstado: { type: string, nullable: true, enum: [PENDIENTE, CONFIRMADO, RECHAZADO], description: Si al usuario lo invitaron. }
+        miEstado: { type: string, nullable: true, enum: [PENDIENTE, CONFIRMADO, RECHAZADO], description: 'Si al usuario lo invitaron o se unió (HU14).' }
     ResultadoDescubrirDto:
       type: object
       properties:
@@ -2629,6 +2716,44 @@ components:
           maxItems: 50
           items:
             $ref: '#/components/schemas/ComunidadDescubrirDto'
+    ResponderAsistenciaDto:
+      type: object
+      required: [asisto]
+      description: HU14. `true` = voy; `false` = no voy.
+      properties:
+        asisto: { type: boolean, example: true }
+    AsistenciaDto:
+      type: object
+      description: HU14. Tu respuesta y cómo quedó el grupo.
+      properties:
+        comunidadId: { type: integer, format: int32, example: 12 }
+        miEstado: { type: string, enum: [CONFIRMADO, RECHAZADO], example: CONFIRMADO }
+        confirmados: { type: integer, format: int32, example: 3, description: Personas que van, contando a quien la creó. }
+        maxParticipantes: { type: integer, format: int32, example: 4 }
+        mensaje: { type: string, example: '¡Listo! Te esperamos en «jugar cartas» hoy de 16:00 a 17:00.' }
+    ParticipanteDto:
+      type: object
+      properties:
+        nombre: { type: string, example: Lucía Rojas, description: 'Completo para quien la creó; nombre e inicial para los demás; «Tú» para uno mismo.' }
+        carrera: { type: string, nullable: true, example: Derecho, description: Solo la ve quien la creó. }
+        estado: { type: string, enum: [PENDIENTE, CONFIRMADO, RECHAZADO], example: CONFIRMADO }
+        esCreador: { type: boolean, example: false }
+        esTu: { type: boolean, example: false }
+    ParticipantesDto:
+      type: object
+      description: HU14. Quiénes van a una comunidad.
+      properties:
+        comunidadId: { type: integer, format: int32, example: 12 }
+        actividad: { type: string, example: jugar cartas }
+        horaInicio: { type: string, example: '16:00' }
+        horaFin: { type: string, example: '17:00' }
+        confirmados: { type: integer, format: int32, example: 3 }
+        maxParticipantes: { type: integer, format: int32, example: 4 }
+        esMia: { type: boolean, example: true }
+        participantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipanteDto'
     InvitacionDto:
       type: object
       description: HU13. Resultado de invitar automáticamente a una actividad.

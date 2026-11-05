@@ -82,6 +82,7 @@ builder.Services.AddScoped<ReporteService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
 builder.Services.AddScoped<ComunidadService>();
 builder.Services.AddScoped<DescubrirComunidadesService>();
+builder.Services.AddScoped<AsistenciaService>();
 builder.Services.AddScoped(sp => new CreacionActividadService(
     sp.GetRequiredService<IActividadRepository>(), TimeProvider.System, sp.GetRequiredService<ComunidadService>()));
 
