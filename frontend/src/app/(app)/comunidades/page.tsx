@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
+import AsistenciaComunidad from "@/components/comunidades/AsistenciaComunidad";
 import CompanerosLibres from "@/components/comunidades/CompanerosLibres";
 import DatoEditable from "@/components/comunidades/DatoEditable";
 import InvitacionGrupo from "@/components/comunidades/InvitacionGrupo";
+import ParticipantesComunidad from "@/components/comunidades/ParticipantesComunidad";
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import {
   ActividadExtraida,
@@ -22,6 +26,7 @@ import {
   ComunidadActiva,
   EJEMPLOS_SOLICITUD,
   MAXIMO_SOLICITUD,
+  RespuestaAsistencia,
   ResultadoDescubrir,
   buscarDeNuevo,
   categoriaDe,
@@ -35,6 +40,8 @@ import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
 
+const PESTANAS: readonly Pestana[] = ["libres", "crear", "descubrir"];
+
 function etiquetaEstado(c: ComunidadActiva): string | null {
   if (c.esMia) return "La creaste tú";
   if (c.miEstado === "PENDIENTE") return "Te invitaron";
@@ -43,10 +50,31 @@ function etiquetaEstado(c: ComunidadActiva): string | null {
   return c.confirmados >= c.maxParticipantes ? "Completa" : null;
 }
 
-export default function Comunidades() {
+export default function PaginaComunidades() {
+  return (
+    <Suspense fallback={null}>
+      <Comunidades />
+    </Suspense>
+  );
+}
+
+function Comunidades() {
   const reducir = useReducedMotion();
   const { sesion } = useSesion();
+  const aviso = useAviso();
+  const parametros = useSearchParams();
   const [pestana, setPestana] = useState<Pestana>("libres");
+  const [destacada, setDestacada] = useState<number | null>(null);
+  const [verQuienes, setVerQuienes] = useState<ComunidadActiva | null>(null);
+  const pedida = parametros.get("pestana");
+  const comunidadPedida = Number(parametros.get("comunidad")) || null;
+  const clavePedida = `${pedida}|${comunidadPedida}`;
+  const [claveVista, setClaveVista] = useState<string | null>(null);
+  if (clavePedida !== claveVista) {
+    setClaveVista(clavePedida);
+    if (PESTANAS.includes(pedida as Pestana)) setPestana(pedida as Pestana);
+    setDestacada(comunidadPedida);
+  }
   const [texto, setTexto] = useState("");
   const [descubrir, setDescubrir] = useState<ResultadoDescubrir | null>(null);
   const [cargandoDescubrir, setCargandoDescubrir] = useState(false);
@@ -171,7 +199,29 @@ export default function Comunidades() {
     return () => {
       activo = false;
     };
-  }, [sesion]);
+  }, [sesion, clavePedida]);
+
+  const hayDestacada = destacada !== null && descubrir?.comunidades.some((c) => c.id === destacada);
+  useEffect(() => {
+    if (!hayDestacada || pestana !== "descubrir") return;
+    document.getElementById(`comunidad-${destacada}`)?.scrollIntoView({ block: "center", behavior: reducir ? "auto" : "smooth" });
+    const t = setTimeout(() => setDestacada(null), 2600);
+    return () => clearTimeout(t);
+  }, [hayDestacada, destacada, pestana, reducir]);
+
+  function alResponder(r: RespuestaAsistencia) {
+    setDescubrir((actual) =>
+      actual
+        ? {
+            ...actual,
+            comunidades: actual.comunidades.map((c) =>
+              c.id === r.comunidadId ? { ...c, miEstado: r.miEstado, confirmados: r.confirmados } : c,
+            ),
+          }
+        : actual,
+    );
+    aviso.mostrar(r.mensaje);
+  }
 
   const activas = descubrir?.estado === "OK" ? descubrir.comunidades : [];
   const nombresCaras = [...new Set(activas.map((c) => (c.esMia ? (sesion?.usuario.nombre ?? "Tú") : c.creador)))].slice(0, 4);
@@ -519,7 +569,8 @@ export default function Comunidades() {
                       return (
                         <motion.li
                           key={c.id}
-                          className={`${estilos.comunidad} lugar-arte`}
+                          id={`comunidad-${c.id}`}
+                          className={`${estilos.comunidad} ${c.id === destacada ? estilos.destacada : ""} lugar-arte`}
                           variants={{
                             oculto: { opacity: 0, y: 16, filter: "blur(4px)" },
                             visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: SALIDA } },
@@ -548,6 +599,12 @@ export default function Comunidades() {
                               )}
                             </div>
                             <small className={estilos.creador}>{c.esMia ? "Creada por ti" : `Creada por ${c.creador}`}</small>
+                            <AsistenciaComunidad
+                              comunidad={c}
+                              onRespondida={alResponder}
+                              onDesactualizada={() => void cargarDescubrir()}
+                              onVerQuienes={() => setVerQuienes(c)}
+                            />
                           </div>
                         </motion.li>
                       );
@@ -560,6 +617,18 @@ export default function Comunidades() {
         </AnimatePresence>
       </Pieza>
 
+      <AnimatePresence>
+        {verQuienes && (
+          <ParticipantesComunidad
+            key={verQuienes.id}
+            comunidadId={verQuienes.id}
+            actividad={verQuienes.actividad}
+            miNombre={sesion?.usuario.nombre ?? "Tú"}
+            onCerrar={() => setVerQuienes(null)}
+          />
+        )}
+      </AnimatePresence>
+      <AvisoFlotante texto={aviso.texto} />
     </Entrada>
   );
 }

@@ -39,6 +39,44 @@ export type ResultadoDescubrir = {
 
 export const listarComunidades = () => pedirApi<ResultadoDescubrir>("/api/comunidades");
 
+export type EstadoParticipacion = "PENDIENTE" | "CONFIRMADO" | "RECHAZADO";
+
+export type RespuestaAsistencia = {
+  comunidadId: number;
+  miEstado: Exclude<EstadoParticipacion, "PENDIENTE">;
+  confirmados: number;
+  maxParticipantes: number;
+  mensaje: string;
+};
+
+export const responderAsistencia = (comunidadId: number, asisto: boolean) =>
+  pedirApi<RespuestaAsistencia>(`/api/comunidades/${comunidadId}/asistencia`, {
+    method: "PUT",
+    body: JSON.stringify({ asisto }),
+  });
+
+export type Participante = {
+  nombre: string;
+  carrera: string | null;
+  estado: EstadoParticipacion;
+  esCreador: boolean;
+  esTu: boolean;
+};
+
+export type Participantes = {
+  comunidadId: number;
+  actividad: string;
+  horaInicio: string;
+  horaFin: string;
+  confirmados: number;
+  maxParticipantes: number;
+  esMia: boolean;
+  participantes: Participante[];
+};
+
+export const listarParticipantes = (comunidadId: number) =>
+  pedirApi<Participantes>(`/api/comunidades/${comunidadId}/participantes`);
+
 export function categoriaDe(actividad: string): "Comida" | "Estudio" | "Descanso" | "Deporte" {
   const texto = actividad.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (/cafe|almorz|comer|merend|desayun|cena|snack|\bte\b/.test(texto)) return "Comida";

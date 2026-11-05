@@ -59,12 +59,12 @@ function IconoCerrar() {
 const TIPOS = {
   PUENTE_DISPONIBLE: { titulo: "Puente disponible", clase: "puente", Icono: IconoRayoApp },
   INVITACION_COMUNIDAD: { titulo: "Invitación a una comunidad", clase: "invitacion", Icono: IconoPersonas },
-  COMUNIDAD_CERRADA: { titulo: "Comunidad cerrada", clase: "cerrada", Icono: IconoPersonas },
+  COMUNIDAD_CERRADA: { titulo: "El grupo se llenó", clase: "cerrada", Icono: IconoPersonas },
 } as const;
 
 function rutaDe(n: Notificacion): string {
   if (n.tipo === "PUENTE_DISPONIBLE") return n.duracionMinutos ? `/recomendaciones?min=${n.duracionMinutos}` : "/recomendaciones";
-  return "/comunidades";
+  return n.comunidadId ? `/comunidades?pestana=descubrir&comunidad=${n.comunidadId}` : "/comunidades?pestana=descubrir";
 }
 
 function haceCuanto(iso: string): string {
