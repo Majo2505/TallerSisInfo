@@ -12,7 +12,7 @@ public interface IInvitadorComunidad
 
 public interface IComunidadRepository
 {
-    Task<int> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default);
+    Task<IReadOnlyList<int>> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default);
 
     Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default);
 

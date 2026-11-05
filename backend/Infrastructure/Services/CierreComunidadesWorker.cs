@@ -1,4 +1,7 @@
+using Breaku.Api.Hubs;
 using Breaku.Application.Comunidades;
+using Breaku.Domain;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -31,9 +34,14 @@ public sealed class CierreComunidadesWorker : BackgroundService
         {
             using var scope = _scopes.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<ICierreComunidadesService>();
-            var cantidad = await service.ArchivarVencidasAsync(DateTime.UtcNow, ct);
-            if (cantidad > 0)
-                _logger.LogInformation("Comunidades archivadas automáticamente: {Cantidad}", cantidad);
+            var hub = scope.ServiceProvider.GetRequiredService<IHubContext<ComunidadHub>>();
+            var archivadas = await service.ArchivarVencidasAsync(DateTime.UtcNow, ct);
+            if (archivadas.Count == 0) return;
+
+            _logger.LogInformation("Comunidades archivadas automáticamente: {Cantidad}", archivadas.Count);
+            foreach (var id in archivadas)
+                await hub.Clients.Group(ComunidadHub.Grupo(id)).SendAsync(
+                    "comunidadActualizada", new ComunidadEstadoActualizado(id, ComunidadEfimera.EstadoArchivada, 0), ct);
         }
         catch (Exception ex) when (!ct.IsCancellationRequested)
         {

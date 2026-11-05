@@ -23,6 +23,8 @@ public interface IDescubrirComunidadesRepository
 
     Task<List<ComunidadActiva>> ListarActivasAsync(int usuarioId, int? deOtrosEnZona, DateTime ahoraUtc, DateTime hastaUtc,
         int maximo, CancellationToken ct = default);
+
+    Task<bool> PuedeVerAsync(int usuarioId, int comunidadId, int? deOtrosEnZona, DateTime ahoraUtc, CancellationToken ct = default);
 }
 
 public record ComunidadDescubrirDto(
@@ -59,6 +61,16 @@ public class DescubrirComunidadesService
 
         var (estado, mensaje) = ReglasDescubrir.Estado(tieneZona, usuario.VisibleMatching, filas.Count);
         return new ResultadoDescubrirDto(estado, mensaje, filas.Select(f => ADto(f, usuarioId)).ToList());
+    }
+
+    public async Task<bool> PuedeVerAsync(int usuarioId, int comunidadId, CancellationToken ct = default)
+    {
+        var usuario = await _repo.ObtenerUsuarioAsync(usuarioId, ct);
+        if (usuario is null) return false;
+
+        var tieneZona = usuario.ZonaActualId is not null && usuario.ZonaActual is { Activa: true };
+        var verDeOtros = tieneZona && usuario.VisibleMatching ? usuario.ZonaActualId : null;
+        return await _repo.PuedeVerAsync(usuarioId, comunidadId, verDeOtros, _reloj.GetUtcNow().UtcDateTime, ct);
     }
 
     private static ComunidadDescubrirDto ADto(ComunidadActiva f, int usuarioId)

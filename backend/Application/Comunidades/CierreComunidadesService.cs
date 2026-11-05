@@ -2,7 +2,7 @@ namespace Breaku.Application.Comunidades;
 
 public interface ICierreComunidadesService
 {
-    Task<int> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default);
+    Task<IReadOnlyList<int>> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default);
 }
 
 public sealed class CierreComunidadesService : ICierreComunidadesService
@@ -11,6 +11,6 @@ public sealed class CierreComunidadesService : ICierreComunidadesService
 
     public CierreComunidadesService(IComunidadRepository repo) => _repo = repo;
 
-    public Task<int> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default)
+    public Task<IReadOnlyList<int>> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default)
         => _repo.ArchivarVencidasAsync(ahoraUtc, ct);
 }
