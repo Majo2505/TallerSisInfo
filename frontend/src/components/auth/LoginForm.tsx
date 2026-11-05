@@ -14,7 +14,7 @@ import {
   rutaDeEntrada,
   suscribirSesion,
 } from "@/services/authService";
-import BotonGoogle, { googleDisponible } from "./BotonGoogle";
+import BotonGoogle from "./BotonGoogle";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
 
@@ -345,12 +345,14 @@ export default function LoginForm() {
         <p className={styles.pie}>Solo con tu correo institucional @ucb.edu.bo</p>
       </form>
 
-      {googleDisponible && !comoAdmin && (
+      {!comoAdmin && (
         <div className={styles.google}>
           <span className={styles.separador}>o</span>
           <BotonGoogle
             alRecibirCredencial={(idToken) => void alRecibirCredencialGoogle(idToken)}
             alFallar={() => setErrorServidor("No pudimos conectar con Google. Inténtalo de nuevo o usa tu correo y contraseña.")}
+            alNoConfigurado={() => setErrorServidor("El acceso con Google todavía no está disponible. Usa tu correo y contraseña.")}
+            claseBoton={styles.botonGoogle}
           />
         </div>
       )}
