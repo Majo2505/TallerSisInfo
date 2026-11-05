@@ -19,6 +19,14 @@ import { Entrada, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimien
 import { Selector } from "@/components/app/Selectores";
 import { guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
 import { guardarConfiguracion, obtenerConfiguracion } from "@/lib/notificaciones";
+import {
+  LARGO_MAXIMO_REPORTE,
+  LARGO_MINIMO_REPORTE,
+  LugarReportable,
+  MotivoReporte,
+  enviarReporte,
+  listarLugaresReportables,
+} from "@/lib/reportes";
 import { CARRERAS, LARGO_MAXIMO_NOMBRE, Perfil as DatosPerfil, SEMESTRES, actualizarPerfil, obtenerPerfil } from "@/lib/perfil";
 import { actualizarNombreSesion, cerrarSesion } from "@/services/authService";
 import { iniciales } from "@/lib/iniciales";
@@ -27,11 +35,10 @@ import estilos from "./perfil.module.css";
 
 type Pestana = "informacion" | "ajustes" | "seguridad" | "reportar";
 
-const LARGO_MAXIMO_REPORTE = 500;
 const TIPOS_REPORTE = [
-  { valor: "error", etiqueta: "Algo no funciona" },
-  { valor: "lugar", etiqueta: "Información incorrecta de un lugar" },
-  { valor: "sugerencia", etiqueta: "Sugerencia" },
+  { valor: "ERROR_APP", etiqueta: "Algo no funciona" },
+  { valor: "LUGAR_INCORRECTO", etiqueta: "Información incorrecta de un lugar" },
+  { valor: "SUGERENCIA", etiqueta: "Sugerencia" },
 ];
 
 const PESTANAS: { id: Pestana; nombre: string; corto: string; Icono: typeof IconoPersona }[] = [
@@ -58,9 +65,13 @@ export default function Perfil() {
   const [avisosActivos, setAvisosActivos] = useState<boolean | null>(null);
   const [errorAvisos, setErrorAvisos] = useState("");
   const [guardandoAvisos, setGuardandoAvisos] = useState(false);
-  const [tipoReporte, setTipoReporte] = useState("error");
+  const [tipoReporte, setTipoReporte] = useState<MotivoReporte>("ERROR_APP");
   const [textoReporte, setTextoReporte] = useState("");
   const [errorReporte, setErrorReporte] = useState("");
+  // El lugar solo se pide con «Información incorrecta de un lugar»; la lista se trae la primera vez que hace falta.
+  const [lugaresReportables, setLugaresReportables] = useState<LugarReportable[] | null>(null);
+  const [lugarReporte, setLugarReporte] = useState("");
+  const [enviandoReporte, setEnviandoReporte] = useState(false);
   const [visibleMatching, setVisibleMatching] = useState<boolean | null>(null);
   const [errorMatching, setErrorMatching] = useState("");
   const [guardandoMatching, setGuardandoMatching] = useState(false);
@@ -432,20 +443,59 @@ export default function Perfil() {
               <form
                 className={estilos.formulario}
                 noValidate
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
+                  if (enviandoReporte) return;
                   const limpio = textoReporte.trim();
-                  if (limpio.length < 10) return setErrorReporte("Cuéntanos un poco más: al menos 10 caracteres.");
+                  const conLugar = tipoReporte === "LUGAR_INCORRECTO";
+                  if (conLugar && !lugarReporte) return setErrorReporte("Elige el lugar que tiene la información incorrecta.");
+                  if (limpio.length < LARGO_MINIMO_REPORTE) return setErrorReporte("Cuéntanos un poco más: al menos 10 caracteres.");
                   if (limpio.length > LARGO_MAXIMO_REPORTE) return setErrorReporte(`Máximo ${LARGO_MAXIMO_REPORTE} caracteres.`);
                   setErrorReporte("");
-                  aviso.mostrar("Enviar reportes va a estar disponible pronto.");
+                  setEnviandoReporte(true);
+                  try {
+                    await enviarReporte(tipoReporte, limpio, conLugar ? Number(lugarReporte) : null);
+                    setTextoReporte("");
+                    setLugarReporte("");
+                    aviso.mostrar("¡Gracias! Lo vamos a revisar.");
+                  } catch (err) {
+                    setErrorReporte((err as Error).message);
+                  } finally {
+                    setEnviandoReporte(false);
+                  }
                 }}
               >
                 <h2 className={estilos.seccion}>Reportar un problema</h2>
                 <div className={estilos.campo}>
                   Tipo de reporte
-                  <Selector valor={tipoReporte} opciones={TIPOS_REPORTE} onCambio={setTipoReporte} etiqueta="Tipo de reporte" />
+                  <Selector
+                    valor={tipoReporte}
+                    opciones={TIPOS_REPORTE}
+                    onCambio={(v) => {
+                      setTipoReporte(v as MotivoReporte);
+                      if (errorReporte) setErrorReporte("");
+                      if (v === "LUGAR_INCORRECTO" && lugaresReportables === null)
+                        void listarLugaresReportables().then(setLugaresReportables).catch(() => setLugaresReportables([]));
+                    }}
+                    etiqueta="Tipo de reporte"
+                  />
                 </div>
+                {tipoReporte === "LUGAR_INCORRECTO" && (
+                  <div className={estilos.campo}>
+                    Lugar
+                    <Selector
+                      valor={lugarReporte}
+                      opciones={(lugaresReportables ?? []).map((l) => ({ valor: String(l.id), etiqueta: l.nombre }))}
+                      onCambio={(v) => {
+                        setLugarReporte(v);
+                        if (errorReporte) setErrorReporte("");
+                      }}
+                      etiqueta="Lugar"
+                      placeholder={lugaresReportables === null ? "Cargando lugares…" : "Elige el lugar"}
+                      deshabilitado={lugaresReportables === null}
+                    />
+                  </div>
+                )}
                 <label className={estilos.campo}>
                   Cuéntanos qué pasó
                   <textarea
@@ -483,8 +533,8 @@ export default function Perfil() {
                     </small>
                   </span>
                 </label>
-                <button type="submit" className={estilos.primario}>
-                  Enviar reporte
+                <button type="submit" className={estilos.primario} disabled={enviandoReporte}>
+                  {enviandoReporte ? "Enviando…" : "Enviar reporte"}
                 </button>
               </form>
             )}
