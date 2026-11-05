@@ -19,6 +19,10 @@
   order: 1;
 }
 
+.zonaActividades {
+  order: 1; /* en el celular, justo después de «Tu día» */
+}
+
 .zonaAnimo {
   order: 2;
 }
@@ -583,4 +587,84 @@
     flex-direction: column;
     gap: 8px;
   }
+}
+
+/* Tus actividades de hoy (Comunidades): las que creaste y aquellas a las que te invitaron. */
+.actividades {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.actividad {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 16px;
+  background: var(--superficie);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 200ms var(--curva-salida);
+}
+
+.actividad:hover {
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 3px rgba(47, 127, 209, 0.12);
+}
+
+.actividad:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+.actividadTexto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.actividadTexto strong {
+  overflow: hidden;
+  color: var(--ucb-marino);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actividadTexto small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+}
+
+.actividadMia,
+.actividadInvitada {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.actividadMia {
+  border: 1.5px solid #b9e6cb;
+  background: #eef9f3;
+  color: #17704a;
+}
+
+.actividadInvitada {
+  border: 1.5px solid var(--ucb-amarillo);
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
 }
