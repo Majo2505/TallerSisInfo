@@ -1226,7 +1226,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActividadCreadaDto'
         '400':
-          description: Datos inválidos, consulta inexistente, ajena o incompleta (`VALIDACION`), o texto que no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`).
+          description: Datos inválidos, consulta incompleta o de otro día (`VALIDACION`), o texto que no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`).
           content:
             application/json:
               schema:
@@ -1236,8 +1236,17 @@ paths:
                 mensaje: Esa hora ya pasó y las actividades son para hoy. ¿A qué hora quieres empezar?
         '401':
           $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: La consulta no existe o es de otro estudiante (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
         '409':
-          description: Esa consulta ya se usó para crear una actividad (`codigo` = `DUPLICADO`).
+          description: |
+            Esa consulta ya se usó para crear una actividad (`DUPLICADO`, también si se confirma dos veces a la vez) o los datos
+            no son los del resumen confirmado (`RESUMEN_DISTINTO`): la actividad se crea con el resumen que guardó la extracción
+            (`log_auditoria_rag.datos_extraidos`), no con lo que mande el cliente.
           content:
             application/json:
               schema:
