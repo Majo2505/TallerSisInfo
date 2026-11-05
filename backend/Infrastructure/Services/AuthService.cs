@@ -11,8 +11,6 @@ using Microsoft.IdentityModel.Tokens;
 namespace Breaku.Infrastructure.Services;   
 public class AuthService : IAuthService
 {
-    private const string DominioInstitucional = "@ucb.edu.bo";
-
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
 
@@ -83,16 +81,8 @@ public class AuthService : IAuthService
 
     private static void ValidarCorreoInstitucional(string? correo)
     {
-        var valor = correo?.Trim() ?? string.Empty;
-        var usuario = valor.Length > DominioInstitucional.Length
-            ? valor[..^DominioInstitucional.Length]
-            : string.Empty;
-
-        if (usuario.Length == 0 || usuario.Contains('@')
-            || !valor.EndsWith(DominioInstitucional, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ArgumentException("Solo se permite el acceso con un correo institucional (@ucb.edu.bo)");
-        }
+        if (!ReglasCorreoInstitucional.EsInstitucional(correo))
+            throw new ArgumentException(ReglasCorreoInstitucional.MensajeNoInstitucional);
     }
 
     private string GenerarJwtToken(Usuario usuario)
