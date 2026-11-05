@@ -8,11 +8,13 @@ import {
   ErrorAuth,
   iniciarSesion,
   iniciarSesionAdmin,
+  iniciarSesionConGoogle,
   obtenerSesion,
   registrarse,
   rutaDeEntrada,
   suscribirSesion,
 } from "@/services/authService";
+import BotonGoogle, { googleDisponible } from "./BotonGoogle";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
 
@@ -150,6 +152,17 @@ export default function LoginForm() {
       else if (comoAdmin) nueva = await iniciarSesionAdmin(correo.trim(), password);
       else nueva = await iniciarSesion(correo.trim(), password);
       router.replace(rutaDeEntrada(nueva));
+    } catch (e) {
+      setErrorServidor(e instanceof ErrorAuth ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
+      setEnviando(false);
+    }
+  }
+
+  async function alRecibirCredencialGoogle(idToken: string) {
+    setErrorServidor("");
+    setEnviando(true);
+    try {
+      router.replace(rutaDeEntrada(await iniciarSesionConGoogle(idToken)));
     } catch (e) {
       setErrorServidor(e instanceof ErrorAuth ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
       setEnviando(false);
@@ -331,6 +344,16 @@ export default function LoginForm() {
 
         <p className={styles.pie}>Solo con tu correo institucional @ucb.edu.bo</p>
       </form>
+
+      {googleDisponible && !comoAdmin && (
+        <div className={styles.google}>
+          <span className={styles.separador}>o</span>
+          <BotonGoogle
+            alRecibirCredencial={(idToken) => void alRecibirCredencialGoogle(idToken)}
+            alFallar={() => setErrorServidor("No pudimos conectar con Google. Inténtalo de nuevo o usa tu correo y contraseña.")}
+          />
+        </div>
+      )}
 
       {!esRegistro && (
         <button

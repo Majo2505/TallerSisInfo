@@ -312,3 +312,27 @@
     background: var(--fondo-suave);
   }
 }
+
+.google {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  color: var(--texto-tenue);
+  font-size: 0.84rem;
+}
+
+.separador::before,
+.separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.25;
+}
