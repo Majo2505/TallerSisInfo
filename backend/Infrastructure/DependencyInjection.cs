@@ -41,6 +41,7 @@ public static class DependencyInjection
 
         services.AddScoped<IDatabaseHealthCheck, DatabaseHealthCheck>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IGoogleTokenValidator, GoogleTokenValidator>();
 
         services.AddScoped<IHorarioRepository, HorarioRepository>();
         services.AddScoped<IPuenteRepository, PuenteRepository>();

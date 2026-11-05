@@ -33,6 +33,31 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("google")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> Google([FromBody] GoogleLoginRequestDto request, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _authService.LoginConGoogleAsync(request, ct));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new ErrorMensajeDto(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ErrorMensajeDto(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorMensajeDto(ex.Message));
+        }
+    }
+
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status400BadRequest)]

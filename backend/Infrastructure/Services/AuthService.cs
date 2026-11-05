@@ -13,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IGoogleTokenValidator _google;
 
-    public AuthService(AppDbContext context, IConfiguration configuration)
+    public AuthService(AppDbContext context, IConfiguration configuration, IGoogleTokenValidator google)
     {
         _context = context;
         _configuration = configuration;
+        _google = google;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
@@ -62,7 +64,7 @@ public class AuthService : IAuthService
         ValidarCorreoInstitucional(request.Email);
 
         var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (usuario == null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
+        if (usuario == null || usuario.PasswordHash is null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
         {
             throw new UnauthorizedAccessException("Credenciales inválidas.");
         }
@@ -72,6 +74,55 @@ public class AuthService : IAuthService
         return new AuthResponseDto
         {
             Token = token,
+            UserId = usuario.Id,
+            Nombre = usuario.Nombre,
+            Email = usuario.Email,
+            Rol = usuario.Rol
+        };
+    }
+
+    public async Task<AuthResponseDto> LoginConGoogleAsync(GoogleLoginRequestDto request, CancellationToken ct = default)
+    {
+        if (!_google.Configurado)
+            throw new InvalidOperationException("El acceso con Google todavía no está disponible.");
+        if (string.IsNullOrWhiteSpace(request.IdToken))
+            throw new ArgumentException("No recibimos la credencial de Google.");
+
+        var identidad = await _google.ValidarAsync(request.IdToken, ct)
+            ?? throw new UnauthorizedAccessException("No pudimos verificar tu cuenta de Google.");
+        if (!identidad.CorreoVerificado)
+            throw new UnauthorizedAccessException("Tu correo de Google no está verificado.");
+
+        var correo = identidad.Email.Trim().ToLowerInvariant();
+        ValidarCorreoInstitucional(correo);
+
+        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == correo, ct);
+        if (usuario is null)
+        {
+            usuario = new Usuario
+            {
+                Nombre = string.IsNullOrWhiteSpace(identidad.Nombre) ? correo[..correo.IndexOf('@')] : identidad.Nombre.Trim(),
+                Email = correo,
+                Rol = "ESTUDIANTE",
+                Activo = true,
+                CorreoVerificado = true
+            };
+            _context.Usuarios.Add(usuario);
+            await _context.SaveChangesAsync(ct);
+        }
+        else if (!usuario.Activo)
+        {
+            throw new UnauthorizedAccessException("Tu cuenta está desactivada.");
+        }
+        else if (!usuario.CorreoVerificado)
+        {
+            usuario.CorreoVerificado = true;
+            await _context.SaveChangesAsync(ct);
+        }
+
+        return new AuthResponseDto
+        {
+            Token = GenerarJwtToken(usuario),
             UserId = usuario.Id,
             Nombre = usuario.Nombre,
             Email = usuario.Email,
