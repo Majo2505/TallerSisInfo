@@ -43,4 +43,24 @@ public class PerformanceMetricsTests
 
         Assert.Single(metrics.Snapshot());
     }
+
+    [Fact]
+    public async Task Peak_load_from_many_threads_loses_no_requests_and_keeps_the_window_bounded()
+    {
+        var metrics = new ApiMetrics();
+        const int workers = 100;
+        const int requestsPerWorker = 200;
+
+        await Task.WhenAll(Enumerable.Range(0, workers).Select(worker => Task.Run(() =>
+        {
+            for (var i = 0; i < requestsPerWorker; i++)
+                metrics.Record("POST", "api/recomendaciones", i % 50 == 0 ? 500 : 200, ApiMetrics.Start());
+        })));
+
+        var snapshot = metrics.Snapshot()["POST api/recomendaciones"];
+
+        Assert.Equal(workers * requestsPerWorker, snapshot.Requests);
+        Assert.Equal(workers * requestsPerWorker / 50, snapshot.Errors);
+        Assert.True(snapshot.P95Milliseconds < 3500);
+    }
 }
