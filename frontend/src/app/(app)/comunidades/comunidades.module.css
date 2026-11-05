@@ -491,6 +491,11 @@
   box-shadow: var(--sombra-1);
 }
 
+.destacada {
+  border-color: var(--ucb-amarillo);
+  box-shadow: 0 0 0 3px var(--ucb-amarillo), var(--sombra-1);
+}
+
 .comunidad > svg {
   height: 96px;
   border-radius: 18px;
