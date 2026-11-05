@@ -1,11 +1,11 @@
 "use client";
 
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { API_URL } from "./config";
 import { obtenerToken } from "@/services/authService";
 
-type EventoComunidad = {
+export type EventoComunidad = {
   comunidadId: number;
   estado: string;
   confirmados: number;
@@ -16,11 +16,16 @@ export function useComunidadesRealtime(
   onActualizada: (evento: EventoComunidad) => void,
 ) {
   const ids = comunidadIds.join(",");
-  const idsToSubscribe = ids ? ids.split(",").map(Number) : [];
+  const alActualizar = useRef(onActualizada);
+
+  useEffect(() => {
+    alActualizar.current = onActualizada;
+  }, [onActualizada]);
 
   useEffect(() => {
     const token = obtenerToken();
-    if (!token || idsToSubscribe.length === 0) return;
+    const suscritas = ids ? ids.split(",").map(Number) : [];
+    if (!token || suscritas.length === 0) return;
 
     const connection = new HubConnectionBuilder()
       .withUrl(`${API_URL}/hubs/comunidades`, { accessTokenFactory: () => obtenerToken() ?? "" })
@@ -30,10 +35,10 @@ export function useComunidadesRealtime(
 
     const suscribir = async () => {
       if (connection.state !== HubConnectionState.Connected) return;
-      await Promise.all(idsToSubscribe.map((id) => connection.invoke("Suscribirse", id)));
+      await Promise.allSettled(suscritas.map((id) => connection.invoke("Suscribirse", id)));
     };
 
-    connection.on("comunidadActualizada", onActualizada);
+    connection.on("comunidadActualizada", (evento: EventoComunidad) => alActualizar.current(evento));
     connection.onreconnected(() => void suscribir());
     void connection
       .start()
@@ -43,5 +48,5 @@ export function useComunidadesRealtime(
     return () => {
       void connection.stop();
     };
-  }, [ids, onActualizada]);
+  }, [ids]);
 }
