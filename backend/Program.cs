@@ -14,6 +14,7 @@ using Breaku.Application.Lugares;
 using Breaku.Application.Ubicacion;
 using Breaku.Application.Actividades;
 using Breaku.Application.Comunidades;
+using Breaku.Infrastructure.Performance;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -63,6 +64,7 @@ builder.Services
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
+builder.Services.AddSingleton<ApiMetrics>();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
@@ -88,6 +90,7 @@ builder.Services.AddScoped(sp => new CreacionActividadService(
 
 var app = builder.Build();
 
+app.UseMiddleware<ApiMetricsMiddleware>();
 app.UseCors(FrontendCorsPolicy);
 
 app.UseSwaggerDocumentation();
