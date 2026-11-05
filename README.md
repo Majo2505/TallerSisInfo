@@ -87,7 +87,7 @@ La documentación sale de los comentarios `///` de los controladores y DTOs (el 
 
 Necesitas una instancia de MySQL con el esquema de [`docs/database/schema.sql`](docs/database/schema.sql) ya cargado (EF Core solo mapea; no hay migraciones de EF).
 
-> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden y `005-sede-cochabamba.sql` para la sede activa y `006-hu12-matching.sql` para el matching de compañeros `007-hu9-feedback.sql` para la valoración de recomendaciones `008-hu2-rango-horario.sql` para el horario de clases de 07:15 a 21:00, `009-hu8-metricas.sql` para las métricas de las recomendaciones , `010-hu11-extraccion.sql` para la extracción de actividades , `011-hu13-comunidad-automatica.sql` para la creación automática de comunidades , `012-hu17-motivo-rechazo.sql` para el motivo de los rechazos de seguridad , `013-hu10-resumen-confirmado.sql` para crear la actividad con el resumen confirmado, `014-admin-catalogo-reportes.sql` para administrar el catálogo y recibir reportes y `015-hu14-asistencia.sql` para confirmar o rechazar la asistencia a una comunidad), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
+> **Ojo al actualizar:** si tu base la creaste con una versión vieja de `schema.sql`, ejecuta en orden los scripts de [`docs/database/migraciones/`](docs/database/migraciones/) que todavía no corriste (por ejemplo, `001-hu4-notificaciones.sql` para HU4, `002-hu5-ubicacion.sql` para HU5, `003-hu21-perfil.sql` para HU21, `004-horario-asistencia.sql` para las clases que coinciden y `005-sede-cochabamba.sql` para la sede activa y `006-hu12-matching.sql` para el matching de compañeros `007-hu9-feedback.sql` para la valoración de recomendaciones `008-hu2-rango-horario.sql` para el horario de clases de 07:15 a 21:00, `009-hu8-metricas.sql` para las métricas de las recomendaciones , `010-hu11-extraccion.sql` para la extracción de actividades , `011-hu13-comunidad-automatica.sql` para la creación automática de comunidades , `012-hu17-motivo-rechazo.sql` para el motivo de los rechazos de seguridad , `013-hu10-resumen-confirmado.sql` para crear la actividad con el resumen confirmado, `014-admin-catalogo-reportes.sql` para administrar el catálogo y recibir reportes `015-hu14-asistencia.sql` para confirmar o rechazar la asistencia a una comunidad y `016-reparar-tildes.sql` para corregir tildes mal guardadas por los seeds), con tu base seleccionada, igual que `seed-dev.sql`. Una base nueva creada con `schema.sql` no los necesita. La versión de MySQL que usa el código es la 8.0.46, fija en `backend/Infrastructure/DependencyInjection.cs`. Falta confirmar la versión del equipo.
 
 La conexión se configura en `backend/.env` (no se sube al repositorio):
 
@@ -186,8 +186,10 @@ El script [`docs/database/seed-dev.sql`](docs/database/seed-dev.sql) inserta eso
 **Opción 2: línea de comandos**, pasando el nombre de la base como parámetro:
 
 ```bash
-mysql -u <usuario> -p <nombre_de_la_base> < docs/database/seed-dev.sql
+mysql --default-character-set=utf8mb4 -u <usuario> -p <nombre_de_la_base> < docs/database/seed-dev.sql
 ```
+
+En PowerShell el `<` no funciona; usa `mysql --default-character-set=utf8mb4 -u <usuario> -p <nombre_de_la_base> -e "source docs/database/seed-dev.sql"`. Sin `--default-character-set=utf8mb4` en Windows las tildes y las ñ quedan mal guardadas (por ejemplo `Cafeter├¡a` en vez de `Cafetería`); si ya te pasó, ejecuta `docs/database/migraciones/016-reparar-tildes.sql`, que las corrige.
 
 En Windows, `mysql` puede no estar en el `PATH`; en ese caso usa la ruta completa a `mysql.exe` (carpeta `bin` de tu instalación de MySQL) o la opción 1.
 
