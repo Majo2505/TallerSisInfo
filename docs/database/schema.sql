@@ -241,7 +241,8 @@ CREATE TABLE participacion (
   invitado_en   DATETIME(6) NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   respondido_en DATETIME(6) NULL,
   PRIMARY KEY (comunidad_id, usuario_id),
-  CONSTRAINT ck_part_estado    CHECK (estado IN ('PENDIENTE','CONFIRMADO','RECHAZADO')),
+  KEY ix_part_usuario_estado (usuario_id, estado),
+  CONSTRAINT ck_part_estado   CHECK (estado IN ('PENDIENTE','CONFIRMADO','RECHAZADO')),
   CONSTRAINT ck_part_respuesta CHECK ((estado = 'PENDIENTE') = (respondido_en IS NULL)),
   CONSTRAINT fk_part_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id),
   CONSTRAINT fk_part_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id)
