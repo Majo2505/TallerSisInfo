@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 SET @autor := (SELECT id FROM usuario WHERE correo = 'dev.estudiante@ucb.edu.bo');
 
 INSERT INTO zona (nombre, latitud, longitud, radio_max_m, activa, created_by, updated_by)

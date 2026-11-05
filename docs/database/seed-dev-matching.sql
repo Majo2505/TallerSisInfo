@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 SET @sede := (SELECT id FROM zona WHERE nombre = 'Campus UCB Cochabamba');
 SET @clave := (SELECT password_hash FROM usuario WHERE correo = 'dev.estudiante@ucb.edu.bo');
 

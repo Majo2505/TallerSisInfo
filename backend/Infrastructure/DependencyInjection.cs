@@ -34,6 +34,7 @@ public static class DependencyInjection
             Database = Required(configuration, "DB_NAME"),
             UserID = Required(configuration, "DB_USER"),
             Password = Required(configuration, "DB_PASSWORD"),
+            CharacterSet = "utf8mb4",
             DateTimeKind = MySqlDateTimeKind.Utc
         }.ConnectionString;
 

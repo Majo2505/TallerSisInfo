@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 INSERT INTO usuario
   (correo, password_hash, nombre, rol, correo_verificado, consentimiento_ubicacion, fecha_consentimiento, activo)
 VALUES
