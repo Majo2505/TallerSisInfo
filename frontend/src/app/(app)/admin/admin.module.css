@@ -243,6 +243,77 @@
 .aprobar { border: 0; background: var(--ucb-marino); color: #ffffff; }
 .desactivar { border: 1.5px solid var(--error-borde); background: var(--superficie); color: var(--error); }
 .aprobar:active, .desactivar:active { transform: scale(0.95); }
+
+/* Catálogo: crear, editar y eliminar lugares. */
+.cabeceraCatalogo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cabeceraCatalogo .conteo {
+  margin: 0;
+}
+
+.nuevoLugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px -14px rgba(5, 40, 69, 0.9);
+}
+
+.nuevoLugar svg {
+  color: var(--ucb-amarillo);
+}
+
+.nuevoLugar:focus-visible,
+.editar:focus-visible,
+.eliminar:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+.editar,
+.eliminar {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--superficie);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms var(--curva-salida);
+}
+
+.editar { border: 1.5px solid var(--borde); color: var(--ucb-marino); }
+.eliminar { border: 1.5px solid transparent; color: var(--error); }
+.editar:active, .eliminar:active { transform: scale(0.95); }
+
+@media (hover: hover) and (pointer: fine) {
+  .editar:hover { border-color: var(--ucb-azul-medio); }
+  .eliminar:hover { border-color: var(--error-borde); }
+  .nuevoLugar:hover { box-shadow: var(--sombra-2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editar,
+  .eliminar {
+    transition: none;
+  }
+}
 .aprobar:disabled, .desactivar:disabled { opacity: 0.5; cursor: progress; }
 
 .listaReportes,

@@ -3,11 +3,14 @@
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import EliminarLugar from "@/components/admin/EliminarLugar";
+import FormularioLugar from "@/components/admin/FormularioLugar";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import {
   IconoBandera,
   IconoBuscar,
   IconoDestello,
+  IconoMas,
   IconoPersonas,
   IconoPin,
   IconoPulgarAbajo,
@@ -18,6 +21,7 @@ import {
   ConsultaRag,
   EstadoLugar,
   LugarAdmin,
+  MOTIVO_REPORTE,
   MetricasAdmin,
   MotivoRechazo,
   ReporteAdmin,
@@ -104,6 +108,9 @@ export default function PanelAdmin() {
   const [filtroAuditoria, setFiltroAuditoria] = useState<FiltroAuditoria>("todas");
   const [error, setError] = useState("");
   const [cambiando, setCambiando] = useState<number | null>(null);
+  // Catálogo: formulario abierto (null = cerrado; { id: null } = lugar nuevo) y lugar a eliminar.
+  const [formulario, setFormulario] = useState<{ id: number | null } | null>(null);
+  const [aEliminar, setAEliminar] = useState<LugarAdmin | null>(null);
 
   useEffect(() => {
     if (listo && sesion && !esAdmin(sesion)) router.replace("/inicio");
@@ -139,6 +146,15 @@ export default function PanelAdmin() {
     } finally {
       setCambiando(null);
     }
+  }
+
+  // Después de crear, editar o eliminar: el catálogo y las cifras se vuelven a pedir.
+  function catalogoCambio(mensaje: string) {
+    setFormulario(null);
+    setAEliminar(null);
+    aviso.mostrar(mensaje);
+    void listarLugaresAdmin().then(setLugares).catch(() => undefined);
+    void obtenerResumen().then(setResumen).catch(() => undefined);
   }
 
   async function validar(lugar: LugarAdmin) {
@@ -263,7 +279,12 @@ export default function PanelAdmin() {
           >
             {pestana === "catalogo" && (
               <>
-                <p className={estilos.conteo}>{lugares ? `${lugares.length} lugares en el catálogo` : "Cargando catálogo…"}</p>
+                <div className={estilos.cabeceraCatalogo}>
+                  <p className={estilos.conteo}>{lugares ? `${lugares.length} lugares en el catálogo` : "Cargando catálogo…"}</p>
+                  <motion.button type="button" className={estilos.nuevoLugar} onClick={() => setFormulario({ id: null })} whileTap={{ scale: 0.97 }}>
+                    <IconoMas tamano={18} /> Nuevo lugar
+                  </motion.button>
+                </div>
                 <div className={estilos.tabla} role="table" aria-label="Catálogo de lugares">
                   <div className={`${estilos.fila} ${estilos.encabezado}`} role="row">
                     <span role="columnheader">Nombre</span>
@@ -327,6 +348,12 @@ export default function PanelAdmin() {
                             Activar
                           </button>
                         )}
+                        <button type="button" className={estilos.editar} onClick={() => setFormulario({ id: l.id })} aria-label={`Editar ${l.nombre}`}>
+                          Editar
+                        </button>
+                        <button type="button" className={estilos.eliminar} onClick={() => setAEliminar(l)} aria-label={`Eliminar ${l.nombre}`}>
+                          Eliminar
+                        </button>
                       </span>
                     </motion.div>
                   ))}
@@ -342,7 +369,7 @@ export default function PanelAdmin() {
                       <span className={`${estilos.estado} ${estilos[ESTADO_REPORTE[r.estado].clase]}`}>{ESTADO_REPORTE[r.estado].etiqueta}</span>
                       <strong>{r.objeto}</strong>
                       <p>
-                        {r.motivo}
+                        {MOTIVO_REPORTE[r.motivo] ?? r.motivo}
                         {r.descripcion ? ` · ${r.descripcion}` : ""}
                       </p>
                       <small>
@@ -564,6 +591,24 @@ export default function PanelAdmin() {
           </motion.section>
         </AnimatePresence>
       </Pieza>
+
+      <AnimatePresence>
+        {formulario && (
+          <FormularioLugar key="formulario" lugarId={formulario.id} onCerrar={() => setFormulario(null)} onGuardado={catalogoCambio} />
+        )}
+        {aEliminar && (
+          <EliminarLugar
+            key="eliminar"
+            lugar={aEliminar}
+            onCerrar={() => setAEliminar(null)}
+            onEliminado={catalogoCambio}
+            onDesactivar={(l) => {
+              setAEliminar(null);
+              void cambiar(l, "INACTIVO");
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AvisoFlotante texto={aviso.texto} />
     </Entrada>
