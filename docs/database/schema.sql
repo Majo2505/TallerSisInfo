@@ -157,6 +157,7 @@ CREATE TABLE log_auditoria_rag (
   respuesta_llm          TEXT         NULL,
   estado                 VARCHAR(20)  NOT NULL,
   motivo_rechazo         VARCHAR(20)  NULL,
+  datos_extraidos        JSON         NULL,               -- HU10/HU11: resumen validado {actividad, horaInicio, duracionMin, maxParticipantes}; lo que se confirma
   modelo                 VARCHAR(40)  NULL,
   latencia_ms            INT          NULL,
   created_at             DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
@@ -168,6 +169,7 @@ CREATE TABLE log_auditoria_rag (
   CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
   CONSTRAINT ck_log_motivo CHECK (motivo_rechazo IN ('INYECCION','FUERA_DE_ALCANCE','BIENESTAR','FUERA_DE_REGLAMENTO','FUERA_DE_CONTEXTO')),
   CONSTRAINT ck_log_motivo_estado CHECK (motivo_rechazo IS NULL OR estado = 'RECHAZADO_SEGURIDAD'),
+  CONSTRAINT ck_log_datos_tipo    CHECK (datos_extraidos IS NULL OR tipo = 'EXTRACCION_COMUNIDAD'),   -- HU10: solo las extracciones tienen resumen
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
   CONSTRAINT fk_log_zona    FOREIGN KEY (zona_id)    REFERENCES zona (id),
   CONSTRAINT fk_log_puente  FOREIGN KEY (puente_id)  REFERENCES puente (id) ON DELETE SET NULL
@@ -219,6 +221,11 @@ CREATE TABLE comunidad_efimera (
   CONSTRAINT ck_com_fechas CHECK (fin > inicio),
   CONSTRAINT ck_com_estado CHECK (estado IN ('ACTIVA','ARCHIVADA')),
   CONSTRAINT ck_com_max    CHECK (max_participantes BETWEEN 2 AND 30),
+  -- HU10: las mismas reglas de la extracción, como última barrera. inicio y fin están en UTC; Bolivia es UTC-4.
+  CONSTRAINT ck_com_duracion CHECK (TIMESTAMPDIFF(MINUTE, inicio, fin) BETWEEN 10 AND 240),
+  CONSTRAINT ck_com_horario  CHECK (TIME(inicio - INTERVAL 4 HOUR) >= '07:15:00'
+                                    AND TIME(fin - INTERVAL 4 HOUR) <= '21:00:00'
+                                    AND DATE(inicio - INTERVAL 4 HOUR) = DATE(fin - INTERVAL 4 HOUR)),
   CONSTRAINT fk_com_creador FOREIGN KEY (creador_id) REFERENCES usuario (id),
   CONSTRAINT fk_com_log     FOREIGN KEY (log_id)     REFERENCES log_auditoria_rag (id),
   CONSTRAINT fk_com_lugar   FOREIGN KEY (lugar_id)   REFERENCES lugar (id)
