@@ -1,4 +1,5 @@
 using Breaku.Application;
+using Breaku.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Breaku.Infrastructure.Performance;
 
@@ -38,10 +39,19 @@ public class HealthController : ControllerBase
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(2));
-        var connected = await _databaseHealthCheck.CanConnectAsync(timeout.Token);
+        var connected = false;
+        try
+        {
+            connected = await _databaseHealthCheck.CanConnectAsync(timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            connected = false;
+        }
+        var operativo = ReglasDisponibilidad.EnHorarioOperativo(DateTime.UtcNow);
         return connected
-            ? Ok(new { status = "ready" })
-            : StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "not_ready" });
+            ? Ok(new { status = "ready", operativo })
+            : StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "not_ready", operativo });
     }
 
     [HttpGet("metrics")]
