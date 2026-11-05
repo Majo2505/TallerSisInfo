@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<ComunidadEfimera> Comunidades => Set<ComunidadEfimera>();
     public DbSet<LugarRecuperado> LugaresRecuperados => Set<LugarRecuperado>();
     public DbSet<Recomendacion> Recomendaciones => Set<Recomendacion>();
+    public DbSet<EventoUniversitario> EventosUniversitarios => Set<EventoUniversitario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
