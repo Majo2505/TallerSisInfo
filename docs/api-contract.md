@@ -446,10 +446,55 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `GET` | `/api/admin/lugares` | Catálogo completo (primero `EN_REVISION`) con cuántas veces se recomendó cada lugar |
 | `PATCH` | `/api/admin/lugares/{id}/estado` | Cambia el estado a `ACTIVO`, `EN_REVISION` o `INACTIVO`; queda en `historial_cambio`. `204`, `400 VALIDACION` o `404 NO_ENCONTRADO` |
 | `PATCH` | `/api/admin/lugares/{id}/validacion` | Marca un lugar como validado (`{ "validado": true }`) o le quita la validación (`false`). Es independiente del estado: un lugar `ACTIVO` puede seguir «Por validar» hasta que el equipo revise sus datos. Queda en `historial_cambio`. `204`, `400 VALIDACION` o `404 NO_ENCONTRADO` |
-| `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`) |
-| `PATCH` | `/api/admin/reportes/{id}` | HU16. Body `{ "estado": "RESUELTO" }` o `"DESCARTADO"`. Cierra un reporte `PENDIENTE` y guarda al admin como `revisor_id` y la fecha en `revisado_en`. **204**; 400 `VALIDACION` (otra decisión, incluida `PENDIENTE`: no se reabre); 404 `NO_ENCONTRADO`; 409 `YA_REVISADO` (ya tenía decisión: no se cambia) |
+| `GET` | `/api/admin/categorias` | Categorías del catálogo (para el formulario de lugar) |
+| `GET` | `/api/admin/campus` | Campus activos con su centro (`latitud`, `longitud`) y su radio (`radioMaxM`): un lugar tiene que quedar dentro de alguno |
+| `GET` | `/api/admin/lugares/{id}` | Un lugar con todos sus datos editables. `200` o `404 NO_ENCONTRADO` |
+| `POST` | `/api/admin/lugares` | Crea un lugar (queda `ACTIVO` y validado). **`201`** `{ "id": … }`; `400 VALIDACION`; `409 NOMBRE_REPETIDO`. Queda `CREATE` en `historial_cambio` |
+| `PUT` | `/api/admin/lugares/{id}` | Edita un lugar con las mismas reglas. **`204`**; `400`; `404`; `409 NOMBRE_REPETIDO`. Queda `UPDATE` (antes y después) en `historial_cambio` |
+| `DELETE` | `/api/admin/lugares/{id}` | Elimina un lugar **que nunca se usó**. **`204`**; `404`; `409 EN_USO` si ya aparece en recomendaciones, reportes o comunidades (hay que desactivarlo). Queda `DELETE` en `historial_cambio` |
+| `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`). Los que no son de un lugar ni de una comunidad se ven con objeto «General» |
+| `PATCH` | `/api/admin/reportes/{id}` | Body `{ "estado": "RESUELTO" }` o `"DESCARTADO"`. Cierra un reporte `PENDIENTE` y guarda al admin como `revisor_id` y la fecha en `revisado_en`. **204**; 400 `VALIDACION` (otra decisión, incluida `PENDIENTE`: no se reabre); 404 `NO_ENCONTRADO`; 409 `YA_REVISADO` (ya tenía decisión: no se cambia) |
 | `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas consultas al asistente con entrada, estado, modelo y latencia (1 a 200) |
 | `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio y los 5 lugares más recomendados |
+
+**Reglas del catálogo** (`ReglasLugar`, y en la base `uq_lugar_nombre` y `ck_lugar_horario`):
+
+| Campo | Regla |
+|---|---|
+| `nombre` | De 3 a 100 caracteres, sin espacios de más; único en el catálogo |
+| `descripcion` | Opcional, hasta 500 caracteres |
+| `categoriaId` | Una de `GET /api/admin/categorias` |
+| `latitud`, `longitud` | Dentro del radio de un campus activo (el mismo radio con el que se buscan lugares viables) |
+| `duracionEstimadaMin` | De 1 a 240 minutos |
+| `horaApertura`, `horaCierre` | `HH:mm`, las dos o ninguna; el cierre, después de la apertura |
+| `minAPieDesdeBloqueA` | Opcional, de 0 a 60 |
+
+Body de `POST` y `PUT`:
+
+```json
+{
+  "nombre": "Sala de Estudio Norte", "descripcion": "Mesas grandes y enchufes", "categoriaId": 2,
+  "latitud": -17.3716, "longitud": -66.1439, "duracionEstimadaMin": 40,
+  "horaApertura": "08:00", "horaCierre": "20:00", "minAPieDesdeBloqueA": 3
+}
+```
+
+## 6c. Reportes de los estudiantes
+
+Perfil → Ajustes → «Cuéntanos qué pasó». Requiere JWT. Los reportes quedan `PENDIENTE` y los revisa un administrador
+(`GET /api/admin/reportes` y `PATCH /api/admin/reportes/{id}`).
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Motivos | `ERROR_APP` (algo no funciona), `SUGERENCIA` y `LUGAR_INCORRECTO` (información incorrecta de un lugar). La base admite además `COMUNIDAD_INAPROPIADA` para más adelante | ✅ Definido |
+| Objeto | `LUGAR_INCORRECTO` lleva `lugarId`; los otros dos van sin lugar (en el panel se ven como «General»). Lo exige también la base (`ck_rep_objeto`) | ✅ Definido |
+| Descripción | De 10 a 500 caracteres (`ck_rep_descripcion`) | ✅ Definido |
+| Sin abusos | Un mismo lugar no se reporta otra vez mientras siga pendiente; como mucho 3 reportes pendientes por estudiante | ✅ Definido |
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `/api/reportes/lugares` | Lugares activos por nombre, para elegir cuál reportar |
+| `POST` | `/api/reportes` | `{ "motivo": "LUGAR_INCORRECTO", "lugarId": 4, "descripcion": "…" }` → **`201`** `{ "id": 12, "estado": "PENDIENTE" }`; `400 VALIDACION`; `404 NO_ENCONTRADO` (lugar); `409 YA_REPORTADO` o `DEMASIADOS_PENDIENTES` |
 
 ## 7. Lugares viables (HU6 — responsable: Ariana)
 
