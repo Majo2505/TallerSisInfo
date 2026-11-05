@@ -94,7 +94,7 @@ export class ErrorAuth extends Error {}
 
 type RespuestaAuth = { token: string; userId: number; nombre: string; email: string; rol?: Rol };
 
-async function autenticar(ruta: "login" | "register", cuerpo: object, rolRequerido?: Rol): Promise<Sesion> {
+async function autenticar(ruta: "login" | "register" | "google", cuerpo: object, rolRequerido?: Rol): Promise<Sesion> {
   let res: Response;
   try {
     res = await fetch(`${API_URL}/api/auth/${ruta}`, {
@@ -126,6 +126,8 @@ export const iniciarSesion = (correo: string, password: string) =>
 
 export const iniciarSesionAdmin = (correo: string, password: string) =>
   autenticar("login", { email: correo, password }, "ADMIN");
+
+export const iniciarSesionConGoogle = (idToken: string) => autenticar("google", { idToken });
 
 export const registrarse = (nombre: string, correo: string, password: string) =>
   autenticar("register", { nombre, email: correo, password });
