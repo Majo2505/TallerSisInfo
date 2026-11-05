@@ -1,0 +1,155 @@
+/* Formulario de lugar del catálogo: usa el modal y los campos de la app (hz-*) y agrega solo lo propio. */
+.modal {
+  max-width: 560px;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--error-fondo);
+  color: var(--error-texto);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.texto {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  resize: vertical;
+}
+
+.texto:focus {
+  outline: none;
+  border-color: var(--ucb-celeste);
+  box-shadow: 0 0 0 4px rgba(47, 127, 209, 0.16);
+}
+
+.contador {
+  justify-self: end;
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.grupo {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.grupo legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--ucb-marino);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.dos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+}
+
+.ayuda {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ucb-azul-medio);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.enlace:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Casilla propia (input oculto + .casilla), como en el resto de la app. */
+.casillaFila {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--ucb-marino);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.casillaFila input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.casilla {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.casilla::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  border-left: 2.5px solid var(--ucb-amarillo);
+  border-bottom: 2.5px solid var(--ucb-amarillo);
+  transform: rotate(-45deg) translateY(-1px);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.casillaFila input:checked + .casilla {
+  border-color: var(--ucb-marino);
+  background: var(--ucb-marino);
+}
+
+.casillaFila input:checked + .casilla::after {
+  opacity: 1;
+}
+
+.casillaFila input:focus-visible + .casilla {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .casilla,
+  .casilla::after {
+    transition: none;
+  }
+}
