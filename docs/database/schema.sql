@@ -100,6 +100,9 @@ CREATE TABLE lugar (
   CONSTRAINT ck_lugar_estado   CHECK (estado IN ('ACTIVO','EN_REVISION','INACTIVO')),
   CONSTRAINT ck_lugar_duracion CHECK (duracion_estimada_min > 0),
   CONSTRAINT ck_lugar_nombre   CHECK (CHAR_LENGTH(TRIM(nombre)) > 0),
+  CONSTRAINT uq_lugar_nombre   UNIQUE (nombre),                                  -- admin: dos lugares con el mismo nombre confunden al estudiante y al asistente
+  CONSTRAINT ck_lugar_horario  CHECK ((hora_apertura IS NULL AND hora_cierre IS NULL)
+                                   OR (hora_apertura IS NOT NULL AND hora_cierre IS NOT NULL AND hora_cierre > hora_apertura)),
   CONSTRAINT ck_lugar_rango_duracion CHECK (duracion_min IS NULL OR duracion_max IS NULL OR duracion_min <= duracion_max),
   CONSTRAINT ck_lugar_lat      CHECK (latitud  BETWEEN -90  AND 90),
   CONSTRAINT ck_lugar_lng      CHECK (longitud BETWEEN -180 AND 180),
@@ -275,15 +278,21 @@ CREATE TABLE reporte (
   usuario_id   INT          NOT NULL,
   lugar_id     INT          NULL,
   comunidad_id INT          NULL,
-  motivo       VARCHAR(30)  NOT NULL,
+  motivo       VARCHAR(30)  NOT NULL,                     -- ERROR_APP | SUGERENCIA | LUGAR_INCORRECTO | COMUNIDAD_INAPROPIADA
   descripcion  TEXT         NULL,
   estado       VARCHAR(12)  NOT NULL DEFAULT 'PENDIENTE',
   revisor_id   INT          NULL,
   created_at   DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   revisado_en  DATETIME(6)  NULL,
   PRIMARY KEY (id),
+  KEY ix_rep_estado (estado, created_at),
   CONSTRAINT ck_rep_estado  CHECK (estado IN ('PENDIENTE','RESUELTO','DESCARTADO')),
-  CONSTRAINT ck_rep_objeto  CHECK ((lugar_id IS NULL) <> (comunidad_id IS NULL)),
+  CONSTRAINT ck_rep_motivo  CHECK (motivo IN ('ERROR_APP','SUGERENCIA','LUGAR_INCORRECTO','COMUNIDAD_INAPROPIADA')),
+  -- Un reporte de un lugar apunta a ese lugar; uno de una comunidad, a esa comunidad; «algo no funciona» y las sugerencias, a nada.
+  CONSTRAINT ck_rep_objeto  CHECK ((motivo = 'LUGAR_INCORRECTO'      AND lugar_id IS NOT NULL AND comunidad_id IS NULL)
+                                OR (motivo = 'COMUNIDAD_INAPROPIADA' AND comunidad_id IS NOT NULL AND lugar_id IS NULL)
+                                OR (motivo IN ('ERROR_APP','SUGERENCIA') AND lugar_id IS NULL AND comunidad_id IS NULL)),
+  CONSTRAINT ck_rep_descripcion CHECK (CHAR_LENGTH(TRIM(descripcion)) BETWEEN 10 AND 500),     -- lo mismo que pide el formulario
   CONSTRAINT ck_rep_revision CHECK ((estado = 'PENDIENTE' AND revisor_id IS NULL AND revisado_en IS NULL)
                                  OR (estado <> 'PENDIENTE' AND revisor_id IS NOT NULL AND revisado_en IS NOT NULL)),
   CONSTRAINT fk_rep_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
