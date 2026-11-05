@@ -36,7 +36,7 @@ import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActivi
 import { iniciales } from "@/lib/iniciales";
 import { guardarConfiguracionMatching } from "@/lib/matching";
 import { useSesion } from "@/lib/useSesion";
-import { useComunidadesRealtime } from "@/lib/useComunidadesRealtime";
+import { EventoComunidad, useComunidadesRealtime } from "@/lib/useComunidadesRealtime";
 import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
@@ -225,19 +225,19 @@ function Comunidades() {
   }
 
   const comunidadIds = useMemo(() => descubrir?.comunidades.map((comunidad) => comunidad.id) ?? [], [descubrir]);
-  const alActualizarComunidad = useCallback((evento: { comunidadId: number; confirmados: number }) => {
-      setDescubrir((actual) =>
-        actual
-          ? {
-              ...actual,
-              comunidades: actual.comunidades.map((comunidad) =>
-                comunidad.id === evento.comunidadId
-                  ? { ...comunidad, confirmados: evento.confirmados }
-                  : comunidad,
-              ),
-            }
-          : actual,
-      );
+  const alActualizarComunidad = useCallback((evento: EventoComunidad) => {
+    setDescubrir((actual) => {
+      if (!actual) return actual;
+      if (evento.estado !== "ACTIVA") {
+        return { ...actual, comunidades: actual.comunidades.filter((comunidad) => comunidad.id !== evento.comunidadId) };
+      }
+      return {
+        ...actual,
+        comunidades: actual.comunidades.map((comunidad) =>
+          comunidad.id === evento.comunidadId ? { ...comunidad, confirmados: evento.confirmados } : comunidad,
+        ),
+      };
+    });
   }, []);
   useComunidadesRealtime(comunidadIds, alActualizarComunidad);
 
