@@ -1,8 +1,6 @@
 using Breaku.Application;
 using Microsoft.AspNetCore.Mvc;
 using Breaku.Infrastructure.Performance;
-using System.Globalization;
-using System.Text;
 
 namespace Breaku.Presentation;
 
@@ -48,22 +46,5 @@ public class HealthController : ControllerBase
 
     [HttpGet("metrics")]
     [Produces("text/plain")]
-    public IActionResult Metrics()
-    {
-        var output = new StringBuilder("# HELP breaku_http_requests_total Total HTTP requests by route.\n");
-        output.AppendLine("# TYPE breaku_http_requests_total counter");
-        output.AppendLine("# HELP breaku_http_errors_total HTTP 5xx responses by route.");
-        output.AppendLine("# TYPE breaku_http_errors_total counter");
-        output.AppendLine("# HELP breaku_http_request_duration_ms HTTP request duration statistics.");
-        output.AppendLine("# TYPE breaku_http_request_duration_ms gauge");
-        foreach (var metric in _metrics.Snapshot())
-        {
-            var labels = metric.Key.Replace("\"", "\\\"", StringComparison.Ordinal);
-            output.AppendLine($"breaku_http_requests_total{{route=\"{labels}\"}} {metric.Value.Requests.ToString(CultureInfo.InvariantCulture)}");
-            output.AppendLine($"breaku_http_errors_total{{route=\"{labels}\"}} {metric.Value.Errors.ToString(CultureInfo.InvariantCulture)}");
-            output.AppendLine($"breaku_http_request_duration_ms{{route=\"{labels}\",quantile=\"0.5\"}} {metric.Value.P50Milliseconds.ToString(CultureInfo.InvariantCulture)}");
-            output.AppendLine($"breaku_http_request_duration_ms{{route=\"{labels}\",quantile=\"0.95\"}} {metric.Value.P95Milliseconds.ToString(CultureInfo.InvariantCulture)}");
-        }
-        return Content(output.ToString(), "text/plain");
-    }
+    public IActionResult Metrics() => Content(_metrics.ToPrometheus(), "text/plain");
 }
