@@ -1,5 +1,6 @@
 using Breaku.Application.Perfil;
 using Breaku.Application.Admin;
+using Breaku.Application.Reportes;
 using Breaku.Application.Matching;
 using System.Text;
 using Breaku.Infrastructure;
@@ -77,6 +78,7 @@ builder.Services.AddScoped<BusquedaLugaresService>();
 builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
+builder.Services.AddScoped<ReporteService>();
 builder.Services.AddScoped<ExtraccionActividadService>();
 builder.Services.AddScoped<ComunidadService>();
 builder.Services.AddScoped<DescubrirComunidadesService>();
