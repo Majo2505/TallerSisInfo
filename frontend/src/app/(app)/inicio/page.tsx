@@ -19,6 +19,7 @@ import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import HeroePuente from "@/components/inicio/HeroePuente";
 import HeroeSinPuentes from "@/components/inicio/HeroeSinPuentes";
+import { ComunidadActiva, listarComunidades } from "@/lib/comunidades";
 import { Bloque, listarHorario } from "@/lib/horario";
 import { LugarViable, ResultadoLugares, buscarLugaresViables } from "@/lib/lugares";
 import { ESTADOS_ANIMO } from "@/lib/maqueta";
@@ -59,6 +60,12 @@ const aMin = (h: string) => {
 
 const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
+/** Tus actividades de hoy: cómo estás en cada una (la creaste, te invitaron o vas). */
+function etiquetaActividad(c: ComunidadActiva): string {
+  if (c.esMia) return "La creaste tú";
+  return c.miEstado === "CONFIRMADO" ? "Vas" : "Te invitaron";
+}
+
 function saludoPara(hora: number) {
   if (hora < 12) return "Buenos días";
   if (hora < 19) return "Buenas tardes";
@@ -76,6 +83,9 @@ export default function Inicio() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [sugeridas, setSugeridas] = useState<{ puenteId: number; resultado: ResultadoLugares | null; error: string } | null>(null);
+  // Tus actividades de hoy (las que creaste y aquellas a las que te invitaron), de Comunidades → Descubrir.
+  // null mientras carga o si falló: Inicio no muestra la tarjeta en vez de mostrar un error.
+  const [actividades, setActividades] = useState<ComunidadActiva[] | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setAhora(new Date()), 30_000);
@@ -92,6 +102,21 @@ export default function Inicio() {
       if (h.status === "fulfilled") setBloques(h.value);
       setCargando(false);
     });
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    listarComunidades()
+      .then((r) => {
+        if (!activo) return;
+        // Solo las propias y las de las que es parte: las de otros del campus se ven en Descubrir.
+        setActividades(r.comunidades.filter((c) => c.esMia || c.miEstado === "PENDIENTE" || c.miEstado === "CONFIRMADO"));
+      })
+      .catch(() => activo && setActividades(null));
     return () => {
       activo = false;
     };
@@ -290,6 +315,47 @@ export default function Inicio() {
               <span className={estilos.muestraPuente} /> {puentesHoy.length} {puentesHoy.length === 1 ? "puente" : "puentes"}
             </li>
           </ul>
+        </Pieza>
+      )}
+
+      {actividades && (
+        <Pieza as="section" className={`${estilos.tarjeta} ${estilos.zonaActividades}`}>
+          <div className={estilos.encabezado}>
+            <h2 className={estilos.subtitulo}>
+              Tus actividades de hoy
+            </h2>
+            <Link href="/comunidades?pestana=descubrir" className={estilos.verTodo}>
+              Ver todas <IconoFlechaDerecha tamano={14} />
+            </Link>
+          </div>
+          {actividades.length > 0 ? (
+            <ul className={estilos.actividades}>
+              {actividades.slice(0, 3).map((c) => (
+                <li key={c.id}>
+                  <Link href={`/comunidades?pestana=descubrir&comunidad=${c.id}`} className={estilos.actividad}>
+                    <span className={estilos.actividadTexto}>
+                      <strong>{c.actividad}</strong>
+                      <small>
+                        <IconoReloj tamano={13} /> {c.horaInicio}–{c.horaFin} · <IconoPersonas tamano={13} /> {c.confirmados}/
+                        {c.maxParticipantes}
+                      </small>
+                    </span>
+                    <span className={c.esMia || c.miEstado === "CONFIRMADO" ? estilos.actividadMia : estilos.actividadInvitada}>
+                      {etiquetaActividad(c)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={estilos.nota}>
+              Hoy no tienes actividades.{" "}
+              <Link href="/comunidades?pestana=crear" className={estilos.verTodo}>
+                Crea una
+              </Link>
+            </p>
+          )}
+          {actividades.length > 3 && <p className={estilos.nota}>Y {actividades.length - 3} más en Comunidades.</p>}
         </Pieza>
       )}
 
