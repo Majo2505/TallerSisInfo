@@ -52,12 +52,14 @@ public static class DependencyInjection
         AddAsistenteIa(services, configuration);
 
         services.AddHostedService<AvisoPuentesWorker>();
+        services.AddHostedService<CierreComunidadesWorker>();
         services.AddScoped<IUbicacionRepository, UbicacionRepository>();
         services.AddScoped<IPerfilRepository, PerfilRepository>();
         services.AddScoped<IMatchingRepository, MatchingRepository>();
         services.AddScoped<IExtraccionRepository, ExtraccionRepository>();
         services.AddScoped<IReporteRepository, ReporteRepository>();
         services.AddScoped<IComunidadRepository, ComunidadRepository>();
+        services.AddScoped<ICierreComunidadesService, CierreComunidadesService>();
         services.AddScoped<IDescubrirComunidadesRepository, DescubrirComunidadesRepository>();
         services.AddScoped<IAsistenciaRepository, AsistenciaRepository>();
         services.AddScoped<IActividadRepository, ActividadRepository>();
