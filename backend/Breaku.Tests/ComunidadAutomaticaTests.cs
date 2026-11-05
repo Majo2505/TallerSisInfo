@@ -135,6 +135,14 @@ public class ComunidadServiceTests
         public List<Participacion> Participaciones { get; } = [];
         public List<Notificacion> Avisos { get; } = [];
         public bool Falla { get; set; }
+        public List<int> VencidasArchivables { get; set; } = [];
+        public DateTime? UltimoCierre { get; private set; }
+
+        public Task<IReadOnlyList<int>> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default)
+        {
+            UltimoCierre = ahoraUtc;
+            return Task.FromResult<IReadOnlyList<int>>(VencidasArchivables);
+        }
 
         public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default) => Task.FromResult<Usuario?>(Usuario);
         public Task<ComunidadEfimera?> ObtenerComunidadAsync(int comunidadId, CancellationToken ct = default)

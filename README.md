@@ -118,6 +118,56 @@ curl -i http://localhost:5092/health/metrics
 
 `/health/ready` comprueba la conexión a la base de datos con un límite de 2 segundos y devuelve `503` si la instancia todavía no está lista. `/health/metrics` devuelve métricas Prometheus de solicitudes, errores 5xx y latencia media/P95 por ruta. Las métricas se mantienen en memoria y se reinician al reiniciar la API.
 
+#### Base compartida del equipo en Aiven (opcional)
+
+Además de su MySQL local, el equipo tiene una base **compartida** en [Aiven](https://aiven.io) (MySQL 8.4, plan **Free**) para probar juntos con los mismos datos y para la demo. Sirve, por ejemplo, para que una comunidad que crea una integrante le aparezca a otra en **Comunidades → Descubrir**.
+
+**Para el día a día sigue usando tu MySQL local.** La base compartida es de todos: lo que se crea, cambia o borra ahí lo ve el resto del equipo al instante, y una migración aplicada a destiempo rompe la app de las demás.
+
+**Conectarte.** Pide los datos de conexión **por mensaje privado** a quien administra el servicio (nunca van en el repositorio, en un issue ni en un chat grupal) y reemplaza estas 5 líneas en tu `backend/.env`:
+
+```
+DB_HOST=<host de Aiven>.aivencloud.com
+DB_PORT=<puerto de Aiven>
+DB_NAME=breaku
+DB_USER=avnadmin
+DB_PASSWORD=<contraseña de Aiven>
+```
+
+Deja el resto de tu `.env` como está (`FRONTEND_ORIGIN`, tu propio `JWT_SECRET`, la configuración del LLM). Reinicia la API y comprueba con `curl -i http://localhost:5092/health/db` (en Windows, `curl.exe`): tiene que responder `200 OK`. Para volver a tu base local, cambia esas 5 líneas por las tuyas; conviene dejar las locales **comentadas con `#` en el mismo `.env`** y no en otro archivo (el `.gitignore` solo ignora el archivo llamado exactamente `.env`).
+
+- **No hay que tocar el código.** La conexión cifra solo (Aiven exige SSL) y el esquema funciona con la configuración estricta de Aiven (`sql_mode` con `ANSI` y `sql_require_primary_key`): se probó con `schema.sql`, los 4 seeds y la API completa.
+- La primera vez que alguien se conecta no hay que cargar nada: la base ya tiene `schema.sql` y los 4 seeds (usuario de prueba, catálogo, sede Cochabamba y compañeros del matching).
+
+**Ver las tablas.** Cualquiera de estas, con los mismos datos de conexión y **SSL activado**:
+
+| Herramienta | Cómo |
+|---|---|
+| Línea de comandos | `mysql -h <host> -P <puerto> -u avnadmin -p --ssl-mode=REQUIRED`, luego `USE breaku;` y `SHOW TABLES;`. En Windows usa la ruta completa a `mysql.exe` (por ejemplo `"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"`) |
+| VS Code | Extensión **MySQL** de *Database Client*: nueva conexión MySQL con host, puerto, `avnadmin`, contraseña, base `breaku` y el interruptor **SSL** encendido |
+| DBeaver | Conexión MySQL; en la pestaña **SSL**, marcar *Use SSL* |
+| MySQL Workbench | Pestaña **SSL**: *Require* sin certificado, o *Require and Verify CA* con el `ca.pem` que se descarga en Aiven (**Overview → CA certificate**). Con *Require* y un certificado a la vez da el error «Invalid ssl-mode». Algunas versiones se quedan colgadas con Aiven: usa otra herramienta de esta tabla |
+
+En la grilla de esas herramientas se puede editar o borrar con un clic: **úsalas para mirar** y avisa al equipo antes de cambiar datos.
+
+**Reglas de la base compartida**
+
+1. **Las migraciones las aplica una sola persona, y solo después de unir el PR a `main`.** Si tu código usa una columna que la base todavía no tiene (por ejemplo, tu rama trae una migración nueva que nadie aplicó), la API responde `500` en todo lo que use esa tabla y en su log aparece `Unknown column '…'`. Y si alguien aplica una migración que borra o renombra una columna, falla el código de quienes no actualizaron. Si te pasa, actualiza tu rama con `main` o avisa a quien administra la base.
+2. **Solo datos de prueba**, nunca datos reales de estudiantes: todo el equipo tiene la contraseña.
+3. **Respaldo antes de cada demo:** en Aiven, **Backups**, o desde tu herramienta exporta la base `breaku`.
+4. **Si una contraseña o clave se filtra** (por ejemplo, en una captura o en un chat), se cambia ese mismo día: en Aiven, **Overview → Password → ↻**; después hay que pasar la nueva a cada integrante. Lo mismo con la clave del LLM.
+5. Varias APIs pueden usar la base a la vez: los avisos de puente (HU4) no se duplican, porque la tabla lo impide con un `UNIQUE`. Para la demo, igual conviene que corra **una sola** API.
+
+**Si algo falla**
+
+| Síntoma | Causa probable |
+|---|---|
+| `/health/db` responde `503` | Datos de conexión mal copiados en el `.env` (sobre todo la contraseña) o el servicio no está **Running** en Aiven |
+| La conexión se queda colgada | El servicio se está reconstruyendo (después de cambiar de plan) o tu red bloquea el puerto. Pruébalo en PowerShell con `Test-NetConnection <host> -Port <puerto>`: tiene que dar `TcpTestSucceeded : True` |
+| `Access denied for user 'avnadmin'` | Contraseña equivocada o ya cambiada: pide la actual |
+| `500` y `Unknown column` en el log | Base y código en versiones distintas: mira la regla 1 |
+| El servicio está apagado | El plan Free puede apagarse si nadie lo usa por un tiempo: quien administra lo vuelve a encender desde la consola de Aiven |
+
 #### Usuario de prueba (solo desarrollo)
 
 > **Ojo:** solo para desarrollo local, nunca para producción. La contraseña es pública en este repositorio.

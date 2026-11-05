@@ -4,6 +4,8 @@ using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Breaku.Api.Hubs;
 
 namespace Breaku.Api.Controllers;
 
@@ -17,12 +19,15 @@ public class ComunidadesController : ControllerBase
     private readonly ComunidadService _service;
     private readonly DescubrirComunidadesService _descubrir;
     private readonly AsistenciaService _asistencia;
+    private readonly IHubContext<ComunidadHub> _hub;
 
-    public ComunidadesController(ComunidadService service, DescubrirComunidadesService descubrir, AsistenciaService asistencia)
+    public ComunidadesController(ComunidadService service, DescubrirComunidadesService descubrir, AsistenciaService asistencia,
+        IHubContext<ComunidadHub> hub)
     {
         _service = service;
         _descubrir = descubrir;
         _asistencia = asistencia;
+        _hub = hub;
     }
 
     private int UsuarioId =>
@@ -73,7 +78,11 @@ public class ComunidadesController : ControllerBase
     {
         try
         {
-            return Ok(await _asistencia.ResponderAsync(UsuarioId, id, body.Asisto, ct));
+            var respuesta = await _asistencia.ResponderAsync(UsuarioId, id, body.Asisto, ct);
+            await _hub.Clients.Group(ComunidadHub.Grupo(id)).SendAsync(
+                "comunidadActualizada",
+                new ComunidadEstadoActualizado(respuesta.ComunidadId, "ACTIVA", respuesta.Confirmados), ct);
+            return Ok(respuesta);
         }
         catch (ReglaNegocioException ex)
         {

@@ -12,6 +12,20 @@ public sealed class DescubrirComunidadesRepository : IDescubrirComunidadesReposi
     public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default)
         => _db.Usuarios.AsNoTracking().Include(u => u.ZonaActual).FirstOrDefaultAsync(u => u.Id == usuarioId && u.Activo, ct);
 
+    public Task<bool> PuedeVerAsync(int usuarioId, int comunidadId, int? deOtrosEnZona, DateTime ahoraUtc, CancellationToken ct = default)
+    {
+        var participaciones = _db.Set<Participacion>();
+
+        return (from c in _db.Comunidades.AsNoTracking()
+                join u in _db.Usuarios on c.CreadorId equals u.Id
+                where c.Id == comunidadId && c.Estado == ComunidadEfimera.EstadoActiva && c.Fin > ahoraUtc
+                      && (c.CreadorId == usuarioId
+                          || participaciones.Any(p => p.ComunidadId == c.Id && p.UsuarioId == usuarioId)
+                          || (deOtrosEnZona != null && u.Activo && u.VisibleMatching && u.ZonaActualId == deOtrosEnZona))
+                select c.Id)
+            .AnyAsync(ct);
+    }
+
     public Task<List<ComunidadActiva>> ListarActivasAsync(int usuarioId, int? deOtrosEnZona, DateTime ahoraUtc, DateTime hastaUtc,
         int maximo, CancellationToken ct = default)
     {

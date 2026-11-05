@@ -57,6 +57,13 @@ public class DescubrirComunidadesServiceTests
     {
         public int? ZonaPedida { get; private set; }
         public DateTime HastaPedido { get; private set; }
+        public bool Visible { get; set; }
+
+        public Task<bool> PuedeVerAsync(int usuarioId, int comunidadId, int? deOtrosEnZona, DateTime ahoraUtc, CancellationToken ct = default)
+        {
+            ZonaPedida = deOtrosEnZona;
+            return Task.FromResult(Visible);
+        }
 
         public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default) => Task.FromResult(usuario);
 
@@ -151,4 +158,21 @@ public class DescubrirComunidadesServiceTests
 
         Assert.Equal("NO_ENCONTRADO", ex.Codigo);
     }
+
+    [Fact]
+    public async Task Solo_puede_suscribirse_a_una_comunidad_que_puede_ver()
+    {
+        var repo = new RepositorioFalso(Estudiante(), []) { Visible = true };
+        var servicio = new DescubrirComunidadesService(repo, new RelojFijo());
+
+        Assert.True(await servicio.PuedeVerAsync(7, 12));
+        Assert.Equal(2, repo.ZonaPedida);
+
+        repo.Visible = false;
+        Assert.False(await servicio.PuedeVerAsync(7, 12));
+    }
+
+    [Fact]
+    public async Task Sin_cuenta_no_puede_suscribirse()
+        => Assert.False(await new DescubrirComunidadesService(new RepositorioFalso(null, []) { Visible = true }, new RelojFijo()).PuedeVerAsync(7, 12));
 }

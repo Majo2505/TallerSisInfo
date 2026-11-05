@@ -10,6 +10,22 @@ public sealed class ComunidadRepository : IComunidadRepository
     private readonly AppDbContext _db;
     public ComunidadRepository(AppDbContext db) => _db = db;
 
+    public async Task<IReadOnlyList<int>> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default)
+    {
+        var ids = await _db.Comunidades
+            .Where(c => c.Estado == ComunidadEfimera.EstadoActiva && c.Fin <= ahoraUtc)
+            .Select(c => c.Id)
+            .ToListAsync(ct);
+        if (ids.Count == 0) return ids;
+
+        await _db.Comunidades
+            .Where(c => ids.Contains(c.Id) && c.Estado == ComunidadEfimera.EstadoActiva)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(c => c.Estado, ComunidadEfimera.EstadoArchivada)
+                .SetProperty(c => c.UpdatedAt, ahoraUtc), ct);
+        return ids;
+    }
+
     public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default)
         => _db.Usuarios.AsNoTracking().Include(u => u.ZonaActual).FirstOrDefaultAsync(u => u.Id == usuarioId && u.Activo, ct);
 

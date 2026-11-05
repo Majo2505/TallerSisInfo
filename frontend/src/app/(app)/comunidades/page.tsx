@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
@@ -36,6 +36,7 @@ import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActivi
 import { iniciales } from "@/lib/iniciales";
 import { guardarConfiguracionMatching } from "@/lib/matching";
 import { useSesion } from "@/lib/useSesion";
+import { EventoComunidad, useComunidadesRealtime } from "@/lib/useComunidadesRealtime";
 import estilos from "./comunidades.module.css";
 
 type Pestana = "libres" | "crear" | "descubrir";
@@ -222,6 +223,23 @@ function Comunidades() {
     );
     aviso.mostrar(r.mensaje);
   }
+
+  const comunidadIds = useMemo(() => descubrir?.comunidades.map((comunidad) => comunidad.id) ?? [], [descubrir]);
+  const alActualizarComunidad = useCallback((evento: EventoComunidad) => {
+    setDescubrir((actual) => {
+      if (!actual) return actual;
+      if (evento.estado !== "ACTIVA") {
+        return { ...actual, comunidades: actual.comunidades.filter((comunidad) => comunidad.id !== evento.comunidadId) };
+      }
+      return {
+        ...actual,
+        comunidades: actual.comunidades.map((comunidad) =>
+          comunidad.id === evento.comunidadId ? { ...comunidad, confirmados: evento.confirmados } : comunidad,
+        ),
+      };
+    });
+  }, []);
+  useComunidadesRealtime(comunidadIds, alActualizarComunidad);
 
   const activas = descubrir?.estado === "OK" ? descubrir.comunidades : [];
   const nombresCaras = [...new Set(activas.map((c) => (c.esMia ? (sesion?.usuario.nombre ?? "Tú") : c.creador)))].slice(0, 4);
