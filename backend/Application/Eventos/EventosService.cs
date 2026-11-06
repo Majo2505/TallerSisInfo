@@ -37,24 +37,35 @@ public sealed class EventosService
     {
         var ahoraUtc = _reloj.GetUtcNow().UtcDateTime;
         var ahoraLocal = ReglasNotificacion.AHoraLocal(ahoraUtc);
-        var siguienteClase = (await _horarios.ListarPorUsuarioAsync(usuarioId, ct))
-            .Where(h => h.Asiste && h.DiaSemana == (int)ahoraLocal.DayOfWeek && h.HoraInicio > TimeOnly.FromDateTime(ahoraLocal))
-            .OrderBy(h => h.HoraInicio)
-            .Select(h => h.HoraInicio)
+        var horarios = await _horarios.ListarPorUsuarioAsync(usuarioId, ct);
+        var siguienteClase = horarios
+            .Where(h => h.Asiste && h.DiaSemana is >= 1 and <= 6)
+            .Select(h =>
+            {
+                var diasHasta = (h.DiaSemana - (int)ahoraLocal.DayOfWeek + 7) % 7;
+                var fecha = ahoraLocal.Date.AddDays(diasHasta);
+                var inicio = fecha + h.HoraInicio.ToTimeSpan();
+                return inicio <= ahoraLocal ? inicio.AddDays(7) : inicio;
+            })
+            .OrderBy(inicio => inicio)
             .FirstOrDefault();
         if (siguienteClase == default) return [];
 
-        var limiteLocal = ahoraLocal.Date + siguienteClase.ToTimeSpan();
+        var limiteLocal = siguienteClase;
         var limiteUtc = DateTime.SpecifyKind(limiteLocal - ReglasNotificacion.DesfaseBolivia, DateTimeKind.Utc);
         var puentes = await _puentes.ListarPorUsuarioAsync(usuarioId, ct);
         var eventos = await _eventos.ListarVigentesAsync(ahoraUtc, limiteUtc, ct);
-        var dia = (int)ahoraLocal.DayOfWeek;
 
         return eventos
-            .Where(e => ReglasNotificacion.AHoraLocal(e.Inicio).DayOfWeek == ahoraLocal.DayOfWeek)
-            .Where(e => !puentes.Any(p => p.DiaSemana == dia &&
-                p.HoraInicio < TimeOnly.FromDateTime(e.Fin) &&
-                p.HoraFin > TimeOnly.FromDateTime(e.Inicio)))
+            .Where(e =>
+            {
+                var inicioLocal = ReglasNotificacion.AHoraLocal(e.Inicio);
+                var finLocal = ReglasNotificacion.AHoraLocal(e.Fin);
+                return finLocal > ahoraLocal && inicioLocal < limiteLocal &&
+                    !puentes.Any(p => p.DiaSemana == (int)inicioLocal.DayOfWeek &&
+                        p.HoraInicio < TimeOnly.FromDateTime(finLocal) &&
+                        p.HoraFin > TimeOnly.FromDateTime(inicioLocal));
+            })
             .Select(e => new EventoRecomendadoDto(e.Id, e.Titulo, e.Descripcion,
                 ReglasNotificacion.AHoraLocal(e.Inicio).ToString("HH:mm"),
                 ReglasNotificacion.AHoraLocal(e.Fin).ToString("HH:mm"), e.Lugar, e.FuenteUrl))
