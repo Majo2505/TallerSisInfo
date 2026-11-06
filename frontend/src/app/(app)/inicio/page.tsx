@@ -25,6 +25,7 @@ import { LugarViable, ResultadoLugares, buscarLugaresViables } from "@/lib/lugar
 import { ESTADOS_ANIMO } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
+import { EventoRecomendado, listarEventosRecomendados } from "@/lib/eventos";
 import estilos from "./inicio.module.css";
 
 const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
@@ -86,6 +87,7 @@ export default function Inicio() {
   // Tus actividades de hoy (las que creaste y aquellas a las que te invitaron), de Comunidades → Descubrir.
   // null mientras carga o si falló: Inicio no muestra la tarjeta en vez de mostrar un error.
   const [actividades, setActividades] = useState<ComunidadActiva[] | null>(null);
+  const [eventos, setEventos] = useState<EventoRecomendado[]>([]);
 
   useEffect(() => {
     const t = setInterval(() => setAhora(new Date()), 30_000);
@@ -102,6 +104,17 @@ export default function Inicio() {
       if (h.status === "fulfilled") setBloques(h.value);
       setCargando(false);
     });
+    return () => {
+      activo = false;
+    };
+  }, [sesion]);
+
+  useEffect(() => {
+    if (!sesion) return;
+    let activo = true;
+    listarEventosRecomendados()
+      .then((resultado) => activo && setEventos(resultado))
+      .catch(() => activo && setEventos([]));
     return () => {
       activo = false;
     };
@@ -356,6 +369,28 @@ export default function Inicio() {
             </p>
           )}
           {actividades.length > 3 && <p className={estilos.nota}>Y {actividades.length - 3} más en Comunidades.</p>}
+        </Pieza>
+      )}
+
+      {eventos.length > 0 && (
+        <Pieza as="section" className={`${estilos.tarjeta} ${estilos.zonaActividades}`}>
+          <div className={estilos.encabezado}>
+            <h2 className={estilos.subtitulo}>Eventos recomendados</h2>
+            <span className={estilos.nota}>Antes de tu próxima clase</span>
+          </div>
+          <ul className={estilos.actividades}>
+            {eventos.slice(0, 3).map((evento) => (
+              <li key={evento.id}>
+                <a href={evento.fuenteUrl} target="_blank" rel="noreferrer" className={estilos.actividad}>
+                  <span className={estilos.actividadTexto}>
+                    <strong>{evento.titulo}</strong>
+                    <small><IconoReloj tamano={13} /> {evento.inicio}–{evento.fin}{evento.lugar ? ` · ${evento.lugar}` : ""}</small>
+                  </span>
+                  <span className={estilos.actividadInvitada}>Instagram UCB</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </Pieza>
       )}
 
