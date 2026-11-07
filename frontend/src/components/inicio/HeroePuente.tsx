@@ -11,6 +11,7 @@ const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
 
 type Props = {
   activo: boolean;
+  despuesDeClases?: boolean;
   minutos: number;
   rango: string;
   empiezaEn?: number;
@@ -19,7 +20,7 @@ type Props = {
   rutaIa: string;
 };
 
-export default function HeroePuente({ activo, minutos, rango, empiezaEn, usado, siguiente, rutaIa }: Props) {
+export default function HeroePuente({ activo, despuesDeClases = false, minutos, rango, empiezaEn, usado, siguiente, rutaIa }: Props) {
   const reducir = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -53,7 +54,13 @@ export default function HeroePuente({ activo, minutos, rango, empiezaEn, usado, 
         <div className={estilos.datos}>
           <span className={estilos.estado}>
             <span className={activo ? estilos.latido : estilos.puntoQuieto} aria-hidden="true" />
-            {activo ? "Puente activo" : "Próximo puente"}
+            {despuesDeClases
+              ? activo
+                ? "Terminaste tus clases"
+                : "Después de clases"
+              : activo
+                ? "Puente activo"
+                : "Próximo puente"}
           </span>
 
           <p className={estilos.minutos}>
@@ -78,7 +85,7 @@ export default function HeroePuente({ activo, minutos, rango, empiezaEn, usado, 
         </div>
 
         {activo && (
-          <div className={estilos.anillo} role="img" aria-label={`${usado}% del puente usado`}>
+          <div className={estilos.anillo} role="img" aria-label={`${usado}% de ${despuesDeClases ? "tu tiempo libre" : "tu puente"} usado`}>
             <svg viewBox="0 0 72 72" aria-hidden="true">
               <circle cx="36" cy="36" r={RADIO} className={estilos.pista} />
               <motion.circle

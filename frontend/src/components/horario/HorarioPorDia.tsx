@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { IconoMas, IconoRayo } from "@/components/app/Iconos";
+import { IconoLuna, IconoMas, IconoRayo } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { Bloque, enChoque } from "@/lib/horario";
-import { Puente, duracionMin, hhmm } from "@/lib/puentes";
+import { Puente, duracionMin, esDespuesDeClases, hhmm, soloEntreClases } from "@/lib/puentes";
 import estilos from "./HorarioPorDia.module.css";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -55,7 +55,7 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
       <div className={estilos.dias} role="tablist" aria-label="Días de la semana">
         {[1, 2, 3, 4, 5, 6].map((d) => {
           const clases = bloques.filter((b) => b.diaSemana === d).length;
-          const huecos = puentes.filter((p) => p.diaSemana === d).length;
+          const huecos = soloEntreClases(puentes).filter((p) => p.diaSemana === d).length;
           return (
             <motion.button
               key={d}
@@ -157,12 +157,18 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
                     )}
                   </motion.li>
                 ) : (
-                  <motion.li key={`p${el.puente.id}`} className={estilos.puente} variants={item}>
+                  <motion.li
+                    key={`p${el.puente.id}`}
+                    className={esDespuesDeClases(el.puente) ? `${estilos.puente} ${estilos.despues}` : estilos.puente}
+                    variants={item}
+                  >
                     <span className={estilos.iconoPuente}>
-                      <IconoRayo tamano={16} />
+                      {esDespuesDeClases(el.puente) ? <IconoLuna tamano={16} /> : <IconoRayo tamano={16} />}
                     </span>
                     <span>
-                      <strong>Puente libre · {duracionMin(el.puente)} min</strong>
+                      <strong>
+                        {esDespuesDeClases(el.puente) ? "Libre después de clases" : "Puente libre"} · {duracionMin(el.puente)} min
+                      </strong>
                       <small>
                         {hhmm(el.puente.horaInicio)} – {hhmm(el.puente.horaFin)}
                       </small>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ESTADOS_ANIMO, EstadoAnimo } from "@/lib/maqueta";
-import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
+import { Puente, duracionMin, esDespuesDeClases, hhmm, listarPuentes } from "@/lib/puentes";
 import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendaciones";
 import { useSesion } from "@/lib/useSesion";
 import FondoVivo from "./FondoVivo";
@@ -146,7 +146,9 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
                 valor={puenteId ? String(puenteId) : ""}
                 opciones={puentes.map((p) => ({
                   valor: String(p.id),
-                  etiqueta: `${DIAS[p.diaSemana]}, de ${hhmm(p.horaInicio)} a ${hhmm(p.horaFin)} (${duracionMin(p)} min)`,
+                  etiqueta: esDespuesDeClases(p)
+                    ? `${DIAS[p.diaSemana]}, después de clases: ${hhmm(p.horaInicio)} a ${hhmm(p.horaFin)}`
+                    : `${DIAS[p.diaSemana]}, de ${hhmm(p.horaInicio)} a ${hhmm(p.horaFin)} (${duracionMin(p)} min)`,
                 }))}
                 onCambio={(v) => setPuenteId(Number(v))}
                 etiqueta="Para qué puente"
@@ -198,7 +200,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
         <span className={estilos.resumenAnimo}>
           <Icono tamano={16} /> {actual.nombre}
         </span>
-        <h1 className={estilos.resumenTitulo}>Para tu puente</h1>
+        <h1 className={estilos.resumenTitulo}>{puente && esDespuesDeClases(puente) ? "Para después de clases" : "Para tu puente"}</h1>
         <p className={estilos.resumenDetalle}>
           {puente
             ? `${DIAS[puente.diaSemana]}, de ${hhmm(puente.horaInicio)} a ${hhmm(puente.horaFin)}`

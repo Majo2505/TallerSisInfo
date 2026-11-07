@@ -6,6 +6,16 @@ public static class ReglasHorario
 
     public static readonly TimeOnly FinMasTarde = new(21, 0);
 
+    public const int DuracionMinimaMin = 45;
+
+    public const string MensajeDuracionMinima = "Una clase dura al menos 45 minutos.";
+
+    /// <summary>La última hora a la que puede empezar una clase (20:15), para que dure 45 min antes de las 21:00.</summary>
+    public static readonly TimeOnly InicioMasTarde = FinMasTarde.AddMinutes(-DuracionMinimaMin);
+
+    /// <summary>La primera hora a la que puede terminar una clase (08:00), si empezó a las 07:15.</summary>
+    public static readonly TimeOnly FinMasTemprano = InicioMasTemprano.AddMinutes(DuracionMinimaMin);
+
     public static string? ValidarBloque(string? materia, int diaSemana, TimeOnly inicio, TimeOnly fin)
     {
         if (string.IsNullOrWhiteSpace(materia)) return "La materia es obligatoria.";
@@ -14,6 +24,7 @@ public static class ReglasHorario
         if (inicio < InicioMasTemprano) return "Las clases empiezan desde las 07:15.";
         if (fin > FinMasTarde) return "Las clases terminan, como muy tarde, a las 21:00.";
         if (fin <= inicio) return "La hora de fin tiene que ser posterior a la hora de inicio.";
+        if ((fin - inicio).TotalMinutes < DuracionMinimaMin) return MensajeDuracionMinima;
         return null;
     }
 
