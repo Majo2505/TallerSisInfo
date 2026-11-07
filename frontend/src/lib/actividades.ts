@@ -18,16 +18,17 @@ export type RespuestaExtraccion = {
   supuestos: CampoActividad[];
 };
 
-export const extraerActividad = (texto: string, anterior: ActividadExtraida | null = null) =>
+/** `consultaAnteriorId`: el `consultaId` de la respuesta anterior, para que la auditoría vea los turnos como una sola consulta. */
+export const extraerActividad = (texto: string, anterior: ActividadExtraida | null = null, consultaAnteriorId: number | null = null) =>
   pedirApi<RespuestaExtraccion>("/api/actividades/extraer", {
     method: "POST",
-    body: JSON.stringify({ texto, anterior }),
+    body: JSON.stringify({ texto, anterior, consultaAnteriorId }),
   });
 
-export const revisarActividad = (texto: string, actividad: ActividadExtraida) =>
+export const revisarActividad = (texto: string, actividad: ActividadExtraida, consultaAnteriorId: number | null = null) =>
   pedirApi<RespuestaExtraccion>("/api/actividades/revisar", {
     method: "POST",
-    body: JSON.stringify({ texto, actividad }),
+    body: JSON.stringify({ texto, actividad, consultaAnteriorId }),
   });
 
 export function formatearDuracion(minutos: number): string {
