@@ -90,6 +90,7 @@ CREATE TABLE lugar (
   min_a_pie_desde_bloque_a SMALLINT    NULL,
   recomendable           BOOLEAN       NOT NULL DEFAULT TRUE,
   validado               BOOLEAN       NOT NULL DEFAULT TRUE,
+  foto_actualizada_en    DATETIME(6)   NULL,                                   -- admin: cuándo cambió la foto (versión de la URL); NULL = sin foto
   created_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   created_by             INT           NOT NULL,
@@ -109,6 +110,21 @@ CREATE TABLE lugar (
   CONSTRAINT fk_lugar_categoria  FOREIGN KEY (categoria_id) REFERENCES categoria (id),
   CONSTRAINT fk_lugar_created_by FOREIGN KEY (created_by)   REFERENCES usuario (id),
   CONSTRAINT fk_lugar_updated_by FOREIGN KEY (updated_by)   REFERENCES usuario (id)
+) ENGINE=InnoDB;
+
+-- admin: foto real del lugar, aparte para que las listas no carguen los bytes. Una por lugar.
+CREATE TABLE lugar_foto (
+  lugar_id        INT          NOT NULL,
+  contenido       MEDIUMBLOB   NOT NULL,
+  tipo_mime       VARCHAR(20)  NOT NULL,
+  bytes           INT          NOT NULL,
+  actualizada_en  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  actualizada_por INT          NOT NULL,
+  PRIMARY KEY (lugar_id),
+  CONSTRAINT ck_foto_mime  CHECK (tipo_mime IN ('image/jpeg','image/png','image/webp')),
+  CONSTRAINT ck_foto_bytes CHECK (bytes BETWEEN 1 AND 2097152),
+  CONSTRAINT fk_foto_lugar FOREIGN KEY (lugar_id)        REFERENCES lugar (id) ON DELETE CASCADE,
+  CONSTRAINT fk_foto_admin FOREIGN KEY (actualizada_por) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE horario (
