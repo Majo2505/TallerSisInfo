@@ -3,6 +3,7 @@ namespace Breaku.Domain;
 public class Notificacion
 {
     public const string TipoPuenteDisponible = "PUENTE_DISPONIBLE";
+    public const string TipoDespuesDeClases = "DESPUES_DE_CLASES";
     public const string TipoInvitacionComunidad = "INVITACION_COMUNIDAD";
     public const string TipoComunidadCerrada = "COMUNIDAD_CERRADA";
 

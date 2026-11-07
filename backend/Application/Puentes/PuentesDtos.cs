@@ -4,5 +4,6 @@ public record PuenteDto(
     int Id,
     int DiaSemana,
     string HoraInicio,
-    string HoraFin
+    string HoraFin,
+    string Tipo
 );

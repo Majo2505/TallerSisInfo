@@ -45,7 +45,8 @@ public class NotificacionRepository : INotificacionRepository
 
     public Task<List<Notificacion>> ListarActivasDePuenteAsync(int usuarioId, CancellationToken ct = default)
         => _db.Notificaciones.AsNoTracking()
-            .Where(n => n.UsuarioId == usuarioId && n.Activa && n.Tipo == Notificacion.TipoPuenteDisponible)
+            .Where(n => n.UsuarioId == usuarioId && n.Activa
+                        && (n.Tipo == Notificacion.TipoPuenteDisponible || n.Tipo == Notificacion.TipoDespuesDeClases))
             .ToListAsync(ct);
 
     public Task DesactivarAsync(IReadOnlyCollection<long> ids, CancellationToken ct = default)
