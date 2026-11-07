@@ -301,9 +301,11 @@ export default function Campus() {
         )}
       </Pieza>
 
-      <Pieza>
-        <p className={estilos.nota}>Solo mostramos lugares aprobados por el administrador. Los que dicen «Por validar» todavía los está revisando el equipo.</p>
-      </Pieza>
+      {resultado?.lugares.some((l) => !l.validado) && (
+        <Pieza>
+          <p className={estilos.nota}>«Por validar»: el equipo todavía está revisando los datos de ese lugar.</p>
+        </Pieza>
+      )}
     </Entrada>
   );
 }

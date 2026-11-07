@@ -28,7 +28,8 @@
   padding: 10px 10px 0;
 }
 
-.portada > svg {
+.portada > svg,
+.portada > img {
   height: 96px;
 }
 

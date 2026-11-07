@@ -375,7 +375,7 @@ export default function Inicio() {
                 whileHover={reducir ? undefined : { y: -4 }}
                 transition={RESORTE_TOQUE}
               >
-                <ArteCategoria categoria={CON_ILUSTRACION.includes(l.categoria.toLowerCase()) ? l.categoria : "Descanso"} />
+                <ArteCategoria categoria={CON_ILUSTRACION.includes(l.categoria.toLowerCase()) ? l.categoria : "Descanso"} fotoUrl={l.fotoUrl} />
                 <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
                 <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
                 <p className={estilos.lugarMeta}>
