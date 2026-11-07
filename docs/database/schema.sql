@@ -139,11 +139,13 @@ CREATE TABLE puente (
   dia_semana  SMALLINT NOT NULL,
   hora_inicio TIME     NOT NULL,
   hora_fin    TIME     NOT NULL,
+  tipo        VARCHAR(20) NOT NULL DEFAULT 'ENTRE_CLASES',
   PRIMARY KEY (id),
   CONSTRAINT uq_puente_slot UNIQUE (usuario_id, dia_semana, hora_inicio),
   KEY ix_puente_matching (dia_semana, hora_inicio, hora_fin),
   CONSTRAINT ck_puente_dia   CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_puente_horas CHECK (hora_fin > hora_inicio),
+  CONSTRAINT ck_puente_tipo  CHECK (tipo IN ('ENTRE_CLASES','DESPUES_DE_CLASES')),
   CONSTRAINT fk_puente_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
@@ -264,10 +266,10 @@ CREATE TABLE notificacion (
   CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),
   CONSTRAINT uq_notif_comunidad UNIQUE (usuario_id, comunidad_id, tipo),
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
-  CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
-  CONSTRAINT ck_notif_ref  CHECK ((tipo = 'PUENTE_DISPONIBLE' AND comunidad_id IS NULL
+  CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
+  CONSTRAINT ck_notif_ref  CHECK ((tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES') AND comunidad_id IS NULL
                                    AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL)
-                               OR (tipo <> 'PUENTE_DISPONIBLE' AND comunidad_id IS NOT NULL
+                               OR (tipo NOT IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES') AND comunidad_id IS NOT NULL
                                    AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL)),
   CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
