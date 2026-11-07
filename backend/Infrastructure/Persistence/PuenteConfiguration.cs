@@ -16,6 +16,7 @@ public class PuenteConfiguration : IEntityTypeConfiguration<Puente>
         builder.Property(p => p.DiaSemana).HasColumnName("dia_semana");
         builder.Property(p => p.HoraInicio).HasColumnName("hora_inicio").HasColumnType("time");
         builder.Property(p => p.HoraFin).HasColumnName("hora_fin").HasColumnType("time");
+        builder.Property(p => p.Tipo).HasColumnName("tipo").HasMaxLength(20);
 
         builder.HasOne<Usuario>().WithMany().HasForeignKey(p => p.UsuarioId);
     }

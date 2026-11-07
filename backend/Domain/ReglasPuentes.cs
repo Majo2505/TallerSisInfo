@@ -6,4 +6,7 @@ public static class ReglasPuente
 
     public static bool EsPuente(TimeOnly finClase, TimeOnly inicioSiguiente, int minutosMinimos = MinutosMinimos)
         => (inicioSiguiente.ToTimeSpan() - finClase.ToTimeSpan()).TotalMinutes >= minutosMinimos;
+
+    public static bool QuedaTiempoDespuesDeClases(TimeOnly finUltimaClase)
+        => EsPuente(finUltimaClase, ReglasHorario.FinMasTarde);
 }
