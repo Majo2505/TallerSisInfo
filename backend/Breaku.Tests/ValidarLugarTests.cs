@@ -33,7 +33,7 @@ public class ValidarLugarTests
         public Task<bool> LugarEnUsoAsync(int lugarId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<bool> EliminarLugarAsync(int lugarId, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<string?> ResolverReporteAsync(int reporteId, string estado, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<List<TurnoConsultaRag>> ListarConsultasRagAsync(int limite, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
 

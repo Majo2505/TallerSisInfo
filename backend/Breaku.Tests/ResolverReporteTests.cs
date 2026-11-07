@@ -61,7 +61,7 @@ public class ResolverReporteServiceTests
         public Task<bool> EditarLugarAsync(int lugarId, Breaku.Domain.Rules.DatosLugar datos, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<bool> LugarEnUsoAsync(int lugarId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<bool> EliminarLugarAsync(int lugarId, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<List<TurnoConsultaRag>> ListarConsultasRagAsync(int limite, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
 
