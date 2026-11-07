@@ -129,6 +129,7 @@ CREATE TABLE horario (
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
   CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),
+  CONSTRAINT ck_horario_duracion CHECK (TIME_TO_SEC(TIMEDIFF(hora_fin, hora_inicio)) >= 2700),  -- HU2: una clase dura al menos 45 min
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
   CONSTRAINT fk_horario_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
