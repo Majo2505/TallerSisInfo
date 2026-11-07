@@ -169,6 +169,7 @@ CREATE TABLE puente (
 CREATE TABLE log_auditoria_rag (
   id                     BIGINT       NOT NULL AUTO_INCREMENT,
   usuario_id             INT          NOT NULL,
+  consulta_origen_id     BIGINT       NULL,               -- HU11: primer turno de la conversación (NULL = esta fila es el primero)
   tipo                   VARCHAR(25)  NOT NULL,
   zona_id                INT          NULL,
   radio_aplicado_m       INT          NULL,
@@ -187,11 +188,13 @@ CREATE TABLE log_auditoria_rag (
   KEY ix_log_created (created_at),
   KEY ix_log_usuario (usuario_id, created_at),
   KEY ix_log_motivo (motivo_rechazo, created_at),
+  KEY ix_log_origen (consulta_origen_id),
   CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD')),
   CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
   CONSTRAINT ck_log_motivo CHECK (motivo_rechazo IN ('INYECCION','FUERA_DE_ALCANCE','BIENESTAR','FUERA_DE_REGLAMENTO','FUERA_DE_CONTEXTO')),
   CONSTRAINT ck_log_motivo_estado CHECK (motivo_rechazo IS NULL OR estado = 'RECHAZADO_SEGURIDAD'),
   CONSTRAINT ck_log_datos_tipo    CHECK (datos_extraidos IS NULL OR tipo = 'EXTRACCION_COMUNIDAD'),   -- HU10: solo las extracciones tienen resumen
+  CONSTRAINT fk_log_origen  FOREIGN KEY (consulta_origen_id) REFERENCES log_auditoria_rag (id) ON DELETE SET NULL,
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
   CONSTRAINT fk_log_zona    FOREIGN KEY (zona_id)    REFERENCES zona (id),
   CONSTRAINT fk_log_puente  FOREIGN KEY (puente_id)  REFERENCES puente (id) ON DELETE SET NULL
