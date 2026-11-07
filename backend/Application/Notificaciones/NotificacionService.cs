@@ -31,14 +31,17 @@ public class NotificacionService
             if (!ReglasNotificacion.DebeAvisarse(p.HoraInicio, hora)) continue;
             if (!ReglasPuente.EsPuente(p.HoraInicio, p.HoraFin)) continue;
 
+            var despuesDeClases = p.Tipo == Puente.TipoDespuesDeClases;
             var aviso = new Notificacion
             {
                 UsuarioId = p.UsuarioId,
-                Tipo = Notificacion.TipoPuenteDisponible,
+                Tipo = despuesDeClases ? Notificacion.TipoDespuesDeClases : Notificacion.TipoPuenteDisponible,
                 PuenteFecha = fecha,
                 PuenteHoraInicio = p.HoraInicio,
                 PuenteHoraFin = p.HoraFin,
-                Mensaje = ReglasNotificacion.Mensaje(p.HoraInicio, p.HoraFin),
+                Mensaje = despuesDeClases
+                    ? ReglasNotificacion.MensajeDespuesDeClases(p.HoraInicio, p.HoraFin)
+                    : ReglasNotificacion.Mensaje(p.HoraInicio, p.HoraFin),
                 CreatedAt = ahoraUtc
             };
 

@@ -23,7 +23,7 @@ import { ComunidadActiva, listarComunidades } from "@/lib/comunidades";
 import { Bloque, listarHorario } from "@/lib/horario";
 import { LugarViable, ResultadoLugares, buscarLugaresViables } from "@/lib/lugares";
 import { ESTADOS_ANIMO } from "@/lib/maqueta";
-import { Puente, listarPuentes, duracionMin, hhmm } from "@/lib/puentes";
+import { Puente, listarPuentes, duracionMin, esDespuesDeClases, hhmm, soloEntreClases } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./inicio.module.css";
 
@@ -31,16 +31,20 @@ const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
 
 function textoSugerencias(
   cargando: boolean,
-  hayPuente: boolean,
+  puente: Puente | undefined,
   sugerencias: { resultado: ResultadoLugares | null; error: string } | null,
 ): string {
+  const hayPuente = !!puente;
   if (cargando) return "Buscando lugares para tu puente…";
   if (!hayPuente) return "Cuando tengas un puente, aquí verás los lugares del campus que te caben.";
   if (!sugerencias) return "Buscando lugares para tu puente…";
   if (sugerencias.error) return sugerencias.error;
   const r = sugerencias.resultado;
   if (!r) return "";
-  if (r.estado === "OK") return `Lugares del catálogo que caben en tu puente de ${r.minutosDisponibles} min.`;
+  if (r.estado === "OK")
+    return puente && esDespuesDeClases(puente)
+      ? `Lugares del catálogo para tus ${r.minutosDisponibles} min libres después de clases.`
+      : `Lugares del catálogo que caben en tu puente de ${r.minutosDisponibles} min.`;
   return r.mensaje ?? "";
 }
 
@@ -153,6 +157,7 @@ export default function Inicio() {
             rango: `${hhmm(primero.horaInicio)} – ${hhmm(primero.horaFin)}`,
             minutos: duracionMin(primero),
             enDias: k,
+            despuesDeClases: esDespuesDeClases(primero),
           },
         };
       }
@@ -186,6 +191,8 @@ export default function Inicio() {
     [bloques, diaHoy],
   );
   const puentesHoy = useMemo(() => puentes.filter((p) => p.diaSemana === diaHoy), [puentes, diaHoy]);
+  const entreClasesHoy = soloEntreClases(puentesHoy).length;
+  const libreDespuesHoy = puentesHoy.find(esDespuesDeClases);
 
   const siguienteClase = foco ? clasesHoy.find((b) => aMin(b.horaInicio) >= aMin(foco.horaFin)) : undefined;
 
@@ -202,7 +209,13 @@ export default function Inicio() {
 
   const tramos = [
     ...clasesHoy.map((b) => ({ tipo: "clase" as const, id: `c${b.id}`, inicio: aMin(b.horaInicio), fin: aMin(b.horaFin), titulo: b.materia })),
-    ...puentesHoy.map((p) => ({ tipo: "puente" as const, id: `p${p.id}`, inicio: aMin(p.horaInicio), fin: aMin(p.horaFin), titulo: `Puente de ${duracionMin(p)} min` })),
+    ...puentesHoy.map((p) => ({
+      tipo: esDespuesDeClases(p) ? ("libre" as const) : ("puente" as const),
+      id: `p${p.id}`,
+      inicio: aMin(p.horaInicio),
+      fin: aMin(p.horaFin),
+      titulo: esDespuesDeClases(p) ? "Libre después de clases" : `Puente de ${duracionMin(p)} min`,
+    })),
   ].sort((a, b) => a.inicio - b.inicio);
   const desde = tramos.length ? Math.floor(Math.min(...tramos.map((t) => t.inicio)) / 60) * 60 : 0;
   const hasta = tramos.length ? Math.ceil(Math.max(...tramos.map((t) => t.fin)) / 60) * 60 : 0;
@@ -251,6 +264,7 @@ export default function Inicio() {
         {foco ? (
           <HeroePuente
             activo={!!activo}
+            despuesDeClases={esDespuesDeClases(foco)}
             minutos={activo ? minutosRestantes : duracionMin(foco)}
             rango={`${hhmm(foco.horaInicio)} – ${hhmm(foco.horaFin)}`}
             empiezaEn={activo ? undefined : aMin(foco.horaInicio) - minutosAhora}
@@ -282,7 +296,7 @@ export default function Inicio() {
             {tramos.map((t, i) => (
               <motion.span
                 key={t.id}
-                className={t.tipo === "clase" ? estilos.tramoClase : estilos.tramoPuente}
+                className={t.tipo === "clase" ? estilos.tramoClase : t.tipo === "libre" ? estilos.tramoLibre : estilos.tramoPuente}
                 style={{ left: posicion(t.inicio), width: `${((t.fin - t.inicio) / total) * 100}%` }}
                 tabIndex={0}
                 aria-label={`${t.titulo}, de ${aHora(t.inicio)} a ${aHora(t.fin)}`}
@@ -312,8 +326,13 @@ export default function Inicio() {
               <span className={estilos.muestraClase} /> {clasesHoy.length} {clasesHoy.length === 1 ? "clase" : "clases"}
             </li>
             <li>
-              <span className={estilos.muestraPuente} /> {puentesHoy.length} {puentesHoy.length === 1 ? "puente" : "puentes"}
+              <span className={estilos.muestraPuente} /> {entreClasesHoy} {entreClasesHoy === 1 ? "puente" : "puentes"}
             </li>
+            {libreDespuesHoy && (
+              <li>
+                <span className={estilos.muestraLibre} /> Libre desde las {hhmm(libreDespuesHoy.horaInicio)}
+              </li>
+            )}
           </ul>
         </Pieza>
       )}
@@ -391,7 +410,7 @@ export default function Inicio() {
           </div>
         )}
         <p className={estilos.nota} role="status">
-          {textoSugerencias(cargando, !!puenteSugerencias, sugerencias)}{" "}
+          {textoSugerencias(cargando, puenteSugerencias, sugerencias)}{" "}
           {sugerencias?.resultado?.estado === "SIN_ZONA" && (
             <Link href="/configuracion/ubicacion" className={estilos.verTodo}>
               Elegir mi campus

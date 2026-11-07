@@ -21,6 +21,9 @@ public static class ReglasNotificacion
     public static string Mensaje(TimeOnly inicio, TimeOnly fin)
         => $"¡Puente disponible! Tienes {FormatearDuracion(DuracionMinutos(inicio, fin))} libres, de {inicio:HH\\:mm} a {fin:HH\\:mm}.";
 
+    public static string MensajeDespuesDeClases(TimeOnly inicio, TimeOnly fin)
+        => $"¡Terminaste tus clases! Tienes {FormatearDuracion(DuracionMinutos(inicio, fin))} libres, hasta las {fin:HH\\:mm}.";
+
     private static string FormatearDuracion(int minutos)
     {
         var (horas, resto) = (minutos / 60, minutos % 60);
