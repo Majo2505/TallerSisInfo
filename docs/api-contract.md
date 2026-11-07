@@ -182,6 +182,7 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
 | `diaSemana` | entero | 1 a 6 (1 = lunes … 6 = sábado) | ✅ Definido (`ck_horario_dia`) |
 | `horaInicio` | hora | Obligatoria, desde las **07:15** (la clase más temprana de la UCB). Antes: 400 «Las clases empiezan desde las 07:15.» | ✅ Definido (`ck_horario_rango`) |
 | `horaFin` | hora | Obligatoria, posterior a `horaInicio` y hasta las **21:00** (la más tarde). Después: 400 «Las clases terminan, como muy tarde, a las 21:00.» | ✅ Definido (`ck_horario_horas`, `ck_horario_rango`) |
+| Duración | — | Al menos **45 minutos**: una clase empieza como muy tarde a las 20:15 y termina como muy temprano a las 08:00. Menos: 400 «Una clase dura al menos 45 minutos.» | ✅ Definido (`ck_horario_duracion`) |
 | `aula` | string o `null` | Opcional, hasta 30 caracteres | ✅ Definido (schema) |
 | `origen` | string | Solo en respuestas. `MANUAL` (alta a mano) o `FOTO` (confirmado desde la foto del horario); valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores); 🟡 Propuesta (que el cliente no lo envíe) |
 | `asiste` | booleano | Opcional al enviar: al crear, `true` si no se envía; al editar, se conserva el valor actual. En respuestas siempre viene. `false` = el estudiante no asiste a ese bloque: no cuenta como tiempo ocupado y no choca con otros | ✅ Definido |
@@ -330,9 +331,9 @@ Eliminación de un bloque (#10).
 
 - ✅ **Definido** (#11): el sistema calcula automáticamente los bloques libres entre las clases del estudiante; si duran **45 minutos o más** (incluido exactamente 45) son un "puente"; si duran menos, no son un puente ni generan ningún evento.
 - ✅ **Definido:** solo cuentan los bloques con `asiste = true`, y el tiempo ocupado de cada día es la unión de sus intervalos (ver «Regla de choques»).
+- ✅ **Definido** (Majo y Maite): además de los puentes, cada día con clases tiene un tramo **después de clases**: desde que termina la última clase a la que asiste hasta las **21:00** (`ReglasHorario.FinMasTarde`), si son 45 minutos o más. Se guarda en `puente` con `tipo = DESPUES_DE_CLASES`, así que recomendaciones, lugares, matching, invitaciones y avisos lo usan como cualquier otro puente. El tiempo antes de la primera clase y los días sin clases no cuentan.
 - ✅ **Definido** (#11, criterio 4): al guardar un horario modificado o recargado, los puentes se recalculan solos, sin que el estudiante lo pida. Por eso **no existe un endpoint de recálculo**: ocurre dentro de `POST`, `PUT` y `DELETE` de `/api/horarios`.
 - 🟡 **Propuesta, a confirmar por Majo:**
-  - Solo cuentan huecos entre clases del mismo día; el tramo antes de la primera clase y después de la última no es puente (#11 dice "entre sus clases").
   - El mínimo de 45 minutos vive en un único lugar de configuración del backend, sin tocar el schema (`schema.sql` lo deja como parámetro, no como `CHECK`).
   - El recálculo es síncrono, dentro de la misma operación de `POST`, `PUT` o `DELETE`, y reemplaza todos los puentes del usuario.
 
@@ -348,6 +349,7 @@ Eliminación de un bloque (#10).
 | `diaSemana` | entero, 1 a 6 | ✅ Definido (`ck_puente_dia`) |
 | `horaInicio` | hora | ✅ Definido |
 | `horaFin` | hora, posterior a `horaInicio` | ✅ Definido (`ck_puente_horas`) |
+| `tipo` | `ENTRE_CLASES` o `DESPUES_DE_CLASES` | ✅ Definido (`ck_puente_tipo`) |
 
 ```json
 [
@@ -355,7 +357,8 @@ Eliminación de un bloque (#10).
     "id": 5,
     "diaSemana": 1,
     "horaInicio": "09:30:00",
-    "horaFin": "10:30:00"
+    "horaFin": "10:30:00",
+    "tipo": "ENTRE_CLASES"
   }
 ]
 ```
@@ -596,7 +599,7 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 | `OK` | Hay compañeros | `null` |
 | `SIN_ZONA` | No elegiste campus o tu sede ya no está activa | `Elige tu campus para encontrar compañeros con tiempo libre compatible.` |
 | `NO_VISIBLE` | No aceptaste aparecer | `Para ver a tus compañeros, primero acepta que ellos también te encuentren.` |
-| `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo en este puente.` |
+| `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo a esa hora.` |
 
 ```json
 {
@@ -998,7 +1001,7 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
 | Maite, Majo | Paginación | Ninguna | 🟡 Propuesta, a confirmar por Maite y Majo |
 | Maite | Texto de errores de validación y solapamiento | — | 🔴 Pendiente (Maite) |
 | Ariana, Maite | `updated_at` | Lo fija el backend con la hora UTC actual | 🟡 Propuesta, a confirmar por Ariana y Maite |
-| Majo | Tramos antes de la primera y después de la última clase | No son puente | 🟡 Propuesta, a confirmar por Majo |
+| Majo | Tramo antes de la primera clase | No es puente | 🟡 Propuesta, a confirmar por Majo |
 | Majo, Ariana | Parámetro de 45 min | Un único lugar de configuración del backend | 🟡 Propuesta, a confirmar por Majo y Ariana |
 | Majo, Maite | Recálculo de puentes | Síncrono, dentro de `POST`/`PUT`/`DELETE` de horarios; reemplaza los puentes del usuario | 🟡 Propuesta, a confirmar por Majo y Maite |
 | Majo | Campo de duración en `GET /api/puentes` | No se incluye | 🟡 Propuesta, a confirmar por Majo |

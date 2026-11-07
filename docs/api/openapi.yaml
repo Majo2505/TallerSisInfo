@@ -2084,12 +2084,12 @@ components:
         horaInicio:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). Desde las 07:15 (horario de clases de la UCB).
+          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). De 07:15 a 20:15 (horario de clases de la UCB).
           example: '08:00'
         horaFin:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). Debe ser posterior a la hora de inicio y no pasar de las 21:00.
+          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). De 08:00 a 21:00, y la clase dura al menos 45 minutos.
           example: '09:30'
         aula:
           type: string
@@ -2193,7 +2193,7 @@ components:
               autorizacionCarrera: { type: boolean, nullable: true, example: true }
     PuenteDto:
       type: object
-      description: Puente detectado. Hueco libre de 45 minutos o más entre dos clases del mismo día.
+      description: Tiempo libre detectado. `ENTRE_CLASES` es un hueco de 45 minutos o más entre dos clases del mismo día; `DESPUES_DE_CLASES` va desde la última clase del día hasta las 21:00, si son 45 minutos o más.
       properties:
         id:
           type: integer
@@ -2213,9 +2213,14 @@ components:
           type: string
           description: Hora en que empieza la clase siguiente (`HH:mm:ss`, 24 h).
           example: '10:30:00'
+        tipo:
+          type: string
+          enum: [ENTRE_CLASES, DESPUES_DE_CLASES]
+          description: Si el tiempo libre está entre dos clases o después de la última del día.
+          example: ENTRE_CLASES
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` (HU4) o `INVITACION_COMUNIDAD` (HU13).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13) o `COMUNIDAD_CERRADA` (HU14).
       properties:
         id:
           type: integer
@@ -2224,7 +2229,7 @@ components:
           example: 31
         tipo:
           type: string
-          enum: [PUENTE_DISPONIBLE, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA]
+          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA]
           description: Tipo de aviso.
           example: PUENTE_DISPONIBLE
         mensaje:
@@ -2721,7 +2726,7 @@ components:
       type: object
       properties:
         estado: { type: string, enum: [OK, SIN_RESULTADOS, SIN_ZONA, NO_VISIBLE] }
-        mensaje: { type: string, nullable: true, example: Por ahora nadie de tu campus está libre contigo en este puente. }
+        mensaje: { type: string, nullable: true, example: Por ahora nadie de tu campus está libre contigo a esa hora. }
         puente:
           $ref: '#/components/schemas/PuenteDto'
         minutosPuente: { type: integer, format: int32, example: 90 }

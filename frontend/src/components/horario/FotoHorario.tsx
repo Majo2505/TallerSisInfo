@@ -9,11 +9,15 @@ import {
   ClaseLeida,
   FOTO_BYTES_MAXIMOS,
   FOTO_TIPOS,
+  HORA_INICIO_MAXIMA,
   HORA_MAXIMA,
   HORA_MINIMA,
+  MENSAJE_DURACION_MINIMA,
   OpcionAsistencia,
   ResultadoLote,
   cambiarAsistencias,
+  duraLoMinimo,
+  finMinimoPara,
   gruposEnChoque,
   guardarLote,
   leerFotoHorario,
@@ -98,6 +102,8 @@ export default function FotoHorario({ onCerrar, onGuardado, onActualizado }: Pro
   async function guardar() {
     const elegidas = filas.filter((f) => f.incluir);
     if (elegidas.length === 0) return;
+    const corta = elegidas.find((c) => !duraLoMinimo(c.horaInicio, c.horaFin));
+    if (corta) return setError(`${corta.materia}: ${MENSAJE_DURACION_MINIMA} Corrige la hora de fin.`);
     setPaso("guardando");
     setError("");
     try {
@@ -327,14 +333,14 @@ export default function FotoHorario({ onCerrar, onGuardado, onActualizado }: Pro
                           compacto
                           valor={f.horaInicio}
                           min={HORA_MINIMA}
-                          max={HORA_MAXIMA}
+                          max={HORA_INICIO_MAXIMA}
                           onCambio={(v) => cambiarFila(f.clave, { horaInicio: v })}
                           etiqueta="Inicio"
                         />
                         <SelectorHora
                           compacto
                           valor={f.horaFin}
-                          min={HORA_MINIMA}
+                          min={finMinimoPara(f.horaInicio)}
                           max={HORA_MAXIMA}
                           onCambio={(v) => cambiarFila(f.clave, { horaFin: v })}
                           etiqueta="Fin"

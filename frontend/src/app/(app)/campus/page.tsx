@@ -9,7 +9,7 @@ import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "
 import { Selector } from "@/components/app/Selectores";
 import TarjetaLugarViable from "@/components/campus/TarjetaLugarViable";
 import { buscarLugaresViables, ResultadoLugares } from "@/lib/lugares";
-import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
+import { Puente, duracionMin, esDespuesDeClases, hhmm, listarPuentes } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import estilos from "./campus.module.css";
 
@@ -33,7 +33,9 @@ function puenteSugerido(puentes: Puente[]): Puente | undefined {
 }
 
 const etiquetaPuente = (p: Puente) =>
-  `${DIAS[p.diaSemana]} · ${hhmm(p.horaInicio)}–${hhmm(p.horaFin)} · ${duracionMin(p)} min`;
+  esDespuesDeClases(p)
+    ? `${DIAS[p.diaSemana]} · después de clases · ${hhmm(p.horaInicio)}–${hhmm(p.horaFin)}`
+    : `${DIAS[p.diaSemana]} · ${hhmm(p.horaInicio)}–${hhmm(p.horaFin)} · ${duracionMin(p)} min`;
 
 type RespuestaPara = { puenteId: number; resultado: ResultadoLugares };
 type ErrorPara = { puenteId: number; mensaje: string };
@@ -124,7 +126,7 @@ export default function Campus() {
           <h1 className={estilos.titulo}>Tu campus, a pocos pasos</h1>
           <p className={estilos.bajada}>
             {resultado?.zona && resultado.radioAplicadoM
-              ? `A menos de ${resultado.radioAplicadoM} m de ${resultado.zona.nombre}, para un puente de ${resultado.minutosDisponibles} min.`
+              ? `A menos de ${resultado.radioAplicadoM} m de ${resultado.zona.nombre}, para ${resultado.minutosDisponibles} min libres.`
               : "Rincones para comer, estudiar, descansar o moverte entre clases."}
           </p>
           {hayLista && (
