@@ -367,6 +367,17 @@ Eliminación de un bloque (#10).
 
 🟡 **Propuesta, a confirmar por Majo y el FE:** no se incluye un campo de duración; el FE puede calcularla.
 
+### Avisos de puente (HU4)
+
+| Tema | Regla | Estado |
+|---|---|---|
+| Cuándo se crea | Un proceso del servidor revisa cada 15 segundos los puentes de hoy (hora de Bolivia) que **ya empezaron y siguen en curso**, y crea el aviso que falte (`PUENTE_DISPONIBLE` o `DESPUES_DE_CLASES`). Antes solo miraba el primer minuto del puente: si ningún servidor estaba prendido justo en ese minuto, el aviso no llegaba nunca | ✅ Definido |
+| A quién | A **todos** los estudiantes con avisos encendidos, estén o no usando la app. Queda sin leer en `GET /api/notificaciones` y se ve al entrar | ✅ Definido |
+| Demasiado tarde | Si al puente le quedan menos de **10 minutos**, ya no se avisa | ✅ Definido |
+| Texto | A tiempo: «¡Puente disponible! Tienes 2 h libres, de 10:00 a 12:00.». Atrasado: «¡Estás en un puente! Te quedan 1 h 30 min libres, hasta las 12:00.». Después de clases: «¡Terminaste tus clases! Tienes … libres, hasta las 21:00.» (con lo que queda) | ✅ Definido |
+| Sin duplicados | Uno por estudiante, día e inicio del puente (`uq_notif_puente`), aunque haya varios servidores prendidos contra la misma base | ✅ Definido |
+| Domingo | Sin avisos | ✅ Definido |
+
 ## 5. Endpoints existentes (fuera de `/api`)
 
 | Endpoint | JWT | Respuesta | Estado |

@@ -4,7 +4,8 @@ namespace Breaku.Application.Notificaciones;
 
 public interface INotificacionRepository
 {
-    Task<List<Puente>> ListarPuentesPorAvisarAsync(int diaSemana, DateOnly fecha, TimeOnly desde, TimeOnly hasta, CancellationToken ct = default);
+    /// <summary>Puentes de ese día que ya empezaron y siguen en curso a esa hora, de usuarios con avisos, sin aviso hoy.</summary>
+    Task<List<Puente>> ListarPuentesPorAvisarAsync(int diaSemana, DateOnly fecha, TimeOnly ahora, CancellationToken ct = default);
 
     Task<bool> AgregarAsync(Notificacion notificacion, CancellationToken ct = default);
 
