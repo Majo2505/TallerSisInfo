@@ -210,8 +210,23 @@
   color: var(--ucb-amarillo-oscuro);
 }
 
+/* Después de clases no es un puente: misma fila, pero gris y sin el amarillo, para que pese menos. */
 .despues {
-  background: var(--superficie);
+  min-height: 48px;
+  border: 1px dashed var(--borde);
+  background: transparent;
+  color: var(--texto-suave);
+}
+
+.despues .iconoPuente {
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+}
+
+.puente.despues strong,
+.puente.despues small {
+  font-weight: 600;
+  color: var(--texto-suave);
 }
 
 .iconoPuente {

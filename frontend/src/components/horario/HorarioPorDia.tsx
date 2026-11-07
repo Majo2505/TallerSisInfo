@@ -165,14 +165,19 @@ export default function HorarioPorDia({ bloques, puentes, colorDe, onAgregar, on
                     <span className={estilos.iconoPuente}>
                       {esDespuesDeClases(el.puente) ? <IconoLuna tamano={16} /> : <IconoRayo tamano={16} />}
                     </span>
-                    <span>
-                      <strong>
-                        {esDespuesDeClases(el.puente) ? "Libre después de clases" : "Puente libre"} · {duracionMin(el.puente)} min
-                      </strong>
-                      <small>
-                        {hhmm(el.puente.horaInicio)} – {hhmm(el.puente.horaFin)}
-                      </small>
-                    </span>
+                    {esDespuesDeClases(el.puente) ? (
+                      <span>
+                        <strong>Después de clases</strong>
+                        <small>Libre desde las {hhmm(el.puente.horaInicio)} · no es un puente</small>
+                      </span>
+                    ) : (
+                      <span>
+                        <strong>Puente libre · {duracionMin(el.puente)} min</strong>
+                        <small>
+                          {hhmm(el.puente.horaInicio)} – {hhmm(el.puente.horaFin)}
+                        </small>
+                      </span>
+                    )}
                   </motion.li>
                 ),
               )}
