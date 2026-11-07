@@ -36,7 +36,7 @@ tags:
   - name: Puentes
     description: Puentes detectados (HU3). Requiere JWT. Solo consulta; se recalculan solos al cambiar el horario.
   - name: Notificaciones
-    description: Avisos de puente disponible (HU4). Requiere JWT. El servidor crea el aviso al empezar cada puente.
+    description: Avisos de puente disponible y de después de clases (HU4). Requiere JWT. El servidor crea el aviso mientras el puente está en curso y le quedan 10 minutos o más, para todos los estudiantes con avisos encendidos, estén o no usando la app; quien entra después lo ve sin leer.
   - name: Ubicación
     description: Consentimiento y selección del campus actual (HU5). Las coordenadas se usan solo para resolver la zona y no se almacenan.
   - name: Lugares
