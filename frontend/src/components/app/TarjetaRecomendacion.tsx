@@ -29,7 +29,7 @@ export default function TarjetaRecomendacion({ recomendacion: r, destacada = fal
       transition={RESORTE_TOQUE}
     >
       <div className={estilos.portada}>
-        <ArteCategoria categoria={r.categoria} />
+        <ArteCategoria categoria={r.categoria} fotoUrl={r.fotoUrl} />
         {destacada && <span className={estilos.mejor}>Mejor opción</span>}
       </div>
 

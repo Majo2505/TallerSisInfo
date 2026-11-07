@@ -17,7 +17,7 @@ export default function TarjetaLugarViable({ lugar, minutosDisponibles }: Props)
   return (
     <article className={`${estilos.tarjeta} lugar-arte`}>
       <div className={estilos.portada}>
-        <ArteCategoria categoria={arte} />
+        <ArteCategoria categoria={arte} fotoUrl={lugar.fotoUrl} />
       </div>
       <div className={estilos.cuerpo}>
         <span className={estilos.categoria}>{lugar.categoria}</span>

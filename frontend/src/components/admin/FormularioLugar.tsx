@@ -14,7 +14,10 @@ import {
   listarCampusAdmin,
   listarCategoriasAdmin,
   obtenerLugarAdmin,
+  quitarFotoLugarAdmin,
+  subirFotoLugarAdmin,
 } from "@/lib/admin";
+import CampoFoto, { CambioFoto } from "./CampoFoto";
 import estilos from "./FormularioLugar.module.css";
 
 const LARGO_MAXIMO_DESCRIPCION = 500;
@@ -65,6 +68,8 @@ export default function FormularioLugar({ lugarId, onCerrar, onGuardado }: Props
   const [campus, setCampus] = useState<CampusAdmin[]>([]);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [fotoActual, setFotoActual] = useState<string | null>(null);
+  const [cambioFoto, setCambioFoto] = useState<CambioFoto>({ tipo: "igual" });
   const editando = lugarId !== null;
 
   useEffect(() => {
@@ -75,6 +80,7 @@ export default function FormularioLugar({ lugarId, onCerrar, onGuardado }: Props
         setCategorias(cats);
         setCampus(camps);
         if (lugar) {
+          setFotoActual(lugar.fotoUrl ?? null);
           setCampos({
             nombre: lugar.nombre,
             descripcion: lugar.descripcion ?? "",
@@ -132,9 +138,20 @@ export default function FormularioLugar({ lugarId, onCerrar, onGuardado }: Props
 
     setGuardando(true);
     try {
+      let id = lugarId;
       if (editando) await editarLugarAdmin(lugarId, lugar);
-      else await crearLugarAdmin(lugar);
-      onGuardado(editando ? `${lugar.nombre}: cambios guardados.` : `${lugar.nombre} ya está en el catálogo.`);
+      else id = (await crearLugarAdmin(lugar)).id;
+      const listo = editando ? `${lugar.nombre}: cambios guardados.` : `${lugar.nombre} ya está en el catálogo.`;
+
+      // La foto va después: al crear, recién ahora existe el id. Si falla, el lugar ya quedó guardado y se avisa.
+      try {
+        if (id !== null && cambioFoto.tipo === "nueva") await subirFotoLugarAdmin(id, cambioFoto.foto);
+        if (id !== null && cambioFoto.tipo === "quitar") await quitarFotoLugarAdmin(id);
+      } catch (errFoto) {
+        onGuardado(`${listo} Pero la foto no se guardó: ${(errFoto as Error).message} Vuelve a intentarlo editando el lugar.`);
+        return;
+      }
+      onGuardado(listo);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -214,6 +231,17 @@ export default function FormularioLugar({ lugarId, onCerrar, onGuardado }: Props
                 {campos.descripcion.length}/{LARGO_MAXIMO_DESCRIPCION}
               </small>
             </label>
+
+            <CampoFoto
+              fotoActual={fotoActual}
+              categoria={categorias.find((c) => String(c.id) === campos.categoriaId)?.nombre ?? "Descanso"}
+              cambio={cambioFoto}
+              onCambio={(c) => {
+                setCambioFoto(c);
+                if (error) setError("");
+              }}
+              deshabilitado={guardando}
+            />
 
             <fieldset className={estilos.grupo}>
               <legend>Ubicación</legend>

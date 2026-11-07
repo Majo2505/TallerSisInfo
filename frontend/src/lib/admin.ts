@@ -90,7 +90,7 @@ export type GuardarLugar = {
   minAPieDesdeBloqueA: number | null;
 };
 
-export type LugarDetalleAdmin = GuardarLugar & { id: number; estado: EstadoLugar; validado: boolean };
+export type LugarDetalleAdmin = GuardarLugar & { id: number; estado: EstadoLugar; validado: boolean; fotoUrl: string | null };
 
 export const listarCategoriasAdmin = () => pedirApi<CategoriaAdmin[]>("/api/admin/categorias");
 export const listarCampusAdmin = () => pedirApi<CampusAdmin[]>("/api/admin/campus");
@@ -99,6 +99,13 @@ export const crearLugarAdmin = (lugar: GuardarLugar) =>
   pedirApi<{ id: number }>("/api/admin/lugares", { method: "POST", body: JSON.stringify(lugar) });
 export const editarLugarAdmin = (id: number, lugar: GuardarLugar) =>
   pedirApi<void>(`/api/admin/lugares/${id}`, { method: "PUT", body: JSON.stringify(lugar) });
+/** Sube o reemplaza la foto del lugar (ya achicada con `achicarFoto`). */
+export function subirFotoLugarAdmin(id: number, foto: Blob) {
+  const datos = new FormData();
+  datos.append("foto", foto, foto.type === "image/webp" ? "foto.webp" : "foto.jpg");
+  return pedirApi<{ fotoUrl: string }>(`/api/admin/lugares/${id}/foto`, { method: "PUT", body: datos });
+}
+export const quitarFotoLugarAdmin = (id: number) => pedirApi<void>(`/api/admin/lugares/${id}/foto`, { method: "DELETE" });
 /** Solo si nunca se usó; si no, responde EN_USO y hay que desactivarlo. */
 export const eliminarLugarAdmin = (id: number) => pedirApi<void>(`/api/admin/lugares/${id}`, { method: "DELETE" });
 

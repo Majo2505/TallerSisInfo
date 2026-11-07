@@ -21,7 +21,8 @@
   padding: 8px 8px 0;
 }
 
-.portada > svg {
+.portada > svg,
+.portada > img {
   height: 112px;
   border-radius: 18px;
 }
