@@ -913,6 +913,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/admin/lugares/{id}/foto:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int32, example: 21 }
+    put:
+      tags: [Administración]
+      operationId: subirFotoLugar
+      summary: Sube o reemplaza la foto real de un lugar.
+      description: JPG, PNG o WebP de hasta 2 MB en el campo `foto` (el panel la achica antes de subirla). El tipo se revisa por el contenido del archivo, no por la extensión. Queda en `historial_cambio` (sin los bytes).
+      security: [{ Bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [foto]
+              properties:
+                foto: { type: string, format: binary }
+      responses:
+        '200':
+          description: Foto guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FotoGuardadaDto'
+        '400':
+          description: Sin foto, más de 2 MB o no es JPG, PNG ni WebP (`codigo` = `VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+    delete:
+      tags: [Administración]
+      operationId: quitarFotoLugar
+      summary: Quita la foto de un lugar (vuelve la ilustración de su categoría).
+      security: [{ Bearer: [] }]
+      responses:
+        '204':
+          description: Foto quitada, o el lugar ya no tenía.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/admin/reportes:
     get:
       tags: [Administración]
@@ -1025,6 +1087,36 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '403':
           description: El usuario no tiene rol `ADMIN`.
+  /api/lugares/{id}/foto:
+    get:
+      tags: [Lugares]
+      operationId: fotoLugar
+      summary: Foto real de un lugar del catálogo.
+      description: Pública, porque la pide la etiqueta `img`, que no manda el token; la foto de un lugar del campus no es un dato privado. Usar la ruta de `fotoUrl` (con `?v=`); con la versión se guarda un año en el navegador (`immutable`) y se vuelve a pedir solo cuando el administrador la cambia.
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int32, example: 21 }
+        - name: v
+          in: query
+          required: false
+          description: Versión de la foto (la pone el servidor en `fotoUrl`).
+          schema: { type: string }
+      responses:
+        '200':
+          description: La imagen.
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        '404':
+          description: El lugar no tiene foto o no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/lugares/viables:
     get:
       tags: [Lugares]
@@ -2272,6 +2364,11 @@ components:
           enum: [LIKE, DISLIKE]
           description: Valoración del estudiante (HU9), o `null` si todavía no valoró.
           example: null
+        fotoUrl:
+          type: string
+          nullable: true
+          description: Ruta de la foto real del lugar (relativa a la API, con `?v=` de versión). `null` si no tiene foto; el frontend muestra la ilustración de la categoría.
+          example: /api/lugares/12/foto?v=639034123456789010
     FeedbackRecomendacionDto:
       type: object
       required: [feedback]
@@ -2386,6 +2483,11 @@ components:
           type: array
           items: { type: string }
           example: [estudiar, leer]
+        fotoUrl:
+          type: string
+          nullable: true
+          description: Ruta de la foto real del lugar (relativa a la API, con `?v=` de versión). `null` si no tiene foto; el frontend muestra la ilustración de la categoría.
+          example: /api/lugares/12/foto?v=639034123456789010
     ResultadoBusquedaLugaresDto:
       type: object
       required: [estado, minutosDisponibles, lugares]
@@ -2446,6 +2548,12 @@ components:
             id: { type: integer, format: int32, example: 21 }
             estado: { type: string, enum: [ACTIVO, EN_REVISION, INACTIVO], example: ACTIVO }
             validado: { type: boolean, example: true }
+            fotoUrl: { type: string, nullable: true, description: 'Ruta de la foto actual, o null si no tiene.', example: '/api/lugares/21/foto?v=639034123456789010' }
+    FotoGuardadaDto:
+      type: object
+      description: Foto guardada.
+      properties:
+        fotoUrl: { type: string, description: Ruta de la foto con la versión nueva (relativa a la API)., example: '/api/lugares/21/foto?v=639034123456789010' }
     NuevoReporteDto:
       type: object
       required: [motivo, descripcion]
