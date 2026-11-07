@@ -52,11 +52,24 @@ public class PuenteService
                     HoraFin = ocupado[i].Inicio
                 });
             }
+
+            var finUltimaClase = ocupado[^1].Fin;
+            if (ReglasPuente.QuedaTiempoDespuesDeClases(finUltimaClase))
+            {
+                puentes.Add(new Puente
+                {
+                    UsuarioId = usuarioId,
+                    DiaSemana = (short)dia.Key,
+                    HoraInicio = finUltimaClase,
+                    HoraFin = ReglasHorario.FinMasTarde,
+                    Tipo = Puente.TipoDespuesDeClases
+                });
+            }
         }
 
         return puentes;
     }
 
     private static PuenteDto ADto(Puente p) =>
-        new(p.Id, p.DiaSemana, p.HoraInicio.ToString("HH:mm:ss"), p.HoraFin.ToString("HH:mm:ss"));
+        new(p.Id, p.DiaSemana, p.HoraInicio.ToString("HH:mm:ss"), p.HoraFin.ToString("HH:mm:ss"), p.Tipo);
 }

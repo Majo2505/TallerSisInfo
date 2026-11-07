@@ -12,6 +12,7 @@ export type ProximoPuente = {
   rango: string;
   minutos: number;
   enDias: number;
+  despuesDeClases?: boolean;
 };
 
 type Props = {
@@ -50,7 +51,7 @@ export default function HeroeSinPuentes({ cargando, error, proximo, rutaIa }: Pr
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.6, ease: SALIDA, delay: 0.25 }}
           >
-            <span className={estilos.proximoEtiqueta}>Tu próximo puente</span>
+            <span className={estilos.proximoEtiqueta}>{proximo.despuesDeClases ? "Libre después de clases" : "Tu próximo puente"}</span>
             <span className={estilos.proximoCifra}>
               <Odometro valor={proximo.minutos} />
               <small>min libres</small>
@@ -69,7 +70,7 @@ export default function HeroeSinPuentes({ cargando, error, proximo, rutaIa }: Pr
         <div className={estilos.acciones}>
           {proximo && (
             <MotionLink href={rutaIa} className={estilos.primaria} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
-              Planea ese puente <IconoFlechaDerecha tamano={18} />
+              {proximo.despuesDeClases ? "Planea esa tarde" : "Planea ese puente"} <IconoFlechaDerecha tamano={18} />
             </MotionLink>
           )}
           <MotionLink

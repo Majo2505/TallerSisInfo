@@ -8,7 +8,7 @@ public static class ReglasMatching
 
     public const string MensajeSinZona = "Elige tu campus para encontrar compañeros con tiempo libre compatible.";
     public const string MensajeNoVisible = "Para ver a tus compañeros, primero acepta que ellos también te encuentren.";
-    public const string MensajeSinResultados = "Por ahora nadie de tu campus está libre contigo en este puente.";
+    public const string MensajeSinResultados = "Por ahora nadie de tu campus está libre contigo a esa hora.";
 
     public readonly record struct Franja(int DiaSemana, TimeOnly Inicio, TimeOnly Fin)
     {
