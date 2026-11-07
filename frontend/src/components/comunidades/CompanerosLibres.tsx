@@ -220,7 +220,7 @@ function SelectorPuentes({ puentes, elegido, onElegir }: { puentes: Puente[]; el
             key={p.id}
             type="button"
             aria-pressed={activo}
-            className={activo ? estilos.puenteActivo : estilos.puente}
+            className={[activo ? estilos.puenteActivo : estilos.puente, esDespuesDeClases(p) ? estilos.tras : ""].join(" ")}
             onClick={() => onElegir(p.id)}
             whileTap={{ scale: 0.95 }}
             transition={RESORTE_TOQUE}
