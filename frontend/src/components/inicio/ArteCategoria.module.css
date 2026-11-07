@@ -6,6 +6,10 @@
   background: var(--fondo-suave);
 }
 
+.foto {
+  object-fit: cover;
+}
+
 .comida {
   background: linear-gradient(135deg, #ffe680, #fdd537);
 }

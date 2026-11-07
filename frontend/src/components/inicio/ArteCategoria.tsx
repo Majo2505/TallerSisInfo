@@ -1,9 +1,27 @@
+"use client";
+
+import { useState } from "react";
+import { urlDeFoto } from "@/lib/fotos";
 import estilos from "./ArteCategoria.module.css";
 
-type Props = { categoria: string };
+type Props = {
+  categoria: string;
+  /** Ruta de la foto real del lugar. Si no hay, o no carga, se muestra la ilustración de la categoría. */
+  fotoUrl?: string | null;
+};
 
-export default function ArteCategoria({ categoria }: Props) {
+export default function ArteCategoria({ categoria, fotoUrl }: Props) {
   const tipo = categoria.toLowerCase();
+  const src = urlDeFoto(fotoUrl);
+  const [fallo, setFallo] = useState<string | null>(null);
+
+  if (src && fallo !== src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- la foto la sirve la API con su propia caché
+      <img className={`${estilos.arte} ${estilos.foto}`} src={src} alt="" loading="lazy" decoding="async" onError={() => setFallo(src)} />
+    );
+  }
+
   return (
     <svg className={`${estilos.arte} ${estilos[tipo] ?? ""}`} viewBox="0 0 120 64" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       {tipo === "comida" && (

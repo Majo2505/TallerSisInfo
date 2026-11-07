@@ -10,6 +10,7 @@ export type Recomendacion = {
   duracionEstimadaMin: number;
   explicacion: string;
   feedback: "LIKE" | "DISLIKE" | null;
+  fotoUrl?: string | null;
 };
 
 export type RespuestaRecomendacion = {

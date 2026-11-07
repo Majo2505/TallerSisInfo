@@ -13,6 +13,8 @@ export type LugarViable = {
   modalidad: string[];
   nivelEnergia: string[];
   actividadesSugeridas: string[];
+  /** Ruta de la foto real (con versión), o null: se muestra la ilustración de la categoría. */
+  fotoUrl?: string | null;
 };
 
 export type ResultadoLugares = {
