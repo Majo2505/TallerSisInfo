@@ -1992,12 +1992,12 @@ components:
         horaInicio:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). Desde las 07:15 (horario de clases de la UCB).
+          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). De 07:15 a 20:15 (horario de clases de la UCB).
           example: '08:00'
         horaFin:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). Debe ser posterior a la hora de inicio y no pasar de las 21:00.
+          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). De 08:00 a 21:00, y la clase dura al menos 45 minutos.
           example: '09:30'
         aula:
           type: string

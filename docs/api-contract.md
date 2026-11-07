@@ -182,6 +182,7 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
 | `diaSemana` | entero | 1 a 6 (1 = lunes … 6 = sábado) | ✅ Definido (`ck_horario_dia`) |
 | `horaInicio` | hora | Obligatoria, desde las **07:15** (la clase más temprana de la UCB). Antes: 400 «Las clases empiezan desde las 07:15.» | ✅ Definido (`ck_horario_rango`) |
 | `horaFin` | hora | Obligatoria, posterior a `horaInicio` y hasta las **21:00** (la más tarde). Después: 400 «Las clases terminan, como muy tarde, a las 21:00.» | ✅ Definido (`ck_horario_horas`, `ck_horario_rango`) |
+| Duración | — | Al menos **45 minutos**: una clase empieza como muy tarde a las 20:15 y termina como muy temprano a las 08:00. Menos: 400 «Una clase dura al menos 45 minutos.» | ✅ Definido (`ck_horario_duracion`) |
 | `aula` | string o `null` | Opcional, hasta 30 caracteres | ✅ Definido (schema) |
 | `origen` | string | Solo en respuestas. `MANUAL` (alta a mano) o `FOTO` (confirmado desde la foto del horario); valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores); 🟡 Propuesta (que el cliente no lo envíe) |
 | `asiste` | booleano | Opcional al enviar: al crear, `true` si no se envía; al editar, se conserva el valor actual. En respuestas siempre viene. `false` = el estudiante no asiste a ese bloque: no cuenta como tiempo ocupado y no choca con otros | ✅ Definido |
