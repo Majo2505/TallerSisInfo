@@ -2,6 +2,26 @@ import { pedirApi } from "./api";
 
 export const HORA_MINIMA = "07:15";
 export const HORA_MAXIMA = "21:00";
+/** Una clase dura al menos 45 minutos: empieza hasta las 20:15 y termina desde las 08:00. */
+export const DURACION_MINIMA_MIN = 45;
+export const HORA_INICIO_MAXIMA = "20:15";
+export const HORA_FIN_MINIMA = "08:00";
+export const MENSAJE_DURACION_MINIMA = "Una clase dura al menos 45 minutos.";
+
+const enMinutos = (h: string) => {
+  const [a, b] = h.split(":").map(Number);
+  return a * 60 + b;
+};
+const dosDigitos = (n: number) => String(n).padStart(2, "0");
+
+/** La primera hora de fin posible para una clase que empieza a `inicio` (o las 08:00 si todavía no hay inicio). */
+export const finMinimoPara = (inicio?: string) => {
+  if (!inicio) return HORA_FIN_MINIMA;
+  const m = enMinutos(inicio) + DURACION_MINIMA_MIN;
+  return `${dosDigitos(Math.floor(m / 60))}:${dosDigitos(m % 60)}`;
+};
+
+export const duraLoMinimo = (inicio: string, fin: string) => enMinutos(fin) - enMinutos(inicio) >= DURACION_MINIMA_MIN;
 
 export type Coincidencia = { id: number; materia: string; horaInicio: string; horaFin: string; asiste: boolean };
 
