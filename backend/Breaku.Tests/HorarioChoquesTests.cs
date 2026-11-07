@@ -119,6 +119,7 @@ public class HuecosLibresConAsistenciaTests
 
     private static List<(int Dia, string Inicio, string Fin)> Huecos(IEnumerable<Horario> bloques)
         => PuenteService.DetectarPuentes(1, bloques)
+            .Where(p => p.Tipo == Puente.TipoEntreClases)
             .OrderBy(p => p.DiaSemana).ThenBy(p => p.HoraInicio)
             .Select(p => ((int)p.DiaSemana, p.HoraInicio.ToString("HH:mm"), p.HoraFin.ToString("HH:mm"))).ToList();
 
