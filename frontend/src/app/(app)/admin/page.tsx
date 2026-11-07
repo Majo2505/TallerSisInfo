@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
 import FormularioLugar from "@/components/admin/FormularioLugar";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
@@ -82,11 +82,11 @@ const ETIQUETA_CONSULTA: Record<ConsultaRag["estado"], string> = {
   INCOMPLETO: "Incompleta",
 };
 
-function pestanaInicial(): Pestana {
-  if (typeof window === "undefined") return "catalogo";
-  const pedida = new URLSearchParams(window.location.search).get("pestana");
-  return PESTANAS.some((p) => p.id === pedida) ? (pedida as Pestana) : "catalogo";
-}
+// La pestaña vive en la URL (?pestana=…). Se lee con useSearchParams y no con window.location: al llegar desde
+// Inicio con un Link, la página se dibuja antes de que cambie la URL del navegador y window.location todavía
+// tenía la de Inicio, así que siempre abría Catálogo.
+const pestanaDe = (pedida: string | null): Pestana =>
+  PESTANAS.some((p) => p.id === pedida) ? (pedida as Pestana) : "catalogo";
 
 const segundos = (ms: number | null) => (ms === null ? "—" : `${(ms / 1000).toLocaleString("es-BO", { maximumFractionDigits: 1 })} s`);
 
@@ -94,11 +94,22 @@ const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleString("es-BO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function PanelAdmin() {
+  return (
+    <Suspense fallback={null}>
+      <PanelAdminContenido />
+    </Suspense>
+  );
+}
+
+function PanelAdminContenido() {
   const router = useRouter();
+  const parametros = useSearchParams();
   const { sesion, listo } = useSesion();
   const reducir = useReducedMotion();
   const aviso = useAviso();
-  const [pestana, setPestana] = useState<Pestana>(pestanaInicial);
+  const pestana = pestanaDe(parametros.get("pestana"));
+  // Al cambiar de pestaña se actualiza la URL: así «Atrás», recargar o compartir el enlace abren la misma sección.
+  const setPestana = (id: Pestana) => router.replace(`/admin?pestana=${id}`, { scroll: false });
   const [resumen, setResumen] = useState<ResumenAdmin | null>(null);
   const [lugares, setLugares] = useState<LugarAdmin[] | null>(null);
   const [reportes, setReportes] = useState<ReporteAdmin[] | null>(null);
