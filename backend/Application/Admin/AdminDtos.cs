@@ -96,7 +96,9 @@ public record ConsultaRagAdminDto(
     int? LatenciaMs,
     int LugaresRecuperados,
     int Recomendados,
-    string? MotivoRechazo = null
+    string? MotivoRechazo = null,
+    List<string>? Respuestas = null,
+    int Turnos = 1
 );
 
 public record MetricasAdminDto(

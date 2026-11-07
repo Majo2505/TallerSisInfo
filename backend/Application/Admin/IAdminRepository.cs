@@ -32,6 +32,7 @@ public interface IAdminRepository
 
     Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default);
     Task<string?> ResolverReporteAsync(int reporteId, string estado, int adminId, CancellationToken ct = default);
-    Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default);
+    /// <summary>Los turnos de las últimas <paramref name="limite"/> conversaciones con el asistente.</summary>
+    Task<List<TurnoConsultaRag>> ListarConsultasRagAsync(int limite, CancellationToken ct = default);
     Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default);
 }
