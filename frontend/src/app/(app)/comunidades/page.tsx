@@ -89,11 +89,11 @@ function Comunidades() {
   const [creada, setCreada] = useState<ActividadCreada | null>(null);
   const [invitando, setInvitando] = useState(false);
 
-  async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null) {
+  async function consultar(textoAEnviar: string, anterior: ActividadExtraida | null, consultaAnteriorId: number | null = null) {
     setBuscando(true);
     setError("");
     try {
-      setExtraccion(await extraerActividad(textoAEnviar, anterior));
+      setExtraccion(await extraerActividad(textoAEnviar, anterior, consultaAnteriorId));
       setRespuesta("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
@@ -112,7 +112,7 @@ function Comunidades() {
   function responder(e: React.FormEvent) {
     e.preventDefault();
     if (!extraccion || !respuesta.trim() || buscando) return;
-    void consultar(respuesta.trim(), extraccion.actividad);
+    void consultar(respuesta.trim(), extraccion.actividad, extraccion.consultaId);
   }
 
   async function guardarDato(campo: CampoActividad, valor: string) {
@@ -127,7 +127,7 @@ function Comunidades() {
     setBuscando(true);
     setError("");
     try {
-      setExtraccion(await revisarActividad(texto.trim(), cambiada));
+      setExtraccion(await revisarActividad(texto.trim(), cambiada, extraccion.consultaId));
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos revisar el cambio. Inténtalo de nuevo.");
     } finally {

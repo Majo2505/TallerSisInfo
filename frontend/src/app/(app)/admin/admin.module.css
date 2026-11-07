@@ -566,6 +566,27 @@
   overflow-wrap: anywhere;
 }
 
+.respuestas {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0 0 0 12px;
+  display: grid;
+  gap: 4px;
+  border-left: 2px solid var(--borde);
+  color: var(--ucb-marino);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.respondio {
+  margin-right: 4px;
+  color: var(--texto-suave);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .consultaDatos {
   display: flex;
   flex-wrap: wrap;

@@ -49,6 +49,9 @@ export type ConsultaRag = {
   lugaresRecuperados: number;
   recomendados: number;
   motivoRechazo?: MotivoRechazo | null;
+  /** Lo que contestó el estudiante en los turnos siguientes (crear una actividad: «¿A qué hora?» → «5»). */
+  respuestas?: string[];
+  turnos?: number;
 };
 
 export type MetricasAdmin = {
