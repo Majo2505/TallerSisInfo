@@ -1,5 +1,4 @@
 using Breaku.Application.Notificaciones;
-using Breaku.Domain.Rules;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -21,9 +20,6 @@ public class AvisoPuentesWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (Intervalo >= ReglasNotificacion.VentanaEnvio)
-            throw new InvalidOperationException("El intervalo del worker debe ser menor que la ventana de envío.");
-
         using var timer = new PeriodicTimer(Intervalo);
         do
         {
