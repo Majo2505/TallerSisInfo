@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminRepository, AdminRepository>();
 
         services.AddScoped<ILugarRepository, LugarRepository>();
+        services.AddScoped<IFotoLugarRepository, FotoLugarRepository>();
         AddAsistenteIa(services, configuration);
 
         services.AddHostedService<AvisoPuentesWorker>();

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Breaku.Application.Admin;
 using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
+using Breaku.Application.Lugares;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,8 +15,16 @@ namespace Breaku.Api.Controllers;
 [Produces("application/json")]
 public class AdminController : ControllerBase
 {
+    private const long LimiteFoto = Breaku.Domain.Rules.ReglasFotoLugar.BytesMaximos + 512 * 1024;
+
     private readonly AdminService _service;
-    public AdminController(AdminService service) => _service = service;
+    private readonly FotoLugarService _fotos;
+
+    public AdminController(AdminService service, FotoLugarService fotos)
+    {
+        _service = service;
+        _fotos = fotos;
+    }
 
     private int AdminId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
@@ -146,6 +155,45 @@ public class AdminController : ControllerBase
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status409Conflict)]
     public Task<IActionResult> EliminarLugar(int id, CancellationToken ct)
         => Responder(async () => { await _service.EliminarLugarAsync(id, AdminId, ct); return NoContent(); });
+
+    /// <summary>Sube o reemplaza la foto real de un lugar.</summary>
+    /// <remarks>
+    /// <c>multipart/form-data</c> con el archivo en el campo <c>foto</c>: JPG, PNG o WebP de hasta 2 MB (el panel la achica
+    /// antes de subirla). El tipo se revisa por el contenido, no por la extensión. Queda en el historial.
+    /// </remarks>
+    /// <response code="200">Foto guardada; <c>fotoUrl</c> trae la ruta con la versión nueva.</response>
+    /// <response code="400">Sin foto, más de 2 MB o no es JPG, PNG ni WebP (<c>VALIDACION</c>).</response>
+    /// <response code="404">El lugar no existe (<c>NO_ENCONTRADO</c>).</response>
+    [HttpPut("lugares/{id:int}/foto")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(LimiteFoto)]
+    [RequestFormLimits(MultipartBodyLengthLimit = LimiteFoto)]
+    [ProducesResponseType(typeof(FotoGuardadaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public Task<IActionResult> SubirFoto(int id, IFormFile? foto, CancellationToken ct) => Responder(async () =>
+    {
+        if (foto is null || foto.Length == 0) throw new ReglaNegocioException("VALIDACION", Breaku.Domain.Rules.ReglasFotoLugar.MensajeVacia);
+        if (foto.Length > Breaku.Domain.Rules.ReglasFotoLugar.BytesMaximos)
+            throw new ReglaNegocioException("VALIDACION", Breaku.Domain.Rules.ReglasFotoLugar.MensajeGrande);
+
+        using var memoria = new MemoryStream();
+        await foto.CopyToAsync(memoria, ct);
+        return Ok(await _fotos.SubirAsync(id, memoria.ToArray(), AdminId, ct));
+    });
+
+    /// <summary>Quita la foto de un lugar; vuelve a mostrarse la ilustración de su categoría.</summary>
+    /// <response code="204">Foto quitada (o el lugar ya no tenía).</response>
+    /// <response code="404">El lugar no existe (<c>NO_ENCONTRADO</c>).</response>
+    [HttpDelete("lugares/{id:int}/foto")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status404NotFound)]
+    public Task<IActionResult> QuitarFoto(int id, CancellationToken ct)
+        => Responder(async () => { await _fotos.EliminarAsync(id, AdminId, ct); return NoContent(); });
 
     private async Task<IActionResult> Responder(Func<Task<IActionResult>> accion)
     {

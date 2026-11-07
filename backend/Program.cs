@@ -89,6 +89,7 @@ builder.Services.AddScoped<UbicacionService>();
 builder.Services.AddScoped<PerfilService>();
 builder.Services.AddScoped<MatchingService>();
 builder.Services.AddScoped<BusquedaLugaresService>();
+builder.Services.AddScoped<FotoLugarService>();
 builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
 builder.Services.AddScoped<RecomendacionService>();
 builder.Services.AddScoped<AdminService>();
