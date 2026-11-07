@@ -106,8 +106,9 @@ public class AdminService
             throw new ReglaNegocioException("YA_REVISADO", ReglasReporte.MensajeYaRevisado);
     }
 
-    public Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int? limite, CancellationToken ct = default)
-        => _repo.ListarConsultasRagAsync(Math.Clamp(limite ?? LimiteConsultasPorDefecto, 1, LimiteConsultasMaximo), ct);
+    public async Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int? limite, CancellationToken ct = default)
+        => AuditoriaConversaciones.Agrupar(
+            await _repo.ListarConsultasRagAsync(Math.Clamp(limite ?? LimiteConsultasPorDefecto, 1, LimiteConsultasMaximo), ct));
 
     public Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default) => _repo.MetricasAsync(ct);
 }

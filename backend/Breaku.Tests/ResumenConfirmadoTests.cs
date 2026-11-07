@@ -161,6 +161,8 @@ public class ResumenConfirmadoServiciosTests
             Logs.Add(log);
             return Task.CompletedTask;
         }
+        public Task<LogAuditoriaRag?> ObtenerLogAsync(long id, CancellationToken ct = default)
+            => Task.FromResult(Logs.FirstOrDefault(l => l.Id == id));
     }
 
     private sealed class ExtractorFalso(ArgumentosExtraidos argumentos) : IExtractorActividad

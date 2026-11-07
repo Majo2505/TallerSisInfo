@@ -2624,6 +2624,12 @@ components:
         latenciaMs: { type: integer, format: int32, nullable: true, example: 23494 }
         lugaresRecuperados: { type: integer, format: int32, example: 5 }
         recomendados: { type: integer, format: int32, example: 3 }
+        respuestas:
+          type: array
+          items: { type: string }
+          example: ['5']
+          description: 'Lo que el estudiante contestó en los turnos siguientes de la misma conversación, en orden. `entrada` es el primero; `id`, el del primer turno; `fecha`, la del último. Si algún turno se rechazó por seguridad, `estado` y `motivoRechazo` son los de ese turno; `latenciaMs` suma todos.'
+        turnos: { type: integer, format: int32, example: 2, description: Cuántos turnos tuvo la conversación (1 en las recomendaciones). }
     MetricasAdminDto:
       type: object
       properties:
@@ -2752,12 +2758,14 @@ components:
             - $ref: '#/components/schemas/ActividadExtraidaDto'
           nullable: true
           description: Lo ya entendido (el campo `actividad` de la respuesta anterior). `null` en la primera consulta.
+        consultaAnteriorId: { type: integer, format: int64, nullable: true, example: 57, description: 'El `consultaId` de la respuesta anterior cuando se contesta una pregunta del asistente o se corrige un dato. Une los turnos en una sola consulta en la Auditoría RAG (solo si es tuya, de crear actividad y de hace menos de 30 min).' }
     RevisionActividadDto:
       type: object
       properties:
         texto: { type: string, maxLength: 200, example: Quiero jugar cartas por una hora, description: La descripción original del estudiante. }
         actividad:
           $ref: '#/components/schemas/ActividadExtraidaDto'
+        consultaAnteriorId: { type: integer, format: int64, nullable: true, example: 57, description: 'El `consultaId` de la respuesta anterior cuando se contesta una pregunta del asistente o se corrige un dato. Une los turnos en una sola consulta en la Auditoría RAG (solo si es tuya, de crear actividad y de hace menos de 30 min).' }
     CrearActividadRequest:
       type: object
       required: [texto, actividad, horaInicio, duracionMin, maxParticipantes, consultaId]

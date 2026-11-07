@@ -13,6 +13,8 @@ public class LogAuditoriaRag
 
     public long Id { get; set; }
     public int UsuarioId { get; set; }
+    /// <summary>HU11: primer turno de la conversación con el asistente; null si este es el primero (o es una recomendación).</summary>
+    public long? ConsultaOrigenId { get; set; }
     public string Tipo { get; set; } = "";
     public int? ZonaId { get; set; }
     public int? RadioAplicadoM { get; set; }

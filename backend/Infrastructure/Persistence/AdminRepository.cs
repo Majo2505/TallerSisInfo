@@ -22,7 +22,8 @@ public class AdminRepository : IAdminRepository
                   (SELECT COUNT(*) FROM lugar WHERE estado = 'EN_REVISION')                    AS LugaresEnRevision,
                   (SELECT COUNT(*) FROM usuario WHERE rol = 'ESTUDIANTE' AND activo = 1)       AS Estudiantes,
                   (SELECT COUNT(*) FROM comunidad_efimera WHERE inicio >= {hoy})               AS ComunidadesHoy,
-                  (SELECT COUNT(*) FROM log_auditoria_rag WHERE created_at >= {desdeSemana})   AS ConsultasRagSemana,
+                  (SELECT COUNT(DISTINCT COALESCE(consulta_origen_id, id)) FROM log_auditoria_rag
+                    WHERE created_at >= {desdeSemana})                                          AS ConsultasRagSemana,
                   (SELECT COUNT(*) FROM reporte WHERE estado = 'PENDIENTE')                    AS ReportesPendientes
                 """).ToListAsync(ct)).Single();
         return new ResumenAdminDto((int)fila.LugaresActivos, (int)fila.LugaresEnRevision, (int)fila.Estudiantes,
@@ -265,19 +266,26 @@ public class AdminRepository : IAdminRepository
         return anterior;
     }
 
-    public async Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default)
+    public async Task<List<TurnoConsultaRag>> ListarConsultasRagAsync(int limite, CancellationToken ct = default)
     {
+        // Primero las últimas conversaciones (por su turno más reciente) y después todos sus turnos.
         var filas = await _db.Database.SqlQuery<FilaConsultaRag>($"""
-                SELECT g.id AS Id, g.created_at AS Fecha, u.nombre AS Usuario, g.tipo AS Tipo, g.entrada_usuario AS Entrada,
+                SELECT g.id AS Id, COALESCE(g.consulta_origen_id, g.id) AS Conversacion, g.created_at AS Fecha,
+                       u.nombre AS Usuario, g.tipo AS Tipo, g.entrada_usuario AS Entrada,
                        g.estado AS Estado, g.motivo_rechazo AS MotivoRechazo, g.modelo AS Modelo, g.latencia_ms AS LatenciaMs,
                        (SELECT COUNT(*) FROM lugar_recuperado lr WHERE lr.log_id = g.id) AS LugaresRecuperados,
                        (SELECT COUNT(*) FROM recomendacion r WHERE r.log_id = g.id)      AS Recomendados
-                FROM log_auditoria_rag g JOIN usuario u ON u.id = g.usuario_id
-                ORDER BY g.created_at DESC
-                LIMIT {limite}
+                FROM log_auditoria_rag g
+                JOIN usuario u ON u.id = g.usuario_id
+                JOIN (SELECT COALESCE(consulta_origen_id, id) AS conversacion, MAX(created_at) AS ultima
+                      FROM log_auditoria_rag
+                      GROUP BY COALESCE(consulta_origen_id, id)
+                      ORDER BY ultima DESC
+                      LIMIT {limite}) ultimas ON ultimas.conversacion = COALESCE(g.consulta_origen_id, g.id)
+                ORDER BY g.created_at, g.id
                 """).ToListAsync(ct);
-        return filas.Select(f => new ConsultaRagAdminDto(f.Id, f.Fecha, f.Usuario, f.Tipo, f.Entrada, f.Estado, f.Modelo,
-            f.LatenciaMs, (int)f.LugaresRecuperados, (int)f.Recomendados, f.MotivoRechazo)).ToList();
+        return filas.Select(f => new TurnoConsultaRag(f.Id, f.Conversacion, f.Fecha, f.Usuario, f.Tipo, f.Entrada, f.Estado,
+            f.MotivoRechazo, f.Modelo, f.LatenciaMs, (int)f.LugaresRecuperados, (int)f.Recomendados)).ToList();
     }
 
     public async Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default)
@@ -401,6 +409,7 @@ public class AdminRepository : IAdminRepository
     private sealed class FilaConsultaRag
     {
         public long Id { get; set; }
+        public long Conversacion { get; set; }
         public DateTime Fecha { get; set; }
         public string Usuario { get; set; } = "";
         public string Tipo { get; set; } = "";
