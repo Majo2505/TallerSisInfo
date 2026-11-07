@@ -550,7 +550,7 @@ export default function PanelAdmin() {
                 </div>
                 <p className={estilos.conteo}>
                   {filtroAuditoria === "todas"
-                    ? `Últimas ${consultas?.length ?? 0} consultas al asistente`
+                    ? `Últimas ${consultas?.length ?? 0} consultas al asistente (cada conversación, en una sola)`
                     : `${consultasFiltradas.length} de las últimas ${consultas?.length ?? 0} consultas`}
                 </p>
                 {consultasFiltradas.length === 0 && consultas && (
@@ -576,12 +576,24 @@ export default function PanelAdmin() {
                         </small>
                       </div>
                       <p className={estilos.entrada}>“{c.entrada ?? "(sin preferencia)"}”</p>
+                      {(c.respuestas?.length ?? 0) > 0 && (
+                        <ol className={estilos.respuestas} aria-label="Lo que respondió después">
+                          {c.respuestas!.map((texto, i) => (
+                            <li key={i}>
+                              <span className={estilos.respondio}>Respondió</span> “{texto}”
+                            </li>
+                          ))}
+                        </ol>
+                      )}
                       <div className={estilos.consultaDatos}>
                         <span>{c.modelo ?? "Sin LLM"}</span>
                         <span>{segundos(c.latenciaMs)}</span>
-                        <span>
-                          {c.lugaresRecuperados} recuperados → {c.recomendados} recomendados
-                        </span>
+                        {(c.turnos ?? 1) > 1 && <span>{c.turnos} turnos</span>}
+                        {c.tipo === "RECOMENDACION" && (
+                          <span>
+                            {c.lugaresRecuperados} recuperados → {c.recomendados} recomendados
+                          </span>
+                        )}
                       </div>
                     </li>
                   ))}
