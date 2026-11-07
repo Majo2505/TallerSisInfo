@@ -14,7 +14,8 @@ public record LugarViableDto(
     string? TipoLugar,
     List<string> Modalidad,
     List<string> NivelEnergia,
-    List<string> ActividadesSugeridas);
+    List<string> ActividadesSugeridas,
+    string? FotoUrl);
 
 public record ResultadoBusquedaLugaresDto(
     string Estado,

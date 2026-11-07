@@ -63,7 +63,7 @@ public class BusquedaLugaresService : IRecuperadorLugares
                 var traslado = ReglasBusquedaLugares.TiempoTrasladoIdaVueltaMin(distancia);
                 return new LugarCandidato(l.Id, l.Nombre, l.Categoria.Nombre, l.Descripcion, distancia, traslado, l.DuracionEstimadaMin,
                     l.Validado, l.TipoLugar, ListasLugar.SepararPorComas(l.Modalidad), ListasLugar.SepararPorComas(l.NivelEnergia),
-                    ListasLugar.LeerJson(l.ActividadesSugeridas));
+                    ListasLugar.LeerJson(l.ActividadesSugeridas), ReglasFotoLugar.Url(l.Id, l.FotoActualizadaEn));
             })
             .Where(c => ReglasBusquedaLugares.TieneMetricasCompletas(c.Nombre, c.Categoria, c.DistanciaM, c.DuracionEstimadaMin))
             .Where(c => ReglasBusquedaLugares.EstaDentroDelRadio(c.DistanciaM, zona.RadioMaxM))
@@ -80,5 +80,5 @@ public class BusquedaLugaresService : IRecuperadorLugares
 
     private static LugarViableDto ADto(LugarCandidato c) =>
         new(c.LugarId, c.Nombre, c.Categoria, c.Descripcion, c.DistanciaM, c.TiempoTrasladoMin, c.DuracionEstimadaMin,
-            c.Validado, c.TipoLugar, c.Modalidad ?? [], c.NivelEnergia ?? [], c.ActividadesSugeridas ?? []);
+            c.Validado, c.TipoLugar, c.Modalidad ?? [], c.NivelEnergia ?? [], c.ActividadesSugeridas ?? [], c.FotoUrl);
 }
