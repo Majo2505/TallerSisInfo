@@ -59,7 +59,8 @@ public record LugarDetalleAdminDto(
     string? HoraCierre,
     int? MinAPieDesdeBloqueA,
     string Estado,
-    bool Validado);
+    bool Validado,
+    string? FotoUrl = null);
 
 /// <summary>Lugar recién creado.</summary>
 public record LugarCreadoDto(int Id);

@@ -111,7 +111,8 @@ public class AdminRepository : IAdminRepository
     {
         var f = await LeerLugarAsync(lugarId, bloquear: false, ct);
         return f is null ? null : new LugarDetalleAdminDto(f.Id, f.Nombre, f.Descripcion, f.CategoriaId, f.Latitud, f.Longitud,
-            f.DuracionEstimadaMin, Hora(f.HoraApertura), Hora(f.HoraCierre), f.MinAPieDesdeBloqueA, f.Estado, f.Validado);
+            f.DuracionEstimadaMin, Hora(f.HoraApertura), Hora(f.HoraCierre), f.MinAPieDesdeBloqueA, f.Estado, f.Validado,
+            ReglasFotoLugar.Url(f.Id, f.FotoActualizadaEn is { } v ? DateTime.SpecifyKind(v, DateTimeKind.Utc) : null));
     }
 
     public async Task<bool> NombreEnUsoAsync(string nombre, int? excluirId, CancellationToken ct = default)
@@ -194,13 +195,15 @@ public class AdminRepository : IAdminRepository
             ? _db.Database.SqlQuery<FilaLugarDetalle>($"""
                 SELECT id AS Id, nombre AS Nombre, descripcion AS Descripcion, categoria_id AS CategoriaId, latitud AS Latitud,
                        longitud AS Longitud, duracion_estimada_min AS DuracionEstimadaMin, hora_apertura AS HoraApertura,
-                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado
+                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado,
+                       foto_actualizada_en AS FotoActualizadaEn
                 FROM lugar WHERE id = {lugarId} FOR UPDATE
                 """)
             : _db.Database.SqlQuery<FilaLugarDetalle>($"""
                 SELECT id AS Id, nombre AS Nombre, descripcion AS Descripcion, categoria_id AS CategoriaId, latitud AS Latitud,
                        longitud AS Longitud, duracion_estimada_min AS DuracionEstimadaMin, hora_apertura AS HoraApertura,
-                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado
+                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado,
+                       foto_actualizada_en AS FotoActualizadaEn
                 FROM lugar WHERE id = {lugarId}
                 """);
         return (await consulta.ToListAsync(ct)).FirstOrDefault();
@@ -377,6 +380,7 @@ public class AdminRepository : IAdminRepository
         public short? MinAPieDesdeBloqueA { get; set; }
         public string Estado { get; set; } = "";
         public bool Validado { get; set; }
+        public DateTime? FotoActualizadaEn { get; set; }
 
         public DatosLugar ADatos() => new(Nombre, Descripcion, CategoriaId, Latitud, Longitud, DuracionEstimadaMin,
             HoraApertura is { } a ? TimeOnly.FromTimeSpan(a) : null, HoraCierre is { } c ? TimeOnly.FromTimeSpan(c) : null,

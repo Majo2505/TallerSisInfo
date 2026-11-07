@@ -455,6 +455,8 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `POST` | `/api/admin/lugares` | Crea un lugar (queda `ACTIVO` y validado). **`201`** `{ "id": … }`; `400 VALIDACION`; `409 NOMBRE_REPETIDO`. Queda `CREATE` en `historial_cambio` |
 | `PUT` | `/api/admin/lugares/{id}` | Edita un lugar con las mismas reglas. **`204`**; `400`; `404`; `409 NOMBRE_REPETIDO`. Queda `UPDATE` (antes y después) en `historial_cambio` |
 | `DELETE` | `/api/admin/lugares/{id}` | Elimina un lugar **que nunca se usó**. **`204`**; `404`; `409 EN_USO` si ya aparece en recomendaciones, reportes o comunidades (hay que desactivarlo). Queda `DELETE` en `historial_cambio` |
+| `PUT` | `/api/admin/lugares/{id}/foto` | Sube o reemplaza la **foto real** del lugar: `multipart/form-data` con el archivo en `foto`, JPG, PNG o WebP de hasta **2 MB** (el panel la achica antes). El tipo se revisa por el contenido, no por la extensión. **`200`** `{ "fotoUrl": "/api/lugares/21/foto?v=…" }`; `400 VALIDACION`; `404 NO_ENCONTRADO`. Queda `UPDATE` `{"foto": …}` en `historial_cambio` (sin los bytes) |
+| `DELETE` | `/api/admin/lugares/{id}/foto` | Quita la foto; vuelve la ilustración de la categoría. **`204`** (también si no tenía); `404 NO_ENCONTRADO` |
 | `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`). Los que no son de un lugar ni de una comunidad se ven con objeto «General» |
 | `PATCH` | `/api/admin/reportes/{id}` | Body `{ "estado": "RESUELTO" }` o `"DESCARTADO"`. Cierra un reporte `PENDIENTE` y guarda al admin como `revisor_id` y la fecha en `revisado_en`. **204**; 400 `VALIDACION` (otra decisión, incluida `PENDIENTE`: no se reabre); 404 `NO_ENCONTRADO`; 409 `YA_REVISADO` (ya tenía decisión: no se cambia) |
 | `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas consultas al asistente con entrada, estado, modelo y latencia (1 a 200) |
@@ -563,6 +565,15 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
 | 400 | Falta `puenteId` o no es un número positivo (`VALIDACION`) |
 | 401 | Sin token o token inválido |
 | 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
+
+### Fotos de los lugares (admin)
+
+| Tema | Regla | Estado |
+|---|---|---|
+| Dónde se guardan | En la base, tabla `lugar_foto` (una por lugar, migración 019), no en el disco del servidor: así todo el equipo las ve desde la base compartida. Las listas no cargan los bytes | ✅ Definido |
+| Cómo se muestran | `fotoUrl` en `GET /api/lugares/viables`, en las recomendaciones y en el detalle del panel. `null` = sin foto: se muestra la ilustración de la categoría. La foto se pide con `GET /api/lugares/{id}/foto?v=…` | ✅ Definido |
+| `GET /api/lugares/{id}/foto` | **Público** (la etiqueta `img` no manda el token). Con `?v=` responde `Cache-Control: public, max-age=31536000, immutable`; la versión cambia cada vez que el admin sube otra. `404 NO_ENCONTRADO` si no tiene | ✅ Definido |
+| Tamaño | Hasta 2 MB por foto (`ck_foto_bytes`). El panel la achica a 1600 px de lado como máximo y la convierte a WebP antes de subirla | ✅ Definido |
 
 ## 7b. Matching de compañeros con puente compatible (HU12 — responsable: Maite)
 

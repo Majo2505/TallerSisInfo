@@ -145,7 +145,7 @@ public class RecomendacionService
     }
 
     private static RecomendacionDto ADto(Recomendacion r, LugarCandidato l) =>
-        new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion, r.Feedback);
+        new(r.Id, l.LugarId, l.Nombre, l.Categoria, l.DistanciaM, l.TiempoTrasladoMin, l.DuracionEstimadaMin, r.Explicacion, r.Feedback, l.FotoUrl);
 
     public async Task<FeedbackGuardadoDto> GuardarFeedbackAsync(int usuarioId, long recomendacionId, string? feedback, CancellationToken ct = default)
     {

@@ -28,6 +28,7 @@ public class LugarConfiguration : IEntityTypeConfiguration<Lugar>
         builder.Property(l => l.MinAPieDesdeBloqueA).HasColumnName("min_a_pie_desde_bloque_a");
         builder.Property(l => l.Recomendable).HasColumnName("recomendable");
         builder.Property(l => l.Validado).HasColumnName("validado");
+        builder.Property(l => l.FotoActualizadaEn).HasColumnName("foto_actualizada_en");
 
         builder.HasOne(l => l.Categoria).WithMany().HasForeignKey(l => l.CategoriaId);
     }

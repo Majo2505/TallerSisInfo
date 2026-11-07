@@ -18,7 +18,8 @@ public record RecomendacionDto(
     int TiempoTrasladoMin,
     int DuracionEstimadaMin,
     string Explicacion,
-    string? Feedback = null
+    string? Feedback = null,
+    string? FotoUrl = null
 );
 
 public record FeedbackRecomendacionDto(string? Feedback);

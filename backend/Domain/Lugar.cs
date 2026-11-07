@@ -30,4 +30,7 @@ public class Lugar
     public bool Recomendable { get; set; } = true;
 
     public bool Validado { get; set; } = true;
+
+    /// <summary>Cuándo cambió la foto real del lugar (versión de su URL). Null: no tiene foto.</summary>
+    public DateTime? FotoActualizadaEn { get; set; }
 }
