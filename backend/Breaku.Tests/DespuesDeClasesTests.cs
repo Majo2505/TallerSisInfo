@@ -160,7 +160,7 @@ public class DespuesDeClasesTests
         public List<Notificacion> Guardadas { get; } = [];
         public List<long> Desactivadas { get; } = [];
 
-        public Task<List<Puente>> ListarPuentesPorAvisarAsync(int diaSemana, DateOnly fecha, TimeOnly desde, TimeOnly hasta, CancellationToken ct = default)
+        public Task<List<Puente>> ListarPuentesPorAvisarAsync(int diaSemana, DateOnly fecha, TimeOnly ahora, CancellationToken ct = default)
             => Task.FromResult(PorAvisar);
 
         public Task<bool> AgregarAsync(Notificacion notificacion, CancellationToken ct = default)
