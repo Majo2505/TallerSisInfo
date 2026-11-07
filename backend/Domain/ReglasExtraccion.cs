@@ -24,6 +24,21 @@ public sealed record ResultadoExtraccion(
 
 public static class ReglasExtraccion
 {
+    /// <summary>Un turno solo continúa la conversación si llega antes de esto; después es una conversación nueva.</summary>
+    public const int MinutosMaximosEntreTurnos = 30;
+
+    /// <summary>
+    /// El primer turno de la conversación que continúa este pedido, o null si empieza una nueva. Solo se continúa una
+    /// extracción del mismo estudiante y reciente: un id ajeno, de una recomendación o viejo no une nada.
+    /// </summary>
+    public static long? OrigenDeConversacion(LogAuditoriaRag? anterior, int usuarioId, DateTime ahoraUtc)
+    {
+        if (anterior is null || anterior.UsuarioId != usuarioId || anterior.Tipo != LogAuditoriaRag.TipoExtraccionComunidad) return null;
+        var pasaron = ahoraUtc - anterior.CreatedAt;
+        if (pasaron < TimeSpan.Zero || pasaron.TotalMinutes >= MinutosMaximosEntreTurnos) return null;
+        return anterior.ConsultaOrigenId ?? anterior.Id;
+    }
+
     public const string EstadoCompleto = "COMPLETO";
     public const string EstadoIncompleto = "INCOMPLETO";
     public const string EstadoNoEntendido = "NO_ENTENDIDO";

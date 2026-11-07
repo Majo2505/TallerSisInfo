@@ -13,6 +13,7 @@ public class LogAuditoriaRagConfiguration : IEntityTypeConfiguration<LogAuditori
 
         builder.Property(l => l.Id).HasColumnName("id");
         builder.Property(l => l.UsuarioId).HasColumnName("usuario_id");
+        builder.Property(l => l.ConsultaOrigenId).HasColumnName("consulta_origen_id");
         builder.Property(l => l.Tipo).HasColumnName("tipo").HasMaxLength(25).IsRequired();
         builder.Property(l => l.ZonaId).HasColumnName("zona_id");
         builder.Property(l => l.RadioAplicadoM).HasColumnName("radio_aplicado_m");
