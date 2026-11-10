@@ -36,6 +36,7 @@ public static class DependencyInjection
             UserID = Required(configuration, "DB_USER"),
             Password = Required(configuration, "DB_PASSWORD"),
             CharacterSet = "utf8mb4",
+            SslMode = ParseSslMode(configuration["DB_SSL_MODE"]),
             DateTimeKind = MySqlDateTimeKind.Utc
         }.ConnectionString;
 
@@ -153,5 +154,13 @@ public static class DependencyInjection
         }
 
         return port;
+    }
+
+    private static MySqlSslMode ParseSslMode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return MySqlSslMode.Preferred;
+        if (Enum.TryParse<MySqlSslMode>(value, true, out var mode)) return mode;
+        throw new InvalidOperationException(
+            "La configuración 'DB_SSL_MODE' debe ser Disabled, Preferred, Required, VerifyCA o VerifyFull.");
     }
 }
