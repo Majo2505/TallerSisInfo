@@ -25,7 +25,7 @@ import { LugarViable, ResultadoLugares, buscarLugaresViables } from "@/lib/lugar
 import { ESTADOS_ANIMO } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, esDespuesDeClases, hhmm, soloEntreClases } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
-import { EventoRecomendado, listarEventosRecomendados } from "@/lib/eventos";
+import { EventoRecomendado, formatearFechaEvento, listarEventosRecomendados } from "@/lib/eventos";
 import estilos from "./inicio.module.css";
 
 const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
@@ -395,7 +395,7 @@ export default function Inicio() {
         <Pieza as="section" className={`${estilos.tarjeta} ${estilos.zonaActividades}`}>
           <div className={estilos.encabezado}>
             <h2 className={estilos.subtitulo}>Eventos recomendados</h2>
-            <span className={estilos.nota}>Antes de tu próxima clase</span>
+            <span className={estilos.nota}>Caben en tus puentes</span>
           </div>
           <ul className={estilos.actividades}>
             {eventos.slice(0, 3).map((evento) => (
@@ -403,7 +403,7 @@ export default function Inicio() {
                 <a href={evento.fuenteUrl} target="_blank" rel="noreferrer" className={estilos.actividad}>
                   <span className={estilos.actividadTexto}>
                     <strong>{evento.titulo}</strong>
-                    <small><IconoReloj tamano={13} /> {evento.inicio}–{evento.fin}{evento.lugar ? ` · ${evento.lugar}` : ""}</small>
+                    <small><IconoReloj tamano={13} /> {formatearFechaEvento(evento.fecha)} · {evento.inicio}–{evento.fin}{evento.lugar ? ` · ${evento.lugar}` : ""}</small>
                   </span>
                   <span className={estilos.actividadInvitada}>Instagram UCB</span>
                 </a>
