@@ -19,26 +19,30 @@ public class NotificacionService
         if (dia == 0) return 0;
 
         var hora = TimeOnly.FromDateTime(ahoraLocal);
-        var desde = hora.ToTimeSpan() >= ReglasNotificacion.VentanaEnvio
-            ? hora.Add(-ReglasNotificacion.VentanaEnvio)
-            : TimeOnly.MinValue;
 
-        var puentes = await _repo.ListarPuentesPorAvisarAsync(dia, fecha, desde, hora, ct);
+        // Todos los puentes de hoy que ya empezaron y siguen en curso, sin aviso todavía. Así el aviso llega aunque ningún
+        // servidor estuviera prendido justo al empezar, y le llega a cada estudiante esté o no usando la app.
+        var puentes = await _repo.ListarPuentesPorAvisarAsync(dia, fecha, hora, ct);
 
         var enviados = 0;
         foreach (var p in puentes)
         {
-            if (!ReglasNotificacion.DebeAvisarse(p.HoraInicio, hora)) continue;
+            if (!ReglasNotificacion.DebeAvisarse(p.HoraInicio, p.HoraFin, hora)) continue;
             if (!ReglasPuente.EsPuente(p.HoraInicio, p.HoraFin)) continue;
 
+            var despuesDeClases = p.Tipo == Puente.TipoDespuesDeClases;
+            var desde = ReglasNotificacion.DesdeCuandoContar(p.HoraInicio, hora);
+            var tarde = desde != p.HoraInicio;
             var aviso = new Notificacion
             {
                 UsuarioId = p.UsuarioId,
-                Tipo = Notificacion.TipoPuenteDisponible,
+                Tipo = despuesDeClases ? Notificacion.TipoDespuesDeClases : Notificacion.TipoPuenteDisponible,
                 PuenteFecha = fecha,
                 PuenteHoraInicio = p.HoraInicio,
                 PuenteHoraFin = p.HoraFin,
-                Mensaje = ReglasNotificacion.Mensaje(p.HoraInicio, p.HoraFin),
+                Mensaje = despuesDeClases ? ReglasNotificacion.MensajeDespuesDeClases(desde, p.HoraFin)
+                    : tarde ? ReglasNotificacion.MensajeEnCurso(desde, p.HoraFin)
+                    : ReglasNotificacion.Mensaje(p.HoraInicio, p.HoraFin),
                 CreatedAt = ahoraUtc
             };
 

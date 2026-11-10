@@ -58,12 +58,13 @@ function IconoCerrar() {
 
 const TIPOS = {
   PUENTE_DISPONIBLE: { titulo: "Puente disponible", clase: "puente", Icono: IconoRayoApp },
+  DESPUES_DE_CLASES: { titulo: "Terminaste tus clases", clase: "puente", Icono: IconoRayoApp },
   INVITACION_COMUNIDAD: { titulo: "Invitación a una comunidad", clase: "invitacion", Icono: IconoPersonas },
   COMUNIDAD_CERRADA: { titulo: "El grupo se llenó", clase: "cerrada", Icono: IconoPersonas },
 } as const;
 
 function rutaDe(n: Notificacion): string {
-  if (n.tipo === "PUENTE_DISPONIBLE") return n.duracionMinutos ? `/recomendaciones?min=${n.duracionMinutos}` : "/recomendaciones";
+  if (n.tipo === "PUENTE_DISPONIBLE" || n.tipo === "DESPUES_DE_CLASES") return n.duracionMinutos ? `/recomendaciones?min=${n.duracionMinutos}` : "/recomendaciones";
   return n.comunidadId ? `/comunidades?pestana=descubrir&comunidad=${n.comunidadId}` : "/comunidades?pestana=descubrir";
 }
 
@@ -407,7 +408,7 @@ export default function Notificaciones({ recarga }: Props) {
                     {activas === false && (
                       <p className={estilos.nota}>No recibirás avisos, pero tus puentes se siguen detectando en tu horario.</p>
                     )}
-                    <p className={estilos.nota}>Los avisos de puente se generan solos cuando empieza un hueco libre entre clases.</p>
+                    <p className={estilos.nota}>Los avisos se generan solos cuando empieza un hueco libre entre clases y cuando terminan tus clases del día.</p>
                   </footer>
                 </motion.aside>
               )}

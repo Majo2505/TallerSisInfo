@@ -7,7 +7,7 @@ import { IconoAjustes, IconoCalendario, IconoPersonas, IconoReloj } from "@/comp
 import { Odometro, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { iniciales } from "@/lib/iniciales";
 import { ResultadoMatching, buscarCompaneros, guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
-import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
+import { Puente, duracionMin, esDespuesDeClases, hhmm, listarPuentes } from "@/lib/puentes";
 import estilos from "./CompanerosLibres.module.css";
 
 const DIAS = ["", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -220,7 +220,7 @@ function SelectorPuentes({ puentes, elegido, onElegir }: { puentes: Puente[]; el
             key={p.id}
             type="button"
             aria-pressed={activo}
-            className={activo ? estilos.puenteActivo : estilos.puente}
+            className={[activo ? estilos.puenteActivo : estilos.puente, esDespuesDeClases(p) ? estilos.tras : ""].join(" ")}
             onClick={() => onElegir(p.id)}
             whileTap={{ scale: 0.95 }}
             transition={RESORTE_TOQUE}
@@ -233,7 +233,10 @@ function SelectorPuentes({ puentes, elegido, onElegir }: { puentes: Puente[]; el
               />
             )}
             <span className={estilos.puenteTexto}>
-              <strong>{CORTOS[p.diaSemana]}</strong>
+              <strong>
+                {CORTOS[p.diaSemana]}
+                {esDespuesDeClases(p) ? " · tras clases" : ""}
+              </strong>
               <span>
                 {hhmm(p.horaInicio)}–{hhmm(p.horaFin)}
               </span>

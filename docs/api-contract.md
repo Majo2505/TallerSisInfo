@@ -182,6 +182,7 @@ Campos del bloque (columnas de `horario`, `schema.sql`):
 | `diaSemana` | entero | 1 a 6 (1 = lunes … 6 = sábado) | ✅ Definido (`ck_horario_dia`) |
 | `horaInicio` | hora | Obligatoria, desde las **07:15** (la clase más temprana de la UCB). Antes: 400 «Las clases empiezan desde las 07:15.» | ✅ Definido (`ck_horario_rango`) |
 | `horaFin` | hora | Obligatoria, posterior a `horaInicio` y hasta las **21:00** (la más tarde). Después: 400 «Las clases terminan, como muy tarde, a las 21:00.» | ✅ Definido (`ck_horario_horas`, `ck_horario_rango`) |
+| Duración | — | Al menos **45 minutos**: una clase empieza como muy tarde a las 20:15 y termina como muy temprano a las 08:00. Menos: 400 «Una clase dura al menos 45 minutos.» | ✅ Definido (`ck_horario_duracion`) |
 | `aula` | string o `null` | Opcional, hasta 30 caracteres | ✅ Definido (schema) |
 | `origen` | string | Solo en respuestas. `MANUAL` (alta a mano) o `FOTO` (confirmado desde la foto del horario); valores válidos en la BD: `MANUAL`, `FOTO` (`ck_horario_origen`). El cliente no lo envía | ✅ Definido (valores); 🟡 Propuesta (que el cliente no lo envíe) |
 | `asiste` | booleano | Opcional al enviar: al crear, `true` si no se envía; al editar, se conserva el valor actual. En respuestas siempre viene. `false` = el estudiante no asiste a ese bloque: no cuenta como tiempo ocupado y no choca con otros | ✅ Definido |
@@ -330,9 +331,9 @@ Eliminación de un bloque (#10).
 
 - ✅ **Definido** (#11): el sistema calcula automáticamente los bloques libres entre las clases del estudiante; si duran **45 minutos o más** (incluido exactamente 45) son un "puente"; si duran menos, no son un puente ni generan ningún evento.
 - ✅ **Definido:** solo cuentan los bloques con `asiste = true`, y el tiempo ocupado de cada día es la unión de sus intervalos (ver «Regla de choques»).
+- ✅ **Definido** (Majo y Maite): además de los puentes, cada día con clases tiene un tramo **después de clases**: desde que termina la última clase a la que asiste hasta las **21:00** (`ReglasHorario.FinMasTarde`), si son 45 minutos o más. Se guarda en `puente` con `tipo = DESPUES_DE_CLASES`, así que recomendaciones, lugares, matching, invitaciones y avisos lo usan como cualquier otro puente. El tiempo antes de la primera clase y los días sin clases no cuentan.
 - ✅ **Definido** (#11, criterio 4): al guardar un horario modificado o recargado, los puentes se recalculan solos, sin que el estudiante lo pida. Por eso **no existe un endpoint de recálculo**: ocurre dentro de `POST`, `PUT` y `DELETE` de `/api/horarios`.
 - 🟡 **Propuesta, a confirmar por Majo:**
-  - Solo cuentan huecos entre clases del mismo día; el tramo antes de la primera clase y después de la última no es puente (#11 dice "entre sus clases").
   - El mínimo de 45 minutos vive en un único lugar de configuración del backend, sin tocar el schema (`schema.sql` lo deja como parámetro, no como `CHECK`).
   - El recálculo es síncrono, dentro de la misma operación de `POST`, `PUT` o `DELETE`, y reemplaza todos los puentes del usuario.
 
@@ -348,6 +349,7 @@ Eliminación de un bloque (#10).
 | `diaSemana` | entero, 1 a 6 | ✅ Definido (`ck_puente_dia`) |
 | `horaInicio` | hora | ✅ Definido |
 | `horaFin` | hora, posterior a `horaInicio` | ✅ Definido (`ck_puente_horas`) |
+| `tipo` | `ENTRE_CLASES` o `DESPUES_DE_CLASES` | ✅ Definido (`ck_puente_tipo`) |
 
 ```json
 [
@@ -355,7 +357,8 @@ Eliminación de un bloque (#10).
     "id": 5,
     "diaSemana": 1,
     "horaInicio": "09:30:00",
-    "horaFin": "10:30:00"
+    "horaFin": "10:30:00",
+    "tipo": "ENTRE_CLASES"
   }
 ]
 ```
@@ -363,6 +366,17 @@ Eliminación de un bloque (#10).
 **Errores:** `401` sin token o token inválido (🟡 Propuesta).
 
 🟡 **Propuesta, a confirmar por Majo y el FE:** no se incluye un campo de duración; el FE puede calcularla.
+
+### Avisos de puente (HU4)
+
+| Tema | Regla | Estado |
+|---|---|---|
+| Cuándo se crea | Un proceso del servidor revisa cada 15 segundos los puentes de hoy (hora de Bolivia) que **ya empezaron y siguen en curso**, y crea el aviso que falte (`PUENTE_DISPONIBLE` o `DESPUES_DE_CLASES`). Antes solo miraba el primer minuto del puente: si ningún servidor estaba prendido justo en ese minuto, el aviso no llegaba nunca | ✅ Definido |
+| A quién | A **todos** los estudiantes con avisos encendidos, estén o no usando la app. Queda sin leer en `GET /api/notificaciones` y se ve al entrar | ✅ Definido |
+| Demasiado tarde | Si al puente le quedan menos de **10 minutos**, ya no se avisa | ✅ Definido |
+| Texto | A tiempo: «¡Puente disponible! Tienes 2 h libres, de 10:00 a 12:00.». Atrasado: «¡Estás en un puente! Te quedan 1 h 30 min libres, hasta las 12:00.». Después de clases: «¡Terminaste tus clases! Tienes … libres, hasta las 21:00.» (con lo que queda) | ✅ Definido |
+| Sin duplicados | Uno por estudiante, día e inicio del puente (`uq_notif_puente`), aunque haya varios servidores prendidos contra la misma base | ✅ Definido |
+| Domingo | Sin avisos | ✅ Definido |
 
 ## 5. Endpoints existentes (fuera de `/api`)
 
@@ -452,9 +466,11 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `POST` | `/api/admin/lugares` | Crea un lugar (queda `ACTIVO` y validado). **`201`** `{ "id": … }`; `400 VALIDACION`; `409 NOMBRE_REPETIDO`. Queda `CREATE` en `historial_cambio` |
 | `PUT` | `/api/admin/lugares/{id}` | Edita un lugar con las mismas reglas. **`204`**; `400`; `404`; `409 NOMBRE_REPETIDO`. Queda `UPDATE` (antes y después) en `historial_cambio` |
 | `DELETE` | `/api/admin/lugares/{id}` | Elimina un lugar **que nunca se usó**. **`204`**; `404`; `409 EN_USO` si ya aparece en recomendaciones, reportes o comunidades (hay que desactivarlo). Queda `DELETE` en `historial_cambio` |
+| `PUT` | `/api/admin/lugares/{id}/foto` | Sube o reemplaza la **foto real** del lugar: `multipart/form-data` con el archivo en `foto`, JPG, PNG o WebP de hasta **2 MB** (el panel la achica antes). El tipo se revisa por el contenido, no por la extensión. **`200`** `{ "fotoUrl": "/api/lugares/21/foto?v=…" }`; `400 VALIDACION`; `404 NO_ENCONTRADO`. Queda `UPDATE` `{"foto": …}` en `historial_cambio` (sin los bytes) |
+| `DELETE` | `/api/admin/lugares/{id}/foto` | Quita la foto; vuelve la ilustración de la categoría. **`204`** (también si no tenía); `404 NO_ENCONTRADO` |
 | `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`). Los que no son de un lugar ni de una comunidad se ven con objeto «General» |
 | `PATCH` | `/api/admin/reportes/{id}` | Body `{ "estado": "RESUELTO" }` o `"DESCARTADO"`. Cierra un reporte `PENDIENTE` y guarda al admin como `revisor_id` y la fecha en `revisado_en`. **204**; 400 `VALIDACION` (otra decisión, incluida `PENDIENTE`: no se reabre); 404 `NO_ENCONTRADO`; 409 `YA_REVISADO` (ya tenía decisión: no se cambia) |
-| `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas consultas al asistente con entrada, estado, modelo y latencia (1 a 200) |
+| `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas **conversaciones** con el asistente (1 a 200): los turnos de una misma conversación (crear una actividad: «jugar cartas» → «¿A qué hora?» → «5») vienen juntos, con `entrada` (el primero), `respuestas` (los siguientes) y `turnos`. Estado, modelo y latencia sumada. Un rechazo de seguridad en cualquier turno marca toda la conversación |
 | `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio y los 5 lugares más recomendados |
 
 **Reglas del catálogo** (`ReglasLugar`, y en la base `uq_lugar_nombre` y `ck_lugar_horario`):
@@ -561,6 +577,15 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
 | 401 | Sin token o token inválido |
 | 404 | El puente no existe o no es del usuario (`NO_ENCONTRADO`) |
 
+### Fotos de los lugares (admin)
+
+| Tema | Regla | Estado |
+|---|---|---|
+| Dónde se guardan | En la base, tabla `lugar_foto` (una por lugar, migración 019), no en el disco del servidor: así todo el equipo las ve desde la base compartida. Las listas no cargan los bytes | ✅ Definido |
+| Cómo se muestran | `fotoUrl` en `GET /api/lugares/viables`, en las recomendaciones y en el detalle del panel. `null` = sin foto: se muestra la ilustración de la categoría. La foto se pide con `GET /api/lugares/{id}/foto?v=…` | ✅ Definido |
+| `GET /api/lugares/{id}/foto` | **Público** (la etiqueta `img` no manda el token). Con `?v=` responde `Cache-Control: public, max-age=31536000, immutable`; la versión cambia cada vez que el admin sube otra. `404 NO_ENCONTRADO` si no tiene | ✅ Definido |
+| Tamaño | Hasta 2 MB por foto (`ck_foto_bytes`). El panel la achica a 1600 px de lado como máximo y la convierte a WebP antes de subirla | ✅ Definido |
+
 ## 7b. Matching de compañeros con puente compatible (HU12 — responsable: Maite)
 
 Compañeros de tu misma sede que están libres al mismo tiempo que tú. Sin IA: es un cruce de horarios.
@@ -585,7 +610,7 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 | `OK` | Hay compañeros | `null` |
 | `SIN_ZONA` | No elegiste campus o tu sede ya no está activa | `Elige tu campus para encontrar compañeros con tiempo libre compatible.` |
 | `NO_VISIBLE` | No aceptaste aparecer | `Para ver a tus compañeros, primero acepta que ellos también te encuentren.` |
-| `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo en este puente.` |
+| `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo a esa hora.` |
 
 ```json
 {
@@ -684,7 +709,7 @@ Si falta un dato (`INCOMPLETO`), `mensaje` trae la pregunta y el dato va en `nul
 }
 ```
 
-Para responder: `{ "texto": "una hora con 2 amigos", "anterior": { "actividad": "tomar un café", "horaInicio": "17:00", "duracionMin": null, "maxParticipantes": null } }` (el `actividad` de la respuesta anterior, tal cual).
+Para responder: `{ "texto": "una hora con 2 amigos", "anterior": { "actividad": "tomar un café", "horaInicio": "17:00", "duracionMin": null, "maxParticipantes": null }, "consultaAnteriorId": 57 }` (el `actividad` y el `consultaId` de la respuesta anterior, tal cual). `consultaAnteriorId` une los dos turnos en una sola consulta en la Auditoría RAG (`log_auditoria_rag.consulta_origen_id`, migración 020); solo se tiene en cuenta si la consulta anterior es tuya, de crear actividad y de hace menos de 30 minutos. `POST /api/actividades/revisar` acepta el mismo campo.
 
 Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendimos tu actividad, ¿puedes describirla con más detalle?» y `faltantes` es `["actividad"]`.
 
@@ -987,7 +1012,7 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
 | Maite, Majo | Paginación | Ninguna | 🟡 Propuesta, a confirmar por Maite y Majo |
 | Maite | Texto de errores de validación y solapamiento | — | 🔴 Pendiente (Maite) |
 | Ariana, Maite | `updated_at` | Lo fija el backend con la hora UTC actual | 🟡 Propuesta, a confirmar por Ariana y Maite |
-| Majo | Tramos antes de la primera y después de la última clase | No son puente | 🟡 Propuesta, a confirmar por Majo |
+| Majo | Tramo antes de la primera clase | No es puente | 🟡 Propuesta, a confirmar por Majo |
 | Majo, Ariana | Parámetro de 45 min | Un único lugar de configuración del backend | 🟡 Propuesta, a confirmar por Majo y Ariana |
 | Majo, Maite | Recálculo de puentes | Síncrono, dentro de `POST`/`PUT`/`DELETE` de horarios; reemplaza los puentes del usuario | 🟡 Propuesta, a confirmar por Majo y Maite |
 | Majo | Campo de duración en `GET /api/puentes` | No se incluye | 🟡 Propuesta, a confirmar por Majo |

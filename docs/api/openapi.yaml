@@ -36,7 +36,7 @@ tags:
   - name: Puentes
     description: Puentes detectados (HU3). Requiere JWT. Solo consulta; se recalculan solos al cambiar el horario.
   - name: Notificaciones
-    description: Avisos de puente disponible (HU4). Requiere JWT. El servidor crea el aviso al empezar cada puente.
+    description: Avisos de puente disponible y de después de clases (HU4). Requiere JWT. El servidor crea el aviso mientras el puente está en curso y le quedan 10 minutos o más, para todos los estudiantes con avisos encendidos, estén o no usando la app; quien entra después lo ve sin leer.
   - name: Ubicación
     description: Consentimiento y selección del campus actual (HU5). Las coordenadas se usan solo para resolver la zona y no se almacenan.
   - name: Lugares
@@ -913,6 +913,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/admin/lugares/{id}/foto:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int32, example: 21 }
+    put:
+      tags: [Administración]
+      operationId: subirFotoLugar
+      summary: Sube o reemplaza la foto real de un lugar.
+      description: JPG, PNG o WebP de hasta 2 MB en el campo `foto` (el panel la achica antes de subirla). El tipo se revisa por el contenido del archivo, no por la extensión. Queda en `historial_cambio` (sin los bytes).
+      security: [{ Bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [foto]
+              properties:
+                foto: { type: string, format: binary }
+      responses:
+        '200':
+          description: Foto guardada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FotoGuardadaDto'
+        '400':
+          description: Sin foto, más de 2 MB o no es JPG, PNG ni WebP (`codigo` = `VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+    delete:
+      tags: [Administración]
+      operationId: quitarFotoLugar
+      summary: Quita la foto de un lugar (vuelve la ilustración de su categoría).
+      security: [{ Bearer: [] }]
+      responses:
+        '204':
+          description: Foto quitada, o el lugar ya no tenía.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: El usuario no tiene rol `ADMIN`.
+        '404':
+          description: El lugar no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/admin/reportes:
     get:
       tags: [Administración]
@@ -1025,6 +1087,36 @@ paths:
           $ref: '#/components/responses/NoAutorizado'
         '403':
           description: El usuario no tiene rol `ADMIN`.
+  /api/lugares/{id}/foto:
+    get:
+      tags: [Lugares]
+      operationId: fotoLugar
+      summary: Foto real de un lugar del catálogo.
+      description: Pública, porque la pide la etiqueta `img`, que no manda el token; la foto de un lugar del campus no es un dato privado. Usar la ruta de `fotoUrl` (con `?v=`); con la versión se guarda un año en el navegador (`immutable`) y se vuelve a pedir solo cuando el administrador la cambia.
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int32, example: 21 }
+        - name: v
+          in: query
+          required: false
+          description: Versión de la foto (la pone el servidor en `fotoUrl`).
+          schema: { type: string }
+      responses:
+        '200':
+          description: La imagen.
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        '404':
+          description: El lugar no tiene foto o no existe (`codigo` = `NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/lugares/viables:
     get:
       tags: [Lugares]
@@ -1992,12 +2084,12 @@ components:
         horaInicio:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). Desde las 07:15 (horario de clases de la UCB).
+          description: Hora de inicio en formato 24 h (`HH:mm` o `HH:mm:ss`). De 07:15 a 20:15 (horario de clases de la UCB).
           example: '08:00'
         horaFin:
           type: string
           pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
-          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). Debe ser posterior a la hora de inicio y no pasar de las 21:00.
+          description: Hora de fin en formato 24 h (`HH:mm` o `HH:mm:ss`). De 08:00 a 21:00, y la clase dura al menos 45 minutos.
           example: '09:30'
         aula:
           type: string
@@ -2101,7 +2193,7 @@ components:
               autorizacionCarrera: { type: boolean, nullable: true, example: true }
     PuenteDto:
       type: object
-      description: Puente detectado. Hueco libre de 45 minutos o más entre dos clases del mismo día.
+      description: Tiempo libre detectado. `ENTRE_CLASES` es un hueco de 45 minutos o más entre dos clases del mismo día; `DESPUES_DE_CLASES` va desde la última clase del día hasta las 21:00, si son 45 minutos o más.
       properties:
         id:
           type: integer
@@ -2121,9 +2213,14 @@ components:
           type: string
           description: Hora en que empieza la clase siguiente (`HH:mm:ss`, 24 h).
           example: '10:30:00'
+        tipo:
+          type: string
+          enum: [ENTRE_CLASES, DESPUES_DE_CLASES]
+          description: Si el tiempo libre está entre dos clases o después de la última del día.
+          example: ENTRE_CLASES
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` (HU4) o `INVITACION_COMUNIDAD` (HU13).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13) o `COMUNIDAD_CERRADA` (HU14).
       properties:
         id:
           type: integer
@@ -2132,7 +2229,7 @@ components:
           example: 31
         tipo:
           type: string
-          enum: [PUENTE_DISPONIBLE, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA]
+          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA]
           description: Tipo de aviso.
           example: PUENTE_DISPONIBLE
         mensaje:
@@ -2272,6 +2369,11 @@ components:
           enum: [LIKE, DISLIKE]
           description: Valoración del estudiante (HU9), o `null` si todavía no valoró.
           example: null
+        fotoUrl:
+          type: string
+          nullable: true
+          description: Ruta de la foto real del lugar (relativa a la API, con `?v=` de versión). `null` si no tiene foto; el frontend muestra la ilustración de la categoría.
+          example: /api/lugares/12/foto?v=639034123456789010
     FeedbackRecomendacionDto:
       type: object
       required: [feedback]
@@ -2386,6 +2488,11 @@ components:
           type: array
           items: { type: string }
           example: [estudiar, leer]
+        fotoUrl:
+          type: string
+          nullable: true
+          description: Ruta de la foto real del lugar (relativa a la API, con `?v=` de versión). `null` si no tiene foto; el frontend muestra la ilustración de la categoría.
+          example: /api/lugares/12/foto?v=639034123456789010
     ResultadoBusquedaLugaresDto:
       type: object
       required: [estado, minutosDisponibles, lugares]
@@ -2446,6 +2553,12 @@ components:
             id: { type: integer, format: int32, example: 21 }
             estado: { type: string, enum: [ACTIVO, EN_REVISION, INACTIVO], example: ACTIVO }
             validado: { type: boolean, example: true }
+            fotoUrl: { type: string, nullable: true, description: 'Ruta de la foto actual, o null si no tiene.', example: '/api/lugares/21/foto?v=639034123456789010' }
+    FotoGuardadaDto:
+      type: object
+      description: Foto guardada.
+      properties:
+        fotoUrl: { type: string, description: Ruta de la foto con la versión nueva (relativa a la API)., example: '/api/lugares/21/foto?v=639034123456789010' }
     NuevoReporteDto:
       type: object
       required: [motivo, descripcion]
@@ -2511,6 +2624,12 @@ components:
         latenciaMs: { type: integer, format: int32, nullable: true, example: 23494 }
         lugaresRecuperados: { type: integer, format: int32, example: 5 }
         recomendados: { type: integer, format: int32, example: 3 }
+        respuestas:
+          type: array
+          items: { type: string }
+          example: ['5']
+          description: 'Lo que el estudiante contestó en los turnos siguientes de la misma conversación, en orden. `entrada` es el primero; `id`, el del primer turno; `fecha`, la del último. Si algún turno se rechazó por seguridad, `estado` y `motivoRechazo` son los de ese turno; `latenciaMs` suma todos.'
+        turnos: { type: integer, format: int32, example: 2, description: Cuántos turnos tuvo la conversación (1 en las recomendaciones). }
     MetricasAdminDto:
       type: object
       properties:
@@ -2613,7 +2732,7 @@ components:
       type: object
       properties:
         estado: { type: string, enum: [OK, SIN_RESULTADOS, SIN_ZONA, NO_VISIBLE] }
-        mensaje: { type: string, nullable: true, example: Por ahora nadie de tu campus está libre contigo en este puente. }
+        mensaje: { type: string, nullable: true, example: Por ahora nadie de tu campus está libre contigo a esa hora. }
         puente:
           $ref: '#/components/schemas/PuenteDto'
         minutosPuente: { type: integer, format: int32, example: 90 }
@@ -2639,12 +2758,14 @@ components:
             - $ref: '#/components/schemas/ActividadExtraidaDto'
           nullable: true
           description: Lo ya entendido (el campo `actividad` de la respuesta anterior). `null` en la primera consulta.
+        consultaAnteriorId: { type: integer, format: int64, nullable: true, example: 57, description: 'El `consultaId` de la respuesta anterior cuando se contesta una pregunta del asistente o se corrige un dato. Une los turnos en una sola consulta en la Auditoría RAG (solo si es tuya, de crear actividad y de hace menos de 30 min).' }
     RevisionActividadDto:
       type: object
       properties:
         texto: { type: string, maxLength: 200, example: Quiero jugar cartas por una hora, description: La descripción original del estudiante. }
         actividad:
           $ref: '#/components/schemas/ActividadExtraidaDto'
+        consultaAnteriorId: { type: integer, format: int64, nullable: true, example: 57, description: 'El `consultaId` de la respuesta anterior cuando se contesta una pregunta del asistente o se corrige un dato. Une los turnos en una sola consulta en la Auditoría RAG (solo si es tuya, de crear actividad y de hace menos de 30 min).' }
     CrearActividadRequest:
       type: object
       required: [texto, actividad, horaInicio, duracionMin, maxParticipantes, consultaId]

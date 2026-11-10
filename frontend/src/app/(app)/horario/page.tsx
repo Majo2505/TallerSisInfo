@@ -9,8 +9,12 @@ import { Selector, SelectorHora } from "@/components/app/Selectores";
 import {
   Bloque,
   BloqueInput,
+  HORA_INICIO_MAXIMA,
   HORA_MAXIMA,
   HORA_MINIMA,
+  MENSAJE_DURACION_MINIMA,
+  duraLoMinimo,
+  finMinimoPara,
   cambiarAsistencia,
   columnasPorSolape,
   crearBloque,
@@ -20,7 +24,7 @@ import {
   listarHorario,
   minutosOcupados,
 } from "@/lib/horario";
-import { Puente, duracionMin, hhmm, listarPuentes } from "@/lib/puentes";
+import { Puente, duracionMin, hhmm, listarPuentes, soloEntreClases } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import ResumenSemanal from "@/components/horario/ResumenSemanal";
 import PuentesDetectados from "@/components/puentes/puentesDetectados";
@@ -128,7 +132,8 @@ export default function HorarioPage() {
     return mapa;
   }, [bloques]);
 
-  const tiempoLibreMin = useMemo(() => puentes.reduce((acc, p) => acc + duracionMin(p), 0), [puentes]);
+  const entreClases = useMemo(() => soloEntreClases(puentes), [puentes]);
+  const tiempoLibreMin = useMemo(() => entreClases.reduce((acc, p) => acc + duracionMin(p), 0), [entreClases]);
 
   const hoy = ahora.getDay();
   const minutoAhora = ahora.getHours() * 60 + ahora.getMinutes();
@@ -201,8 +206,8 @@ export default function HorarioPage() {
             <dd><Odometro valor={clasesAsistidas} /></dd>
           </div>
           <div className="hz-cifra">
-            <dt>{puentes.length === 1 ? "puente" : "puentes"}</dt>
-            <dd><Odometro valor={puentes.length} /></dd>
+            <dt>{entreClases.length === 1 ? "puente" : "puentes"}</dt>
+            <dd><Odometro valor={entreClases.length} /></dd>
           </div>
           <div className="hz-cifra hz-cifra-libre">
             <dt>min libres</dt>
@@ -323,7 +328,7 @@ export default function HorarioPage() {
 
         <aside className="hz-lateral" aria-label="Puentes y resumen semanal">
           <PuentesDetectados puentes={puentes} cargando={cargando} error={errorPuentes} onReintentar={cargar} />
-          <ResumenSemanal bloques={bloques} puentes={puentes} cargando={cargando} />
+          <ResumenSemanal bloques={bloques} puentes={entreClases} cargando={cargando} />
         </aside>
       </div>
 
@@ -402,9 +407,11 @@ function BloqueModal({ estado, onClose, onSaved }: {
     else if (form.materia.trim().length > 100) e.materia = "Máximo 100 caracteres.";
     if (!form.horaInicio) e.horaInicio = "Indica la hora de inicio.";
     else if (form.horaInicio < HORA_MINIMA) e.horaInicio = "Las clases empiezan desde las 07:15.";
+    else if (form.horaInicio > HORA_INICIO_MAXIMA) e.horaInicio = "Las clases empiezan, como muy tarde, a las 20:15.";
     if (!form.horaFin) e.horaFin = "Indica la hora de fin.";
     else if (form.horaFin > HORA_MAXIMA) e.horaFin = "Las clases terminan, como muy tarde, a las 21:00.";
     else if (form.horaInicio && form.horaFin <= form.horaInicio) e.horaFin = "Tiene que ser posterior a la hora de inicio.";
+    else if (form.horaInicio && !duraLoMinimo(form.horaInicio, form.horaFin)) e.horaFin = MENSAJE_DURACION_MINIMA;
     return e;
   };
 
@@ -496,7 +503,7 @@ function BloqueModal({ estado, onClose, onSaved }: {
             <SelectorHora
               valor={form.horaInicio}
               min={HORA_MINIMA}
-              max={aHora(aMin(HORA_MAXIMA) - 5)}
+              max={HORA_INICIO_MAXIMA}
               etiqueta="Hora de inicio"
               invalido={!!errores.horaInicio}
               onCambio={(v) => {
@@ -510,7 +517,7 @@ function BloqueModal({ estado, onClose, onSaved }: {
             <span>Fin</span>
             <SelectorHora
               valor={form.horaFin}
-              min={form.horaInicio ? aHora(aMin(form.horaInicio) + 5) : aHora(aMin(HORA_MINIMA) + 5)}
+              min={finMinimoPara(form.horaInicio)}
               max={HORA_MAXIMA}
               etiqueta="Hora de fin"
               invalido={!!errores.horaFin}
@@ -522,7 +529,7 @@ function BloqueModal({ estado, onClose, onSaved }: {
             {errores.horaFin && <small className="hz-err">{errores.horaFin}</small>}
           </div>
         </div>
-        <p className="hz-nota">Las clases de la UCB van de 07:15 a 21:00.</p>
+        <p className="hz-nota">Las clases de la UCB van de 07:15 a 21:00 y duran al menos 45 minutos.</p>
 
         <label className="hz-campo">
           <span>Aula <em>(opcional)</em></span>

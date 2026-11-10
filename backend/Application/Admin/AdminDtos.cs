@@ -59,7 +59,8 @@ public record LugarDetalleAdminDto(
     string? HoraCierre,
     int? MinAPieDesdeBloqueA,
     string Estado,
-    bool Validado);
+    bool Validado,
+    string? FotoUrl = null);
 
 /// <summary>Lugar recién creado.</summary>
 public record LugarCreadoDto(int Id);
@@ -95,7 +96,9 @@ public record ConsultaRagAdminDto(
     int? LatenciaMs,
     int LugaresRecuperados,
     int Recomendados,
-    string? MotivoRechazo = null
+    string? MotivoRechazo = null,
+    List<string>? Respuestas = null,
+    int Turnos = 1
 );
 
 public record MetricasAdminDto(

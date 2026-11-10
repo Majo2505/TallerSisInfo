@@ -7,6 +7,12 @@
 .tarjeta:nth-child(3) { animation-delay: 140ms; }
 .tarjeta:nth-child(n + 4) { animation-delay: 210ms; }
 @keyframes entrar { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
+.secundario { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--borde); }
+.subtitulo { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-suave); }
+.subnota { margin: 4px 0 6px; color: var(--texto-tenue); font-size: .82rem; line-height: 1.45; }
+.listaTenue { list-style: none; margin: 0; padding: 0; display: grid; }
+.listaTenue li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; color: var(--texto-suave); font-size: .88rem; font-variant-numeric: tabular-nums; }
+.listaTenue li + li { border-top: 1px solid var(--borde-suave); }
 .fila { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .nombre { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--ucb-marino); }
 .nombre svg { box-sizing: content-box; padding: 6px; border-radius: 10px; background: var(--ucb-amarillo); transition: transform 300ms var(--curva-salida); }

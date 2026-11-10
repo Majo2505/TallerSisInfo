@@ -130,7 +130,7 @@ public class CatalogoAdminServiceTests
         public Task<bool?> CambiarValidacionLugarAsync(int lugarId, bool validado, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<List<ReporteAdminDto>> ListarReportesAsync(CancellationToken ct = default) => throw new NotSupportedException();
         public Task<string?> ResolverReporteAsync(int reporteId, string estado, int adminId, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<List<TurnoConsultaRag>> ListarConsultasRagAsync(int limite, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default) => throw new NotSupportedException();
     }
 

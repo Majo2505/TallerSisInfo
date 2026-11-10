@@ -10,11 +10,11 @@ public class NotificacionRepository : INotificacionRepository
     private readonly AppDbContext _db;
     public NotificacionRepository(AppDbContext db) => _db = db;
 
-    public Task<List<Puente>> ListarPuentesPorAvisarAsync(int diaSemana, DateOnly fecha, TimeOnly desde, TimeOnly hasta, CancellationToken ct = default)
+    public Task<List<Puente>> ListarPuentesPorAvisarAsync(int diaSemana, DateOnly fecha, TimeOnly ahora, CancellationToken ct = default)
         => (from p in _db.Puentes.AsNoTracking()
             join u in _db.Usuarios on p.UsuarioId equals u.Id
             where p.DiaSemana == diaSemana
-                  && p.HoraInicio >= desde && p.HoraInicio <= hasta
+                  && p.HoraInicio <= ahora && p.HoraFin > ahora
                   && u.Activo && u.NotificacionesActivas
                   && !_db.Notificaciones.Any(n => n.UsuarioId == p.UsuarioId
                                                   && n.PuenteFecha == fecha
@@ -45,7 +45,8 @@ public class NotificacionRepository : INotificacionRepository
 
     public Task<List<Notificacion>> ListarActivasDePuenteAsync(int usuarioId, CancellationToken ct = default)
         => _db.Notificaciones.AsNoTracking()
-            .Where(n => n.UsuarioId == usuarioId && n.Activa && n.Tipo == Notificacion.TipoPuenteDisponible)
+            .Where(n => n.UsuarioId == usuarioId && n.Activa
+                        && (n.Tipo == Notificacion.TipoPuenteDisponible || n.Tipo == Notificacion.TipoDespuesDeClases))
             .ToListAsync(ct);
 
     public Task DesactivarAsync(IReadOnlyCollection<long> ids, CancellationToken ct = default)

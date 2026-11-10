@@ -84,7 +84,7 @@ public class MatchingService
     private static ConfiguracionMatchingDto AConfiguracion(Usuario u) => new(u.VisibleMatching, u.FechaVisibleMatching);
 
     private static PuenteDto APuenteDto(Puente p) =>
-        new(p.Id, p.DiaSemana, p.HoraInicio.ToString("HH:mm:ss"), p.HoraFin.ToString("HH:mm:ss"));
+        new(p.Id, p.DiaSemana, p.HoraInicio.ToString("HH:mm:ss"), p.HoraFin.ToString("HH:mm:ss"), p.Tipo);
 
     private static CompaneroCompatibleDto ACompanero(CompaneroCandidato c, ReglasMatching.Compatibilidad m) =>
         new(c.Nombre, c.Carrera, c.Semestre, m.EnComun.Inicio.ToString("HH:mm:ss"), m.EnComun.Fin.ToString("HH:mm:ss"),

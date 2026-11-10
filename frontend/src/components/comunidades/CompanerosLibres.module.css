@@ -231,6 +231,13 @@
   color: #ffffff;
 }
 
+/* Después de clases: se puede elegir, pero se ve en segundo plano frente a los puentes. */
+.puente.tras {
+  border-style: dashed;
+  background: transparent;
+  color: var(--texto-suave);
+}
+
 .pastilla {
   position: absolute;
   inset: -1px;

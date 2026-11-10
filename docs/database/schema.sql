@@ -90,6 +90,7 @@ CREATE TABLE lugar (
   min_a_pie_desde_bloque_a SMALLINT    NULL,
   recomendable           BOOLEAN       NOT NULL DEFAULT TRUE,
   validado               BOOLEAN       NOT NULL DEFAULT TRUE,
+  foto_actualizada_en    DATETIME(6)   NULL,                                   -- admin: cuándo cambió la foto (versión de la URL); NULL = sin foto
   created_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at             DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   created_by             INT           NOT NULL,
@@ -111,6 +112,21 @@ CREATE TABLE lugar (
   CONSTRAINT fk_lugar_updated_by FOREIGN KEY (updated_by)   REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
+-- admin: foto real del lugar, aparte para que las listas no carguen los bytes. Una por lugar.
+CREATE TABLE lugar_foto (
+  lugar_id        INT          NOT NULL,
+  contenido       MEDIUMBLOB   NOT NULL,
+  tipo_mime       VARCHAR(20)  NOT NULL,
+  bytes           INT          NOT NULL,
+  actualizada_en  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  actualizada_por INT          NOT NULL,
+  PRIMARY KEY (lugar_id),
+  CONSTRAINT ck_foto_mime  CHECK (tipo_mime IN ('image/jpeg','image/png','image/webp')),
+  CONSTRAINT ck_foto_bytes CHECK (bytes BETWEEN 1 AND 2097152),
+  CONSTRAINT fk_foto_lugar FOREIGN KEY (lugar_id)        REFERENCES lugar (id) ON DELETE CASCADE,
+  CONSTRAINT fk_foto_admin FOREIGN KEY (actualizada_por) REFERENCES usuario (id)
+) ENGINE=InnoDB;
+
 CREATE TABLE horario (
   id          INT          NOT NULL AUTO_INCREMENT,
   usuario_id  INT          NOT NULL,
@@ -129,6 +145,7 @@ CREATE TABLE horario (
   CONSTRAINT ck_horario_dia    CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_horario_horas  CHECK (hora_fin > hora_inicio),
   CONSTRAINT ck_horario_rango  CHECK (hora_inicio >= '07:15:00' AND hora_fin <= '21:00:00'),
+  CONSTRAINT ck_horario_duracion CHECK (TIME_TO_SEC(TIMEDIFF(hora_fin, hora_inicio)) >= 2700),  -- HU2: una clase dura al menos 45 min
   CONSTRAINT ck_horario_origen CHECK (origen IN ('MANUAL','FOTO')),
   CONSTRAINT fk_horario_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
@@ -139,17 +156,20 @@ CREATE TABLE puente (
   dia_semana  SMALLINT NOT NULL,
   hora_inicio TIME     NOT NULL,
   hora_fin    TIME     NOT NULL,
+  tipo        VARCHAR(20) NOT NULL DEFAULT 'ENTRE_CLASES',
   PRIMARY KEY (id),
   CONSTRAINT uq_puente_slot UNIQUE (usuario_id, dia_semana, hora_inicio),
   KEY ix_puente_matching (dia_semana, hora_inicio, hora_fin),
   CONSTRAINT ck_puente_dia   CHECK (dia_semana BETWEEN 1 AND 6),
   CONSTRAINT ck_puente_horas CHECK (hora_fin > hora_inicio),
+  CONSTRAINT ck_puente_tipo  CHECK (tipo IN ('ENTRE_CLASES','DESPUES_DE_CLASES')),
   CONSTRAINT fk_puente_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE log_auditoria_rag (
   id                     BIGINT       NOT NULL AUTO_INCREMENT,
   usuario_id             INT          NOT NULL,
+  consulta_origen_id     BIGINT       NULL,               -- HU11: primer turno de la conversación (NULL = esta fila es el primero)
   tipo                   VARCHAR(25)  NOT NULL,
   zona_id                INT          NULL,
   radio_aplicado_m       INT          NULL,
@@ -168,11 +188,13 @@ CREATE TABLE log_auditoria_rag (
   KEY ix_log_created (created_at),
   KEY ix_log_usuario (usuario_id, created_at),
   KEY ix_log_motivo (motivo_rechazo, created_at),
+  KEY ix_log_origen (consulta_origen_id),
   CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD')),
   CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
   CONSTRAINT ck_log_motivo CHECK (motivo_rechazo IN ('INYECCION','FUERA_DE_ALCANCE','BIENESTAR','FUERA_DE_REGLAMENTO','FUERA_DE_CONTEXTO')),
   CONSTRAINT ck_log_motivo_estado CHECK (motivo_rechazo IS NULL OR estado = 'RECHAZADO_SEGURIDAD'),
   CONSTRAINT ck_log_datos_tipo    CHECK (datos_extraidos IS NULL OR tipo = 'EXTRACCION_COMUNIDAD'),   -- HU10: solo las extracciones tienen resumen
+  CONSTRAINT fk_log_origen  FOREIGN KEY (consulta_origen_id) REFERENCES log_auditoria_rag (id) ON DELETE SET NULL,
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
   CONSTRAINT fk_log_zona    FOREIGN KEY (zona_id)    REFERENCES zona (id),
   CONSTRAINT fk_log_puente  FOREIGN KEY (puente_id)  REFERENCES puente (id) ON DELETE SET NULL
@@ -264,10 +286,10 @@ CREATE TABLE notificacion (
   CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),
   CONSTRAINT uq_notif_comunidad UNIQUE (usuario_id, comunidad_id, tipo),
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
-  CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
-  CONSTRAINT ck_notif_ref  CHECK ((tipo = 'PUENTE_DISPONIBLE' AND comunidad_id IS NULL
+  CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
+  CONSTRAINT ck_notif_ref  CHECK ((tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES') AND comunidad_id IS NULL
                                    AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL)
-                               OR (tipo <> 'PUENTE_DISPONIBLE' AND comunidad_id IS NOT NULL
+                               OR (tipo NOT IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES') AND comunidad_id IS NOT NULL
                                    AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL)),
   CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),

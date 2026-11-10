@@ -22,7 +22,8 @@ public class AdminRepository : IAdminRepository
                   (SELECT COUNT(*) FROM lugar WHERE estado = 'EN_REVISION')                    AS LugaresEnRevision,
                   (SELECT COUNT(*) FROM usuario WHERE rol = 'ESTUDIANTE' AND activo = 1)       AS Estudiantes,
                   (SELECT COUNT(*) FROM comunidad_efimera WHERE inicio >= {hoy})               AS ComunidadesHoy,
-                  (SELECT COUNT(*) FROM log_auditoria_rag WHERE created_at >= {desdeSemana})   AS ConsultasRagSemana,
+                  (SELECT COUNT(DISTINCT COALESCE(consulta_origen_id, id)) FROM log_auditoria_rag
+                    WHERE created_at >= {desdeSemana})                                          AS ConsultasRagSemana,
                   (SELECT COUNT(*) FROM reporte WHERE estado = 'PENDIENTE')                    AS ReportesPendientes
                 """).ToListAsync(ct)).Single();
         return new ResumenAdminDto((int)fila.LugaresActivos, (int)fila.LugaresEnRevision, (int)fila.Estudiantes,
@@ -111,7 +112,8 @@ public class AdminRepository : IAdminRepository
     {
         var f = await LeerLugarAsync(lugarId, bloquear: false, ct);
         return f is null ? null : new LugarDetalleAdminDto(f.Id, f.Nombre, f.Descripcion, f.CategoriaId, f.Latitud, f.Longitud,
-            f.DuracionEstimadaMin, Hora(f.HoraApertura), Hora(f.HoraCierre), f.MinAPieDesdeBloqueA, f.Estado, f.Validado);
+            f.DuracionEstimadaMin, Hora(f.HoraApertura), Hora(f.HoraCierre), f.MinAPieDesdeBloqueA, f.Estado, f.Validado,
+            ReglasFotoLugar.Url(f.Id, f.FotoActualizadaEn is { } v ? DateTime.SpecifyKind(v, DateTimeKind.Utc) : null));
     }
 
     public async Task<bool> NombreEnUsoAsync(string nombre, int? excluirId, CancellationToken ct = default)
@@ -194,13 +196,15 @@ public class AdminRepository : IAdminRepository
             ? _db.Database.SqlQuery<FilaLugarDetalle>($"""
                 SELECT id AS Id, nombre AS Nombre, descripcion AS Descripcion, categoria_id AS CategoriaId, latitud AS Latitud,
                        longitud AS Longitud, duracion_estimada_min AS DuracionEstimadaMin, hora_apertura AS HoraApertura,
-                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado
+                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado,
+                       foto_actualizada_en AS FotoActualizadaEn
                 FROM lugar WHERE id = {lugarId} FOR UPDATE
                 """)
             : _db.Database.SqlQuery<FilaLugarDetalle>($"""
                 SELECT id AS Id, nombre AS Nombre, descripcion AS Descripcion, categoria_id AS CategoriaId, latitud AS Latitud,
                        longitud AS Longitud, duracion_estimada_min AS DuracionEstimadaMin, hora_apertura AS HoraApertura,
-                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado
+                       hora_cierre AS HoraCierre, min_a_pie_desde_bloque_a AS MinAPieDesdeBloqueA, estado AS Estado, validado AS Validado,
+                       foto_actualizada_en AS FotoActualizadaEn
                 FROM lugar WHERE id = {lugarId}
                 """);
         return (await consulta.ToListAsync(ct)).FirstOrDefault();
@@ -262,19 +266,26 @@ public class AdminRepository : IAdminRepository
         return anterior;
     }
 
-    public async Task<List<ConsultaRagAdminDto>> ListarConsultasRagAsync(int limite, CancellationToken ct = default)
+    public async Task<List<TurnoConsultaRag>> ListarConsultasRagAsync(int limite, CancellationToken ct = default)
     {
+        // Primero las últimas conversaciones (por su turno más reciente) y después todos sus turnos.
         var filas = await _db.Database.SqlQuery<FilaConsultaRag>($"""
-                SELECT g.id AS Id, g.created_at AS Fecha, u.nombre AS Usuario, g.tipo AS Tipo, g.entrada_usuario AS Entrada,
+                SELECT g.id AS Id, COALESCE(g.consulta_origen_id, g.id) AS Conversacion, g.created_at AS Fecha,
+                       u.nombre AS Usuario, g.tipo AS Tipo, g.entrada_usuario AS Entrada,
                        g.estado AS Estado, g.motivo_rechazo AS MotivoRechazo, g.modelo AS Modelo, g.latencia_ms AS LatenciaMs,
                        (SELECT COUNT(*) FROM lugar_recuperado lr WHERE lr.log_id = g.id) AS LugaresRecuperados,
                        (SELECT COUNT(*) FROM recomendacion r WHERE r.log_id = g.id)      AS Recomendados
-                FROM log_auditoria_rag g JOIN usuario u ON u.id = g.usuario_id
-                ORDER BY g.created_at DESC
-                LIMIT {limite}
+                FROM log_auditoria_rag g
+                JOIN usuario u ON u.id = g.usuario_id
+                JOIN (SELECT COALESCE(consulta_origen_id, id) AS conversacion, MAX(created_at) AS ultima
+                      FROM log_auditoria_rag
+                      GROUP BY COALESCE(consulta_origen_id, id)
+                      ORDER BY ultima DESC
+                      LIMIT {limite}) ultimas ON ultimas.conversacion = COALESCE(g.consulta_origen_id, g.id)
+                ORDER BY g.created_at, g.id
                 """).ToListAsync(ct);
-        return filas.Select(f => new ConsultaRagAdminDto(f.Id, f.Fecha, f.Usuario, f.Tipo, f.Entrada, f.Estado, f.Modelo,
-            f.LatenciaMs, (int)f.LugaresRecuperados, (int)f.Recomendados, f.MotivoRechazo)).ToList();
+        return filas.Select(f => new TurnoConsultaRag(f.Id, f.Conversacion, f.Fecha, f.Usuario, f.Tipo, f.Entrada, f.Estado,
+            f.MotivoRechazo, f.Modelo, f.LatenciaMs, (int)f.LugaresRecuperados, (int)f.Recomendados)).ToList();
     }
 
     public async Task<MetricasAdminDto> MetricasAsync(CancellationToken ct = default)
@@ -377,6 +388,7 @@ public class AdminRepository : IAdminRepository
         public short? MinAPieDesdeBloqueA { get; set; }
         public string Estado { get; set; } = "";
         public bool Validado { get; set; }
+        public DateTime? FotoActualizadaEn { get; set; }
 
         public DatosLugar ADatos() => new(Nombre, Descripcion, CategoriaId, Latitud, Longitud, DuracionEstimadaMin,
             HoraApertura is { } a ? TimeOnly.FromTimeSpan(a) : null, HoraCierre is { } c ? TimeOnly.FromTimeSpan(c) : null,
@@ -397,6 +409,7 @@ public class AdminRepository : IAdminRepository
     private sealed class FilaConsultaRag
     {
         public long Id { get; set; }
+        public long Conversacion { get; set; }
         public DateTime Fecha { get; set; }
         public string Usuario { get; set; } = "";
         public string Tipo { get; set; } = "";

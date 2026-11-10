@@ -157,7 +157,8 @@
 }
 
 .tramoClase,
-.tramoPuente {
+.tramoPuente,
+.tramoLibre {
   position: absolute;
   top: 4px;
   bottom: 4px;
@@ -177,6 +178,11 @@
     var(--ucb-amarillo);
   background-size: 17px 17px, auto;
   box-shadow: 0 0 0 1px rgba(122, 92, 0, 0.12) inset;
+}
+
+.tramoLibre {
+  background: var(--ucb-amarillo-suave);
+  box-shadow: 0 0 0 1.5px #e0b400 inset;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -250,6 +256,14 @@
 
 .muestraPuente {
   background: var(--ucb-amarillo);
+}
+
+.muestraLibre {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1.5px dashed #c99a00;
+  background: var(--ucb-amarillo-suave);
 }
 
 .estados {

@@ -21,5 +21,6 @@ public record LugarCandidato(
     string? TipoLugar = null,
     List<string>? Modalidad = null,
     List<string>? NivelEnergia = null,
-    List<string>? ActividadesSugeridas = null
+    List<string>? ActividadesSugeridas = null,
+    string? FotoUrl = null
 );

@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ErrorApi } from "@/lib/api";
-import { Puente, duracionMin } from "@/lib/puentes";
+import { Puente, duracionMin, tuTiempo } from "@/lib/puentes";
 import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendaciones";
 import { IconoDestello, IconoFlechaDerecha } from "./Iconos";
 import { RESORTE_TOQUE, SALIDA } from "./Movimiento";
@@ -79,7 +79,7 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
           </span>
           <div className={estilos.burbujaIa}>
             ¡Hola! Cuéntame qué te gustaría hacer
-            {puente ? ` en tu puente de ${duracionMin(puente)} min` : ""} y te recomiendo lugares del campus que te alcanzan.
+            {puente ? ` en ${tuTiempo(puente)} de ${duracionMin(puente)} min` : ""} y te recomiendo lugares del campus que te alcanzan.
           </div>
         </motion.div>
 

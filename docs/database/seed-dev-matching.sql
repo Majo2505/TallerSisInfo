@@ -72,3 +72,15 @@ INSERT INTO puente (usuario_id, dia_semana, hora_inicio, hora_fin) VALUES
   (@mateo, 2, '09:30', '11:30'),
   (@mateo, 4, '11:30', '14:00'),
   (@sofia, 1, '09:30', '11:00');
+
+INSERT INTO puente (usuario_id, dia_semana, hora_inicio, hora_fin, tipo) VALUES
+  (@ana,   1, '12:30', '21:00', 'DESPUES_DE_CLASES'),
+  (@ana,   3, '13:30', '21:00', 'DESPUES_DE_CLASES'),
+  (@ana,   5, '18:30', '21:00', 'DESPUES_DE_CLASES'),
+  (@diego, 1, '13:00', '21:00', 'DESPUES_DE_CLASES'),
+  (@diego, 2, '13:30', '21:00', 'DESPUES_DE_CLASES'),
+  (@lucia, 1, '12:00', '21:00', 'DESPUES_DE_CLASES'),
+  (@lucia, 3, '14:00', '21:00', 'DESPUES_DE_CLASES'),
+  (@mateo, 2, '13:00', '21:00', 'DESPUES_DE_CLASES'),
+  (@mateo, 4, '15:30', '21:00', 'DESPUES_DE_CLASES'),
+  (@sofia, 1, '12:30', '21:00', 'DESPUES_DE_CLASES');

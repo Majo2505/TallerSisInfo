@@ -1,5 +1,6 @@
 "use client";
-import { Puente, duracionMin, hhmm } from "@/lib/puentes";
+import { IconoLuna } from "@/components/app/Iconos";
+import { Puente, duracionMin, esDespuesDeClases, hhmm } from "@/lib/puentes";
 import estilos from "./puentesDetectados.module.css";
 
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -20,6 +21,8 @@ type Props = {
 };
 
 export default function PuentesDetectados({ puentes, cargando, error, onReintentar }: Props) {
+  const entreClases = puentes.filter((p) => !esDespuesDeClases(p));
+  const despues = puentes.filter(esDespuesDeClases);
   return (
     <section className={estilos.panel} aria-labelledby="puentes-titulo">
       <h2 id="puentes-titulo" className={estilos.titulo}>Puentes detectados</h2>
@@ -33,24 +36,44 @@ export default function PuentesDetectados({ puentes, cargando, error, onReintent
         </div>
       )}
 
-      {!cargando && !error && puentes.length === 0 && (
+      {!cargando && !error && entreClases.length === 0 && (
         <p className={estilos.vacio}>
           Todavía no hay puentes. Un puente es un hueco libre de 45 min o más entre dos clases del mismo día; se detecta solo cuando registras tu horario.
         </p>
       )}
 
-      {!cargando && !error && puentes.length > 0 && (
+      {!cargando && !error && entreClases.length > 0 && (
         <ul className={estilos.lista}>
-          {puentes.map((p, i) => (
+          {entreClases.map((p, i) => (
             <li key={p.id} className={estilos.tarjeta}>
               <div className={estilos.fila}>
-                <span className={estilos.nombre}><IconoRayo /> Puente {i + 1}</span>
+                <span className={estilos.nombre}>
+                  <IconoRayo /> Puente {i + 1}
+                </span>
                 <span className={estilos.insignia}>{duracionMin(p)} min</span>
               </div>
               <p className={estilos.hora}>{DIAS[p.diaSemana]} · {hhmm(p.horaInicio)} – {hhmm(p.horaFin)}</p>
             </li>
           ))}
         </ul>
+      )}
+
+      {/* No es un puente: va aparte, más chico y sin color, para que los puentes sean lo primero que se ve. */}
+      {!cargando && !error && despues.length > 0 && (
+        <section className={estilos.secundario} aria-labelledby="despues-titulo">
+          <h3 id="despues-titulo" className={estilos.subtitulo}>
+            <IconoLuna tamano={14} /> Después de clases
+          </h3>
+          <p className={estilos.subnota}>No es un puente: es tu tiempo libre desde la última clase hasta las 21:00.</p>
+          <ul className={estilos.listaTenue}>
+            {despues.map((p) => (
+              <li key={p.id}>
+                <span>{DIAS[p.diaSemana]}</span>
+                <span>desde las {hhmm(p.horaInicio)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </section>
   );

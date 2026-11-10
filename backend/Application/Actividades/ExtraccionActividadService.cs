@@ -43,6 +43,7 @@ public class ExtraccionActividadService
         var log = new LogAuditoriaRag
         {
             UsuarioId = usuarioId,
+            ConsultaOrigenId = await OrigenAsync(usuarioId, req.ConsultaAnteriorId, ahoraUtc, ct),
             Tipo = LogAuditoriaRag.TipoExtraccionComunidad,
             EntradaUsuario = texto,
             CreatedAt = ahoraUtc
@@ -109,6 +110,7 @@ public class ExtraccionActividadService
         var log = new LogAuditoriaRag
         {
             UsuarioId = usuarioId,
+            ConsultaOrigenId = await OrigenAsync(usuarioId, req.ConsultaAnteriorId, ahoraUtc, ct),
             Tipo = LogAuditoriaRag.TipoExtraccionComunidad,
             EntradaUsuario = texto,
             Modelo = ModeloCorreccionManual,
@@ -125,6 +127,11 @@ public class ExtraccionActividadService
         await _repo.GuardarLogAsync(log, ct);
         return ADto(log.Id, resultado);
     }
+
+    private async Task<long?> OrigenAsync(int usuarioId, long? consultaAnteriorId, DateTime ahoraUtc, CancellationToken ct)
+        => consultaAnteriorId is { } id && id > 0
+            ? ReglasExtraccion.OrigenDeConversacion(await _repo.ObtenerLogAsync(id, ct), usuarioId, ahoraUtc)
+            : null;
 
     /// <summary>HU10: solo un resumen completo se puede confirmar; se guarda tal como se le muestra al estudiante.</summary>
     private static string? ResumenSiEstaCompleto(ResultadoExtraccion r)
