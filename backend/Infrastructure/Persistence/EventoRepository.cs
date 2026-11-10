@@ -41,9 +41,9 @@ public sealed class EventoRepository : IEventosRepository
         await _db.SaveChangesAsync(ct);
     }
 
-    public Task<List<EventoUniversitario>> ListarVigentesAsync(DateTime ahoraUtc, DateTime hastaUtc, CancellationToken ct = default)
+    public Task<List<EventoUniversitario>> ListarProximosAsync(DateTime ahoraUtc, CancellationToken ct = default)
         => _db.Set<EventoUniversitario>().AsNoTracking()
-            .Where(e => e.Inicio < hastaUtc && e.Fin > ahoraUtc)
+            .Where(e => e.Fin > ahoraUtc)
             .OrderBy(e => e.Inicio)
             .Take(50)
             .ToListAsync(ct);
