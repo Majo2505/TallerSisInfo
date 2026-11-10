@@ -345,6 +345,21 @@ CREATE TABLE historial_cambio (
   CONSTRAINT fk_hist_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE evento_universitario (
+  id              BIGINT        NOT NULL AUTO_INCREMENT,
+  fuente          VARCHAR(40)   NOT NULL,
+  fuente_url      VARCHAR(500)  NOT NULL,
+  titulo          VARCHAR(200)  NOT NULL,
+  descripcion     VARCHAR(2000) NOT NULL,
+  inicio          DATETIME(6)   NOT NULL,
+  fin             DATETIME(6)   NOT NULL,
+  lugar           VARCHAR(200)  NULL,
+  actualizado_en  DATETIME(6)   NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_evento_fuente_url (fuente_url),
+  KEY ix_evento_vigencia (inicio, fin)
+) ENGINE=InnoDB;
+
 CREATE OR REPLACE VIEW v_metricas_lugar AS
 SELECT l.id AS lugar_id, l.nombre, c.nombre AS categoria,
        COUNT(r.id)                     AS veces_recomendado,

@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS evento_universitario (
   PRIMARY KEY (id),
   UNIQUE KEY uq_evento_fuente_url (fuente_url),
   KEY ix_evento_vigencia (inicio, fin)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
