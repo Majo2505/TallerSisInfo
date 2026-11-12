@@ -429,7 +429,7 @@ export default function Notificaciones({ recarga }: Props) {
                     <IconoRayo />
                   </span>
                   <div className={estilos.emergenteTexto}>
-                    <strong>¡Puente disponible!</strong>
+                    <strong>{emergente.tipo === "PUENTE_DISPONIBLE" ? "¡Puente disponible!" : (TIPOS[emergente.tipo]?.titulo ?? "Nuevo aviso")}</strong>
                     {emergente.duracionMinutos !== null && emergente.horaInicio && emergente.horaFin ? (
                       <span>
                         Tienes <b>{formatearDuracion(emergente.duracionMinutos)}</b> libres, de {hhmm(emergente.horaInicio)} a{" "}
