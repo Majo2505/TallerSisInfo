@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
-namespace Breaku.Infrastructure.Performance;
+namespace Breaku.Presentation.Rendimiento;
 
 public sealed record ApiMetricSnapshot(long Requests, long Errors, double AverageMilliseconds, double P50Milliseconds, double P95Milliseconds);
 

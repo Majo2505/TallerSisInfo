@@ -1,24 +1,14 @@
-using Breaku.Application.Perfil;
-using Breaku.Application.Admin;
-using Breaku.Application.Reportes;
-using Breaku.Application.Matching;
 using System.Text;
+using Breaku.Application;
+using Breaku.Application.TiempoReal;
+using Breaku.Presentation.TiempoReal;
 using System.Threading.RateLimiting;
 using Breaku.Application.DTOs;
 using Breaku.Domain.Rules;
 using Microsoft.AspNetCore.RateLimiting;
 using Breaku.Infrastructure;
-using Breaku.Application.Horarios;
-using Breaku.Infrastructure.Persistence;
-using Breaku.Application.Puentes;
-using Breaku.Application.Notificaciones;
-using Breaku.Application.Recomendaciones;
 using Breaku.Presentation.Documentacion;
-using Breaku.Application.Lugares;
-using Breaku.Application.Ubicacion;
-using Breaku.Application.Actividades;
-using Breaku.Application.Comunidades;
-using Breaku.Infrastructure.Performance;
+using Breaku.Presentation.Rendimiento;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -104,28 +94,11 @@ builder.Services.AddRateLimiter(opciones =>
 builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, Breaku.Api.Hubs.UsuarioIdProvider>();
 builder.Services.AddSingleton<ApiMetrics>();
 builder.Services.AddSwaggerDocumentation();
+// HU20: cada capa registra lo suyo. Application: casos de uso; Infrastructure: base de datos, IA y workers;
+// Presentation (acá): controladores, hub y canal en vivo.
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<IHorarioRepository, HorarioRepository>();
-builder.Services.AddScoped<HorarioService>();
-builder.Services.AddScoped<FotoHorarioService>();
-builder.Services.AddScoped<IPuenteRepository, PuenteRepository>();
-builder.Services.AddScoped<PuenteService>();
-builder.Services.AddScoped<NotificacionService>();
-builder.Services.AddScoped<UbicacionService>();
-builder.Services.AddScoped<PerfilService>();
-builder.Services.AddScoped<MatchingService>();
-builder.Services.AddScoped<BusquedaLugaresService>();
-builder.Services.AddScoped<FotoLugarService>();
-builder.Services.AddScoped<IRecuperadorLugares>(sp => sp.GetRequiredService<BusquedaLugaresService>());
-builder.Services.AddScoped<RecomendacionService>();
-builder.Services.AddScoped<AdminService>();
-builder.Services.AddScoped<ReporteService>();
-builder.Services.AddScoped<ExtraccionActividadService>();
-builder.Services.AddScoped<ComunidadService>();
-builder.Services.AddScoped<DescubrirComunidadesService>();
-builder.Services.AddScoped<AsistenciaService>();
-builder.Services.AddScoped(sp => new CreacionActividadService(
-    sp.GetRequiredService<IActividadRepository>(), TimeProvider.System, sp.GetRequiredService<ComunidadService>()));
+builder.Services.AddSingleton<ICanalEnVivo, CanalSignalR>();
 
 var app = builder.Build();
 

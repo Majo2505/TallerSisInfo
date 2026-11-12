@@ -42,6 +42,10 @@ public sealed class ComunidadHub : Hub
 
     private int? UsuarioId() => UsuarioIdProvider.Leer(Context.User);
 
+    public const string EventoComunidadActualizada = "comunidadActualizada";
+    public const string EventoComunidades = "comunidadesCambiaron";
+    public const string EventoAvisos = "avisosCambiaron";
+
     public static string Grupo(int comunidadId) => $"comunidad:{comunidadId}";
 
     public static string GrupoZona(int zonaId) => $"zona:{zonaId}";

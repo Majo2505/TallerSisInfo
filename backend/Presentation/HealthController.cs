@@ -1,7 +1,7 @@
 using Breaku.Application;
 using Breaku.Domain;
 using Microsoft.AspNetCore.Mvc;
-using Breaku.Infrastructure.Performance;
+using Breaku.Presentation.Rendimiento;
 
 namespace Breaku.Presentation;
 

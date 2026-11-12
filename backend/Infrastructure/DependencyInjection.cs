@@ -56,14 +56,12 @@ public static class DependencyInjection
 
         services.AddHostedService<AvisoPuentesWorker>();
         services.AddHostedService<CierreComunidadesWorker>();
-        services.AddScoped<Breaku.Application.TiempoReal.ITiempoReal, TiempoRealSignalR>();
         services.AddScoped<IUbicacionRepository, UbicacionRepository>();
         services.AddScoped<IPerfilRepository, PerfilRepository>();
         services.AddScoped<IMatchingRepository, MatchingRepository>();
         services.AddScoped<IExtraccionRepository, ExtraccionRepository>();
         services.AddScoped<IReporteRepository, ReporteRepository>();
         services.AddScoped<IComunidadRepository, ComunidadRepository>();
-        services.AddScoped<ICierreComunidadesService, CierreComunidadesService>();
         services.AddScoped<IDescubrirComunidadesRepository, DescubrirComunidadesRepository>();
         services.AddScoped<IAsistenciaRepository, AsistenciaRepository>();
         services.AddScoped<IActividadRepository, ActividadRepository>();

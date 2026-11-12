@@ -1,5 +1,5 @@
 using Breaku.Application;
-using Breaku.Infrastructure.Performance;
+using Breaku.Presentation.Rendimiento;
 using Breaku.Presentation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

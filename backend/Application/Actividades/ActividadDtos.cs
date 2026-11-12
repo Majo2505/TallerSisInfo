@@ -1,5 +1,7 @@
 namespace Breaku.Application.Actividades;
 
+/// <param name="Texto">Lo que escribió el estudiante en este turno.</param>
+/// <param name="Anterior">Lo ya entendido (el campo <c>actividad</c> de la respuesta anterior); null en la primera consulta.</param>
 /// <param name="ConsultaAnteriorId">El <c>consultaId</c> de la respuesta anterior cuando el estudiante contesta una pregunta del
 /// asistente: así la Auditoría RAG muestra los dos turnos como una sola consulta.</param>
 public record SolicitudExtraccionDto(string? Texto, ActividadExtraidaDto? Anterior, long? ConsultaAnteriorId = null);
