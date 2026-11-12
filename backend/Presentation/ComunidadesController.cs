@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Breaku.Application.Comunidades;
 using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
+using Breaku.Application.TiempoReal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -20,14 +21,16 @@ public class ComunidadesController : ControllerBase
     private readonly DescubrirComunidadesService _descubrir;
     private readonly AsistenciaService _asistencia;
     private readonly IHubContext<ComunidadHub> _hub;
+    private readonly ITiempoReal _tiempoReal;
 
     public ComunidadesController(ComunidadService service, DescubrirComunidadesService descubrir, AsistenciaService asistencia,
-        IHubContext<ComunidadHub> hub)
+        IHubContext<ComunidadHub> hub, ITiempoReal tiempoReal)
     {
         _service = service;
         _descubrir = descubrir;
         _asistencia = asistencia;
         _hub = hub;
+        _tiempoReal = tiempoReal;
     }
 
     private int UsuarioId =>
@@ -58,7 +61,10 @@ public class ComunidadesController : ControllerBase
     {
         try
         {
-            return Ok(await _service.InvitarDeNuevoAsync(UsuarioId, id, ct));
+            var invitacion = await _service.InvitarDeNuevoAsync(UsuarioId, id, ct);
+            // HU18: a los nuevos invitados les llega la invitación al momento.
+            await _tiempoReal.AvisosDeComunidadAsync(id, ct);
+            return Ok(invitacion);
         }
         catch (ReglaNegocioException ex)
         {
@@ -82,6 +88,8 @@ public class ComunidadesController : ControllerBase
             await _hub.Clients.Group(ComunidadHub.Grupo(id)).SendAsync(
                 "comunidadActualizada",
                 new ComunidadEstadoActualizado(respuesta.ComunidadId, "ACTIVA", respuesta.Confirmados), ct);
+            // HU18: si se llenó (o se reabrió), los pendientes ven «El grupo se llenó» al momento.
+            await _tiempoReal.AvisosDeComunidadAsync(id, ct);
             return Ok(respuesta);
         }
         catch (ReglaNegocioException ex)

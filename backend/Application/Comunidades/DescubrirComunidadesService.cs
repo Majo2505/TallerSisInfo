@@ -73,6 +73,17 @@ public class DescubrirComunidadesService
         return await _repo.PuedeVerAsync(usuarioId, comunidadId, verDeOtros, _reloj.GetUtcNow().UtcDateTime, ct);
     }
 
+    /// <summary>
+    /// HU18: la sede cuyas comunidades nuevas recibe en vivo. Solo si ve las de otros (sede activa y matching aceptado);
+    /// las propias ya las tiene porque las creó.
+    /// </summary>
+    public async Task<int?> ZonaParaSeguirAsync(int usuarioId, CancellationToken ct = default)
+    {
+        var usuario = await _repo.ObtenerUsuarioAsync(usuarioId, ct);
+        if (usuario is null || !usuario.VisibleMatching || usuario.ZonaActual is not { Activa: true }) return null;
+        return usuario.ZonaActualId;
+    }
+
     private static ComunidadDescubrirDto ADto(ComunidadActiva f, int usuarioId)
     {
         var esMia = f.CreadorId == usuarioId;

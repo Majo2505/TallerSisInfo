@@ -56,6 +56,7 @@ public static class DependencyInjection
 
         services.AddHostedService<AvisoPuentesWorker>();
         services.AddHostedService<CierreComunidadesWorker>();
+        services.AddScoped<Breaku.Application.TiempoReal.ITiempoReal, TiempoRealSignalR>();
         services.AddScoped<IUbicacionRepository, UbicacionRepository>();
         services.AddScoped<IPerfilRepository, PerfilRepository>();
         services.AddScoped<IMatchingRepository, MatchingRepository>();
