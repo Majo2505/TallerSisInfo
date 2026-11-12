@@ -20,6 +20,7 @@ using Breaku.Application.Matching;
 using Breaku.Application.Comunidades;
 using Breaku.Application.Reportes;
 using Breaku.Application.Actividades;
+using Breaku.Application.Eventos;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
 {
@@ -66,6 +67,14 @@ public static class DependencyInjection
         services.AddScoped<IDescubrirComunidadesRepository, DescubrirComunidadesRepository>();
         services.AddScoped<IAsistenciaRepository, AsistenciaRepository>();
         services.AddScoped<IActividadRepository, ActividadRepository>();
+        services.AddScoped<IEventosRepository, EventoRepository>();
+        services.AddHttpClient<IEventosPublicosClient, InstagramEventosClient>(http =>
+        {
+            http.Timeout = TimeSpan.FromSeconds(15);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Breaku/1.0 (public event reader)");
+        });
+        services.AddScoped<EventosService>();
+        services.AddHostedService<ImportacionEventosWorker>();
 
         return services;
     }
