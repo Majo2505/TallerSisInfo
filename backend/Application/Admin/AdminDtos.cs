@@ -111,7 +111,18 @@ public record MetricasAdminDto(
     List<LugarTopDto> MasRecomendados,
     int MeGusta,
     int NoMeSirve,
-    List<RechazoPorMotivoDto>? RechazosPorMotivo = null
+    List<RechazoPorMotivoDto>? RechazosPorMotivo = null,
+    RendimientoRecomendacionDto? Rendimiento = null
+);
+
+/// <summary>HU19: cuánto esperan las recomendaciones de los últimos 7 días frente al objetivo de 3,5 s.</summary>
+public record RendimientoRecomendacionDto(
+    int Consultas,
+    int ObjetivoMs,
+    int? P50Ms,
+    int? P95Ms,
+    int? DentroDelObjetivoPct,
+    int Respaldos
 );
 
 public record RechazoPorMotivoDto(string Motivo, int Cantidad);

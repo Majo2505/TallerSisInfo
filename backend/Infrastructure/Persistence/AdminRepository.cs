@@ -325,11 +325,23 @@ public class AdminRepository : IAdminRepository
                 GROUP BY COALESCE(motivo_rechazo, 'SIN_MOTIVO')
                 ORDER BY Cantidad DESC
                 """).ToListAsync(ct);
+        var tiempos = await _db.Database.SqlQuery<FilaTiempo>($"""
+                SELECT latencia_ms AS LatenciaMs, modelo = {ReglasRendimiento.ModeloRespaldo} AS Respaldo
+                FROM log_auditoria_rag
+                WHERE tipo = 'RECOMENDACION' AND latencia_ms IS NOT NULL AND created_at >= {desde}
+                """).ToListAsync(ct);
+        var rendimiento = RendimientoRecomendacion.Calcular(tiempos.Select(t => (t.LatenciaMs, t.Respaldo == true)).ToList());
         return new MetricasAdminDto((int)f.Total, (int)f.Ok, (int)f.SinResultados, (int)f.Rechazadas, (int)f.Errores,
             f.LatenciaPromedio is null ? null : (int)f.LatenciaPromedio,
             top.Select(t => new LugarTopDto(t.Nombre, t.Categoria, (int)t.Veces, (int)t.MeGusta, (int)t.NoMeSirve)).ToList(),
             (int)votos.MeGusta, (int)votos.NoMeSirve,
-            rechazos.Select(r => new RechazoPorMotivoDto(r.Motivo, (int)r.Cantidad)).ToList());
+            rechazos.Select(r => new RechazoPorMotivoDto(r.Motivo, (int)r.Cantidad)).ToList(), rendimiento);
+    }
+
+    private sealed class FilaTiempo
+    {
+        public int LatenciaMs { get; set; }
+        public bool? Respaldo { get; set; }
     }
 
     private static string? Hora(TimeSpan? t) => t is null ? null : $"{t.Value.Hours:00}:{t.Value.Minutes:00}";
