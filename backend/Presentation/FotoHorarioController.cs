@@ -3,6 +3,8 @@ using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Breaku.Domain.Rules;
 
 namespace Breaku.Api.Controllers;
 
@@ -29,6 +31,7 @@ public class FotoHorarioController : ControllerBase
                   ?? throw new UnauthorizedAccessException());
 
     [HttpPost("foto")]
+    [EnableRateLimiting(ReglasRendimiento.PoliticaIa)]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(LimiteCuerpo)]
     [RequestFormLimits(MultipartBodyLengthLimit = LimiteCuerpo)]
@@ -47,6 +50,7 @@ public class FotoHorarioController : ControllerBase
     });
 
     [HttpPost("lote")]
+    [EnableRateLimiting(ReglasRendimiento.PoliticaIa)]
     [ProducesResponseType(typeof(ResultadoLoteDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
