@@ -5,6 +5,7 @@ CREATE TABLE usuario (
   id                        INT          NOT NULL AUTO_INCREMENT,
   correo                    VARCHAR(120) NOT NULL,
   password_hash             VARCHAR(255) NULL,
+  google_sub                VARCHAR(64)  NULL,              -- cuenta de Google enlazada (claim «sub»); NULL si nunca entró con Google
   nombre                    VARCHAR(100) NOT NULL,
   carrera                   VARCHAR(80)  NULL,
   semestre                  TINYINT      NULL,
@@ -22,6 +23,8 @@ CREATE TABLE usuario (
   activo                    BOOLEAN      NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   CONSTRAINT uq_usuario_correo UNIQUE (correo),
+  CONSTRAINT uq_usuario_google UNIQUE (google_sub),
+  CONSTRAINT ck_usuario_credencial CHECK (password_hash IS NOT NULL OR google_sub IS NOT NULL),   -- contraseña, Google o ambas
   CONSTRAINT ck_usuario_rol    CHECK (rol IN ('ESTUDIANTE','ADMIN')),
   CONSTRAINT ck_usuario_semestre CHECK (semestre IS NULL OR semestre BETWEEN 1 AND 10),
   CONSTRAINT ck_usuario_consentimiento CHECK (
