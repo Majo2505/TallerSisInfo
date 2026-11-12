@@ -87,6 +87,7 @@ public class TiempoRealTests
 
         public Task ComunidadCreadaAsync(int comunidadId, CancellationToken ct = default) => Task.CompletedTask;
         public Task AvisosDeComunidadAsync(int comunidadId, CancellationToken ct = default) => Task.CompletedTask;
+        public Task ComunidadActualizadaAsync(int comunidadId, string estado, int confirmados, CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private sealed class SoloUsuario(Usuario? usuario) : IDescubrirComunidadesRepository

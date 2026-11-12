@@ -5,8 +5,7 @@ using Breaku.Application.Horarios;
 using Breaku.Application.TiempoReal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Breaku.Api.Hubs;
+using Breaku.Domain;
 
 namespace Breaku.Api.Controllers;
 
@@ -20,16 +19,14 @@ public class ComunidadesController : ControllerBase
     private readonly ComunidadService _service;
     private readonly DescubrirComunidadesService _descubrir;
     private readonly AsistenciaService _asistencia;
-    private readonly IHubContext<ComunidadHub> _hub;
     private readonly ITiempoReal _tiempoReal;
 
     public ComunidadesController(ComunidadService service, DescubrirComunidadesService descubrir, AsistenciaService asistencia,
-        IHubContext<ComunidadHub> hub, ITiempoReal tiempoReal)
+        ITiempoReal tiempoReal)
     {
         _service = service;
         _descubrir = descubrir;
         _asistencia = asistencia;
-        _hub = hub;
         _tiempoReal = tiempoReal;
     }
 
@@ -85,9 +82,7 @@ public class ComunidadesController : ControllerBase
         try
         {
             var respuesta = await _asistencia.ResponderAsync(UsuarioId, id, body.Asisto, ct);
-            await _hub.Clients.Group(ComunidadHub.Grupo(id)).SendAsync(
-                "comunidadActualizada",
-                new ComunidadEstadoActualizado(respuesta.ComunidadId, "ACTIVA", respuesta.Confirmados), ct);
+            await _tiempoReal.ComunidadActualizadaAsync(respuesta.ComunidadId, ComunidadEfimera.EstadoActiva, respuesta.Confirmados, ct);
             // HU18: si se llenó (o se reabrió), los pendientes ven «El grupo se llenó» al momento.
             await _tiempoReal.AvisosDeComunidadAsync(id, ct);
             return Ok(respuesta);
