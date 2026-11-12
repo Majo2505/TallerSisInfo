@@ -43,6 +43,10 @@ public static class DependencyInjection
 
         services.AddScoped<IDatabaseHealthCheck, DatabaseHealthCheck>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IHasherContrasenas, HasherBCrypt>();
+        // Sin GOOGLE_CLIENT_ID, el inicio con Google queda apagado (el endpoint responde 503 y el botón no aparece).
+        services.AddSingleton<IVerificadorGoogle>(sp => new VerificadorGoogle(
+            configuration["GOOGLE_CLIENT_ID"], sp.GetRequiredService<ILogger<VerificadorGoogle>>()));
 
         services.AddScoped<IHorarioRepository, HorarioRepository>();
         services.AddScoped<IPuenteRepository, PuenteRepository>();

@@ -134,6 +134,36 @@ paths:
                 $ref: '#/components/schemas/ErrorMensajeDto'
               example:
                 message: Credenciales inválidas.
+  /api/auth/google:
+    post:
+      tags: [Auth]
+      operationId: loginGoogle
+      summary: Entra (o se registra) con una cuenta de Google institucional.
+      description: |
+        Verifica el ID token de Google (firma, emisor, audiencia = GOOGLE_CLIENT_ID y vencimiento). Solo cuentas @ucb.edu.bo
+        con el correo verificado. Si el correo ya tiene cuenta, se enlaza; si no, se crea como ESTUDIANTE sin contraseña.
+        El administrador entra solo con contraseña. Comparte con el login el límite de 30 intentos por minuto por IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginGoogleRequest'
+      responses:
+        '200':
+          description: Sesión iniciada (mismo cuerpo que el login).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
+        '400':
+          description: Cuenta no institucional, correo sin verificar, administrador, cuenta desactivada o ya enlazada a otra cuenta de Google.
+        '401':
+          description: El token de Google no es válido o venció.
+        '429':
+          $ref: '#/components/responses/DemasiadasSolicitudes'
+        '503':
+          description: El servidor no tiene GOOGLE_CLIENT_ID (el inicio con Google está apagado).
   /api/horario:
     get:
       tags: [Horario]
@@ -1581,6 +1611,35 @@ paths:
                 $ref: '#/components/schemas/ErrorNegocioDto'
         '401':
           $ref: '#/components/responses/NoAutorizado'
+  /api/perfil/contrasena:
+    put:
+      tags: [Perfil]
+      operationId: cambiarContrasena
+      summary: Cambia la contraseña (o la crea si la cuenta entra solo con Google).
+      description: |
+        Pide la actual si la cuenta ya tiene contraseña. La nueva tiene de 8 a 72 bytes, una letra y un número, y es distinta de
+        la actual. Queda en historial_cambio sin la contraseña. Máximo 5 intentos por minuto por estudiante.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequest'
+      responses:
+        '204':
+          description: Contraseña guardada.
+        '400':
+          description: Falta la actual, es incorrecta (`CONTRASENA_INCORRECTA`) o la nueva no cumple las reglas (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '429':
+          $ref: '#/components/responses/DemasiadasSolicitudes'
   /api/matching:
     get:
       tags: [Matching]
@@ -2720,6 +2779,20 @@ components:
         rol: { type: string, enum: [ESTUDIANTE, ADMIN] }
         carrera: { type: string, nullable: true, example: Ingeniería de Sistemas }
         semestre: { type: integer, format: int32, nullable: true, minimum: 1, maximum: 10, example: 5 }
+        tieneContrasena: { type: boolean, example: true, description: False si la cuenta entra solo con Google (en Seguridad se crea una sin pedir la actual). }
+        conGoogle: { type: boolean, example: false, description: Si la cuenta está enlazada con Google. }
+    CambiarContrasenaRequest:
+      type: object
+      required: [nueva, confirmacion]
+      properties:
+        actual: { type: string, nullable: true, description: Obligatoria si la cuenta ya tiene contraseña. }
+        nueva: { type: string, minLength: 8, description: 'De 8 a 72 bytes, con al menos una letra y un número.', example: nueva2026 }
+        confirmacion: { type: string, example: nueva2026 }
+    LoginGoogleRequest:
+      type: object
+      required: [credencial]
+      properties:
+        credencial: { type: string, description: El ID token (campo `credential`) que Google Identity Services le da al frontend. }
     ActualizarPerfilRequest:
       type: object
       required: [nombre]

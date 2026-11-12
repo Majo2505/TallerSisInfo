@@ -79,9 +79,20 @@ builder.Services.AddRateLimiter(opciones =>
     {
         if (contexto.Lease.TryGetMetadata(MetadataName.RetryAfter, out var espera))
             contexto.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(espera.TotalSeconds)).ToString();
-        await contexto.HttpContext.Response.WriteAsJsonAsync(
-            new ErrorNegocioDto(ReglasRendimiento.CodigoDemasiadasConsultas, ReglasRendimiento.MensajeDemasiadasConsultas), ct);
+        var politica = contexto.HttpContext.GetEndpoint()?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+        var mensaje = politica == ReglasRendimiento.PoliticaIa
+            ? ReglasRendimiento.MensajeDemasiadasConsultas
+            : ReglasCuenta.MensajeDemasiadosIntentos;
+        await contexto.HttpContext.Response.WriteAsJsonAsync(new ErrorNegocioDto(ReglasRendimiento.CodigoDemasiadasConsultas, mensaje), ct);
     };
+    // Contraseñas y login: contra quien intenta adivinar. El login va por IP (todavía no hay usuario) con un margen alto,
+    // porque en el campus muchos estudiantes salen por la misma IP; cambiar la contraseña va por estudiante.
+    opciones.AddPolicy(ReglasCuenta.PoliticaLogin, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "anonimo",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = ReglasCuenta.IntentosLoginPorMinuto, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    opciones.AddPolicy(ReglasCuenta.PoliticaContrasena, http => RateLimitPartition.GetFixedWindowLimiter(
+        Breaku.Api.Hubs.UsuarioIdProvider.Leer(http.User)?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonimo",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = ReglasCuenta.IntentosContrasenaPorMinuto, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     opciones.AddPolicy(ReglasRendimiento.PoliticaIa, http => RateLimitPartition.GetFixedWindowLimiter(
         Breaku.Api.Hubs.UsuarioIdProvider.Leer(http.User)?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonimo",
         _ => new FixedWindowRateLimiterOptions

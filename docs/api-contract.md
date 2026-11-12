@@ -158,6 +158,37 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | 401 | Correo no registrado | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (mismo mensaje de #9 criterio 3; decisión de Ariana, base, según OWASP Authentication Cheat Sheet: no revelar qué correos existen) |
 | 401 | Usuario con `activo = 0` (el login exige `activo = 1`) | `Correo o contraseña incorrectos` (mismo mensaje) | ✅ Definido (decisión de Ariana, base; borrado lógico con `activo`) |
 
+### `POST /api/auth/google`
+
+Requiere JWT: **no**. Estado: ✅ Definido. Solo funciona si el servidor tiene `GOOGLE_CLIENT_ID`; si no, **503** y el
+frontend no muestra el botón (le falta `NEXT_PUBLIC_GOOGLE_CLIENT_ID`).
+
+```json
+{ "credencial": "<ID token que Google Identity Services le da al frontend>" }
+```
+
+El servidor verifica el token con las claves públicas de Google (firma, emisor, audiencia = nuestro Client ID y
+vencimiento; no hace falta client secret) y decide (`Domain/ReglasCuenta.DecidirGoogle`):
+
+| Caso | Resultado |
+|---|---|
+| Ya entró con Google antes (`usuario.google_sub`) | **200**, entra a esa cuenta |
+| Hay una cuenta con ese correo, sin Google | **200**, se enlaza (Google ya verificó que el correo es suyo) y entra |
+| No hay cuenta | **200**, se crea como `ESTUDIANTE`, con el nombre de Google y **sin contraseña** (la puede crear en Perfil → Seguridad) |
+| Correo que no es `@ucb.edu.bo`, o sin verificar en Google | **400** «Entra con tu cuenta de Google institucional (@ucb.edu.bo).» / «Tu cuenta de Google no tiene el correo verificado.» |
+| Cuenta `ADMIN` | **400** «El administrador entra con su correo y contraseña.» (nadie se vuelve admin por una cuenta de Google) |
+| Cuenta desactivada, o el correo ya enlazado a otra cuenta de Google | **400** |
+| Token inválido, vencido o de otra app | **401** «No pudimos verificar tu cuenta de Google. Inténtalo de nuevo.» |
+
+La respuesta 200 es la misma del login. Login y Google comparten un límite de **30 intentos por minuto por IP** (alto
+porque en el campus muchos salen por la misma IP) → **429**.
+
+**Configurar Google (una vez):** en [console.cloud.google.com](https://console.cloud.google.com) crear un proyecto,
+configurar la pantalla de consentimiento (Externo; mientras está en «Testing» solo entran los usuarios de prueba que se
+agreguen, hasta 100) y crear un **ID de cliente de OAuth → Aplicación web** con `http://localhost:3000` (y la URL del
+despliegue) en «Orígenes de JavaScript autorizados». El Client ID va en `GOOGLE_CLIENT_ID` (backend) y en
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` (frontend).
+
 ### Decisiones de auth
 
 | Duda | Valor por defecto | Estado |
@@ -166,6 +197,8 @@ Orden de validación: campos vacíos → dominio → credenciales (🟡 Propuest
 | Mensaje de error de login | `Correo o contraseña incorrectos`, el mismo para contraseña incorrecta, correo inexistente y usuario con `activo = 0` | ✅ Definido (#9 criterio 3) |
 | Cuerpo de los errores de login | `ProblemDetails` (RFC 9457); el texto va en `detail` | 🟡 Propuesta, a confirmar por Amira |
 | Algoritmo de hash de contraseña (`password_hash` es `VARCHAR(255)`) | BCrypt (paquete BCrypt.Net-Next; versión por confirmar). El paquete lo agrega Amira en #30 | ✅ Definido (decisión de Ariana, base) |
+| Cuenta sin contraseña (entra solo con Google) que intenta el login normal | **401** «Credenciales inválidas.» (antes, BCrypt fallaba y respondía 500) | ✅ Definido |
+| Contraseña (registro y cambio) | De 8 a 72 bytes (lo que usa BCrypt), con al menos una letra y un número, sin espacios al inicio ni al final (`ReglasCuenta.ValidarNueva`) | ✅ Definido |
 | ¿El login exige `correoVerificado = true`? | No en el sprint 1 (no existe flujo de verificación). Sí exige `activo = 1`. Si más adelante se agrega verificación, se vuelve a definir | ✅ Definido (decisión de Ariana, base); 🔴 Pendiente (Amira) si se agrega verificación |
 | Creación de usuarios | Sin endpoint de registro en el sprint 1 (el alcance de HU1 es el login; #9 no tiene criterio de registro) | ✅ Definido (alcance del sprint); 🔴 Pendiente (Amira) si más adelante se agrega registro |
 
@@ -494,6 +527,27 @@ Body de `POST` y `PUT`:
   "horaApertura": "08:00", "horaCierre": "20:00", "minAPieDesdeBloqueA": 3
 }
 ```
+
+## 6b-bis. Cambiar la contraseña desde el perfil
+
+### `PUT /api/perfil/contrasena`
+
+Requiere JWT. Perfil → Seguridad.
+
+```json
+{ "actual": "********", "nueva": "nueva2026", "confirmacion": "nueva2026" }
+```
+
+| Caso | Respuesta |
+|---|---|
+| Correcto | **204** (sin cuerpo). Queda en `historial_cambio` como `{"contrasena": "(oculta)"}` → `{"contrasena": "cambiada"}`, sin la contraseña |
+| La cuenta entra solo con Google (no tiene contraseña) | `actual` no hace falta: la contraseña se **crea** (`"creada"` en el historial) y desde ahí también puede entrar con correo y contraseña |
+| Falta `actual` | **400** `VALIDACION` «Escribe tu contraseña actual.» |
+| `actual` incorrecta | **400** `CONTRASENA_INCORRECTA` «La contraseña actual no es correcta.» |
+| La nueva no cumple las reglas, no coincide con `confirmacion` o es igual a la actual | **400** `VALIDACION` con el motivo |
+| Más de 5 intentos en un minuto | **429** `DEMASIADAS_SOLICITUDES` «Hiciste muchos intentos seguidos. Espera un minuto y vuelve a intentarlo.» |
+
+`GET /api/perfil` trae además `tieneContrasena` (false si entra solo con Google) y `conGoogle` (si la cuenta está enlazada).
 
 ## 6c. Reportes de los estudiantes
 

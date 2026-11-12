@@ -14,6 +14,7 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.Id).HasColumnName("id");
         builder.Property(u => u.Email).HasColumnName("correo").HasMaxLength(120).IsRequired();
         builder.Property(u => u.PasswordHash).HasColumnName("password_hash").HasMaxLength(255);
+        builder.Property(u => u.GoogleSub).HasColumnName("google_sub").HasMaxLength(64);
         builder.Property(u => u.Nombre).HasColumnName("nombre").HasMaxLength(100).IsRequired();
         builder.Property(u => u.Carrera).HasColumnName("carrera").HasMaxLength(80);
         builder.Property(u => u.Semestre).HasColumnName("semestre");
