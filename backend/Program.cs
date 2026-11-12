@@ -76,6 +76,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, Breaku.Api.Hubs.UsuarioIdProvider>();
 builder.Services.AddSingleton<ApiMetrics>();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);

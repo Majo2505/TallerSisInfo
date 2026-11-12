@@ -1,4 +1,5 @@
 using Breaku.Application.Horarios;
+using Breaku.Application.TiempoReal;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
 
@@ -9,7 +10,15 @@ public class NotificacionService
     private const int MaximoListado = 20;
 
     private readonly INotificacionRepository _repo;
-    public NotificacionService(INotificacionRepository repo) => _repo = repo;
+    private readonly ITiempoReal _tiempoReal;
+
+    public NotificacionService(INotificacionRepository repo) : this(repo, SinTiempoReal.Instancia) { }
+
+    public NotificacionService(INotificacionRepository repo, ITiempoReal tiempoReal)
+    {
+        _repo = repo;
+        _tiempoReal = tiempoReal;
+    }
 
     public async Task<int> EnviarAvisosAsync(DateTime ahoraUtc, CancellationToken ct = default)
     {
@@ -24,7 +33,7 @@ public class NotificacionService
         // servidor estuviera prendido justo al empezar, y le llega a cada estudiante esté o no usando la app.
         var puentes = await _repo.ListarPuentesPorAvisarAsync(dia, fecha, hora, ct);
 
-        var enviados = 0;
+        var avisados = new List<int>();
         foreach (var p in puentes)
         {
             if (!ReglasNotificacion.DebeAvisarse(p.HoraInicio, p.HoraFin, hora)) continue;
@@ -46,10 +55,12 @@ public class NotificacionService
                 CreatedAt = ahoraUtc
             };
 
-            if (await _repo.AgregarAsync(aviso, ct)) enviados++;
+            if (await _repo.AgregarAsync(aviso, ct)) avisados.Add(p.UsuarioId);
         }
 
-        return enviados;
+        // HU18: el aviso aparece en la campanita al momento, no en la próxima consulta.
+        await _tiempoReal.AvisosCambiaronAsync(avisados, ct);
+        return avisados.Count;
     }
 
     public async Task DesactivarSinPuenteAsync(int usuarioId, IReadOnlyList<Puente> puentesActuales, CancellationToken ct = default)

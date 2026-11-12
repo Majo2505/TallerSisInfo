@@ -1,5 +1,6 @@
 using Breaku.Api.Hubs;
 using Breaku.Application.Comunidades;
+using Breaku.Application.TiempoReal;
 using Breaku.Domain;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,9 +57,14 @@ public sealed class CierreComunidadesWorker : BackgroundService
             if (archivadas.Count == 0) return;
 
             _logger.LogInformation("Comunidades archivadas automáticamente: {Cantidad}", archivadas.Count);
+            var tiempoReal = scope.ServiceProvider.GetRequiredService<ITiempoReal>();
             foreach (var id in archivadas)
+            {
                 await hub.Clients.Group(ComunidadHub.Grupo(id)).SendAsync(
                     "comunidadActualizada", new ComunidadEstadoActualizado(id, ComunidadEfimera.EstadoArchivada, 0), ct);
+                // HU18: sus avisos se apagaron (HU15): la campanita los quita al momento.
+                await tiempoReal.AvisosDeComunidadAsync(id, ct);
+            }
         }
         catch (Exception ex) when (!ct.IsCancellationRequested)
         {

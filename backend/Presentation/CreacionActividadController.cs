@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Breaku.Application.Actividades;
 using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
+using Breaku.Application.TiempoReal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +16,13 @@ namespace Breaku.Api.Controllers;
 public class CreacionActividadController : ControllerBase
 {
     private readonly CreacionActividadService _service;
-    public CreacionActividadController(CreacionActividadService service) => _service = service;
+    private readonly ITiempoReal _tiempoReal;
+
+    public CreacionActividadController(CreacionActividadService service, ITiempoReal tiempoReal)
+    {
+        _service = service;
+        _tiempoReal = tiempoReal;
+    }
 
     private int UsuarioId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
@@ -42,6 +49,8 @@ public class CreacionActividadController : ControllerBase
         try
         {
             var creada = await _service.CrearAsync(UsuarioId, req, ct);
+            // HU18: aparece en Descubrir de su sede y la invitación llega a los invitados, sin recargar.
+            await _tiempoReal.ComunidadCreadaAsync(creada.Id, ct);
             return StatusCode(StatusCodes.Status201Created, creada);
         }
         catch (ReglaNegocioException ex)
