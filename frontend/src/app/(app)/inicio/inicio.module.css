@@ -521,6 +521,7 @@
 }
 
 .globo {
+  --globo-x: -50%;
   position: absolute;
   bottom: calc(100% + 12px);
   left: 50%;
@@ -538,7 +539,7 @@
   box-shadow: var(--sombra-2);
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 4px) scale(0.96);
+  transform: translate(var(--globo-x), 4px) scale(0.96);
   transform-origin: bottom center;
   transition: opacity 150ms ease, transform 180ms var(--curva-salida);
 }
@@ -558,17 +559,42 @@
   border-top-color: var(--ucb-marino);
 }
 
+/* Tramos cerca de los bordes: el globo se apoya en el borde del tramo y la flecha queda cerca de ese lado. */
+.globoInicio {
+  --globo-x: 0%;
+  left: 0;
+  transform-origin: bottom left;
+}
+
+.globoInicio::after {
+  left: 14px;
+}
+
+.globoFin {
+  --globo-x: 0%;
+  left: auto;
+  right: 0;
+  transform-origin: bottom right;
+}
+
+.globoFin::after {
+  left: auto;
+  right: 14px;
+  margin-left: 0;
+  margin-right: -6px;
+}
+
 .tramoClase:focus-visible .globo,
 .tramoPuente:focus-visible .globo {
   opacity: 1;
-  transform: translate(-50%, 0) scale(1);
+  transform: translate(var(--globo-x), 0) scale(1);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .tramoClase:hover .globo,
   .tramoPuente:hover .globo {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translate(var(--globo-x), 0) scale(1);
   }
 }
 
