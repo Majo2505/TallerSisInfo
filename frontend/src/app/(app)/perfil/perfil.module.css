@@ -235,6 +235,13 @@
   gap: 12px;
 }
 
+/* HU20: en celular no entran lado a lado («2.° semestre» se salía de la pantalla a 320 px). */
+@media (max-width: 480px) {
+  .fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .acciones {
   display: grid;
   gap: 10px;

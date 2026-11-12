@@ -221,6 +221,11 @@ export default function Inicio() {
   const hasta = tramos.length ? Math.ceil(Math.max(...tramos.map((t) => t.fin)) / 60) * 60 : 0;
   const total = Math.max(hasta - desde, 60);
   const posicion = (m: number) => `${((m - desde) / total) * 100}%`;
+  // HU20: cerca de los bordes, el globo se alinea al borde en vez de centrarse (si no, se sale de la pantalla en celular).
+  const ladoDelGlobo = (t: { inicio: number; fin: number }) => {
+    const centro = ((t.inicio + t.fin) / 2 - desde) / total;
+    return centro < 0.3 ? estilos.globoInicio : centro > 0.7 ? estilos.globoFin : "";
+  };
   const ahoraVisible = tramos.length > 0 && minutosAhora >= desde && minutosAhora <= hasta;
 
   return (
@@ -304,7 +309,7 @@ export default function Inicio() {
                 animate={{ scaleX: 1, opacity: 1 }}
                 transition={{ duration: 0.6, ease: SALIDA, delay: 0.35 + i * 0.06 }}
               >
-                <span className={estilos.globo} aria-hidden="true">
+                <span className={`${estilos.globo} ${ladoDelGlobo(t)}`} aria-hidden="true">
                   <strong>{t.titulo}</strong>
                   {aHora(t.inicio)} – {aHora(t.fin)}
                 </span>
