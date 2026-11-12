@@ -1,9 +1,7 @@
 "use client";
 
-import { HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
-import { useEffect, useRef } from "react";
-import { API_URL } from "./config";
-import { obtenerToken } from "@/services/authService";
+import { useEffect } from "react";
+import { seguirComunidad, useEventoEnVivo } from "./tiempoReal";
 
 export type EventoComunidad = {
   comunidadId: number;
@@ -11,42 +9,17 @@ export type EventoComunidad = {
   confirmados: number;
 };
 
-export function useComunidadesRealtime(
-  comunidadIds: readonly number[],
-  onActualizada: (evento: EventoComunidad) => void,
-) {
+/**
+ * HU18: sigue estas comunidades y llama a `onActualizada` cuando cambia su cupo o se archivan. Usa la conexión
+ * compartida (`lib/tiempoReal.ts`): si la lista cambia, solo se suscribe a las nuevas y deja las que ya no están.
+ */
+export function useComunidadesRealtime(comunidadIds: readonly number[], onActualizada: (evento: EventoComunidad) => void) {
   const ids = comunidadIds.join(",");
-  const alActualizar = useRef(onActualizada);
+
+  useEventoEnVivo("comunidadActualizada", onActualizada);
 
   useEffect(() => {
-    alActualizar.current = onActualizada;
-  }, [onActualizada]);
-
-  useEffect(() => {
-    const token = obtenerToken();
-    const suscritas = ids ? ids.split(",").map(Number) : [];
-    if (!token || suscritas.length === 0) return;
-
-    const connection = new HubConnectionBuilder()
-      .withUrl(`${API_URL}/hubs/comunidades`, { accessTokenFactory: () => obtenerToken() ?? "" })
-      .withAutomaticReconnect()
-      .configureLogging(LogLevel.Warning)
-      .build();
-
-    const suscribir = async () => {
-      if (connection.state !== HubConnectionState.Connected) return;
-      await Promise.allSettled(suscritas.map((id) => connection.invoke("Suscribirse", id)));
-    };
-
-    connection.on("comunidadActualizada", (evento: EventoComunidad) => alActualizar.current(evento));
-    connection.onreconnected(() => void suscribir());
-    void connection
-      .start()
-      .then(() => suscribir())
-      .catch(() => undefined);
-
-    return () => {
-      void connection.stop();
-    };
+    const soltar = ids ? ids.split(",").map((id) => seguirComunidad(Number(id))) : [];
+    return () => soltar.forEach((f) => f());
   }, [ids]);
 }

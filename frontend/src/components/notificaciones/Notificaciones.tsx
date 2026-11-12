@@ -14,6 +14,7 @@ import {
   obtenerConfiguracion,
 } from "@/lib/notificaciones";
 import { hhmm } from "@/lib/puentes";
+import { useAlReconectar, useEventoEnVivo } from "@/lib/tiempoReal";
 import estilos from "./Notificaciones.module.css";
 
 function IconoCampana() {
@@ -129,6 +130,11 @@ export default function Notificaciones({ recarga }: Props) {
       document.removeEventListener("visibilitychange", revisar);
     };
   }, [consultar, recarga]);
+
+  // HU18: lo nuevo llega al momento; la consulta de cada 15 s queda de respaldo por si se corta la conexión.
+  const consultarEnVivo = useCallback(() => void consultar(() => true), [consultar]);
+  useEventoEnVivo("avisosCambiaron", consultarEnVivo);
+  useAlReconectar(consultarEnVivo);
 
   useEffect(() => {
     let activo = true;
