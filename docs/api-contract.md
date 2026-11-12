@@ -471,7 +471,7 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`). Los que no son de un lugar ni de una comunidad se ven con objeto «General» |
 | `PATCH` | `/api/admin/reportes/{id}` | Body `{ "estado": "RESUELTO" }` o `"DESCARTADO"`. Cierra un reporte `PENDIENTE` y guarda al admin como `revisor_id` y la fecha en `revisado_en`. **204**; 400 `VALIDACION` (otra decisión, incluida `PENDIENTE`: no se reabre); 404 `NO_ENCONTRADO`; 409 `YA_REVISADO` (ya tenía decisión: no se cambia) |
 | `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas **conversaciones** con el asistente (1 a 200): los turnos de una misma conversación (crear una actividad: «jugar cartas» → «¿A qué hora?» → «5») vienen juntos, con `entrada` (el primero), `respuestas` (los siguientes) y `turnos`. Estado, modelo y latencia sumada. Un rechazo de seguridad en cualquier turno marca toda la conversación |
-| `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio y los 5 lugares más recomendados |
+| `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio, los 5 lugares más recomendados y `rendimiento` de las recomendaciones (P50, P95, % por debajo de 3,5 s y respuestas del plan B, HU19) |
 
 **Reglas del catálogo** (`ReglasLugar`, y en la base `uq_lugar_nombre` y `ck_lugar_horario`):
 
@@ -727,6 +727,7 @@ Si no se reconoce ninguna actividad (`NO_ENTENDIDO`), `mensaje` es «No entendim
 |---|---|
 | 400 | Falta el texto o supera los 200 caracteres (`VALIDACION`), o no pasa los guardrails (`SOLICITUD_NO_PERMITIDA`, con el mismo mensaje que HU17) |
 | 401 | Sin token o token inválido |
+| 429 | Más de 10 consultas en un minuto (`DEMASIADAS_SOLICITUDES`, HU19) |
 | 503 | El LLM no respondió (`ASISTENTE_NO_DISPONIBLE`); queda registrado como `ERROR` |
 
 ### Corregir lo que la IA entendió mal
@@ -1018,6 +1019,18 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
 
 **Panel admin:** `GET /api/admin/auditoria-rag` trae `motivoRechazo` en cada consulta y `GET /api/admin/metricas` trae
 `rechazosPorMotivo` (últimos 7 días).
+
+## 7h. Rendimiento y disponibilidad (HU19 — Rocío y Ariana; ampliación: Maite)
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Objetivo | `POST /api/recomendaciones` responde en **menos de 3,5 s** | ✅ Definido |
+| Presupuesto de la IA | 2,8 s (`ReglasRendimiento.PresupuestoIaMs`); el resto es para recuperar, validar y guardar | ✅ Definido |
+| Plan B | Si la IA no contesta en ese tiempo o falla, se recomiendan hasta 3 lugares de los ya recuperados (HU6): primero los que entran con ida, actividad y vuelta en el puente, después los más cercanos. Responde `200` `OK` con `mensaje` = «El asistente estaba muy solicitado, así que te mostramos las opciones más cercanas para tu puente.» (con la IA, `mensaje` es `null`). Queda en la auditoría como `OK` con `modelo` = `respaldo-sin-ia` | ✅ Definido |
+| `latencia_ms` | En las recomendaciones, el tiempo total que espera el estudiante (recuperar + IA), no solo la IA | ✅ Definido |
+| Razonamiento | Con OpenAI (`api.openai.com`) se manda `reasoning_effort: "none"`, como en la extracción (HU11) | ✅ Definido |
+| Límite en horas pico | 10 consultas por minuto por estudiante entre `POST /api/recomendaciones`, `/api/actividades/extraer`, `/api/actividades/revisar` y `/api/horario/foto` (cada una cuenta por separado; guardar el horario no tiene límite). Al pasarse: **429** `{ "codigo": "DEMASIADAS_SOLICITUDES", "mensaje": "Hiciste muchas consultas seguidas. Espera un minuto y vuelve a intentarlo." }` con `Retry-After` | ✅ Definido |
+| Observabilidad | `/health/ready` (base en 2 s) y `/health/metrics` (Prometheus, en memoria) de Rocío y Ariana; `GET /api/admin/metricas` → `rendimiento` `{ consultas, objetivoMs, p50Ms, p95Ms, dentroDelObjetivoPct, respaldos }` desde la auditoría (no se pierde al reiniciar) | ✅ Definido |
 
 ## 8. Resumen de decisiones por responsable
 
