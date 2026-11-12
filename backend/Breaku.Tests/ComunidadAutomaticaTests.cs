@@ -114,7 +114,7 @@ public class ReglasComunidadTests
 public class ComunidadServiceTests
 {
     private static readonly DateTimeOffset AhoraUtc = new(2026, 11, 3, 14, 0, 0, TimeSpan.Zero);
-    private const int Yo = 7;
+    internal const int Yo = 7;
 
     private sealed class RelojFijo : TimeProvider
     {
