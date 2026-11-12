@@ -975,6 +975,25 @@ No tiene endpoint: lo hace el servidor solo (`CierreComunidadesWorker`, cada 15 
 | Avisos de la campanita | Los de esa comunidad (`INVITACION_COMUNIDAD`, `COMUNIDAD_CERRADA`) quedan `activa = FALSE`: ya no aparecen en `GET /api/notificaciones` ni cuentan como no leídos. Al arrancar, el servidor apaga también los que quedaron de comunidades archivadas antes | ✅ Definido |
 | Historial | La comunidad y sus participaciones no se borran (quedan para métricas y auditoría) | ✅ Definido |
 
+## 7f-quinquies. Actualización en tiempo real (HU18 — Rocío y Ariana; ampliación: Maite)
+
+SignalR en **`/hubs/comunidades`**, con el mismo JWT (`?access_token=` en la conexión). Los eventos son solo señales: el
+cliente vuelve a pedir lo suyo a la API, que aplica los permisos de siempre.
+
+| Método del cliente | Para qué |
+|---|---|
+| `Suscribirse(comunidadId)` / `Desuscribirse(comunidadId)` | Seguir una comunidad que puedes ver (si no, `HubException`) |
+| `SeguirDescubrir()` | Recibir las comunidades nuevas de tu sede (solo con sede activa y matching aceptado) |
+
+| Evento del servidor | A quién | Cuándo |
+|---|---|---|
+| `comunidadActualizada` `{ comunidadId, estado, confirmados }` | Quienes siguen esa comunidad | Alguien responde «Voy»/«No voy» (`ACTIVA` con el cupo nuevo) o se archiva (`ARCHIVADA`) |
+| `comunidadesCambiaron` (sin datos) | Quienes miran Descubrir en la sede de quien la creó | Se crea una comunidad (`POST /api/actividades`) |
+| `avisosCambiaron` (sin datos) | El estudiante | Le llega una invitación (al crear o con «Buscar de nuevo»), el grupo se llena o se reabre, la comunidad termina o empieza un puente |
+
+Si el aviso en vivo falla, la operación sigue igual y la campanita lo ve en su consulta de cada 15 segundos. El cliente
+reintenta la conexión sin rendirse y, al reconectar, vuelve a pedir todo (lo que pasó mientras estuvo desconectado).
+
 ## 7g. Protección contra prompt injection y solicitudes no permitidas (HU17 — Amira y Ariana; ajustes: Maite)
 
 Todo texto que llega al asistente o sale de él pasa por los guardrails (`ReglasSeguridadIa`). Lo que no pasa se rechaza
