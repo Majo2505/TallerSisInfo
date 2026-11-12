@@ -50,7 +50,6 @@ public class FotoHorarioController : ControllerBase
     });
 
     [HttpPost("lote")]
-    [EnableRateLimiting(ReglasRendimiento.PoliticaIa)]
     [ProducesResponseType(typeof(ResultadoLoteDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
