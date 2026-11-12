@@ -8,11 +8,13 @@ import {
   ErrorAuth,
   iniciarSesion,
   iniciarSesionAdmin,
+  iniciarSesionConGoogle,
   obtenerSesion,
   registrarse,
   rutaDeEntrada,
   suscribirSesion,
 } from "@/services/authService";
+import BotonGoogle from "./BotonGoogle";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
 
@@ -46,6 +48,8 @@ function validar(
   if (!datos.password) errores.password = "Ingresa tu contraseña.";
   else if (modo === "registro" && datos.password.length < LARGO_MINIMO_PASSWORD)
     errores.password = `Tu contraseña tiene que tener al menos ${LARGO_MINIMO_PASSWORD} caracteres.`;
+  else if (modo === "registro" && !(/\p{L}/u.test(datos.password) && /\d/.test(datos.password)))
+    errores.password = "Tu contraseña tiene que tener al menos una letra y un número.";
 
   if (modo === "registro") {
     if (!datos.confirmar) errores.confirmar = "Confirma tu contraseña.";
@@ -150,6 +154,17 @@ export default function LoginForm() {
       else if (comoAdmin) nueva = await iniciarSesionAdmin(correo.trim(), password);
       else nueva = await iniciarSesion(correo.trim(), password);
       router.replace(rutaDeEntrada(nueva));
+    } catch (e) {
+      setErrorServidor(e instanceof ErrorAuth ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
+      setEnviando(false);
+    }
+  }
+
+  async function entrarConGoogle(credencial: string) {
+    setErrorServidor("");
+    setEnviando(true);
+    try {
+      router.replace(rutaDeEntrada(await iniciarSesionConGoogle(credencial)));
     } catch (e) {
       setErrorServidor(e instanceof ErrorAuth ? e.message : "Hubo un error inesperado. Inténtalo de nuevo.");
       setEnviando(false);
@@ -328,6 +343,9 @@ export default function LoginForm() {
           {enviando && <span className={styles.girando} aria-hidden="true" />}
           {textoBoton}
         </motion.button>
+
+        {/* El administrador entra solo con contraseña. */}
+        {!comoAdmin && <BotonGoogle alEntrar={entrarConGoogle} />}
 
         <p className={styles.pie}>Solo con tu correo institucional @ucb.edu.bo</p>
       </form>
