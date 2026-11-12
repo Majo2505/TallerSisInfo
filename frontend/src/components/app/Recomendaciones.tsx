@@ -252,6 +252,11 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
 
       {respuesta?.estado === "OK" && (
         <>
+          {respuesta.mensaje && (
+            <p className={estilos.notaRespaldo} role="status">
+              {respuesta.mensaje}
+            </p>
+          )}
           <motion.ol
             className={estilos.lista}
             initial={reducir ? false : "oculto"}
