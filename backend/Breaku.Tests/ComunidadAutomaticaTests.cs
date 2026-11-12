@@ -144,6 +144,15 @@ public class ComunidadServiceTests
             return Task.FromResult<IReadOnlyList<int>>(VencidasArchivables);
         }
 
+        /// <summary>Cada llamada a DesactivarAvisosDeArchivadasAsync (null = todas las archivadas).</summary>
+        public List<IReadOnlyCollection<int>?> AvisosApagados { get; } = [];
+
+        public Task<int> DesactivarAvisosDeArchivadasAsync(IReadOnlyCollection<int>? comunidadIds, CancellationToken ct = default)
+        {
+            AvisosApagados.Add(comunidadIds);
+            return Task.FromResult(comunidadIds?.Count ?? 7);
+        }
+
         public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default) => Task.FromResult<Usuario?>(Usuario);
         public Task<ComunidadEfimera?> ObtenerComunidadAsync(int comunidadId, CancellationToken ct = default)
             => Task.FromResult(Comunidad?.Id == comunidadId ? Comunidad : null);

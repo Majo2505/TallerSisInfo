@@ -963,6 +963,18 @@ Orden: quien la creó, después los que van, los pendientes y los que no van (ca
 | 401 | Sin token o token inválido |
 | 404 | La comunidad no existe, está archivada o no estás en ella (`NO_ENCONTRADO`) |
 
+## 7f-quater. Cierre automático de la comunidad al vencer el bloque (HU15 — Amira; aviso en vivo: Ariana; avisos: Maite)
+
+No tiene endpoint: lo hace el servidor solo (`CierreComunidadesWorker`, cada 15 segundos).
+
+| Regla | Valor | Estado |
+|---|---|---|
+| Cuándo se cierra | Cuando llega la hora de fin (`comunidad_efimera.fin <= ahora`, en UTC): `estado` pasa de `ACTIVA` a `ARCHIVADA` (`ck_com_estado`, índice `ix_comunidad_estado_fin`) | ✅ Definido |
+| Qué deja de funcionar | Desaparece de `GET /api/comunidades`; asistencia, participantes e invitaciones responden 404 o 400 «La actividad ya terminó.» | ✅ Definido |
+| Aviso en vivo | SignalR `/hubs/comunidades`, evento `comunidadActualizada` `{ comunidadId, estado: "ARCHIVADA", confirmados: 0 }` a quienes la siguen (Descubrir la quita al momento) | ✅ Definido |
+| Avisos de la campanita | Los de esa comunidad (`INVITACION_COMUNIDAD`, `COMUNIDAD_CERRADA`) quedan `activa = FALSE`: ya no aparecen en `GET /api/notificaciones` ni cuentan como no leídos. Al arrancar, el servidor apaga también los que quedaron de comunidades archivadas antes | ✅ Definido |
+| Historial | La comunidad y sus participaciones no se borran (quedan para métricas y auditoría) | ✅ Definido |
+
 ## 7g. Protección contra prompt injection y solicitudes no permitidas (HU17 — Amira y Ariana; ajustes: Maite)
 
 Todo texto que llega al asistente o sale de él pasa por los guardrails (`ReglasSeguridadIa`). Lo que no pasa se rechaza
