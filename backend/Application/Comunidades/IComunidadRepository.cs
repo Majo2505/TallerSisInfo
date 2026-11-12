@@ -14,6 +14,12 @@ public interface IComunidadRepository
 {
     Task<IReadOnlyList<int>> ArchivarVencidasAsync(DateTime ahoraUtc, CancellationToken ct = default);
 
+    /// <summary>
+    /// HU15: apaga los avisos (invitación, «el grupo se llenó») de las comunidades archivadas, para que no queden en la
+    /// campanita de algo que ya terminó. Con <paramref name="comunidadIds"/> en null, los de todas las archivadas.
+    /// </summary>
+    Task<int> DesactivarAvisosDeArchivadasAsync(IReadOnlyCollection<int>? comunidadIds, CancellationToken ct = default);
+
     Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default);
 
     Task<ComunidadEfimera?> ObtenerComunidadAsync(int comunidadId, CancellationToken ct = default);

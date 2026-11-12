@@ -22,10 +22,27 @@ public sealed class CierreComunidadesWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await LimpiarAvisosAsync(stoppingToken);
         await ArchivarAsync(stoppingToken);
         using var timer = new PeriodicTimer(Intervalo);
         while (await timer.WaitForNextTickAsync(stoppingToken))
             await ArchivarAsync(stoppingToken);
+    }
+
+    private async Task LimpiarAvisosAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var scope = _scopes.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<ICierreComunidadesService>();
+            var apagados = await service.LimpiarAvisosDeArchivadasAsync(ct);
+            if (apagados > 0)
+                _logger.LogInformation("Avisos de comunidades ya archivadas apagados: {Cantidad}", apagados);
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogError(ex, "No se pudieron apagar los avisos de las comunidades archivadas.");
+        }
     }
 
     private async Task ArchivarAsync(CancellationToken ct)

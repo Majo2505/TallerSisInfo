@@ -26,6 +26,15 @@ public sealed class ComunidadRepository : IComunidadRepository
         return ids;
     }
 
+    public Task<int> DesactivarAvisosDeArchivadasAsync(IReadOnlyCollection<int>? comunidadIds, CancellationToken ct = default)
+    {
+        var avisos = _db.Notificaciones.Where(n => n.Activa && n.ComunidadId != null
+            && _db.Comunidades.Any(c => c.Id == n.ComunidadId && c.Estado == ComunidadEfimera.EstadoArchivada));
+        if (comunidadIds is not null)
+            avisos = avisos.Where(n => comunidadIds.Contains(n.ComunidadId!.Value));
+        return avisos.ExecuteUpdateAsync(s => s.SetProperty(n => n.Activa, false), ct);
+    }
+
     public Task<Usuario?> ObtenerUsuarioAsync(int usuarioId, CancellationToken ct = default)
         => _db.Usuarios.AsNoTracking().Include(u => u.ZonaActual).FirstOrDefaultAsync(u => u.Id == usuarioId && u.Activo, ct);
 
