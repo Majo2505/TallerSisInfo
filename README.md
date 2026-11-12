@@ -27,7 +27,10 @@ Archivos en la raíz: `README.md`, `.gitignore`.
 
 - Cliente-servidor de 3 niveles.
 - Backend: monolito modular en capas con inversión de dependencias, en un solo proyecto con las capas como carpetas (`Presentation`, `Application`, `Domain`, `Infrastructure`).
-  - `Domain` no depende de nadie; `Application` solo de `Domain`; `Infrastructure` implementa las interfaces de `Application`; `Presentation` llama a `Application` (por convención).
+  - `Domain` no depende de nadie; `Application` solo de `Domain`; `Infrastructure` implementa las interfaces de `Application`; `Presentation` llama a `Application` y nunca a `Infrastructure`.
+  - La regla la verifica `Breaku.Tests/ArquitecturaTests.cs`: si una capa usa otra de afuera (o `Domain` usa EF Core, ASP.NET o HTTP), la prueba falla con el archivo y la línea.
+  - Cada capa registra lo suyo: `AddApplication()` (casos de uso), `AddInfrastructure()` (repositorios, IA, workers) y `Program.cs` solo compone (controladores, hub, canal en vivo).
+  - Para agregar un módulo: reglas puras en `Domain/Reglas*.cs`, servicio e interfaz del repositorio en `Application/<Módulo>/` (registrado en `AddApplication`), repositorio en `Infrastructure/Persistence/` (en `AddInfrastructure`) y controlador en `Presentation/`.
   - Solo `Infrastructure` accede a la base de datos y a servicios externos.
   - El servidor de Next.js no accede a la base de datos; todo pasa por la API.
 
