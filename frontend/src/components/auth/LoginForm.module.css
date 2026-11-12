@@ -312,3 +312,31 @@
     background: var(--fondo-suave);
   }
 }
+
+/* «Continuar con Google»: el botón lo dibuja Google (exige su diseño); acá solo el separador y el espacio. */
+.google {
+  display: grid;
+  gap: 14px;
+}
+
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+}
+
+.separador::before,
+.separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--borde);
+}
+
+.botonGoogle {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}

@@ -94,7 +94,7 @@ export class ErrorAuth extends Error {}
 
 type RespuestaAuth = { token: string; userId: number; nombre: string; email: string; rol?: Rol };
 
-async function autenticar(ruta: "login" | "register", cuerpo: object, rolRequerido?: Rol): Promise<Sesion> {
+async function autenticar(ruta: "login" | "register" | "google", cuerpo: object, rolRequerido?: Rol): Promise<Sesion> {
   let res: Response;
   try {
     res = await fetch(`${API_URL}/api/auth/${ruta}`, {
@@ -111,7 +111,9 @@ async function autenticar(ruta: "login" | "register", cuerpo: object, rolRequeri
   }
   const datos = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new ErrorAuth(datos?.detail ?? datos?.message ?? "No pudimos completar la solicitud. Inténtalo de nuevo en unos minutos.");
+    throw new ErrorAuth(
+      datos?.mensaje ?? datos?.detail ?? datos?.message ?? "No pudimos completar la solicitud. Inténtalo de nuevo en unos minutos.",
+    );
   }
 
   const r = datos as RespuestaAuth;
@@ -126,6 +128,9 @@ export const iniciarSesion = (correo: string, password: string) =>
 
 export const iniciarSesionAdmin = (correo: string, password: string) =>
   autenticar("login", { email: correo, password }, "ADMIN");
+
+/** Entra (o se registra) con el ID token que dio Google. El backend lo verifica y solo acepta cuentas @ucb.edu.bo. */
+export const iniciarSesionConGoogle = (credencial: string) => autenticar("google", { credencial });
 
 export const registrarse = (nombre: string, correo: string, password: string) =>
   autenticar("register", { nombre, email: correo, password });

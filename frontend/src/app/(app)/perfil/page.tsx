@@ -27,7 +27,16 @@ import {
   enviarReporte,
   listarLugaresReportables,
 } from "@/lib/reportes";
-import { CARRERAS, LARGO_MAXIMO_NOMBRE, Perfil as DatosPerfil, SEMESTRES, actualizarPerfil, obtenerPerfil } from "@/lib/perfil";
+import {
+  CARRERAS,
+  LARGO_MAXIMO_NOMBRE,
+  Perfil as DatosPerfil,
+  SEMESTRES,
+  actualizarPerfil,
+  cambiarContrasena,
+  errorContrasenaNueva,
+  obtenerPerfil,
+} from "@/lib/perfil";
 import { actualizarNombreSesion, cerrarSesion } from "@/services/authService";
 import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
@@ -56,6 +65,11 @@ export default function Perfil() {
   const [pestana, setPestana] = useState<Pestana>("informacion");
   const [perfil, setPerfil] = useState<DatosPerfil | null>(null);
   const [errorPerfil, setErrorPerfil] = useState("");
+  const [contrasenaActual, setContrasenaActual] = useState("");
+  const [contrasenaNueva, setContrasenaNueva] = useState("");
+  const [contrasenaConfirmacion, setContrasenaConfirmacion] = useState("");
+  const [errorContrasena, setErrorContrasena] = useState("");
+  const [guardandoContrasena, setGuardandoContrasena] = useState(false);
   const [nombre, setNombre] = useState("");
   const [carrera, setCarrera] = useState("");
   const [semestre, setSemestre] = useState("");
@@ -418,23 +432,99 @@ export default function Perfil() {
             )}
 
             {pestana === "seguridad" && (
-              <form className={estilos.formulario} onSubmit={(e) => e.preventDefault()}>
+              <form
+                className={estilos.formulario}
+                noValidate
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!perfil || guardandoContrasena) return;
+                  const tieneContrasena = perfil.tieneContrasena !== false;
+                  if (tieneContrasena && !contrasenaActual) return setErrorContrasena("Escribe tu contraseña actual.");
+                  const error = errorContrasenaNueva(contrasenaNueva, contrasenaConfirmacion);
+                  if (error) return setErrorContrasena(error);
+                  setErrorContrasena("");
+                  setGuardandoContrasena(true);
+                  try {
+                    await cambiarContrasena(tieneContrasena ? contrasenaActual : null, contrasenaNueva, contrasenaConfirmacion);
+                    setPerfil({ ...perfil, tieneContrasena: true });
+                    setContrasenaActual("");
+                    setContrasenaNueva("");
+                    setContrasenaConfirmacion("");
+                    aviso.mostrar(tieneContrasena ? "Tu contraseña se cambió." : "Listo: ya puedes entrar también con tu correo y contraseña.");
+                  } catch (err) {
+                    setErrorContrasena(err instanceof Error ? err.message : "No pudimos cambiar la contraseña. Inténtalo de nuevo.");
+                  } finally {
+                    setGuardandoContrasena(false);
+                  }
+                }}
+              >
                 <h2 className={estilos.seccion}>Seguridad</h2>
-                <label className={estilos.campo}>
-                  Contraseña actual
-                  <input type="password" disabled autoComplete="current-password" />
-                </label>
+                {perfil?.conGoogle && (
+                  <p className={estilos.nota}>
+                    Tu cuenta está enlazada con Google: puedes entrar con «Continuar con Google»
+                    {perfil.tieneContrasena === false ? "." : " o con tu correo y contraseña."}
+                  </p>
+                )}
+                {perfil?.tieneContrasena === false ? (
+                  <p className={estilos.nota}>
+                    Todavía no tienes contraseña. Crea una si también quieres entrar con tu correo institucional.
+                  </p>
+                ) : (
+                  <label className={estilos.campo}>
+                    Contraseña actual
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={contrasenaActual}
+                      onChange={(e) => setContrasenaActual(e.target.value)}
+                      disabled={!perfil}
+                    />
+                  </label>
+                )}
                 <label className={estilos.campo}>
                   Nueva contraseña
-                  <input type="password" disabled autoComplete="new-password" />
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={contrasenaNueva}
+                    onChange={(e) => setContrasenaNueva(e.target.value)}
+                    aria-describedby="reglas-contrasena"
+                    disabled={!perfil}
+                  />
+                  <small id="reglas-contrasena">Al menos 8 caracteres, con una letra y un número.</small>
                 </label>
                 <label className={estilos.campo}>
                   Confirmar nueva contraseña
-                  <input type="password" disabled autoComplete="new-password" />
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={contrasenaConfirmacion}
+                    onChange={(e) => setContrasenaConfirmacion(e.target.value)}
+                    disabled={!perfil}
+                  />
                 </label>
-                <p className={estilos.nota}>Cambiar la contraseña va a estar disponible pronto.</p>
-                <button type="submit" className={estilos.primario} disabled>
-                  Cambiar contraseña
+                {errorContrasena && (
+                  <motion.p
+                    key={errorContrasena}
+                    className={estilos.errorCampo}
+                    role="alert"
+                    initial={reducir ? false : { x: 0 }}
+                    animate={{ x: [0, -8, 8, -5, 5, 0] }}
+                    transition={{ duration: 0.42 }}
+                  >
+                    {errorContrasena}
+                  </motion.p>
+                )}
+                <button
+                  type="submit"
+                  className={estilos.primario}
+                  disabled={!perfil || guardandoContrasena || !contrasenaNueva || !contrasenaConfirmacion}
+                >
+                  {guardandoContrasena
+                    ? "Guardando…"
+                    : perfil?.tieneContrasena === false
+                      ? "Crear contraseña"
+                      : "Cambiar contraseña"}
                 </button>
               </form>
             )}
