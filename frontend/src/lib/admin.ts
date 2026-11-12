@@ -65,6 +65,15 @@ export type MetricasAdmin = {
   meGusta: number;
   noMeSirve: number;
   rechazosPorMotivo?: { motivo: MotivoRechazo | "SIN_MOTIVO"; cantidad: number }[];
+  /** HU19: lo que esperaron las recomendaciones frente al objetivo de 3,5 s. */
+  rendimiento?: {
+    consultas: number;
+    objetivoMs: number;
+    p50Ms: number | null;
+    p95Ms: number | null;
+    dentroDelObjetivoPct: number | null;
+    respaldos: number;
+  } | null;
 };
 
 export const obtenerResumen = () => pedirApi<ResumenAdmin>("/api/admin/resumen");

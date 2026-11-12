@@ -406,6 +406,26 @@
   letter-spacing: 0;
 }
 
+.objetivoOk,
+.objetivoFuera {
+  margin: 0;
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.objetivoOk {
+  background: #e7f6ec;
+  color: #14632f;
+}
+
+.objetivoFuera {
+  background: #fdecea;
+  color: #9b1c1c;
+}
+
 .ayuda {
   margin: 0;
   color: var(--texto-suave);

@@ -142,9 +142,9 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
                   {m.estado === "listo" && (
                     <>
                       <div className={estilos.burbujaIa}>
-                        {m.respuesta.estado === "OK"
-                          ? `Para "${m.consulta}" te recomiendo ${m.respuesta.recomendaciones.length === 1 ? "este lugar" : `estos ${m.respuesta.recomendaciones.length} lugares`}:`
-                          : m.respuesta.mensaje}
+                        {/* SIN_RESULTADOS y el plan B (HU19) traen su mensaje; si no, el saludo de siempre. */}
+                        {m.respuesta.mensaje ??
+                          `Para "${m.consulta}" te recomiendo ${m.respuesta.recomendaciones.length === 1 ? "este lugar" : `estos ${m.respuesta.recomendaciones.length} lugares`}:`}
                       </div>
                       {m.respuesta.estado === "OK" && (
                         <motion.ol
