@@ -90,6 +90,34 @@ const pestanaDe = (pedida: string | null): Pestana =>
 
 const segundos = (ms: number | null) => (ms === null ? "—" : `${(ms / 1000).toLocaleString("es-BO", { maximumFractionDigits: 1 })} s`);
 
+/** HU19: P95 de las recomendaciones frente al objetivo de 3,5 s, % a tiempo y cuántas veces respondió el plan B. */
+function TarjetaRendimiento({ rendimiento: r }: { rendimiento: NonNullable<MetricasAdmin["rendimiento"]> }) {
+  const aTiempo = r.p95Ms !== null && r.p95Ms < r.objetivoMs;
+  return (
+    <div className={estilos.tarjetaMetrica}>
+      <h2>Recomendaciones a tiempo</h2>
+      {r.p95Ms === null ? (
+        <p className={estilos.ayuda}>Todavía no hay recomendaciones esta semana.</p>
+      ) : (
+        <>
+          <p className={estilos.grande}>
+            {segundos(r.p95Ms)} <small>en el 95 % de los casos</small>
+          </p>
+          <p className={aTiempo ? estilos.objetivoOk : estilos.objetivoFuera}>
+            {aTiempo ? "Dentro" : "Fuera"} del objetivo de {segundos(r.objetivoMs)}
+          </p>
+          <p className={estilos.ayuda}>
+            {r.dentroDelObjetivoPct} % de {r.consultas} respondió a tiempo; la mitad, en {segundos(r.p50Ms)}.{" "}
+            {r.respaldos > 0
+              ? `${r.respaldos} ${r.respaldos === 1 ? "vez respondió" : "veces respondió"} el plan B (la IA tardó o falló).`
+              : "La IA respondió siempre a tiempo."}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 const fechaCorta = (iso: string) =>
   new Date(iso).toLocaleString("es-BO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -455,6 +483,7 @@ function PanelAdminContenido() {
                   <p className={estilos.grande}>{segundos(metricas.latenciaPromedioMs)}</p>
                   <p className={estilos.ayuda}>Tiempo que tarda el asistente en responder cada consulta.</p>
                 </div>
+                {metricas.rendimiento && <TarjetaRendimiento rendimiento={metricas.rendimiento} />}
                 <div className={estilos.tarjetaMetrica}>
                   <h2>Valoraciones de los estudiantes</h2>
                   <div className={estilos.votosResumen}>
