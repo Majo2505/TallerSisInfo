@@ -36,6 +36,7 @@ import { ActividadCreada, comoCompleta, crearActividad } from "@/lib/crearActivi
 import { iniciales } from "@/lib/iniciales";
 import { guardarConfiguracionMatching } from "@/lib/matching";
 import { useSesion } from "@/lib/useSesion";
+import { seguirDescubrir, useAlReconectar, useEventoEnVivo, volverASeguirDescubrir } from "@/lib/tiempoReal";
 import { EventoComunidad, useComunidadesRealtime } from "@/lib/useComunidadesRealtime";
 import estilos from "./comunidades.module.css";
 
@@ -180,7 +181,10 @@ function Comunidades() {
     setCargandoDescubrir(true);
     setErrorDescubrir("");
     try {
-      if (aceptarMatching) await guardarConfiguracionMatching(true);
+      if (aceptarMatching) {
+        await guardarConfiguracionMatching(true);
+        volverASeguirDescubrir();
+      }
       setDescubrir(await listarComunidades());
     } catch (e) {
       setErrorDescubrir(e instanceof Error ? e.message : "No pudimos cargar las comunidades. Inténtalo de nuevo.");
@@ -254,6 +258,24 @@ function Comunidades() {
     });
   }, [aviso]);
   useComunidadesRealtime(comunidadIds, alActualizarComunidad);
+
+  // HU18: comunidades nuevas de tu sede, invitaciones que te llegan y lo que pasó mientras estabas sin conexión,
+  // sin recargar. Se vuelve a pedir la lista a la API (que decide qué puedes ver).
+  useEffect(() => seguirDescubrir(), []);
+  const recargarEnVivo = useCallback(() => {
+    if (!sesion) return;
+    listarComunidades()
+      .then((nueva) => {
+        const antes = new Set(descubrirActual.current?.comunidades.map((c) => c.id) ?? []);
+        const llegada = descubrirActual.current ? nueva.comunidades.find((c) => !c.esMia && !antes.has(c.id)) : undefined;
+        if (llegada) aviso.mostrar(`Nueva comunidad: «${llegada.actividad}»`);
+        setDescubrir(nueva);
+      })
+      .catch(() => undefined);
+  }, [sesion, aviso]);
+  useEventoEnVivo("comunidadesCambiaron", recargarEnVivo);
+  useEventoEnVivo("avisosCambiaron", recargarEnVivo);
+  useAlReconectar(recargarEnVivo);
 
   const activas = descubrir?.estado === "OK" ? descubrir.comunidades : [];
   const nombresCaras = [...new Set(activas.map((c) => (c.esMia ? (sesion?.usuario.nombre ?? "Tú") : c.creador)))].slice(0, 4);

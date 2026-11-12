@@ -6,6 +6,8 @@ import { motion, useReducedMotion } from "motion/react";
 import { SALIDA } from "@/components/app/Movimiento";
 import { EstadoParticipacion, Participante, Participantes, listarParticipantes } from "@/lib/comunidades";
 import { iniciales } from "@/lib/iniciales";
+import { useEventoEnVivo } from "@/lib/tiempoReal";
+import type { EventoComunidad } from "@/lib/useComunidadesRealtime";
 import estilos from "./ParticipantesComunidad.module.css";
 
 const sinSuscripcion = () => () => {};
@@ -40,6 +42,11 @@ export default function ParticipantesComunidad({ comunidadId, actividad, miNombr
   }, [comunidadId]);
 
   useEffect(() => cargar(), [cargar]);
+
+  // HU18: si alguien responde mientras la lista está abierta, se actualiza sola.
+  useEventoEnVivo("comunidadActualizada", (evento: EventoComunidad) => {
+    if (evento.comunidadId === comunidadId && evento.estado === "ACTIVA") cargar();
+  });
 
   useEffect(() => {
     const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
