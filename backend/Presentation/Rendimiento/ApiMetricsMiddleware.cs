@@ -1,4 +1,4 @@
-namespace Breaku.Infrastructure.Performance;
+namespace Breaku.Presentation.Rendimiento;
 
 public sealed class ApiMetricsMiddleware
 {

@@ -1,4 +1,4 @@
-using Breaku.Infrastructure.Performance;
+using Breaku.Presentation.Rendimiento;
 
 namespace Breaku.Tests;
 
