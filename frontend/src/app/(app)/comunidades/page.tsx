@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
@@ -203,6 +203,12 @@ function Comunidades() {
   }, [sesion, clavePedida]);
 
   const hayDestacada = destacada !== null && descubrir?.comunidades.some((c) => c.id === destacada);
+  // HU15: un aviso viejo (o un enlace) que lleva a una comunidad que ya se archivó.
+  const pedidaYaNoEsta =
+    pestana === "descubrir" &&
+    comunidadPedida !== null &&
+    (descubrir?.estado === "OK" || descubrir?.estado === "SIN_RESULTADOS") &&
+    !descubrir.comunidades.some((c) => c.id === comunidadPedida);
   useEffect(() => {
     if (!hayDestacada || pestana !== "descubrir") return;
     document.getElementById(`comunidad-${destacada}`)?.scrollIntoView({ block: "center", behavior: reducir ? "auto" : "smooth" });
@@ -225,7 +231,15 @@ function Comunidades() {
   }
 
   const comunidadIds = useMemo(() => descubrir?.comunidades.map((comunidad) => comunidad.id) ?? [], [descubrir]);
+  const descubrirActual = useRef(descubrir);
+  useEffect(() => {
+    descubrirActual.current = descubrir;
+  }, [descubrir]);
   const alActualizarComunidad = useCallback((evento: EventoComunidad) => {
+    // HU15: si se archiva una en la que estás (tuya, vas o te invitaron), te avisamos en vez de hacerla desaparecer sin más.
+    const terminada = descubrirActual.current?.comunidades.find((c) => c.id === evento.comunidadId);
+    if (evento.estado !== "ACTIVA" && terminada && (terminada.esMia || terminada.miEstado === "CONFIRMADO" || terminada.miEstado === "PENDIENTE"))
+      aviso.mostrar(`«${terminada.actividad}» ya terminó y se archivó.`);
     setDescubrir((actual) => {
       if (!actual) return actual;
       if (evento.estado !== "ACTIVA") {
@@ -238,7 +252,7 @@ function Comunidades() {
         ),
       };
     });
-  }, []);
+  }, [aviso]);
   useComunidadesRealtime(comunidadIds, alActualizarComunidad);
 
   const activas = descubrir?.estado === "OK" ? descubrir.comunidades : [];
@@ -554,6 +568,11 @@ function Comunidades() {
                   <p className={estilos.cargando} role="status">
                     Buscando las comunidades de hoy…
                   </p>
+                )}
+                {pedidaYaNoEsta && (
+                  <div className={estilos.avisoDescubrir} role="status">
+                    <span>Esa actividad ya terminó o ya no está disponible.</span>
+                  </div>
                 )}
                 {descubrir?.mensaje && (
                   <div className={estilos.avisoDescubrir} role="status">
