@@ -83,6 +83,13 @@
 .entendido:active { transform: scale(.96); }
 .entendido:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
+/* HU20: en celulares angostos, «Entendido» va debajo a todo el ancho; si no, el texto queda en una columna de 7 líneas. */
+@media (max-width: 419px) {
+  .emergente { flex-wrap: wrap; align-items: flex-start; }
+  .emergenteTexto { flex: 1 1 calc(100% - 52px); }
+  .entendido { flex: 1 0 100%; }
+}
+
 @media (min-width: 640px) {
   .emergente { left: auto; right: 24px; width: min(400px, calc(100vw - 32px)); }
 }
