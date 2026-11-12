@@ -3,6 +3,10 @@ using Breaku.Application.Admin;
 using Breaku.Application.Reportes;
 using Breaku.Application.Matching;
 using System.Text;
+using System.Threading.RateLimiting;
+using Breaku.Application.DTOs;
+using Breaku.Domain.Rules;
+using Microsoft.AspNetCore.RateLimiting;
 using Breaku.Infrastructure;
 using Breaku.Application.Horarios;
 using Breaku.Infrastructure.Persistence;
@@ -76,6 +80,27 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+// HU19: en horas pico, cada estudiante tiene un límite de consultas por minuto a lo que usa la IA (recomendaciones,
+// extracción y foto del horario). Protege la latencia de todos y los tokens del equipo.
+builder.Services.AddRateLimiter(opciones =>
+{
+    opciones.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    opciones.OnRejected = async (contexto, ct) =>
+    {
+        if (contexto.Lease.TryGetMetadata(MetadataName.RetryAfter, out var espera))
+            contexto.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(espera.TotalSeconds)).ToString();
+        await contexto.HttpContext.Response.WriteAsJsonAsync(
+            new ErrorNegocioDto(ReglasRendimiento.CodigoDemasiadasConsultas, ReglasRendimiento.MensajeDemasiadasConsultas), ct);
+    };
+    opciones.AddPolicy(ReglasRendimiento.PoliticaIa, http => RateLimitPartition.GetFixedWindowLimiter(
+        Breaku.Api.Hubs.UsuarioIdProvider.Leer(http.User)?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonimo",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = ReglasRendimiento.ConsultasIaPorMinuto,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+});
 builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, Breaku.Api.Hubs.UsuarioIdProvider>();
 builder.Services.AddSingleton<ApiMetrics>();
 builder.Services.AddSwaggerDocumentation();
@@ -111,6 +136,7 @@ app.UseSwaggerDocumentation();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHub<Breaku.Api.Hubs.ComunidadHub>("/hubs/comunidades");

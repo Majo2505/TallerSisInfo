@@ -4,6 +4,8 @@ using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Breaku.Domain.Rules;
 
 namespace Breaku.Api.Controllers;
 
@@ -22,6 +24,7 @@ public class ActividadesController : ControllerBase
                   ?? throw new UnauthorizedAccessException());
 
     [HttpPost("extraer")]
+    [EnableRateLimiting(ReglasRendimiento.PoliticaIa)]
     [ProducesResponseType(typeof(RespuestaExtraccionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -30,6 +33,7 @@ public class ActividadesController : ControllerBase
         => Ejecutar(async () => Ok(await _service.ExtraerAsync(UsuarioId, req, ct)));
 
     [HttpPost("revisar")]
+    [EnableRateLimiting(ReglasRendimiento.PoliticaIa)]
     [ProducesResponseType(typeof(RespuestaExtraccionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

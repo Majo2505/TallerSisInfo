@@ -16,17 +16,25 @@ public class RecomendacionService
     private readonly IRecuperadorLugares _recuperador;
     private readonly IAsistenteIa _asistente;
     private readonly IRecomendacionRepository _repo;
+    private readonly TimeSpan _presupuestoIa;
 
     public RecomendacionService(IPuenteRepository puentes, IRecuperadorLugares recuperador, IAsistenteIa asistente, IRecomendacionRepository repo)
+        : this(puentes, recuperador, asistente, repo, TimeSpan.FromMilliseconds(ReglasRendimiento.PresupuestoIaMs)) { }
+
+    public RecomendacionService(IPuenteRepository puentes, IRecuperadorLugares recuperador, IAsistenteIa asistente, IRecomendacionRepository repo,
+        TimeSpan presupuestoIa)
     {
         _puentes = puentes;
         _recuperador = recuperador;
         _asistente = asistente;
         _repo = repo;
+        _presupuestoIa = presupuestoIa;
     }
 
     public async Task<RespuestaRecomendacionDto> RecomendarAsync(int usuarioId, SolicitudRecomendacionDto req, CancellationToken ct = default)
     {
+        // HU19: latencia_ms de una recomendación es lo que espera el estudiante (recuperar + IA), no solo la IA.
+        var reloj = Stopwatch.StartNew();
         var entrada = LimpiarEntrada(req.Entrada);
 
         var puente = (await _puentes.ListarPorUsuarioAsync(usuarioId, ct)).FirstOrDefault(p => p.Id == req.PuenteId)
@@ -78,19 +86,17 @@ public class RecomendacionService
         var prompt = PromptRecomendacion.Construir(candidatos, minutosDisponibles, entrada);
         log.PromptEnviado = prompt.ComoTexto();
 
-        var reloj = Stopwatch.StartNew();
         RespuestaAsistente respuesta;
+        // HU19: la IA tiene un presupuesto; si no contesta a tiempo o falla, responde el plan B (los más cercanos).
+        using var limite = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        limite.CancelAfter(_presupuestoIa);
         try
         {
-            respuesta = await _asistente.GenerarAsync(prompt, ct);
+            respuesta = await _asistente.GenerarAsync(prompt, limite.Token);
         }
         catch (Exception) when (!ct.IsCancellationRequested)
         {
-            log.Estado = LogAuditoriaRag.EstadoError;
-            log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
-            await _repo.GuardarAsync(log, [], ct);
-            throw new ReglaNegocioException("ASISTENTE_NO_DISPONIBLE",
-                "El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.");
+            return await RespaldoAsync(log, candidatos, minutosDisponibles, reloj, ct);
         }
 
         log.Modelo = respuesta.Modelo;
@@ -123,6 +129,30 @@ public class RecomendacionService
 
         var porId = candidatos.ToDictionary(l => l.LugarId);
         return new RespuestaRecomendacionDto(log.Id, EstadoRespuestaOk, null,
+            recomendaciones.Select(r => ADto(r, porId[r.LugarId])).ToList());
+    }
+
+    private async Task<RespuestaRecomendacionDto> RespaldoAsync(LogAuditoriaRag log, List<LugarCandidato> candidatos, int minutosDisponibles,
+        Stopwatch reloj, CancellationToken ct)
+    {
+        var elegidos = ReglasRendimiento.Respaldo(
+            candidatos.Select(c => new ReglasRendimiento.Candidato(c.LugarId, c.TiempoTrasladoMin, c.DistanciaM, c.DuracionEstimadaMin)),
+            minutosDisponibles);
+
+        log.Estado = LogAuditoriaRag.EstadoOk;
+        log.Modelo = ReglasRendimiento.ModeloRespaldo;
+        log.LatenciaMs = (int)reloj.ElapsedMilliseconds;
+        var recomendaciones = elegidos.Select(e => new Recomendacion
+        {
+            LugarId = e.LugarId,
+            Explicacion = e.Explicacion,
+            LugarRecuperado = log.LugaresRecuperados.Single(l => l.LugarId == e.LugarId)
+        }).ToList();
+
+        await _repo.GuardarAsync(log, recomendaciones, ct);
+
+        var porId = candidatos.ToDictionary(l => l.LugarId);
+        return new RespuestaRecomendacionDto(log.Id, EstadoRespuestaOk, ReglasRendimiento.MensajeRespaldo,
             recomendaciones.Select(r => ADto(r, porId[r.LugarId])).ToList());
     }
 

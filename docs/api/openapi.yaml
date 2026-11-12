@@ -356,6 +356,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+        '429':
+          $ref: '#/components/responses/DemasiadasSolicitudes'
   /api/horario/lote:
     post:
       tags: [Horario]
@@ -1213,6 +1215,10 @@ paths:
 
         Si no hay lugares viables, no se llama al asistente y se responde `200` con `estado` = `SIN_RESULTADOS`
         y el mensaje «No encontramos opciones cercanas para este tiempo disponible.».
+
+        **HU19:** responde en menos de 3,5 s. Si el asistente no contesta en 2,8 s o falla, se recomiendan los lugares
+        más cercanos de los ya recuperados (`estado` = `OK`, con `mensaje` explicándolo; en la auditoría, `modelo` =
+        `respaldo-sin-ia`). Por eso ya no responde 503.
       security:
         - Bearer: []
       requestBody:
@@ -1282,15 +1288,8 @@ paths:
               example:
                 codigo: NO_ENCONTRADO
                 mensaje: El puente no existe.
-        '503':
-          description: El asistente no respondió (`codigo` = `ASISTENTE_NO_DISPONIBLE`). La consulta queda registrada como `ERROR`.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorNegocioDto'
-              example:
-                codigo: ASISTENTE_NO_DISPONIBLE
-                mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+        '429':
+          $ref: '#/components/responses/DemasiadasSolicitudes'
   /api/recomendaciones/{id}/feedback:
     patch:
       tags: [Recomendaciones]
@@ -1422,6 +1421,8 @@ paths:
               example:
                 codigo: ASISTENTE_NO_DISPONIBLE
                 mensaje: El asistente no está disponible en este momento. Intenta de nuevo en unos minutos.
+        '429':
+          $ref: '#/components/responses/DemasiadasSolicitudes'
   /api/actividades/revisar:
     post:
       tags: [Actividades]
@@ -1468,6 +1469,8 @@ paths:
                 mensaje: Escribe qué actividad vas a hacer.
         '401':
           $ref: '#/components/responses/NoAutorizado'
+        '429':
+          $ref: '#/components/responses/DemasiadasSolicitudes'
   /api/actividades:
     post:
       tags: [Actividades]
@@ -1905,6 +1908,15 @@ components:
       bearerFormat: JWT
       description: Token JWT obtenido en `POST /api/auth/login` o `POST /api/auth/register`. Pégalo sin la palabra `Bearer`.
   responses:
+    DemasiadasSolicitudes:
+      description: 'HU19: más de 10 consultas por minuto a lo que usa la IA (`codigo` = `DEMASIADAS_SOLICITUDES`). Trae `Retry-After` con los segundos que faltan.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorNegocioDto'
+          example:
+            codigo: DEMASIADAS_SOLICITUDES
+            mensaje: Hiciste muchas consultas seguidas. Espera un minuto y vuelve a intentarlo.
     NoAutorizado:
       description: Falta el token, es inválido o está vencido. Sin cuerpo.
     BloqueNoEncontrado:
@@ -2659,6 +2671,16 @@ components:
             properties:
               motivo: { type: string, example: INYECCION }
               cantidad: { type: integer, format: int32, example: 3 }
+        rendimiento:
+          type: object
+          description: HU19. Tiempo que esperaron las recomendaciones de los últimos 7 días frente al objetivo.
+          properties:
+            consultas: { type: integer, format: int32, example: 30 }
+            objetivoMs: { type: integer, format: int32, example: 3500 }
+            p50Ms: { type: integer, format: int32, nullable: true, example: 1025 }
+            p95Ms: { type: integer, format: int32, nullable: true, example: 2824 }
+            dentroDelObjetivoPct: { type: integer, format: int32, nullable: true, example: 100, description: Porcentaje que respondió en menos de 3,5 s. }
+            respaldos: { type: integer, format: int32, example: 3, description: Cuántas respondió el plan B (la IA tardó o falló). }
     ClaseLeidaDto:
       type: object
       properties:

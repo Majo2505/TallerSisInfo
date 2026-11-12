@@ -69,6 +69,8 @@ public class AsistenteLlm : IAsistenteIa
                 }
             }
         };
+        // HU19: sin razonamiento extendido (es elegir entre lugares ya recuperados), como en la extracción (HU11).
+        if (ExtractorActividadLlm.EsOpenAi(_http.BaseAddress)) cuerpo["reasoning_effort"] = "none";
 
         using var respuesta = await _http.PostAsJsonAsync("chat/completions", cuerpo, ct);
         if (!respuesta.IsSuccessStatusCode)
