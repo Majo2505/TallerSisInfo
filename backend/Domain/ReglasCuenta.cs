@@ -45,13 +45,20 @@ public static class ReglasCuenta
     /// <summary>Lo que dice el token de Google, ya verificado (firma, emisor, audiencia y vencimiento).</summary>
     public sealed record IdentidadGoogle(string Sub, string Correo, bool CorreoVerificado, string? Nombre);
 
-    public sealed record CuentaExistente(int Id, string Rol, bool Activa, string? GoogleSub);
+    /// <param name="Bloqueo">Por qué la cuenta no puede entrar (suspensión o baja de HU28); null si puede.</param>
+    public sealed record CuentaExistente(int Id, string Rol, bool Activa, string? GoogleSub,
+        ReglasSancion.BloqueoCuenta? Bloqueo = null);
 
     public enum Accion { Entrar, Enlazar, Crear, Rechazar }
 
-    public sealed record Decision(Accion Accion, int? UsuarioId = null, string? Mensaje = null)
+    public sealed record Decision(Accion Accion, int? UsuarioId = null, string? Mensaje = null,
+        ReglasSancion.BloqueoCuenta? Bloqueo = null)
     {
         public static Decision No(string mensaje) => new(Accion.Rechazar, Mensaje: mensaje);
+
+        /// <summary>Cuenta suspendida o dada de baja: se rechaza con el motivo (y la fecha de fin, si la hay).</summary>
+        public static Decision Bloqueada(ReglasSancion.BloqueoCuenta bloqueo)
+            => new(Accion.Rechazar, Mensaje: ReglasSancion.MensajeBloqueo(bloqueo), Bloqueo: bloqueo);
     }
 
     public const string MensajeSoloInstitucional = "Entra con tu cuenta de Google institucional (@ucb.edu.bo).";
@@ -75,6 +82,8 @@ public static class ReglasCuenta
         var cuenta = porSub ?? porCorreo;
         if (cuenta is null) return new Decision(Accion.Crear);
         if (cuenta.Rol == "ADMIN") return Decision.No(MensajeAdmin);
+        // Una cuenta dada de baja conserva su fila (con correo y google_sub): por eso se la encuentra y nunca se crea otra.
+        if (cuenta.Bloqueo is not null) return Decision.Bloqueada(cuenta.Bloqueo);
         if (!cuenta.Activa) return Decision.No(MensajeInactiva);
         if (porSub is not null) return new Decision(Accion.Entrar, porSub.Id);
         if (cuenta.GoogleSub is not null && cuenta.GoogleSub != identidad.Sub) return Decision.No(MensajeOtraCuentaGoogle);

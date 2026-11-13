@@ -70,7 +70,9 @@ public class AsistenciaService
                 PuedeVerla: ctx.PuedeVerla,
                 Confirmados: ctx.Confirmados,
                 Maximo: c?.MaxParticipantes ?? 0,
-                HayCruce: ctx.Cruce is not null);
+                HayCruce: ctx.Cruce is not null,
+                // Al cambiar de creador (HU28) el texto original se vacía: así se distingue al organizador heredado.
+                CreadorHeredado: c is not null && c.TextoOriginal.Length == 0);
 
             var decision = ReglasAsistencia.Decidir(situacion, asisto.Value);
             if (decision.Error == ReglasAsistencia.ErrorCruce)
