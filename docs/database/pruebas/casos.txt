@@ -1,0 +1,103 @@
+# Casos de la Fase 0 para verificar-fase0.sh. Una línea por caso: ESPERADO ||| SQL
+#   · ESPERADO = OK: la sentencia debe funcionar.
+#   · ESPERADO = otra cosa: la sentencia debe FALLAR y el mensaje de error debe contener ese texto (el nombre del CHECK o de
+#     la restricción que la rechaza, o parte del mensaje).
+# Cada caso corre dentro de una transacción que se deshace (ROLLBACK): no deja datos. Los marcadores {U} (estudiante de
+# prueba), {A} (admin de prueba), {L} (lugar «Biblioteca Central»), {E} (un evento [Prueba]), {C} (una comunidad) y {R} (un
+# reporte PENDIENTE) se reemplazan por subconsultas. Para comprobar un resultado se usa un SELECT que falla si no se cumple:
+# SELECT IF(condición, 1, (SELECT 1 UNION ALL SELECT 2)).
+
+# ---------------------------------------------------------------- evento: lo que NO debe pasar (los CHECK con NULL)
+ck_evento_lugar ||| INSERT INTO evento (creador_id, titulo, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Sin lugar', '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+ck_evento_lugar ||| INSERT INTO evento (creador_id, titulo, lugar_texto, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Lugar en blanco', '   ', '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+ck_evento_motivo ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Pendiente sin motivo', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PENDIENTE', 'FORMULARIO', 'FIJA')
+ck_evento_motivo ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Rechazado sin motivo', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'RECHAZADO', 'FORMULARIO', 'FIJA')
+ck_evento_motivo ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia, motivo) VALUES ({U}, 'Pendiente con motivo en blanco', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PENDIENTE', 'FORMULARIO', 'FIJA', '   ')
+ck_evento_titulo ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, '  ', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+ck_evento_fechas ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Fin igual al inicio', {L}, '2030-01-07 15:00:00', '2030-01-07 15:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+ck_evento_visita ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Libre sin visita', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'LIBRE')
+ck_evento_visita ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia, visita_min, visita_max) VALUES ({U}, 'Fija con visita', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA', 10, 20)
+ck_evento_visita ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia, visita_min, visita_max) VALUES ({U}, 'Libre con mínimo mayor al máximo', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'LIBRE', 30, 20)
+ck_evento_visita ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia, visita_min, visita_max) VALUES ({U}, 'Libre con mínimo cero', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'LIBRE', 0, 20)
+ck_evento_estado ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Estado inválido', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'BORRADOR', 'FORMULARIO', 'FIJA')
+ck_evento_origen ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Origen inválido', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'INSTAGRAM', 'FIJA')
+ck_evento_asistencia ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Asistencia inválida', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'MEDIA')
+foreign key constraint fails ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES (999999, 'Creador inexistente', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+foreign key constraint fails ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Lugar inexistente', 999999, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+
+# ---------------------------------------------------------------- evento: lo que SÍ debe pasar
+OK ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Con lugar del catálogo', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+OK ||| INSERT INTO evento (creador_id, titulo, lugar_texto, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Con lugar en texto', 'Canchas del barrio', '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA')
+OK ||| INSERT INTO evento (creador_id, titulo, lugar_texto, inicio, fin, estado, origen, asistencia, motivo) VALUES ({U}, 'Pendiente con motivo', 'Canchas del barrio', '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PENDIENTE', 'FLYER', 'FIJA', 'El lugar no está en el catálogo.')
+OK ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia, motivo) VALUES ({A}, 'Rechazado con motivo', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'RECHAZADO', 'ADMIN', 'FIJA', 'Contenido inapropiado.')
+OK ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia, visita_min, visita_max) VALUES ({U}, 'Libre válido', {L}, '2030-01-07 15:00:00', '2030-01-07 18:00:00', 'PUBLICADO', 'FORMULARIO', 'LIBRE', 15, 60)
+
+# ---------------------------------------------------------------- evento_imagen
+ck_evimg_mime ||| INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES ({E}, 'x', 'image/webp', 1)
+ck_evimg_bytes ||| INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES ({E}, 'x', 'image/png', 0)
+ck_evimg_bytes ||| INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES ({E}, 'x', 'image/png', 2097153)
+Duplicate entry ||| INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES ({E}, 'x', 'image/png', 1); INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES ({E}, 'y', 'image/jpeg', 1)
+OK ||| INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES ({E}, 'x', 'image/jpeg', 2097152)
+OK ||| INSERT INTO evento (creador_id, titulo, lugar_id, inicio, fin, estado, origen, asistencia) VALUES ({U}, 'Evento con imagen', {L}, '2030-01-07 15:00:00', '2030-01-07 16:00:00', 'PUBLICADO', 'FORMULARIO', 'FIJA'); SET @ev = LAST_INSERT_ID(); INSERT INTO evento_imagen (evento_id, contenido, tipo_mime, bytes) VALUES (@ev, 'x', 'image/png', 1); DELETE FROM evento WHERE id = @ev; SELECT IF((SELECT COUNT(*) FROM evento_imagen WHERE evento_id = @ev) = 0, 1, (SELECT 1 UNION ALL SELECT 2))
+
+# ---------------------------------------------------------------- reporte
+ck_rep_objeto ||| INSERT INTO reporte (usuario_id, motivo, descripcion) VALUES ({U}, 'EVENTO_INAPROPIADO', 'Reporte de evento sin evento.')
+ck_rep_objeto ||| INSERT INTO reporte (usuario_id, evento_id, motivo, descripcion) VALUES ({U}, {E}, 'ERROR_APP', 'Un error con un evento puesto.')
+ck_rep_objeto ||| INSERT INTO reporte (usuario_id, lugar_id, evento_id, motivo, descripcion) VALUES ({U}, {L}, {E}, 'EVENTO_INAPROPIADO', 'Evento y lugar a la vez.')
+ck_rep_objeto ||| INSERT INTO reporte (usuario_id, comunidad_id, motivo, descripcion) VALUES ({U}, {C}, 'EVENTO_INAPROPIADO', 'Evento con comunidad.')
+ck_rep_motivo ||| INSERT INTO reporte (usuario_id, motivo, descripcion) VALUES ({U}, 'OTRO_MOTIVO', 'Un motivo que no existe.')
+ck_rep_respuesta ||| INSERT INTO reporte (usuario_id, motivo, descripcion, respuesta) VALUES ({U}, 'ERROR_APP', 'Reporte pendiente con respuesta.', 'Ya lo vimos.')
+ck_rep_respuesta ||| INSERT INTO reporte (usuario_id, motivo, descripcion, estado, revisor_id, revisado_en, respuesta) VALUES ({U}, 'ERROR_APP', 'Respuesta demasiado larga.', 'RESUELTO', {A}, UTC_TIMESTAMP(6), REPEAT('x', 501))
+ck_rep_respuesta ||| INSERT INTO reporte (usuario_id, motivo, descripcion, estado, revisor_id, revisado_en, respuesta) VALUES ({U}, 'ERROR_APP', 'Respuesta en blanco que no vale.', 'RESUELTO', {A}, UTC_TIMESTAMP(6), '')
+OK ||| INSERT INTO reporte (usuario_id, evento_id, motivo, descripcion) VALUES ({U}, {E}, 'EVENTO_INAPROPIADO', 'El evento tiene una foto inapropiada.')
+OK ||| INSERT INTO reporte (usuario_id, motivo, descripcion, estado, revisor_id, revisado_en, respuesta) VALUES ({U}, 'ERROR_APP', 'Reporte resuelto con respuesta.', 'RESUELTO', {A}, UTC_TIMESTAMP(6), REPEAT('x', 500))
+OK ||| INSERT INTO reporte (usuario_id, motivo, descripcion, estado, revisor_id, revisado_en) VALUES ({U}, 'ERROR_APP', 'Reporte descartado sin respuesta.', 'DESCARTADO', {A}, UTC_TIMESTAMP(6))
+
+# ---------------------------------------------------------------- sancion
+ck_sancion_hasta ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'SUSPENSION', 'Suspensión sin fecha de fin.', {A})
+ck_sancion_hasta ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, hasta) VALUES ({U}, 'ADVERTENCIA', 'Advertencia con fecha de fin.', {A}, '2030-01-07 00:00:00')
+ck_sancion_hasta ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, hasta) VALUES ({U}, 'BAJA', 'Baja con fecha de fin.', {A}, '2030-01-07 00:00:00')
+ck_sancion_hasta ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, hasta) VALUES ({U}, 'SUSPENSION', 'Suspensión que termina en el pasado.', {A}, '2000-01-01 00:00:00')
+ck_sancion_levantada ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, levantada_en) VALUES ({U}, 'ADVERTENCIA', 'Levantada sin quién.', {A}, UTC_TIMESTAMP(6))
+ck_sancion_levantada ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, levantada_por) VALUES ({U}, 'ADVERTENCIA', 'Levantada sin cuándo.', {A}, {A})
+ck_sancion_tipo ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'MULTA', 'Un tipo que no existe.', {A})
+ck_sancion_motivo ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'ADVERTENCIA', '  ', {A})
+foreign key constraint fails ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES (999999, 'ADVERTENCIA', 'Usuario inexistente.', {A})
+OK ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'ADVERTENCIA', 'Primera advertencia.', {A})
+OK ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, hasta) VALUES ({U}, 'SUSPENSION', 'Suspensión de siete días.', {A}, UTC_TIMESTAMP(6) + INTERVAL 7 DAY)
+OK ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'BAJA', 'Baja definitiva.', {A})
+OK ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, levantada_en, levantada_por) VALUES ({U}, 'ADVERTENCIA', 'Advertencia levantada.', {A}, UTC_TIMESTAMP(6), {A})
+OK ||| INSERT INTO reporte (usuario_id, motivo, descripcion) VALUES ({U}, 'ERROR_APP', 'Reporte que origina una sanción.'); SET @r = LAST_INSERT_ID(); INSERT INTO sancion (usuario_id, tipo, motivo, creado_por, reporte_id) VALUES ({U}, 'ADVERTENCIA', 'Con reporte de origen.', {A}, @r); SET @s = LAST_INSERT_ID(); DELETE FROM reporte WHERE id = @r; SELECT IF((SELECT reporte_id FROM sancion WHERE id = @s) IS NULL, 1, (SELECT 1 UNION ALL SELECT 2))
+
+# ---------------------------------------------------------------- notificacion: los tipos viejos siguen valiendo y los nuevos exigen su referencia
+OK ||| INSERT INTO notificacion (usuario_id, tipo, puente_fecha, puente_hora_inicio, puente_hora_fin, mensaje) VALUES ({U}, 'PUENTE_DISPONIBLE', '2031-01-07', '10:00:00', '11:00:00', 'Puente.')
+OK ||| INSERT INTO notificacion (usuario_id, tipo, comunidad_id, mensaje) VALUES ({U}, 'INVITACION_COMUNIDAD', (SELECT id FROM comunidad_efimera LIMIT 1), 'Invitación nueva.') ON DUPLICATE KEY UPDATE mensaje = 'Invitación repetida.'
+ck_notif_ref ||| INSERT INTO notificacion (usuario_id, tipo, mensaje) VALUES ({U}, 'EVENTO_APROBADO', 'Sin evento.')
+ck_notif_ref ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, comunidad_id, mensaje) VALUES ({U}, 'EVENTO_APROBADO', {E}, {C}, 'Evento y comunidad.')
+ck_notif_ref ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'REPORTE_RESUELTO', {E}, 'Reporte con evento.')
+ck_notif_ref ||| INSERT INTO notificacion (usuario_id, tipo, reporte_id, mensaje) VALUES ({U}, 'SANCION_ADVERTENCIA', {R}, 'Advertencia con reporte.')
+ck_notif_ref ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, puente_fecha, puente_hora_inicio, puente_hora_fin, mensaje) VALUES ({U}, 'PUENTE_DISPONIBLE', {E}, '2031-01-08', '10:00:00', '11:00:00', 'Puente con evento.')
+ck_notif_ref ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'INVITACION_COMUNIDAD', {E}, 'Invitación con evento.')
+is violated ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'EVENTO_CANCELADO', {E}, 'Un tipo que no existe (lo rechaza ck_notif_tipo y ck_notif_ref).')
+Duplicate entry ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'EVENTO_APROBADO', {E}, 'Primero.'); INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'EVENTO_APROBADO', {E}, 'Repetido.')
+Duplicate entry ||| INSERT INTO notificacion (usuario_id, tipo, reporte_id, mensaje) VALUES ({U}, 'REPORTE_RESUELTO', {R}, 'Primero.'); INSERT INTO notificacion (usuario_id, tipo, reporte_id, mensaje) VALUES ({U}, 'REPORTE_RESUELTO', {R}, 'Repetido.')
+Duplicate entry ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'ADVERTENCIA', 'Advertencia.', {A}); SET @s = LAST_INSERT_ID(); INSERT INTO notificacion (usuario_id, tipo, sancion_id, mensaje) VALUES ({U}, 'SANCION_ADVERTENCIA', @s, 'Primero.'); INSERT INTO notificacion (usuario_id, tipo, sancion_id, mensaje) VALUES ({U}, 'SANCION_ADVERTENCIA', @s, 'Repetido.')
+OK ||| INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'EVENTO_APROBADO', {E}, 'Aprobado.'); INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'EVENTO_BAJADO', {E}, 'Bajado.'); INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje) VALUES ({U}, 'EVENTO_RECHAZADO', {E}, 'Rechazado.')
+OK ||| INSERT INTO notificacion (usuario_id, tipo, reporte_id, mensaje) VALUES ({U}, 'REPORTE_RESUELTO', {R}, 'Tu reporte fue respondido.')
+OK ||| INSERT INTO sancion (usuario_id, tipo, motivo, creado_por) VALUES ({U}, 'ADVERTENCIA', 'Advertencia.', {A}); SET @s = LAST_INSERT_ID(); INSERT INTO notificacion (usuario_id, tipo, sancion_id, mensaje) VALUES ({U}, 'SANCION_ADVERTENCIA', @s, 'Recibiste una advertencia.')
+
+# ---------------------------------------------------------------- log_auditoria_rag e historial_cambio
+OK ||| INSERT INTO log_auditoria_rag (usuario_id, tipo, estado, datos_extraidos) VALUES ({U}, 'EXTRACCION_EVENTO', 'OK', '{"titulo":"Feria"}')
+OK ||| INSERT INTO log_auditoria_rag (usuario_id, tipo, estado) VALUES ({U}, 'EXTRACCION_EVENTO', 'INCOMPLETO')
+ck_log_tipo ||| INSERT INTO log_auditoria_rag (usuario_id, tipo, estado) VALUES ({U}, 'EXTRACCION_OTRA', 'OK')
+ck_log_datos_tipo ||| INSERT INTO log_auditoria_rag (usuario_id, tipo, estado, datos_extraidos) VALUES ({U}, 'RECOMENDACION', 'OK', '{"x":1}')
+OK ||| INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id) VALUES ('EVENTO', {E}, 'UPDATE', '{"estado":"PENDIENTE"}', '{"estado":"PUBLICADO"}', {A})
+ck_hist_entidad ||| INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id) VALUES ('SANCION', 1, 'UPDATE', '{"a":1}', '{"a":2}', {A})
+
+# ---------------------------------------------------------------- etiquetas
+ck_etiqueta_nombre ||| INSERT INTO etiqueta_actividad (nombre) VALUES ('   ')
+uq_etiqueta_nombre ||| INSERT INTO etiqueta_actividad (nombre) VALUES ('Comer')
+foreign key constraint fails ||| INSERT INTO lugar_etiqueta (lugar_id, etiqueta_id) VALUES (999999, (SELECT id FROM etiqueta_actividad LIMIT 1))
+foreign key constraint fails ||| INSERT INTO lugar_etiqueta (lugar_id, etiqueta_id) VALUES ({L}, 999999)
+OK ||| INSERT INTO etiqueta_actividad (nombre) VALUES ('Etiqueta nueva'); SET @e = LAST_INSERT_ID(); INSERT INTO lugar_etiqueta (lugar_id, etiqueta_id) VALUES ({L}, @e)
+OK ||| INSERT INTO lugar (nombre, categoria_id, latitud, longitud, duracion_estimada_min, created_by, updated_by) VALUES ('Lugar de prueba borrable', (SELECT id FROM categoria LIMIT 1), -17.37, -66.14, 20, {A}, {A}); SET @l2 = LAST_INSERT_ID(); INSERT INTO lugar_etiqueta (lugar_id, etiqueta_id) VALUES (@l2, (SELECT id FROM etiqueta_actividad LIMIT 1)); DELETE FROM lugar WHERE id = @l2; SELECT IF((SELECT COUNT(*) FROM lugar_etiqueta WHERE lugar_id = @l2) = 0, 1, (SELECT 1 UNION ALL SELECT 2))
