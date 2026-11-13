@@ -4,7 +4,9 @@ import {
   ayudaFechaFin,
   confirmacionBajaValida,
   mensajeDeLoginBloqueado,
-  motivoDelCorte401,
+  mensajeDeSesionSancionada,
+  reporteDeUsuario,
+  usuarioParaSancionar,
   sePuedeLevantar,
   sugiereSuspension,
   validarSancion,
@@ -73,9 +75,25 @@ test("el mensaje de cuenta bloqueada del login se muestra tal como viene (403)",
   assert.equal(mensajeDeLoginBloqueado(403, null), null);
 });
 
-test("un 401 con el token sin vencer es por la cuenta; con el token vencido, sesión vencida", () => {
-  const ahora = Date.parse("2026-11-13T15:00:00Z");
-  assert.equal(motivoDelCorte401(ahora + 3_600_000, ahora), "CUENTA_RECHAZADA");
-  assert.equal(motivoDelCorte401(ahora - 1, ahora), "VENCIDA");
-  assert.equal(motivoDelCorte401(null, ahora), "CUENTA_RECHAZADA");
+test("el 401 con CUENTA_SANCIONADA lleva su mensaje; el token vencido (sin código) no", () => {
+  const msg = "Tu cuenta fue dada de baja. Motivo: Fraude";
+  assert.equal(mensajeDeSesionSancionada({ codigo: "CUENTA_SANCIONADA", mensaje: msg }), msg);
+  assert.match(mensajeDeSesionSancionada({ codigo: "CUENTA_SANCIONADA" }) ?? "", /suspendida o dada de baja/);
+  assert.equal(mensajeDeSesionSancionada(null), null);
+  assert.equal(mensajeDeSesionSancionada({ mensaje: "otra cosa" }), null);
+  assert.equal(mensajeDeSesionSancionada({ codigo: "OTRO", mensaje: "x" }), null);
+});
+
+test("desde un reporte se sanciona al usuario reportado; sin él no hay botón", () => {
+  assert.deepEqual(usuarioParaSancionar({ usuarioReportadoId: 7, usuarioReportadoNombre: " Beto " }), { id: 7, nombre: "Beto" });
+  assert.deepEqual(usuarioParaSancionar({ usuarioReportadoId: 7, usuarioReportadoNombre: null }), { id: 7, nombre: "este usuario" });
+  assert.equal(usuarioParaSancionar({ usuarioReportadoId: null, usuarioReportadoNombre: null }), null);
+  assert.equal(usuarioParaSancionar({}), null);
+});
+
+test("solo los reportes de comunidades y eventos apuntan a un usuario", () => {
+  assert.equal(reporteDeUsuario("COMUNIDAD_INAPROPIADA"), true);
+  assert.equal(reporteDeUsuario("EVENTO_INAPROPIADO"), true);
+  assert.equal(reporteDeUsuario("LUGAR_INCORRECTO"), false);
+  assert.equal(reporteDeUsuario("ERROR_APP"), false);
 });

@@ -1,5 +1,5 @@
-import { cerrarSesion, expiracionMs, guardarAvisoLogin, obtenerToken } from "@/services/authService";
-import { MENSAJE_CUENTA_RECHAZADA, MENSAJE_SESION_VENCIDA, motivoDelCorte401 } from "./reglasUsuarios";
+import { cerrarSesion, guardarAvisoLogin, obtenerToken } from "@/services/authService";
+import { MENSAJE_SESION_VENCIDA, mensajeDeSesionSancionada } from "./reglasUsuarios";
 import { API_URL } from "./config";
 
 export class ErrorApi extends Error {
@@ -28,13 +28,13 @@ export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise
   }
 
   if (res.status === 401) {
-    // HU28: el backend responde 401 igual para el token vencido y para una cuenta sancionada (sin cuerpo): se distinguen
-    // por el vencimiento del token. Una sola salida limpia: se cierra la sesión y el login muestra el aviso.
-    const corte = token ? motivoDelCorte401(expiracionMs(token), Date.now()) : "VENCIDA";
+    // HU28: el 401 de una cuenta sancionada trae { codigo: "CUENTA_SANCIONADA", mensaje }; el del token vencido, no.
+    // Una sola salida limpia: se cierra la sesión y el login muestra el aviso (los shells ya llevan al login).
+    const sancionada = mensajeDeSesionSancionada(await res.json().catch(() => null));
     cerrarSesion();
-    if (corte === "CUENTA_RECHAZADA") {
-      guardarAvisoLogin(MENSAJE_CUENTA_RECHAZADA);
-      throw new Error(MENSAJE_CUENTA_RECHAZADA);
+    if (sancionada) {
+      guardarAvisoLogin(sancionada);
+      throw new Error(sancionada);
     }
     throw new Error(MENSAJE_SESION_VENCIDA);
   }

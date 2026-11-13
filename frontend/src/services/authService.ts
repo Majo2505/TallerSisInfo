@@ -15,7 +15,7 @@ function avisar() {
   oyentes.forEach((oyente) => oyente());
 }
 
-export function expiracionMs(token: string): number | null {
+function expiracionMs(token: string): number | null {
   try {
     const payload = token.split(".")[1];
     const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));

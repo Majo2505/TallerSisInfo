@@ -69,12 +69,23 @@ export const MENSAJE_CUENTA_RECHAZADA =
 export const MENSAJE_SESION_VENCIDA = "Se venció tu sesión. Inicia sesión de nuevo.";
 
 /**
- * El backend corta con 401 tanto el token vencido como el de una cuenta sancionada, y en el segundo caso no manda cuerpo.
- * Se distinguen por el vencimiento del propio token: si todavía no vencía y el servidor igual lo rechazó, fue por la cuenta.
+ * El backend corta con 401 tanto el token vencido como el de una cuenta sancionada. Solo el segundo lleva el cuerpo
+ * `{ codigo: "CUENTA_SANCIONADA", mensaje }`: devuelve el mensaje (motivo y fecha) o null si fue un 401 normal.
  */
-export function motivoDelCorte401(expiracionMs: number | null, ahoraMs: number): "VENCIDA" | "CUENTA_RECHAZADA" {
-  return expiracionMs !== null && expiracionMs <= ahoraMs ? "VENCIDA" : "CUENTA_RECHAZADA";
+export const CODIGO_CUENTA_SANCIONADA = "CUENTA_SANCIONADA";
+
+export function mensajeDeSesionSancionada(cuerpo: { codigo?: unknown; mensaje?: unknown } | null): string | null {
+  if (cuerpo?.codigo !== CODIGO_CUENTA_SANCIONADA) return null;
+  return typeof cuerpo.mensaje === "string" && cuerpo.mensaje.trim() ? cuerpo.mensaje : MENSAJE_CUENTA_RECHAZADA;
 }
+
+/** A quién se sanciona desde un reporte: el creador de la comunidad o del evento reportado. Null si no hay (lugar, app, objeto borrado). */
+export function usuarioParaSancionar(r: { usuarioReportadoId?: number | null; usuarioReportadoNombre?: string | null }): { id: number; nombre: string } | null {
+  return typeof r.usuarioReportadoId === "number" ? { id: r.usuarioReportadoId, nombre: r.usuarioReportadoNombre?.trim() || "este usuario" } : null;
+}
+
+/** Los reportes de una comunidad o de un evento apuntan a un usuario; los de la app o un lugar no. */
+export const reporteDeUsuario = (motivo: string): boolean => motivo === "COMUNIDAD_INAPROPIADA" || motivo === "EVENTO_INAPROPIADO";
 
 /** El mensaje del backend para una cuenta suspendida o dada de baja (403 del login): se muestra tal cual, con su motivo y fecha. */
 export function mensajeDeLoginBloqueado(estado: number, cuerpo: { message?: unknown; mensaje?: unknown } | null): string | null {
