@@ -222,6 +222,15 @@ Para probarlo: elige tu campus (en la app, `/configuracion/ubicacion`, o con `PU
 - Ana, Diego, Lucía y Mateo aceptaron aparecer en el matching. Sofía **no**: tiene los mismos puentes que Ana, pero nunca debe aparecer.
 - Para verlos: entra como el estudiante de prueba, elige la sede Cochabamba, activa «Dejar que compañeros con tiempo compatible me encuentren» y registra un horario con un puente, por ejemplo el lunes de 09:30 a 11:00.
 
+#### Eventos y etiquetas de prueba (HU22 a HU30, solo desarrollo)
+
+Después de aplicar las migraciones `022` a `028` (o de crear la base con el `schema.sql` actual) y los seeds anteriores:
+
+- [`docs/database/seed-dev-etiquetas.sql`](docs/database/seed-dev-etiquetas.sql) asigna las etiquetas de tipo de actividad (el catálogo de 8 ya viene con la migración `027`) a los 14 lugares recomendables, por el nombre exacto del lugar. Se puede correr varias veces.
+- [`docs/database/seed-dev-eventos.sql`](docs/database/seed-dev-eventos.sql) carga 6 eventos de ejemplo con `[Prueba]` en el título (3 de hoy, otros de esta semana y uno `PENDIENTE`), ligados a los usuarios de prueba. Vuelve a correrlo cuando quieras refrescar las fechas: actualiza esos eventos al día en que lo ejecutas, en hora de Bolivia.
+- Ambos se ejecutan igual que los otros seeds, con `--default-character-set=utf8mb4` (los nombres llevan tildes).
+- `docs/database/migraciones/reversa/` tiene la reversa de cada migración de la Fase 0, y `docs/database/pruebas/` el script que verifica todo en una base MySQL local (ver su `README.md`).
+
 ### Asistente de IA (HU7, opcional)
 
 Las recomendaciones de `POST /api/recomendaciones` las redacta un LLM, que solo puede elegir entre los lugares recuperados del catálogo. **Es opcional:** sin configurarlo, la API arranca igual y usa un asistente simulado, sin LLM, que también recomienda solo lugares del catálogo (con explicaciones genéricas).
