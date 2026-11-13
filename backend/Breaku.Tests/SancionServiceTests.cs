@@ -164,7 +164,7 @@ public class SancionServiceTests
     private sealed class Validador : IValidadorSesion
     {
         public List<int> Invalidados { get; } = [];
-        public Task<bool> PuedeUsarApiAsync(int usuarioId, CancellationToken ct = default) => Task.FromResult(true);
+        public Task<ResultadoSesion> ValidarAsync(int usuarioId, CancellationToken ct = default) => Task.FromResult(new ResultadoSesion(true));
         public void Invalidar(int usuarioId) => Invalidados.Add(usuarioId);
     }
 
