@@ -9,6 +9,7 @@ using Breaku.Application.Perfil;
 using Breaku.Application.Puentes;
 using Breaku.Application.Recomendaciones;
 using Breaku.Application.Reportes;
+using Breaku.Application.Sanciones;
 using Breaku.Application.TiempoReal;
 using Breaku.Application.Ubicacion;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +55,18 @@ public static class DependencyInjection
         services.AddScoped<DescubrirComunidadesService>();
         services.AddScoped<AsistenciaService>();
         services.AddScoped<ICierreComunidadesService, CierreComunidadesService>();
+
+        // Sanciones y baja de usuarios (HU28); la purga la reutiliza HU29
+        services.AddScoped(sp => new PurgaUsuarioService(sp.GetRequiredService<IPurgaRepository>(), sp.GetRequiredService<ITransaccion>(),
+            sp.GetRequiredService<ITiempoReal>(), TimeProvider.System));
+        services.AddScoped(sp => new SancionService(sp.GetRequiredService<ISancionRepository>(), sp.GetRequiredService<PurgaUsuarioService>(),
+            sp.GetRequiredService<ITransaccion>(), sp.GetRequiredService<ITiempoReal>(), sp.GetRequiredService<IValidadorSesion>(), TimeProvider.System));
+        // Un solo validador para todo el proceso: guarda ~60 s lo que lee de la base, con un alcance propio por lectura.
+        services.AddSingleton<IValidadorSesion>(sp => new ValidadorSesion(async (usuarioId, ahora, ct) =>
+        {
+            using var alcance = sp.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            return await alcance.ServiceProvider.GetRequiredService<ISancionRepository>().ObtenerEstadoSesionAsync(usuarioId, ahora, ct);
+        }, TimeProvider.System));
 
         // Tiempo real (HU18): a quién avisar. El canal (SignalR) lo registra Presentation.
         services.AddScoped<ITiempoReal, TiempoRealService>();
