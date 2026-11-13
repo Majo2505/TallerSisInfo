@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
+import Usuarios from "@/components/admin/Usuarios";
 import FormularioLugar from "@/components/admin/FormularioLugar";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import {
@@ -40,11 +41,12 @@ import { useSesion } from "@/lib/useSesion";
 import { esAdmin } from "@/services/authService";
 import estilos from "./admin.module.css";
 
-type Pestana = "catalogo" | "reportes" | "metricas" | "auditoria";
+type Pestana = "catalogo" | "reportes" | "usuarios" | "metricas" | "auditoria";
 
 const PESTANAS: { id: Pestana; nombre: string; Icono: typeof IconoPin }[] = [
   { id: "catalogo", nombre: "Catálogo", Icono: IconoPin },
   { id: "reportes", nombre: "Reportes", Icono: IconoBandera },
+  { id: "usuarios", nombre: "Usuarios", Icono: IconoPersonas },
   { id: "metricas", nombre: "Métricas", Icono: IconoDestello },
   { id: "auditoria", nombre: "Auditoría RAG", Icono: IconoBuscar },
 ];
@@ -448,6 +450,8 @@ function PanelAdminContenido() {
                   <span>Cuando un estudiante reporte un lugar o una comunidad, aparecerá aquí.</span>
                 </div>
               ))}
+
+            {pestana === "usuarios" && <Usuarios onAviso={aviso.mostrar} />}
 
             {pestana === "metricas" && metricas && (
               <div className={estilos.metricas}>
