@@ -13,10 +13,13 @@ import {
   registrarse,
   rutaDeEntrada,
   suscribirSesion,
+  tomarAvisoLogin,
 } from "@/services/authService";
 import BotonGoogle from "./BotonGoogle";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
+
+const sinSuscripcion = () => () => {};
 
 const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DOMINIO_INSTITUCIONAL = "@ucb.edu.bo";
@@ -132,6 +135,11 @@ export default function LoginForm() {
     if (sesion) router.replace(rutaDeEntrada(sesion));
   }, [sesion, router]);
 
+  // HU28: si el servidor cortó la sesión por una sanción, se explica aquí hasta que la persona vuelva a intentar.
+  const avisoSesion = useSyncExternalStore(sinSuscripcion, tomarAvisoLogin, () => "");
+  const [avisoSesionVisto, setAvisoSesionVisto] = useState(false);
+  const mensajeServidor = errorServidor || (avisoSesionVisto ? "" : avisoSesion);
+
   function cambiarModo(nuevo: Modo) {
     setModo(nuevo);
     setErrores({});
@@ -143,6 +151,7 @@ export default function LoginForm() {
   async function alEnviar(evento: React.FormEvent) {
     evento.preventDefault();
     setErrorServidor("");
+    setAvisoSesionVisto(true);
     const encontrados = validar(modo, { nombre, correo, password, confirmar, terminos });
     setErrores(encontrados);
     if (Object.keys(encontrados).length > 0) return;
@@ -162,6 +171,7 @@ export default function LoginForm() {
 
   async function entrarConGoogle(credencial: string) {
     setErrorServidor("");
+    setAvisoSesionVisto(true);
     setEnviando(true);
     try {
       router.replace(rutaDeEntrada(await iniciarSesionConGoogle(credencial)));
@@ -219,16 +229,16 @@ export default function LoginForm() {
       )}
 
       <form className={styles.formulario} onSubmit={alEnviar} noValidate>
-        {errorServidor && (
+        {mensajeServidor && (
           <motion.p
-            key={errorServidor}
+            key={mensajeServidor}
             className={styles.aviso}
             role="alert"
             initial={reducir ? false : { x: 0 }}
             animate={{ x: [0, -8, 8, -5, 5, 0] }}
             transition={{ duration: 0.42 }}
           >
-            {errorServidor}
+            {mensajeServidor}
           </motion.p>
         )}
 

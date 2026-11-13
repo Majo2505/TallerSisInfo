@@ -1,0 +1,63 @@
+/* HU28: gestión de usuarios y sanciones. Usa los colores y el modal (hz-*) de la app y agrega solo lo propio. */
+.contenedor { display: grid; gap: 14px; }
+
+.barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.buscador { flex: 1 1 260px; display: grid; gap: 6px; font-size: .9rem; font-weight: 700; color: var(--ucb-marino); }
+.buscador input { box-sizing: border-box; width: 100%; min-height: 46px; padding: 0 14px; border: 1.5px solid var(--borde); border-radius: 14px; background: var(--superficie); color: var(--texto); font: inherit; font-weight: 500; }
+.buscador input:focus { outline: none; border-color: var(--ucb-celeste); box-shadow: 0 0 0 4px rgba(47, 127, 209, .16); }
+
+.conteo { margin: 0; color: var(--ucb-marino); font-weight: 800; }
+
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--borde-suave); background: var(--superficie); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform 160ms var(--curva-salida), box-shadow 200ms ease; }
+.fila:focus-visible { outline: 3px solid var(--ucb-celeste); outline-offset: 2px; }
+.fila:active { transform: scale(.99); }
+.filaNombre { color: var(--ucb-marino); font-weight: 800; overflow-wrap: anywhere; }
+.filaDato { color: var(--texto-suave); font-size: .88rem; overflow-wrap: anywhere; }
+.filaCifras { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--texto-tenue); font-size: .85rem; font-weight: 600; }
+
+.estado { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: .78rem; font-weight: 800; white-space: nowrap; }
+.estado_ACTIVO { background: #e3f6ea; color: #17704a; }
+.estado_SUSPENDIDO { background: var(--ucb-amarillo-suave); color: var(--ucb-amarillo-oscuro); }
+.estado_BAJA, .estado_DESACTIVADA { background: var(--error-fondo); color: var(--error-texto); }
+
+.error { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--error-fondo); border: 1px solid var(--error-borde); color: var(--error-texto); font-weight: 600; }
+.vacio { display: grid; justify-items: center; gap: 4px; text-align: center; border: 1.5px dashed var(--borde); border-radius: 20px; padding: 22px; color: var(--texto-suave); }
+.vacio strong { color: var(--ucb-marino); }
+
+.volver { justify-self: start; }
+.cabecera { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.cabecera h2 { margin: 0; color: var(--ucb-marino); font-size: 1.4rem; font-weight: 800; overflow-wrap: anywhere; }
+.cabecera p { margin: 2px 0 0; color: var(--texto-suave); overflow-wrap: anywhere; }
+
+.tarjeta { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; background: var(--superficie); border: 1px solid var(--borde-suave); }
+.tarjeta h3 { margin: 0; color: var(--ucb-marino); font-size: 1rem; font-weight: 800; }
+.grande { margin: 0; color: var(--ucb-marino); font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.grande small { color: var(--texto-tenue); font-size: .9rem; font-weight: 600; }
+
+.sugerencia { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--ucb-amarillo-suave); border: 1px solid color-mix(in srgb, var(--ucb-amarillo-oscuro) 35%, transparent); color: var(--ucb-amarillo-oscuro); font-weight: 700; line-height: 1.45; }
+.bloqueo { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--error-fondo); border: 1px solid var(--error-borde); color: var(--error-texto); font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.historial { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sancion { display: grid; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--superficie); border: 1px solid var(--borde-suave); }
+.sancionLevantada { opacity: .7; }
+.sancionCabecera { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tipo_ADVERTENCIA { background: var(--ucb-amarillo-suave); color: var(--ucb-amarillo-oscuro); }
+.tipo_SUSPENSION { background: #fdeadb; color: #9a4b0b; }
+.tipo_BAJA { background: var(--error-fondo); color: var(--error-texto); }
+.sancion p { margin: 0; color: var(--texto); overflow-wrap: anywhere; }
+.sancion small { color: var(--texto-tenue); }
+
+.textoArea { box-sizing: border-box; width: 100%; min-height: 96px; padding: 12px 14px; border: 1.5px solid var(--borde); border-radius: 14px; background: var(--superficie); color: var(--texto); font: inherit; font-weight: 500; resize: vertical; }
+.textoArea:focus { outline: none; border-color: var(--ucb-celeste); box-shadow: 0 0 0 4px rgba(47, 127, 209, .16); }
+.textoArea[aria-invalid="true"] { border-color: var(--error); }
+.contador { justify-self: end; color: var(--texto-tenue); font-size: .8rem; font-weight: 600; }
+.advertenciaBaja { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--error-fondo); border: 1px solid var(--error-borde); color: var(--error-texto); line-height: 1.5; }
+.advertenciaBaja ul { margin: 6px 0 0; padding-left: 20px; }
+.modalSancion { max-width: 520px; }
+.tipos { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 10px 14px; border: 1.5px solid var(--borde); border-radius: 14px; }
+.tipos legend { padding: 0 6px; color: var(--ucb-marino); font-size: .9rem; font-weight: 700; }
+.tipoOpcion { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--texto); font-weight: 600; cursor: pointer; }
+.tipoOpcion input { width: 20px; height: 20px; accent-color: var(--ucb-marino); }

@@ -41,6 +41,7 @@
 .puente { --tono: var(--ucb-amarillo-oscuro); --tono-suave: var(--ucb-amarillo-suave); }
 .invitacion { --tono: #086a7f; --tono-suave: #e2f3f6; }
 .cerrada { --tono: var(--texto-tenue); --tono-suave: var(--fondo-suave); }
+.advertencia { --tono: var(--error); --tono-suave: var(--error-fondo); }
 .noLeida { background: color-mix(in srgb, var(--tono-suave) 70%, var(--superficie)); border-color: color-mix(in srgb, var(--tono) 30%, transparent); }
 
 .itemIcono { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; background: var(--tono-suave); color: var(--tono); }
