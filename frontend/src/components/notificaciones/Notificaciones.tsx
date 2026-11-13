@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from "motion/react";
-import { IconoPersonas, IconoRayo as IconoRayoApp } from "@/components/app/Iconos";
+import { IconoBandera, IconoPersonas, IconoRayo as IconoRayoApp } from "@/components/app/Iconos";
 import { SALIDA } from "@/components/app/Movimiento";
 import {
   INTERVALO_CONSULTA_MS,
@@ -62,6 +62,8 @@ const TIPOS = {
   DESPUES_DE_CLASES: { titulo: "Terminaste tus clases", clase: "puente", Icono: IconoRayoApp },
   INVITACION_COMUNIDAD: { titulo: "Invitación a una comunidad", clase: "invitacion", Icono: IconoPersonas },
   COMUNIDAD_CERRADA: { titulo: "El grupo se llenó", clase: "cerrada", Icono: IconoPersonas },
+  // HU28: la advertencia del administrador. No lleva a otra pantalla: el aviso ya dice el motivo.
+  SANCION_ADVERTENCIA: { titulo: "Advertencia del administrador", clase: "advertencia", Icono: IconoBandera },
 } as const;
 
 function rutaDe(n: Notificacion): string {
@@ -378,9 +380,11 @@ export default function Notificaciones({ recarga }: Props) {
                                           Marcar leída
                                         </button>
                                       )}
-                                      <button type="button" className={estilos.ver} onClick={() => ver(n)}>
-                                        Ver
-                                      </button>
+                                      {n.tipo !== "SANCION_ADVERTENCIA" && (
+                                        <button type="button" className={estilos.ver} onClick={() => ver(n)}>
+                                          Ver
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

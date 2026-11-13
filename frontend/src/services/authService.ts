@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/config";
+import { mensajeDeLoginBloqueado } from "@/lib/reglasUsuarios";
 
 export type Rol = "ESTUDIANTE" | "ADMIN";
 export type UsuarioSesion = { id: number; nombre: string; correo: string; rol?: Rol };
@@ -92,6 +93,32 @@ export function cerrarSesion() {
 
 export class ErrorAuth extends Error {}
 
+// HU28: si el servidor corta la sesión por una sanción, el motivo se guarda aquí para mostrarlo una sola vez en el login.
+const CLAVE_AVISO_LOGIN = "breaku.aviso_login";
+
+export function guardarAvisoLogin(mensaje: string) {
+  avisoLeido = null;
+  try {
+    window.sessionStorage.setItem(CLAVE_AVISO_LOGIN, mensaje);
+  } catch {
+  }
+}
+
+let avisoLeido: string | null = null;
+
+/** Lee (y borra del almacén) el aviso pendiente; mientras la página siga abierta devuelve siempre el mismo texto. */
+export function tomarAvisoLogin(): string {
+  if (avisoLeido !== null) return avisoLeido;
+  try {
+    avisoLeido = window.sessionStorage.getItem(CLAVE_AVISO_LOGIN) ?? "";
+    window.sessionStorage.removeItem(CLAVE_AVISO_LOGIN);
+  } catch {
+    avisoLeido = "";
+  }
+  return avisoLeido;
+}
+
+
 type RespuestaAuth = { token: string; userId: number; nombre: string; email: string; rol?: Rol };
 
 async function autenticar(ruta: "login" | "register" | "google", cuerpo: object, rolRequerido?: Rol): Promise<Sesion> {
@@ -110,6 +137,9 @@ async function autenticar(ruta: "login" | "register" | "google", cuerpo: object,
     throw new ErrorAuth("Correo o contraseña incorrectos");
   }
   const datos = await res.json().catch(() => null);
+  // HU28: cuenta suspendida o dada de baja (403): el backend manda el motivo y la fecha de fin ya redactados.
+  const bloqueada = mensajeDeLoginBloqueado(res.status, datos);
+  if (bloqueada) throw new ErrorAuth(bloqueada);
   if (!res.ok) {
     throw new ErrorAuth(
       datos?.mensaje ?? datos?.detail ?? datos?.message ?? "No pudimos completar la solicitud. Inténtalo de nuevo en unos minutos.",

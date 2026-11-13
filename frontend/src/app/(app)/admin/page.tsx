@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
+import FormularioSancion from "@/components/admin/FormularioSancion";
+import Usuarios from "@/components/admin/Usuarios";
 import FormularioLugar from "@/components/admin/FormularioLugar";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import {
@@ -36,15 +38,17 @@ import {
   obtenerResumen,
 } from "@/lib/admin";
 import { ErrorApi } from "@/lib/api";
+import { reporteDeUsuario, usuarioParaSancionar } from "@/lib/reglasUsuarios";
 import { useSesion } from "@/lib/useSesion";
 import { esAdmin } from "@/services/authService";
 import estilos from "./admin.module.css";
 
-type Pestana = "catalogo" | "reportes" | "metricas" | "auditoria";
+type Pestana = "catalogo" | "reportes" | "usuarios" | "metricas" | "auditoria";
 
 const PESTANAS: { id: Pestana; nombre: string; Icono: typeof IconoPin }[] = [
   { id: "catalogo", nombre: "Catálogo", Icono: IconoPin },
   { id: "reportes", nombre: "Reportes", Icono: IconoBandera },
+  { id: "usuarios", nombre: "Usuarios", Icono: IconoPersonas },
   { id: "metricas", nombre: "Métricas", Icono: IconoDestello },
   { id: "auditoria", nombre: "Auditoría RAG", Icono: IconoBuscar },
 ];
@@ -142,6 +146,8 @@ function PanelAdminContenido() {
   const [lugares, setLugares] = useState<LugarAdmin[] | null>(null);
   const [reportes, setReportes] = useState<ReporteAdmin[] | null>(null);
   const [resolviendoReporte, setResolviendoReporte] = useState<number | null>(null);
+  // HU28: sanción abierta desde un reporte (el usuario reportado y el reporte de origen).
+  const [sancionDeReporte, setSancionDeReporte] = useState<{ usuario: { id: number; nombre: string }; reporteId: number } | null>(null);
   const [metricas, setMetricas] = useState<MetricasAdmin | null>(null);
   const [consultas, setConsultas] = useState<ConsultaRag[] | null>(null);
   const [filtroAuditoria, setFiltroAuditoria] = useState<FiltroAuditoria>("todas");
@@ -306,6 +312,20 @@ function PanelAdminContenido() {
         </div>
       </Pieza>
 
+      {sancionDeReporte && (
+        <FormularioSancion
+          usuario={sancionDeReporte.usuario}
+          tipo="ADVERTENCIA"
+          elegirTipo
+          reporteId={sancionDeReporte.reporteId}
+          onCerrar={() => setSancionDeReporte(null)}
+          onAplicada={(mensaje) => {
+            setSancionDeReporte(null);
+            aviso.mostrar(mensaje);
+          }}
+        />
+      )}
+
       <Pieza>
         <AnimatePresence mode="wait" initial={false}>
           <motion.section
@@ -414,6 +434,25 @@ function PanelAdminContenido() {
                       <small>
                         {r.autor} · {fechaCorta(r.creadoEn)}
                       </small>
+                      {(() => {
+                        const reportado = usuarioParaSancionar(r);
+                        if (reportado)
+                          return (
+                            <span className={estilos.accionesLugar}>
+                              <button
+                                type="button"
+                                className={estilos.desactivar}
+                                onClick={() => setSancionDeReporte({ usuario: reportado, reporteId: r.id })}
+                                aria-label={`Sancionar a ${reportado.nombre} por el reporte de ${r.objeto}`}
+                              >
+                                Sancionar a {reportado.nombre}
+                              </button>
+                            </span>
+                          );
+                        return reporteDeUsuario(r.motivo) ? (
+                          <small>No hay un usuario para sancionar: el objeto reportado ya no existe o lo creó un administrador.</small>
+                        ) : null;
+                      })()}
                       {r.estado === "PENDIENTE" && (
                         <span className={estilos.accionesLugar}>
                           <button
@@ -448,6 +487,8 @@ function PanelAdminContenido() {
                   <span>Cuando un estudiante reporte un lugar o una comunidad, aparecerá aquí.</span>
                 </div>
               ))}
+
+            {pestana === "usuarios" && <Usuarios onAviso={aviso.mostrar} />}
 
             {pestana === "metricas" && metricas && (
               <div className={estilos.metricas}>
