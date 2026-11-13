@@ -21,6 +21,9 @@ public static class ReglasSancion
     /// <summary>Cuenta con <c>activo = 0</c> sin una BAJA registrada (desactivada por fuera de HU28).</summary>
     public const string Desactivada = "DESACTIVADA";
 
+    /// <summary>Código del 401 cuando el token es válido pero la cuenta está suspendida o dada de baja (el token vencido no lo lleva).</summary>
+    public const string CodigoCuentaSancionada = "CUENTA_SANCIONADA";
+
     public const string ErrorValidacion = "VALIDACION";
     public const string ErrorNoEncontrado = "NO_ENCONTRADO";
     public const string ErrorNoSancionable = "NO_SANCIONABLE";
