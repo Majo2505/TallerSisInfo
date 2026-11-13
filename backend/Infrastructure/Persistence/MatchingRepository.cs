@@ -14,8 +14,10 @@ public sealed class MatchingRepository : IMatchingRepository
 
     public async Task<List<CompaneroCandidato>> ListarCandidatosAsync(int usuarioId, int zonaId, Puente puente, CancellationToken ct = default)
     {
+        var suspendidos = FiltrosSancion.IdsSuspendidos(_db, DateTime.UtcNow);
         var companeros = await _db.Usuarios.AsNoTracking()
             .Where(u => u.Id != usuarioId && u.Activo && u.Rol == "ESTUDIANTE" && u.VisibleMatching && u.ZonaActualId == zonaId)
+            .Where(u => !suspendidos.Contains(u.Id))
             .Where(u => _db.Puentes.Any(p => p.UsuarioId == u.Id && p.DiaSemana == puente.DiaSemana
                                              && p.HoraInicio < puente.HoraFin && p.HoraFin > puente.HoraInicio))
             .Select(u => new { u.Id, u.Nombre, u.Carrera, u.Semestre })

@@ -46,10 +46,12 @@ public sealed class AsistenciaRepository : IAsistenciaRepository
                            select new CruceAsistencia(c.Actividad, c.Inicio, c.Fin))
             .FirstOrDefaultAsync(ct);
 
+        var suspendidos = FiltrosSancion.IdsSuspendidos(_db, ahoraUtc);
         var pendientesConAviso = await (from p in participaciones
                                         join u in _db.Usuarios on p.UsuarioId equals u.Id
                                         where p.ComunidadId == comunidadId && p.Estado == Participacion.EstadoPendiente
                                               && p.UsuarioId != usuarioId && u.Activo && u.NotificacionesActivas
+                                              && !suspendidos.Contains(u.Id)
                                         select p.UsuarioId)
             .ToListAsync(ct);
 
@@ -120,7 +122,9 @@ public sealed class AsistenciaRepository : IAsistenciaRepository
             .FirstOrDefaultAsync(ct);
         if (yo is null || yo.ZonaActualId is null || !yo.ZonaActiva || !yo.VisibleMatching) return false;
 
+        var suspendidos = FiltrosSancion.IdsSuspendidos(_db, DateTime.UtcNow);
         return await _db.Usuarios.AnyAsync(
-            u => u.Id == creadorId && u.Activo && u.VisibleMatching && u.ZonaActualId == yo.ZonaActualId, ct);
+            u => u.Id == creadorId && u.Activo && u.VisibleMatching && u.ZonaActualId == yo.ZonaActualId
+                 && !suspendidos.Contains(u.Id), ct);
     }
 }
