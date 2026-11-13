@@ -1,4 +1,5 @@
-import { cerrarSesion, obtenerToken } from "@/services/authService";
+import { cerrarSesion, expiracionMs, guardarAvisoLogin, obtenerToken } from "@/services/authService";
+import { MENSAJE_CUENTA_RECHAZADA, MENSAJE_SESION_VENCIDA, motivoDelCorte401 } from "./reglasUsuarios";
 import { API_URL } from "./config";
 
 export class ErrorApi extends Error {
@@ -27,8 +28,15 @@ export async function pedirApi<T>(ruta: string, init: RequestInit = {}): Promise
   }
 
   if (res.status === 401) {
+    // HU28: el backend responde 401 igual para el token vencido y para una cuenta sancionada (sin cuerpo): se distinguen
+    // por el vencimiento del token. Una sola salida limpia: se cierra la sesión y el login muestra el aviso.
+    const corte = token ? motivoDelCorte401(expiracionMs(token), Date.now()) : "VENCIDA";
     cerrarSesion();
-    throw new Error("Se venció tu sesión. Inicia sesión de nuevo.");
+    if (corte === "CUENTA_RECHAZADA") {
+      guardarAvisoLogin(MENSAJE_CUENTA_RECHAZADA);
+      throw new Error(MENSAJE_CUENTA_RECHAZADA);
+    }
+    throw new Error(MENSAJE_SESION_VENCIDA);
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => null);
