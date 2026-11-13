@@ -192,11 +192,11 @@ CREATE TABLE log_auditoria_rag (
   KEY ix_log_usuario (usuario_id, created_at),
   KEY ix_log_motivo (motivo_rechazo, created_at),
   KEY ix_log_origen (consulta_origen_id),
-  CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD')),
+  CONSTRAINT ck_log_tipo   CHECK (tipo   IN ('RECOMENDACION','EXTRACCION_COMUNIDAD','EXTRACCION_EVENTO')),
   CONSTRAINT ck_log_estado CHECK (estado IN ('OK','SIN_RESULTADOS','RECHAZADO_SEGURIDAD','ERROR','INCOMPLETO')),
   CONSTRAINT ck_log_motivo CHECK (motivo_rechazo IN ('INYECCION','FUERA_DE_ALCANCE','BIENESTAR','FUERA_DE_REGLAMENTO','FUERA_DE_CONTEXTO')),
   CONSTRAINT ck_log_motivo_estado CHECK (motivo_rechazo IS NULL OR estado = 'RECHAZADO_SEGURIDAD'),
-  CONSTRAINT ck_log_datos_tipo    CHECK (datos_extraidos IS NULL OR tipo = 'EXTRACCION_COMUNIDAD'),   -- HU10: solo las extracciones tienen resumen
+  CONSTRAINT ck_log_datos_tipo    CHECK (datos_extraidos IS NULL OR tipo IN ('EXTRACCION_COMUNIDAD','EXTRACCION_EVENTO')),   -- HU10 y HU24: solo las extracciones tienen resumen
   CONSTRAINT fk_log_origen  FOREIGN KEY (consulta_origen_id) REFERENCES log_auditoria_rag (id) ON DELETE SET NULL,
   CONSTRAINT fk_log_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id),
   CONSTRAINT fk_log_zona    FOREIGN KEY (zona_id)    REFERENCES zona (id),
@@ -273,11 +273,117 @@ CREATE TABLE participacion (
   CONSTRAINT fk_part_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE evento (
+  id           INT           NOT NULL AUTO_INCREMENT,
+  creador_id   INT           NOT NULL,
+  titulo       VARCHAR(120)  NOT NULL,
+  descripcion  TEXT          NULL,
+  lugar_id     INT           NULL,
+  lugar_texto  VARCHAR(150)  NULL,
+  inicio       DATETIME(6)   NOT NULL,
+  fin          DATETIME(6)   NOT NULL,
+  estado       VARCHAR(10)   NOT NULL,
+  origen       VARCHAR(10)   NOT NULL,
+  asistencia   VARCHAR(5)    NOT NULL,
+  visita_min   SMALLINT      NULL,
+  visita_max   SMALLINT      NULL,
+  motivo       VARCHAR(500)  NULL,
+  created_at   DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  updated_at   DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  PRIMARY KEY (id),
+  KEY ix_evento_estado_fin (estado, fin),
+  KEY ix_evento_creador (creador_id, created_at),
+  CONSTRAINT ck_evento_titulo     CHECK (CHAR_LENGTH(TRIM(titulo)) > 0),
+  CONSTRAINT ck_evento_fechas     CHECK (fin > inicio),
+  CONSTRAINT ck_evento_lugar      CHECK (lugar_id IS NOT NULL OR (lugar_texto IS NOT NULL AND CHAR_LENGTH(TRIM(lugar_texto)) > 0)),
+  CONSTRAINT ck_evento_estado     CHECK (estado IN ('PENDIENTE','PUBLICADO','RECHAZADO','CANCELADO')),
+  CONSTRAINT ck_evento_origen     CHECK (origen IN ('FORMULARIO','FLYER','ADMIN')),
+  CONSTRAINT ck_evento_asistencia CHECK (asistencia IN ('FIJA','LIBRE')),
+  CONSTRAINT ck_evento_visita     CHECK ((asistencia = 'FIJA'  AND visita_min IS NULL AND visita_max IS NULL)
+                                      OR (asistencia = 'LIBRE' AND visita_min IS NOT NULL AND visita_max IS NOT NULL
+                                          AND visita_min > 0 AND visita_min <= visita_max)),
+  CONSTRAINT ck_evento_motivo     CHECK (estado NOT IN ('PENDIENTE','RECHAZADO') OR (motivo IS NOT NULL AND CHAR_LENGTH(TRIM(motivo)) > 0)),
+  CONSTRAINT fk_evento_creador FOREIGN KEY (creador_id) REFERENCES usuario (id),
+  CONSTRAINT fk_evento_lugar   FOREIGN KEY (lugar_id)   REFERENCES lugar (id)
+) ENGINE=InnoDB;
+
+CREATE TABLE evento_imagen (
+  evento_id       INT          NOT NULL,
+  contenido       MEDIUMBLOB   NOT NULL,
+  tipo_mime       VARCHAR(20)  NOT NULL,
+  bytes           INT          NOT NULL,
+  actualizada_en  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  PRIMARY KEY (evento_id),
+  CONSTRAINT ck_evimg_mime  CHECK (tipo_mime IN ('image/jpeg','image/png')),
+  CONSTRAINT ck_evimg_bytes CHECK (bytes BETWEEN 1 AND 2097152),
+  CONSTRAINT fk_evimg_evento FOREIGN KEY (evento_id) REFERENCES evento (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE reporte (
+  id           INT          NOT NULL AUTO_INCREMENT,
+  usuario_id   INT          NOT NULL,
+  lugar_id     INT          NULL,
+  comunidad_id INT          NULL,
+  evento_id    INT          NULL,
+  motivo       VARCHAR(30)  NOT NULL,                     -- ERROR_APP | SUGERENCIA | LUGAR_INCORRECTO | COMUNIDAD_INAPROPIADA | EVENTO_INAPROPIADO
+  descripcion  TEXT         NULL,
+  estado       VARCHAR(12)  NOT NULL DEFAULT 'PENDIENTE',
+  revisor_id   INT          NULL,
+  created_at   DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  revisado_en  DATETIME(6)  NULL,
+  respuesta    TEXT         NULL,
+  PRIMARY KEY (id),
+  KEY ix_rep_estado (estado, created_at),
+  CONSTRAINT ck_rep_estado  CHECK (estado IN ('PENDIENTE','RESUELTO','DESCARTADO')),
+  CONSTRAINT ck_rep_motivo  CHECK (motivo IN ('ERROR_APP','SUGERENCIA','LUGAR_INCORRECTO','COMUNIDAD_INAPROPIADA','EVENTO_INAPROPIADO')),
+  -- Un reporte de un lugar apunta a ese lugar; uno de una comunidad, a esa comunidad; uno de un evento, a ese evento; «algo no funciona» y las sugerencias, a nada.
+  CONSTRAINT ck_rep_objeto  CHECK ((motivo = 'LUGAR_INCORRECTO'      AND lugar_id IS NOT NULL AND comunidad_id IS NULL AND evento_id IS NULL)
+                                OR (motivo = 'COMUNIDAD_INAPROPIADA' AND comunidad_id IS NOT NULL AND lugar_id IS NULL AND evento_id IS NULL)
+                                OR (motivo = 'EVENTO_INAPROPIADO'    AND evento_id IS NOT NULL AND lugar_id IS NULL AND comunidad_id IS NULL)
+                                OR (motivo IN ('ERROR_APP','SUGERENCIA') AND lugar_id IS NULL AND comunidad_id IS NULL AND evento_id IS NULL)),
+  CONSTRAINT ck_rep_descripcion CHECK (CHAR_LENGTH(TRIM(descripcion)) BETWEEN 10 AND 500),     -- lo mismo que pide el formulario
+  CONSTRAINT ck_rep_revision CHECK ((estado = 'PENDIENTE' AND revisor_id IS NULL AND revisado_en IS NULL)
+                                 OR (estado <> 'PENDIENTE' AND revisor_id IS NOT NULL AND revisado_en IS NOT NULL)),
+  CONSTRAINT ck_rep_respuesta CHECK (respuesta IS NULL OR (estado <> 'PENDIENTE' AND CHAR_LENGTH(respuesta) BETWEEN 1 AND 500)),
+  CONSTRAINT fk_rep_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
+  CONSTRAINT fk_rep_lugar     FOREIGN KEY (lugar_id)     REFERENCES lugar (id),
+  CONSTRAINT fk_rep_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id),
+  CONSTRAINT fk_rep_revisor   FOREIGN KEY (revisor_id)   REFERENCES usuario (id),
+  CONSTRAINT fk_rep_evento    FOREIGN KEY (evento_id)    REFERENCES evento (id)
+) ENGINE=InnoDB;
+
+CREATE TABLE sancion (
+  id             INT           NOT NULL AUTO_INCREMENT,
+  usuario_id     INT           NOT NULL,
+  tipo           VARCHAR(12)   NOT NULL,
+  motivo         VARCHAR(500)  NOT NULL,
+  reporte_id     INT           NULL,
+  creado_por     INT           NOT NULL,
+  creado_en      DATETIME(6)   NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  hasta          DATETIME(6)   NULL,
+  levantada_en   DATETIME(6)   NULL,
+  levantada_por  INT           NULL,
+  PRIMARY KEY (id),
+  KEY ix_sancion_usuario (usuario_id, tipo, hasta),
+  CONSTRAINT ck_sancion_tipo      CHECK (tipo IN ('ADVERTENCIA','SUSPENSION','BAJA')),
+  CONSTRAINT ck_sancion_motivo    CHECK (CHAR_LENGTH(TRIM(motivo)) > 0),
+  CONSTRAINT ck_sancion_hasta     CHECK ((tipo = 'SUSPENSION' AND hasta IS NOT NULL AND hasta > creado_en)
+                                      OR (tipo <> 'SUSPENSION' AND hasta IS NULL)),
+  CONSTRAINT ck_sancion_levantada CHECK ((levantada_en IS NULL) = (levantada_por IS NULL)),
+  CONSTRAINT fk_sancion_usuario FOREIGN KEY (usuario_id)    REFERENCES usuario (id),
+  CONSTRAINT fk_sancion_creador FOREIGN KEY (creado_por)    REFERENCES usuario (id),
+  CONSTRAINT fk_sancion_levanta FOREIGN KEY (levantada_por) REFERENCES usuario (id),
+  CONSTRAINT fk_sancion_reporte FOREIGN KEY (reporte_id)    REFERENCES reporte (id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE notificacion (
   id                  BIGINT       NOT NULL AUTO_INCREMENT,
   usuario_id          INT          NOT NULL,
   tipo                VARCHAR(25)  NOT NULL,
   comunidad_id        INT          NULL,
+  evento_id           INT          NULL,
+  reporte_id          INT          NULL,
+  sancion_id          INT          NULL,
   puente_fecha        DATE         NULL,
   puente_hora_inicio  TIME         NULL,
   puente_hora_fin     TIME         NULL,
@@ -288,43 +394,35 @@ CREATE TABLE notificacion (
   PRIMARY KEY (id),
   CONSTRAINT uq_notif_puente UNIQUE (usuario_id, puente_fecha, puente_hora_inicio),
   CONSTRAINT uq_notif_comunidad UNIQUE (usuario_id, comunidad_id, tipo),
+  CONSTRAINT uq_notif_evento  UNIQUE (usuario_id, evento_id, tipo),
+  CONSTRAINT uq_notif_reporte UNIQUE (usuario_id, reporte_id, tipo),
+  CONSTRAINT uq_notif_sancion UNIQUE (usuario_id, sancion_id, tipo),
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
-  CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA')),
-  CONSTRAINT ck_notif_ref  CHECK ((tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES') AND comunidad_id IS NULL
-                                   AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL)
-                               OR (tipo NOT IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES') AND comunidad_id IS NOT NULL
-                                   AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL)),
+  CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA',
+                                           'EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','REPORTE_RESUELTO','SANCION_ADVERTENCIA')),
+  -- Cada aviso apunta solo a lo suyo: un puente, una comunidad, un evento, un reporte o una sanción.
+  CONSTRAINT ck_notif_ref CHECK (
+       (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES')
+          AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)
+    OR (tipo IN ('INVITACION_COMUNIDAD','COMUNIDAD_CERRADA') AND comunidad_id IS NOT NULL
+          AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
+          AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)
+    OR (tipo IN ('EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO') AND evento_id IS NOT NULL
+          AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
+          AND comunidad_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)
+    OR (tipo = 'REPORTE_RESUELTO' AND reporte_id IS NOT NULL
+          AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
+          AND comunidad_id IS NULL AND evento_id IS NULL AND sancion_id IS NULL)
+    OR (tipo = 'SANCION_ADVERTENCIA' AND sancion_id IS NOT NULL
+          AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL)),
   CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
-  CONSTRAINT fk_notif_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id)
-) ENGINE=InnoDB;
-
-CREATE TABLE reporte (
-  id           INT          NOT NULL AUTO_INCREMENT,
-  usuario_id   INT          NOT NULL,
-  lugar_id     INT          NULL,
-  comunidad_id INT          NULL,
-  motivo       VARCHAR(30)  NOT NULL,                     -- ERROR_APP | SUGERENCIA | LUGAR_INCORRECTO | COMUNIDAD_INAPROPIADA
-  descripcion  TEXT         NULL,
-  estado       VARCHAR(12)  NOT NULL DEFAULT 'PENDIENTE',
-  revisor_id   INT          NULL,
-  created_at   DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
-  revisado_en  DATETIME(6)  NULL,
-  PRIMARY KEY (id),
-  KEY ix_rep_estado (estado, created_at),
-  CONSTRAINT ck_rep_estado  CHECK (estado IN ('PENDIENTE','RESUELTO','DESCARTADO')),
-  CONSTRAINT ck_rep_motivo  CHECK (motivo IN ('ERROR_APP','SUGERENCIA','LUGAR_INCORRECTO','COMUNIDAD_INAPROPIADA')),
-  -- Un reporte de un lugar apunta a ese lugar; uno de una comunidad, a esa comunidad; «algo no funciona» y las sugerencias, a nada.
-  CONSTRAINT ck_rep_objeto  CHECK ((motivo = 'LUGAR_INCORRECTO'      AND lugar_id IS NOT NULL AND comunidad_id IS NULL)
-                                OR (motivo = 'COMUNIDAD_INAPROPIADA' AND comunidad_id IS NOT NULL AND lugar_id IS NULL)
-                                OR (motivo IN ('ERROR_APP','SUGERENCIA') AND lugar_id IS NULL AND comunidad_id IS NULL)),
-  CONSTRAINT ck_rep_descripcion CHECK (CHAR_LENGTH(TRIM(descripcion)) BETWEEN 10 AND 500),     -- lo mismo que pide el formulario
-  CONSTRAINT ck_rep_revision CHECK ((estado = 'PENDIENTE' AND revisor_id IS NULL AND revisado_en IS NULL)
-                                 OR (estado <> 'PENDIENTE' AND revisor_id IS NOT NULL AND revisado_en IS NOT NULL)),
-  CONSTRAINT fk_rep_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
-  CONSTRAINT fk_rep_lugar     FOREIGN KEY (lugar_id)     REFERENCES lugar (id),
-  CONSTRAINT fk_rep_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id),
-  CONSTRAINT fk_rep_revisor   FOREIGN KEY (revisor_id)   REFERENCES usuario (id)
+  CONSTRAINT fk_notif_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id),
+  CONSTRAINT fk_notif_evento    FOREIGN KEY (evento_id)    REFERENCES evento (id),
+  CONSTRAINT fk_notif_reporte   FOREIGN KEY (reporte_id)   REFERENCES reporte (id),
+  CONSTRAINT fk_notif_sancion   FOREIGN KEY (sancion_id)   REFERENCES sancion (id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE historial_cambio (
@@ -339,7 +437,7 @@ CREATE TABLE historial_cambio (
   PRIMARY KEY (id),
   KEY ix_hist_entidad (entidad, entidad_id, created_at),
   KEY ix_hist_usuario (usuario_id, created_at),
-  CONSTRAINT ck_hist_entidad CHECK (entidad IN ('USUARIO','LUGAR','ZONA')),
+  CONSTRAINT ck_hist_entidad CHECK (entidad IN ('USUARIO','LUGAR','ZONA','EVENTO')),
   CONSTRAINT ck_hist_accion  CHECK (accion IN ('CREATE','UPDATE','DELETE')),
   CONSTRAINT ck_hist_valores CHECK (
         (accion = 'CREATE' AND valores_anteriores IS NULL     AND valores_nuevos IS NOT NULL)
@@ -347,6 +445,33 @@ CREATE TABLE historial_cambio (
      OR (accion = 'DELETE' AND valores_anteriores IS NOT NULL AND valores_nuevos IS NULL)),
   CONSTRAINT fk_hist_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
+
+CREATE TABLE etiqueta_actividad (
+  id      INT          NOT NULL AUTO_INCREMENT,
+  nombre  VARCHAR(50)  NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT uq_etiqueta_nombre UNIQUE (nombre),
+  CONSTRAINT ck_etiqueta_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) > 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE lugar_etiqueta (
+  lugar_id     INT  NOT NULL,
+  etiqueta_id  INT  NOT NULL,
+  PRIMARY KEY (lugar_id, etiqueta_id),
+  KEY ix_lugar_etiqueta_etiqueta (etiqueta_id),
+  CONSTRAINT fk_le_lugar    FOREIGN KEY (lugar_id)    REFERENCES lugar (id) ON DELETE CASCADE,
+  CONSTRAINT fk_le_etiqueta FOREIGN KEY (etiqueta_id) REFERENCES etiqueta_actividad (id)
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO etiqueta_actividad (nombre) VALUES
+  ('Café y bebidas'),
+  ('Comer'),
+  ('Deportes'),
+  ('Caminar y aire libre'),
+  ('Descanso y silencio'),
+  ('Estudio'),
+  ('Juegos de mesa'),
+  ('Arte y música');
 
 CREATE OR REPLACE VIEW v_metricas_lugar AS
 SELECT l.id AS lugar_id, l.nombre, c.nombre AS categoria,
