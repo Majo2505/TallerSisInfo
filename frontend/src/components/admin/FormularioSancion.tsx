@@ -20,6 +20,8 @@ const sinSuscripcion = () => () => {};
 type Props = {
   usuario: { id: number; nombre: string };
   tipo: TipoSancion;
+  /** Muestra un selector de tipo (al sancionar desde un reporte, donde todavía no se eligió). */
+  elegirTipo?: boolean;
   /** Reporte que originó la sanción, si se abrió desde uno. */
   reporteId?: number | null;
   onCerrar: () => void;
@@ -40,10 +42,11 @@ function ahoraLocal(): string {
 }
 
 /** Formulario de sanción. Motivo obligatorio; fecha de fin solo en la suspensión; la baja pide confirmación explícita. */
-export default function FormularioSancion({ usuario, tipo, reporteId = null, onCerrar, onAplicada }: Props) {
+export default function FormularioSancion({ usuario, tipo: tipoInicial, elegirTipo = false, reporteId = null, onCerrar, onAplicada }: Props) {
   const reducir = useReducedMotion();
   const enCliente = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const idTitulo = useId();
+  const [tipo, setTipo] = useState<TipoSancion>(tipoInicial);
   const [motivo, setMotivo] = useState("");
   const [hasta, setHasta] = useState("");
   const [confirmacion, setConfirmacion] = useState("");
@@ -106,6 +109,24 @@ export default function FormularioSancion({ usuario, tipo, reporteId = null, onC
         <h2 id={idTitulo}>
           {TITULO[tipo]} {usuario.nombre}
         </h2>
+
+        {reporteId !== null && (
+          <p className="hz-nota" style={{ margin: 0 }}>
+            Se registra el reporte n.º {reporteId} como origen de la sanción.
+          </p>
+        )}
+
+        {elegirTipo && (
+          <fieldset className={estilos.tipos}>
+            <legend>Tipo de sanción</legend>
+            {(["ADVERTENCIA", "SUSPENSION", "BAJA"] as const).map((t) => (
+              <label key={t} className={estilos.tipoOpcion}>
+                <input type="radio" name={`${idTitulo}-tipo`} checked={tipo === t} onChange={() => setTipo(t)} />
+                {ETIQUETA_TIPO[t]}
+              </label>
+            ))}
+          </fieldset>
+        )}
 
         {tipo === "BAJA" && (
           <div className={estilos.advertenciaBaja} role="note">

@@ -57,3 +57,7 @@
 .advertenciaBaja { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--error-fondo); border: 1px solid var(--error-borde); color: var(--error-texto); line-height: 1.5; }
 .advertenciaBaja ul { margin: 6px 0 0; padding-left: 20px; }
 .modalSancion { max-width: 520px; }
+.tipos { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 10px 14px; border: 1.5px solid var(--borde); border-radius: 14px; }
+.tipos legend { padding: 0 6px; color: var(--ucb-marino); font-size: .9rem; font-weight: 700; }
+.tipoOpcion { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--texto); font-weight: 600; cursor: pointer; }
+.tipoOpcion input { width: 20px; height: 20px; accent-color: var(--ucb-marino); }

@@ -33,6 +33,9 @@ export type ReporteAdmin = {
   objeto: string;
   autor: string;
   creadoEn: string;
+  /** HU28: el creador de la comunidad o del evento reportado (estudiante); null si no aplica o ya no existe. */
+  usuarioReportadoId?: number | null;
+  usuarioReportadoNombre?: string | null;
 };
 
 export type MotivoRechazo = "INYECCION" | "FUERA_DE_ALCANCE" | "BIENESTAR" | "FUERA_DE_REGLAMENTO" | "FUERA_DE_CONTEXTO";
@@ -127,6 +130,7 @@ export const MOTIVO_REPORTE: Record<string, string> = {
   SUGERENCIA: "Sugerencia",
   LUGAR_INCORRECTO: "Información incorrecta",
   COMUNIDAD_INAPROPIADA: "Comunidad inapropiada",
+  EVENTO_INAPROPIADO: "Evento inapropiado",
 };
 
 export const listarReportes = () => pedirApi<ReporteAdmin[]>("/api/admin/reportes");
