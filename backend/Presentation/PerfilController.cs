@@ -54,6 +54,23 @@ public class PerfilController : ControllerBase
             return NoContent();
         });
 
+    /// <summary>Elimina mi cuenta y mis datos (HU29). Pide el texto ELIMINAR y reautenticación: contraseña o login de Google.</summary>
+    /// <response code="204">Cuenta eliminada; el token deja de servir.</response>
+    /// <response code="400">Falta la confirmación o la reautenticación, es incorrecta (<c>CONTRASENA_INCORRECTA</c>, <c>GOOGLE_INCORRECTO</c>), es ADMIN (<c>NO_ELIMINABLE</c>) o tiene una suspensión vigente (<c>SANCION_ACTIVA</c>).</response>
+    /// <response code="429">Demasiados intentos en un minuto.</response>
+    [HttpDelete]
+    [EnableRateLimiting(ReglasCuenta.PoliticaContrasena)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status429TooManyRequests)]
+    public Task<IActionResult> Eliminar([FromBody] EliminarCuentaRequest req, [FromServices] EliminarCuentaService eliminar, CancellationToken ct)
+        => Ejecutar(async () =>
+        {
+            await eliminar.EliminarAsync(UsuarioId, req, ct);
+            return NoContent();
+        });
+
     private async Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion)
     {
         try { return await accion(); }

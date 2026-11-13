@@ -1,5 +1,6 @@
 using Breaku.Application.Actividades;
 using Breaku.Application.Admin;
+using Breaku.Application.Common.Interfaces;
 using Breaku.Application.Comunidades;
 using Breaku.Application.Horarios;
 using Breaku.Application.Lugares;
@@ -61,6 +62,10 @@ public static class DependencyInjection
             sp.GetRequiredService<ITiempoReal>(), TimeProvider.System));
         services.AddScoped(sp => new SancionService(sp.GetRequiredService<ISancionRepository>(), sp.GetRequiredService<PurgaUsuarioService>(),
             sp.GetRequiredService<ITransaccion>(), sp.GetRequiredService<ITiempoReal>(), sp.GetRequiredService<IValidadorSesion>(), TimeProvider.System));
+        // Eliminar mi cuenta (HU29): reutiliza la purga de HU28 con eliminarCuenta: true
+        services.AddScoped(sp => new EliminarCuentaService(sp.GetRequiredService<IPerfilRepository>(), sp.GetRequiredService<ISancionRepository>(),
+            sp.GetRequiredService<PurgaUsuarioService>(), sp.GetRequiredService<ITransaccion>(), sp.GetRequiredService<IHasherContrasenas>(),
+            sp.GetRequiredService<IVerificadorGoogle>(), sp.GetRequiredService<IValidadorSesion>(), TimeProvider.System));
         // Un solo validador para todo el proceso: guarda ~60 s lo que lee de la base, con un alcance propio por lectura.
         services.AddSingleton<IValidadorSesion>(sp => new ValidadorSesion(async (usuarioId, ahora, ct) =>
         {
