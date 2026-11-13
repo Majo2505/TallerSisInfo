@@ -45,7 +45,7 @@ public static class ReglasCuenta
     /// <summary>Lo que dice el token de Google, ya verificado (firma, emisor, audiencia y vencimiento).</summary>
     public sealed record IdentidadGoogle(string Sub, string Correo, bool CorreoVerificado, string? Nombre);
 
-    /// <param name="Bloqueo">Por qué la cuenta no puede entrar (suspensión o baja de HU28); null si puede.</param>
+    // Bloqueo: por qué la cuenta no puede entrar (suspensión o baja de HU28); null si puede.
     public sealed record CuentaExistente(int Id, string Rol, bool Activa, string? GoogleSub,
         ReglasSancion.BloqueoCuenta? Bloqueo = null);
 

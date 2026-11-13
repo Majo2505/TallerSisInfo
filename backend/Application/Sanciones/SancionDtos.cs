@@ -13,7 +13,7 @@ public record SancionDto(
     DateTime? Hasta,
     DateTime? LevantadaEn,
     string? LevantadaPor,
-    /// <summary>Todavía surte efecto: suspensión sin levantar y sin vencer, o baja.</summary>
+    // Vigente: todavía surte efecto (suspensión sin levantar y sin vencer, o baja).
     bool Vigente);
 
 public record BloqueoDto(string Tipo, string Motivo, DateTime? Hasta);
@@ -27,7 +27,7 @@ public record UsuarioDetalleDto(
     string Estado,
     DateTime RegistradoEn,
     int Advertencias,
-    /// <summary>Solo una sugerencia: tras 3 advertencias la siguiente es SUSPENSION. Nada es automático.</summary>
+    // SiguienteSancionSugerida: solo una sugerencia; tras 3 advertencias la siguiente es SUSPENSION. Nada es automático.
     string SiguienteSancionSugerida,
     int AdvertenciasParaSuspension,
     int DiasSuspensionPorDefecto,

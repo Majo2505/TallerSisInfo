@@ -32,6 +32,7 @@ public class AdminUsuariosController : ControllerBase
     /// <summary>Lista de estudiantes con su estado y su cantidad de sanciones, con búsqueda por nombre o correo.</summary>
     /// <param name="buscar">Texto que debe contener el nombre o el correo.</param>
     /// <param name="limite">Cuántos devolver (100 por defecto, máximo 200).</param>
+    /// <param name="ct">Cancelación de la petición.</param>
     [HttpGet]
     [ProducesResponseType(typeof(List<UsuarioListaDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

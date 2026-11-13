@@ -26,7 +26,7 @@ public sealed class ValidadorSesion : IValidadorSesion
     private readonly TimeProvider _reloj;
     private readonly ConcurrentDictionary<int, (bool Permitido, DateTime Vence)> _cache = new();
 
-    /// <param name="lector">Lee el estado del usuario en la base (null si no existe).</param>
+    // lector: lee el estado del usuario en la base (null si no existe).
     public ValidadorSesion(Func<int, DateTime, CancellationToken, Task<EstadoSesion?>> lector, TimeProvider reloj)
     {
         _lector = lector;
