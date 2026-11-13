@@ -49,12 +49,17 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorCuentaBloqueadaDto), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Google([FromBody] LoginGoogleRequest request, CancellationToken ct)
     {
         try
         {
             return Ok(await _authService.LoginConGoogleAsync(request.Credencial, ct));
+        }
+        catch (CuentaBloqueadaException ex)
+        {
+            return CuentaBloqueada(ex);
         }
         catch (ArgumentException ex)
         {
@@ -75,12 +80,17 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorMensajeDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorCuentaBloqueadaDto), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         try
         {
             var result = await _authService.LoginAsync(request);
             return Ok(result);
+        }
+        catch (CuentaBloqueadaException ex)
+        {
+            return CuentaBloqueada(ex);
         }
         catch (ArgumentException ex)
         {
@@ -90,5 +100,17 @@ public class AuthController : ControllerBase
         {
             return Unauthorized(new ErrorMensajeDto(ex.Message));
         }
+    }
+
+    /// <summary>HU28: 403 con el motivo y, si la hay, la fecha de fin de la suspensión (UTC).</summary>
+    private ObjectResult CuentaBloqueada(CuentaBloqueadaException ex)
+    {
+        var codigo = ex.Bloqueo.Tipo switch
+        {
+            "SUSPENSION" => "CUENTA_SUSPENDIDA",
+            "BAJA" => "CUENTA_DADA_DE_BAJA",
+            _ => "CUENTA_DESACTIVADA"
+        };
+        return StatusCode(StatusCodes.Status403Forbidden, new ErrorCuentaBloqueadaDto(ex.Message, codigo, ex.Bloqueo.Motivo, ex.Bloqueo.Hasta));
     }
 }

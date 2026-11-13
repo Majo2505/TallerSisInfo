@@ -15,10 +15,12 @@ public sealed class DescubrirComunidadesRepository : IDescubrirComunidadesReposi
     public Task<bool> PuedeVerAsync(int usuarioId, int comunidadId, int? deOtrosEnZona, DateTime ahoraUtc, CancellationToken ct = default)
     {
         var participaciones = _db.Set<Participacion>();
+        var suspendidos = FiltrosSancion.IdsSuspendidos(_db, ahoraUtc);
 
         return (from c in _db.Comunidades.AsNoTracking()
                 join u in _db.Usuarios on c.CreadorId equals u.Id
                 where c.Id == comunidadId && c.Estado == ComunidadEfimera.EstadoActiva && c.Fin > ahoraUtc
+                      && !suspendidos.Contains(c.CreadorId)
                       && (c.CreadorId == usuarioId
                           || participaciones.Any(p => p.ComunidadId == c.Id && p.UsuarioId == usuarioId)
                           || (deOtrosEnZona != null && u.Activo && u.VisibleMatching && u.ZonaActualId == deOtrosEnZona))
@@ -30,10 +32,13 @@ public sealed class DescubrirComunidadesRepository : IDescubrirComunidadesReposi
         int maximo, CancellationToken ct = default)
     {
         var participaciones = _db.Set<Participacion>();
+        // HU28: la comunidad de alguien suspendido no se muestra mientras dure la sanción.
+        var suspendidos = FiltrosSancion.IdsSuspendidos(_db, ahoraUtc);
 
         return (from c in _db.Comunidades.AsNoTracking()
                 join u in _db.Usuarios on c.CreadorId equals u.Id
                 where c.Estado == ComunidadEfimera.EstadoActiva && c.Fin > ahoraUtc && c.Inicio < hastaUtc
+                      && !suspendidos.Contains(c.CreadorId)
                       && (c.CreadorId == usuarioId
                           || participaciones.Any(p => p.ComunidadId == c.Id && p.UsuarioId == usuarioId)
                           || (deOtrosEnZona != null && u.Activo && u.VisibleMatching && u.ZonaActualId == deOtrosEnZona))

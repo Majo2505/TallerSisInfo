@@ -238,15 +238,19 @@ public class AdminRepository : IAdminRepository
     {
         var filas = await _db.Database.SqlQuery<FilaReporte>($"""
                 SELECT r.id AS Id, r.motivo AS Motivo, r.descripcion AS Descripcion, r.estado AS Estado,
-                       COALESCE(l.nombre, c.actividad, 'General') AS Objeto, u.nombre AS Autor, r.created_at AS CreadoEn
+                       COALESCE(l.nombre, c.actividad, e.titulo, 'General') AS Objeto, u.nombre AS Autor, r.created_at AS CreadoEn,
+                       rep.id AS UsuarioReportadoId, rep.nombre AS UsuarioReportadoNombre
                 FROM reporte r
                 JOIN usuario u ON u.id = r.usuario_id
                 LEFT JOIN lugar l ON l.id = r.lugar_id
                 LEFT JOIN comunidad_efimera c ON c.id = r.comunidad_id
+                LEFT JOIN evento e ON e.id = r.evento_id
+                LEFT JOIN usuario rep ON rep.id = COALESCE(c.creador_id, e.creador_id) AND rep.rol = 'ESTUDIANTE'
                 ORDER BY FIELD(r.estado, 'PENDIENTE', 'RESUELTO', 'DESCARTADO'), r.created_at DESC
                 LIMIT 100
                 """).ToListAsync(ct);
-        return filas.Select(f => new ReporteAdminDto(f.Id, f.Motivo, f.Descripcion, f.Estado, f.Objeto, f.Autor, f.CreadoEn)).ToList();
+        return filas.Select(f => new ReporteAdminDto(f.Id, f.Motivo, f.Descripcion, f.Estado, f.Objeto, f.Autor, f.CreadoEn,
+            f.UsuarioReportadoId, f.UsuarioReportadoNombre)).ToList();
     }
 
     public async Task<string?> ResolverReporteAsync(int reporteId, string estado, int adminId, CancellationToken ct = default)
@@ -416,6 +420,8 @@ public class AdminRepository : IAdminRepository
         public string Objeto { get; set; } = "";
         public string Autor { get; set; } = "";
         public DateTime CreadoEn { get; set; }
+        public int? UsuarioReportadoId { get; set; }
+        public string? UsuarioReportadoNombre { get; set; }
     }
 
     private sealed class FilaConsultaRag

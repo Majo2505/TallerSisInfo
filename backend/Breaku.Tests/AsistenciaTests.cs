@@ -77,6 +77,15 @@ public class ReglasAsistenciaTests
     }
 
     [Fact]
+    public void Quien_heredo_la_comunidad_ve_que_ahora_la_organiza()
+    {
+        var decision = ReglasAsistencia.Decidir(Invitado(Confirmado) with { EsCreador = true, CreadorHeredado = true }, asisto: true);
+
+        Assert.Equal(ReglasAsistencia.MensajeEresOrganizador, decision.Mensaje);
+        Assert.Equal("Ahora organizas esta comunidad.", ReglasAsistencia.MensajeEresOrganizador);
+    }
+
+    [Fact]
     public void Despues_de_que_termina_ya_no_se_responde()
     {
         var decision = ReglasAsistencia.Decidir(Invitado() with { Terminada = true }, asisto: true);

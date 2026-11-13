@@ -80,7 +80,11 @@ public record ReporteAdminDto(
     string Estado,
     string Objeto,
     string Autor,
-    DateTime CreadoEn
+    DateTime CreadoEn,
+    // HU28: a quién se puede sancionar desde el reporte: el creador de la comunidad o del evento reportado (estudiante).
+    // Null si el reporte no es de una comunidad o un evento, si el objeto ya no existe o si lo creó un administrador.
+    int? UsuarioReportadoId = null,
+    string? UsuarioReportadoNombre = null
 );
 
 public record ResolverReporteDto(string? Estado);

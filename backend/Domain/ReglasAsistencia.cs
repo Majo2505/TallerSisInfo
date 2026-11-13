@@ -10,6 +10,8 @@ public static class ReglasAsistencia
     public const string MensajeNoEncontrada = "La comunidad no existe o ya no está disponible.";
     public const string MensajeFaltaRespuesta = "Indica si vas o no.";
     public const string MensajeEresCreador = "Creaste esta comunidad: tú siempre vas.";
+    /// <summary>La comunidad cambió de creador cuando el creador original fue dado de baja (HU28/HU29).</summary>
+    public const string MensajeEresOrganizador = "Ahora organizas esta comunidad.";
     public const string MensajeTerminada = "La actividad ya terminó.";
     public const string MensajeNoEstabas = "No estás en esta comunidad.";
     public const string MensajeCompleta = "Ya no quedan lugares en esta comunidad.";
@@ -24,7 +26,8 @@ public static class ReglasAsistencia
         bool PuedeVerla,
         int Confirmados,
         int Maximo,
-        bool HayCruce);
+        bool HayCruce,
+        bool CreadorHeredado = false);
 
     public readonly record struct Decision(string? Error, string? Mensaje, string Estado, bool Cambia)
     {
@@ -38,7 +41,7 @@ public static class ReglasAsistencia
         if (!s.Existe || (!s.EsCreador && s.MiEstado is null && !s.PuedeVerla))
             return Decision.Falla(ErrorNoEncontrado, MensajeNoEncontrada);
         if (s.EsCreador)
-            return Decision.Falla(ErrorValidacion, MensajeEresCreador);
+            return Decision.Falla(ErrorValidacion, s.CreadorHeredado ? MensajeEresOrganizador : MensajeEresCreador);
         if (s.Terminada)
             return Decision.Falla(ErrorValidacion, MensajeTerminada);
 

@@ -19,6 +19,7 @@ using Breaku.Application.Admin;
 using Breaku.Application.Matching;
 using Breaku.Application.Comunidades;
 using Breaku.Application.Reportes;
+using Breaku.Application.Sanciones;
 using Breaku.Application.Actividades;
 namespace Breaku.Infrastructure;
 public static class DependencyInjection
@@ -69,6 +70,9 @@ public static class DependencyInjection
         services.AddScoped<IDescubrirComunidadesRepository, DescubrirComunidadesRepository>();
         services.AddScoped<IAsistenciaRepository, AsistenciaRepository>();
         services.AddScoped<IActividadRepository, ActividadRepository>();
+        services.AddScoped<ISancionRepository, SancionRepository>();
+        services.AddScoped<IPurgaRepository, PurgaRepository>();
+        services.AddScoped<ITransaccion, TransaccionEf>();
 
         return services;
     }

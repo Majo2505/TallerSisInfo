@@ -55,11 +55,12 @@ public sealed class ComunidadRepository : IComunidadRepository
                              && c.Estado == ComunidadEfimera.EstadoActiva && c.Inicio < comunidad.Fin && c.Fin > comunidad.Inicio
                        select p.UsuarioId;
         var yaDentro = _db.Set<Participacion>().Where(p => p.ComunidadId == comunidad.Id).Select(p => p.UsuarioId);
+        var suspendidos = FiltrosSancion.IdsSuspendidos(_db, DateTime.UtcNow);
 
         var companeros = await _db.Usuarios.AsNoTracking()
             .Where(u => u.Id != comunidad.CreadorId && u.Activo && u.Rol == "ESTUDIANTE" && u.VisibleMatching && u.ZonaActualId == zonaId)
             .Where(u => _db.Puentes.Any(p => p.UsuarioId == u.Id && p.DiaSemana == diaSemana && p.HoraInicio < fin && p.HoraFin > inicio))
-            .Where(u => !ocupados.Contains(u.Id) && !yaDentro.Contains(u.Id))
+            .Where(u => !ocupados.Contains(u.Id) && !yaDentro.Contains(u.Id) && !suspendidos.Contains(u.Id))
             .Select(u => new { u.Id, u.Nombre, u.Carrera, u.NotificacionesActivas })
             .ToListAsync(ct);
         if (companeros.Count == 0) return [];
