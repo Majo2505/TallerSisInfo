@@ -47,15 +47,10 @@ builder.Services
     {
         options.Events = new JwtBearerEvents
         {
-            // HU28: un token ya emitido deja de valer si el usuario fue suspendido o dado de baja. Corre también con el
-            // token que llega por query string al hub de tiempo real. El estado se guarda ~60 s (ver ValidadorSesion).
-            OnTokenValidated = async context =>
-            {
-                var usuarioId = Breaku.Api.Hubs.UsuarioIdProvider.Leer(context.Principal);
-                var validador = context.HttpContext.RequestServices.GetRequiredService<IValidadorSesion>();
-                if (usuarioId is null || !await validador.PuedeUsarApiAsync(usuarioId.Value, context.HttpContext.RequestAborted))
-                    context.Fail("La cuenta no puede usar la plataforma.");
-            },
+            // HU28: un token ya emitido deja de valer si el usuario fue suspendido o dado de baja (401 con CUENTA_SANCIONADA).
+            // Corre también con el token por query string del hub de tiempo real. El estado se guarda ~60 s (ValidadorSesion).
+            OnTokenValidated = Breaku.Presentation.SesionSancionada.ValidarTokenAsync,
+            OnChallenge = Breaku.Presentation.SesionSancionada.ResponderDesafioAsync,
             OnMessageReceived = context =>
             {
                 var token = context.Request.Query["access_token"];
