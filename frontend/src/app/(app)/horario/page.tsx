@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import fotoEscritorio from "@/components/app/fotos/escritorio.webp";
 import FondoVivo from "@/components/app/FondoVivo";
+import Mascota from "@/components/app/Mascota";
 import { IconoCalendario, IconoCheck, IconoMas } from "@/components/app/Iconos";
 import { Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import { Selector, SelectorHora } from "@/components/app/Selectores";
@@ -253,6 +254,10 @@ export default function HorarioPage() {
               </div>
 
               <div className="hz-vista-grilla">
+              {/* Breaki recostado sobre el borde de la grilla, siguiendo el cursor con la mirada. */}
+              <span className="hz-mascota">
+                <Mascota pose="recostada" tamano={96} />
+              </span>
               <div className="hz-scroll">
                 <div className="hz-grid" style={{ ["--ph" as string]: `${PX_HORA}px` }}>
                   <div className="hz-corner" />
