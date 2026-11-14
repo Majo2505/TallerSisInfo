@@ -1,6 +1,22 @@
-/* Onboarding: portada a pantalla completa con foto, como la página de entrada de un producto. */
+/* Portada pública: foto a pantalla completa, mensaje y testimonio. Las secciones siguientes están en Secciones.module.css. */
 
-.pantalla {
+.pagina {
+  min-height: 100svh;
+  background: var(--fondo-app);
+  color: var(--texto);
+}
+
+.pagina ::selection {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+/* globals.css le da padding a todo <main>; la portada va de borde a borde. */
+.principal {
+  padding: 0;
+}
+
+.portada {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -8,13 +24,6 @@
   background: var(--ucb-marino);
   color: #fff;
 }
-
-.pantalla ::selection {
-  background: var(--ucb-amarillo);
-  color: var(--ucb-marino);
-}
-
-/* ---------- Foto y velo ---------- */
 
 .foto {
   position: absolute;
@@ -34,144 +43,41 @@
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, rgba(5, 40, 69, 0.55) 0%, rgba(5, 40, 69, 0) 18%),
-    linear-gradient(0deg, rgba(5, 40, 69, 0.7) 0%, rgba(5, 40, 69, 0) 34%),
+    linear-gradient(180deg, rgba(5, 40, 69, 0.6) 0%, rgba(5, 40, 69, 0) 20%),
+    linear-gradient(0deg, rgba(5, 40, 69, 0.75) 0%, rgba(5, 40, 69, 0) 30%),
     linear-gradient(
       90deg,
       rgba(5, 40, 69, 0.96) 0%,
       rgba(5, 40, 69, 0.86) 30%,
       rgba(5, 40, 69, 0.42) 56%,
-      rgba(5, 40, 69, 0.08) 78%
+      rgba(5, 40, 69, 0.06) 80%
     );
 }
 
-/* ---------- Estructura ---------- */
-
-.contenedor {
+.portadaContenido {
   box-sizing: border-box;
+  display: grid;
+  align-content: end;
+  gap: clamp(32px, 6vh, 64px);
   min-height: 100svh;
-  width: 100%;
-  max-width: 1440px;
+  max-width: 1300px;
   margin: 0 auto;
-  padding:
-    max(20px, env(safe-area-inset-top))
-    clamp(16px, 4.5vw, 72px)
-    max(clamp(20px, 4vh, 48px), env(safe-area-inset-bottom));
+  /* Abajo deja lugar para la tarjeta de promesas, que se monta sobre la foto. */
+  padding: 128px clamp(16px, 4.5vw, 64px) clamp(120px, 16vh, 160px);
+}
+
+.mensaje {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.cabecera {
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.marca {
-  flex-shrink: 0;
-  font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.035em;
-}
-
-.marca span {
-  color: var(--ucb-amarillo);
-}
-
-/* Los pasos hacen de menú, como las secciones de una página. */
-.pasos {
-  display: flex;
-  gap: clamp(8px, 2.4vw, 36px);
-}
-
-.pasoEnlace {
-  position: relative;
-  min-height: 44px;
-  padding: 0 4px;
-  border: 0;
-  background: none;
-  color: rgba(255, 255, 255, 0.7);
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: color 200ms ease;
-}
-
-.pasoEnlace[aria-current="step"] {
-  color: #fff;
-}
-
-.pasoSubrayado {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
-  height: 3px;
-  border-radius: 3px;
-  background: var(--ucb-amarillo);
-}
-
-.entrar {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 46px;
-  padding: 0 18px 0 20px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-  transition: background-color 200ms ease, transform 140ms var(--curva-salida);
-}
-
-.entrar:active {
-  transform: scale(0.97);
-}
-
-/* Solo en el celular: los pasos como una línea de progreso. */
-.progreso {
-  display: none;
-}
-
-.principal {
-  grid-row: 3;
-  align-self: center;
-  max-width: 660px;
-  padding: clamp(32px, 8vh, 96px) 0 clamp(28px, 5vh, 56px);
-}
-
-.contenido {
-  display: grid;
-  gap: 20px;
+  gap: 22px;
   justify-items: start;
-  cursor: grab;
-  touch-action: pan-y;
-}
-
-.contenido:active {
-  cursor: grabbing;
+  max-width: 660px;
 }
 
 .titulo {
   margin: 0;
   max-width: 13ch;
   font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: clamp(2.35rem, 1.1rem + 4.4vw, 4.75rem);
+  font-size: clamp(2.4rem, 1.1rem + 4.6vw, 5rem);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.038em;
@@ -182,37 +88,20 @@
   color: var(--ucb-amarillo);
 }
 
-.texto {
+.bajada {
   margin: 0;
-  max-width: 46ch;
-  color: rgba(255, 255, 255, 0.84);
-  font-size: clamp(1rem, 0.94rem + 0.3vw, 1.175rem);
+  max-width: 48ch;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(1.02rem, 0.95rem + 0.32vw, 1.2rem);
   line-height: 1.6;
   text-wrap: pretty;
 }
 
-.nota {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 0.93rem;
-  font-weight: 600;
-}
-
-.nota svg {
-  flex-shrink: 0;
-  color: var(--ucb-amarillo);
-}
-
-/* ---------- Botones ---------- */
-
-.acciones {
+.botones {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 8px;
 }
 
 .primario,
@@ -223,17 +112,16 @@
   gap: 10px;
   min-height: 54px;
   border-radius: 999px;
-  font: inherit;
   font-size: 1rem;
   font-weight: 800;
-  cursor: pointer;
+  text-decoration: none;
   touch-action: manipulation;
   user-select: none;
+  transition: transform 140ms var(--curva-salida), background-color 200ms ease, border-color 200ms ease;
 }
 
 .primario {
   padding: 0 24px 0 28px;
-  border: 0;
   background: var(--ucb-amarillo);
   color: var(--ucb-marino);
   box-shadow: 0 14px 32px -14px rgba(253, 213, 55, 0.7);
@@ -244,45 +132,40 @@
 }
 
 .secundario {
-  padding: 0 24px;
+  padding: 0 26px;
   border: 1.5px solid rgba(255, 255, 255, 0.55);
-  background: rgba(5, 40, 69, 0.18);
+  background: rgba(5, 40, 69, 0.2);
   color: #fff;
-  transition: background-color 200ms ease, border-color 200ms ease, transform 140ms var(--curva-salida);
 }
 
+.primario:active,
 .secundario:active {
   transform: scale(0.97);
 }
 
-.pasoEnlace:focus-visible,
-.entrar:focus-visible,
 .primario:focus-visible,
-.secundario:focus-visible,
-.segmento:focus-visible {
+.secundario:focus-visible {
   outline: 3px solid var(--ucb-amarillo);
   outline-offset: 3px;
 }
 
-/* ---------- Testimonio ---------- */
+/* ---------- Testimonio de la portada ---------- */
 
 .testimonio {
-  grid-row: 4;
-  align-self: end;
   box-sizing: border-box;
-  max-width: 470px;
+  max-width: 500px;
   margin: 0;
   padding: 20px 22px 22px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 22px;
   /* El vidrio esmerilado separa la cita de la foto sin taparla. */
-  background: rgba(5, 40, 69, 0.52);
+  background: rgba(5, 40, 69, 0.55);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   backdrop-filter: blur(16px) saturate(1.2);
   box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.5);
 }
 
-.autora {
+.testimonioCabeza {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -290,46 +173,46 @@
 
 .avatar {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 46px;
+  height: 46px;
   border: 2px solid var(--ucb-amarillo);
+  border-radius: 50%;
   object-fit: cover;
 }
 
-.autora > span {
+.testimonioCabeza figcaption {
   display: grid;
   gap: 1px;
   min-width: 0;
 }
 
-.autora strong {
-  font-size: 0.98rem;
+.testimonioCabeza strong {
+  font-size: 1rem;
   font-weight: 800;
 }
 
-.autora small {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.84rem;
+.testimonioCabeza small {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
-.cita {
-  margin: 14px 0 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
-  line-height: 1.55;
+.puntaje {
+  display: block;
+  margin-top: 14px;
+  color: var(--ucb-amarillo);
 }
 
-/* ---------- Hover (solo con mouse) ---------- */
+.cita {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.97rem;
+  line-height: 1.6;
+}
 
 @media (hover: hover) and (pointer: fine) {
-  .pasoEnlace:hover {
-    color: #fff;
-  }
-
-  .entrar:hover {
-    background: rgba(255, 255, 255, 0.2);
+  .primario:hover {
+    background: #ffde5c;
   }
 
   .primario:hover svg {
@@ -342,50 +225,24 @@
   }
 }
 
-/* ---------- Tablet y celular ---------- */
+/* Escritorio ancho: el testimonio se va a la derecha, a la altura del mensaje. */
+@media (min-width: 1180px) {
+  .portadaContenido {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .testimonio {
+    width: 400px;
+    margin-bottom: 4px;
+  }
+}
 
 @media (max-width: 860px) {
-  .pasos {
-    display: none;
-  }
-
-  .progreso {
-    grid-row: 2;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-top: 18px;
-  }
-
-  .segmento {
-    position: relative;
-    height: 22px;
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-
-  /* La línea visible es fina; el botón es más alto para que se pueda tocar. */
-  .segmento::before {
-    content: "";
-    position: absolute;
-    inset: 9px 0;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.28);
-    transition: background-color 260ms var(--curva-salida);
-  }
-
-  .segmento[data-lleno]::before {
-    background: var(--ucb-amarillo);
-  }
-
-  /* En vertical, la foto ocupa la parte de arriba (sin ampliarla de más) y se funde con el marino. */
   .foto,
   .velo {
     bottom: auto;
-    height: min(64svh, 640px);
+    height: min(62svh, 620px);
   }
 
   .fotoImagen {
@@ -398,85 +255,14 @@
       linear-gradient(0deg, var(--ucb-marino) 0%, rgba(5, 40, 69, 0.82) 22%, rgba(5, 40, 69, 0.2) 52%, rgba(5, 40, 69, 0) 70%);
   }
 
-  .principal {
-    align-self: end;
-    padding: max(calc(min(64svh, 640px) - 230px), 120px) 0 24px;
-  }
-
-  .titulo {
-    max-width: 15ch;
-  }
-
-  .acciones {
-    margin-top: 26px;
+  .portadaContenido {
+    min-height: 0;
+    padding-top: max(calc(min(62svh, 620px) - 200px), 150px);
+    padding-bottom: 120px;
   }
 
   .primario,
   .secundario {
     flex: 1 1 auto;
-  }
-
-  .testimonio {
-    max-width: none;
-    padding: 16px 18px 18px;
-  }
-
-  .cita {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    overflow: hidden;
-    font-size: 0.9rem;
-  }
-}
-
-/* Pantallas bajas de escritorio (laptops de 768 px): todo entra sin desplazar. */
-@media (min-width: 861px) and (max-height: 820px) {
-  .principal {
-    padding: 20px 0 24px;
-  }
-
-  .contenido {
-    gap: 14px;
-  }
-
-  .titulo {
-    font-size: clamp(2.35rem, 0.8rem + 4.2vw, 4rem);
-  }
-
-  .acciones {
-    margin-top: 22px;
-  }
-
-  .cita {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
-  }
-}
-
-@media (max-width: 359px) {
-  .entrar span {
-    display: none;
-  }
-
-  .entrar {
-    width: 46px;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .acciones {
-    flex-direction: column;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .primario svg,
-  .segmento::before {
-    transition: none;
   }
 }
