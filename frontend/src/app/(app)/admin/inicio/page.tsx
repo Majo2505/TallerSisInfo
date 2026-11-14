@@ -5,15 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
-import {
-  IconoBandera,
-  IconoBuscar,
-  IconoCheck,
-  IconoDestello,
-  IconoFlechaDerecha,
-  IconoPersonas,
-  IconoPin,
-} from "@/components/app/Iconos";
+import { IconoCheck, IconoFlechaDerecha } from "@/components/app/Iconos";
+import { duo } from "@/components/app/IconosDuo";
 import { Entrada, Odometro, Pieza, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import { ResumenAdmin, obtenerResumen } from "@/lib/admin";
 import { useSesion } from "@/lib/useSesion";
@@ -62,10 +55,10 @@ export default function InicioAdmin() {
   const reportes = resumen?.reportesPendientes ?? 0;
 
   const cifras = [
-    { valor: resumen?.lugaresActivos, etiqueta: "Lugares activos", clase: estilos.tonoLugares, Icono: IconoPin },
-    { valor: resumen?.estudiantes, etiqueta: "Estudiantes", clase: estilos.tonoEstudiantes, Icono: IconoPersonas },
-    { valor: resumen?.consultasRagSemana, etiqueta: "Consultas a la IA (7 días)", clase: estilos.tonoRag, Icono: IconoDestello },
-    { valor: resumen?.comunidadesHoy, etiqueta: "Comunidades hoy", clase: estilos.tonoComunidades, Icono: IconoPersonas },
+    { valor: resumen?.lugaresActivos, etiqueta: "Lugares activos", clase: estilos.tonoLugares, Icono: duo("lugar") },
+    { valor: resumen?.estudiantes, etiqueta: "Estudiantes", clase: estilos.tonoEstudiantes, Icono: duo("birrete") },
+    { valor: resumen?.consultasRagSemana, etiqueta: "Consultas a la IA (7 días)", clase: estilos.tonoRag, Icono: duo("asistente") },
+    { valor: resumen?.comunidadesHoy, etiqueta: "Comunidades hoy", clase: estilos.tonoComunidades, Icono: duo("grupo") },
   ];
 
   const accesos = [
@@ -74,26 +67,26 @@ export default function InicioAdmin() {
       titulo: "Catálogo de lugares",
       texto: "Aprueba, desactiva o reactiva los lugares que se recomiendan.",
       insignia: enRevision ? `${enRevision} en revisión` : undefined,
-      Icono: IconoPin,
+      Icono: duo("catalogo"),
     },
     {
       pestana: "reportes",
       titulo: "Reportes",
       texto: "Lo que los estudiantes avisaron sobre lugares o la app.",
       insignia: reportes ? plural(reportes, "pendiente", "pendientes") : undefined,
-      Icono: IconoBandera,
+      Icono: duo("bandera"),
     },
     {
       pestana: "metricas",
       titulo: "Métricas de la IA",
       texto: "Consultas por resultado, latencia y lugares más recomendados.",
-      Icono: IconoDestello,
+      Icono: duo("barras"),
     },
     {
       pestana: "auditoria",
       titulo: "Auditoría RAG",
       texto: "Cada consulta al asistente con los lugares que la respaldan.",
-      Icono: IconoBuscar,
+      Icono: duo("lupa"),
     },
   ];
 
@@ -145,7 +138,7 @@ export default function InicioAdmin() {
           {cifras.map(({ valor, etiqueta, clase, Icono }) => (
             <div key={etiqueta} className={`${estilos.cifra} ${clase}`}>
               <span className={estilos.cifraIcono} aria-hidden="true">
-                <Icono tamano={18} />
+                <Icono tamano={30} />
               </span>
               <span className={estilos.cifraValor}>{valor === undefined ? "—" : <Odometro valor={valor} />}</span>
               <span className={estilos.cifraEtiqueta}>{etiqueta}</span>
@@ -159,9 +152,9 @@ export default function InicioAdmin() {
         <ul className={estilos.accesos}>
           {accesos.map(({ pestana, titulo, texto, insignia, Icono }) => (
             <li key={pestana}>
-              <Link href={`/admin?pestana=${pestana}`} className={estilos.acceso}>
+              <Link href={`/admin?pestana=${pestana}`} className={`${estilos.acceso} icono-duo-anfitrion`}>
                 <span className={estilos.accesoIcono} aria-hidden="true">
-                  <Icono tamano={20} />
+                  <Icono tamano={32} />
                 </span>
                 <span className={estilos.accesoTexto}>
                   <strong>

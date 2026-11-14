@@ -199,8 +199,8 @@
 .cifraIcono {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   margin-bottom: 6px;
   border-radius: 13px;
   background: var(--tono-suave);
@@ -253,8 +253,8 @@
 .accesoIcono {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   border-radius: 14px;
   background: var(--fondo-suave);
   color: var(--ucb-marino);

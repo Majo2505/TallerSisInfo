@@ -9,6 +9,7 @@ import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendacio
 import { useSesion } from "@/lib/useSesion";
 import fotoGradas from "@/components/onboarding/fotos/estudiantes.webp";
 import FondoVivo from "./FondoVivo";
+import IconoDuo from "./IconosDuo";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import { Selector } from "./Selectores";
@@ -133,7 +134,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
                   />
                 )}
                 <span className={estilos.modoTexto}>
-                  {id === "animo" ? <IconoLuna tamano={16} /> : <IconoDestello tamano={16} />} {etiqueta}
+                  {id === "animo" ? <IconoLuna tamano={16} /> : <IconoDuo nombre="asistente" tamano={18} />} {etiqueta}
                 </span>
               </motion.button>
             ))}
