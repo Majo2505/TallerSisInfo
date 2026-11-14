@@ -1,0 +1,178 @@
+.mascota {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.mascota * {
+  transform-box: fill-box;
+}
+
+.cuerpo {
+  fill: var(--ucb-marino);
+}
+
+.cuerpoOscuro {
+  fill: #0b3a62;
+}
+
+.zapato {
+  fill: var(--ucb-amarillo);
+}
+
+.mano {
+  fill: #0b3a62;
+}
+
+.puente {
+  fill: none;
+  stroke: var(--ucb-amarillo);
+  stroke-width: 4.2;
+  stroke-linecap: round;
+}
+
+.puentePilar {
+  fill: none;
+  stroke: var(--ucb-amarillo);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.ojo {
+  fill: #ffffff;
+}
+
+.pupila {
+  fill: var(--ucb-marino);
+}
+
+.brillo {
+  fill: #ffffff;
+}
+
+.boca {
+  fill: none;
+  stroke: var(--ucb-amarillo);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.mejilla {
+  fill: var(--ucb-amarillo);
+  opacity: 0.35;
+}
+
+.sombra {
+  fill: var(--ucb-marino);
+  opacity: 0.12;
+}
+
+.parpado {
+  transform-origin: 50% 54%;
+}
+
+.flote,
+.respiro {
+  transform-origin: 50% 100%;
+}
+
+.brazo {
+  transform-origin: 50% 100%;
+}
+
+.piernaA,
+.piernaB {
+  transform-origin: 50% 100%;
+}
+
+/*
+ * Movimiento lento y con pausas: la mascota está en pantallas que se ven seguido, así que se mece en ciclos de
+ * varios segundos y parpadea una sola vez por ciclo. Nada de esto corre si se pidió reducir el movimiento.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .parpado {
+    animation: parpadear 5s ease infinite;
+  }
+
+  .flote {
+    animation: flotar 4.8s var(--curva-movimiento) infinite;
+  }
+
+  .respiro {
+    animation: respirar 4.4s var(--curva-movimiento) infinite;
+  }
+
+  .brazo {
+    animation: saludar 1.4s var(--curva-movimiento) 0.4s 2 both;
+  }
+
+  .piernaA {
+    animation: patalear 2.8s var(--curva-movimiento) infinite;
+  }
+
+  .piernaB {
+    animation: patalear 2.8s var(--curva-movimiento) -1.4s infinite;
+  }
+
+  [data-pensando] .flote {
+    animation-duration: 1.6s;
+  }
+}
+
+@keyframes parpadear {
+  0%,
+  44%,
+  50%,
+  100% {
+    transform: scaleY(1);
+  }
+  47% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes flotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-3deg) translateY(-1px);
+  }
+}
+
+@keyframes saludar {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-38deg);
+  }
+  50% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(-38deg);
+  }
+}
+
+@keyframes patalear {
+  0%,
+  100% {
+    transform: rotate(12deg);
+  }
+  50% {
+    transform: rotate(-14deg);
+  }
+}

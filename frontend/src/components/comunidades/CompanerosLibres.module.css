@@ -4,6 +4,26 @@
   max-width: 980px;
 }
 
+/* Título a la izquierda y, en pantallas anchas, la escena de cómo se coincide a la derecha. */
+.cabecera {
+  display: grid;
+  gap: 18px;
+  align-items: center;
+}
+
+.cabeceraTexto {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .cabecera {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 32px;
+  }
+}
+
 .chip {
   justify-self: start;
   padding: 6px 12px;

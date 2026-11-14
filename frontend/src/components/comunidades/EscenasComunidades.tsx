@@ -35,6 +35,40 @@ export function EscenaCrear() {
   );
 }
 
+/**
+ * «Libres contigo»: cómo se coincide. Dos franjas del día (la tuya y la de Ana) con sus clases; se ilumina el rato
+ * libre que comparten y aparece la afinidad. Decorativa: el texto de al lado ya lo explica.
+ */
+export function EscenaCoincidir() {
+  return (
+    <div className={estilos.coincidir} aria-hidden="true">
+      <div className={estilos.tabla}>
+        <span className={`${estilos.avatarYo} ${estilos.filaUno}`}>Tú</span>
+        <span className={`${estilos.franja} ${estilos.filaUno}`}>
+          <span className={estilos.clase} style={{ left: "0%", width: "34%" }} />
+          <span className={estilos.clase} style={{ left: "68%", width: "32%" }} />
+        </span>
+        <span className={`${estilos.caraAna} ${estilos.filaDos}`}>AQ</span>
+        <span className={`${estilos.franja} ${estilos.filaDos}`}>
+          <span className={estilos.clase} style={{ left: "0%", width: "46%" }} />
+          <span className={estilos.clase} style={{ left: "84%", width: "16%" }} />
+        </span>
+        <span className={estilos.cruce}>
+          <span className={estilos.brillo} />
+        </span>
+      </div>
+      <div className={estilos.horas}>
+        <span>09:00</span>
+        <span>12:00</span>
+      </div>
+      <div className={estilos.resultado}>
+        <span className={estilos.resultadoHora}>Libres juntos · 10:30–11:15</span>
+        <span className={estilos.resultadoAfinidad}>82 % en común</span>
+      </div>
+    </div>
+  );
+}
+
 /** «Descubrir» sin comunidades: un radar que sigue buscando en tu campus. */
 export function EscenaBuscando() {
   return (

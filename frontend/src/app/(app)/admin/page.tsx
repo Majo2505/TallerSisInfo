@@ -8,16 +8,8 @@ import FormularioSancion from "@/components/admin/FormularioSancion";
 import Usuarios from "@/components/admin/Usuarios";
 import FormularioLugar from "@/components/admin/FormularioLugar";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
-import {
-  IconoBandera,
-  IconoBuscar,
-  IconoDestello,
-  IconoMas,
-  IconoPersonas,
-  IconoPin,
-  IconoPulgarAbajo,
-  IconoPulgarArriba,
-} from "@/components/app/Iconos";
+import { IconoBandera, IconoMas, IconoPulgarAbajo, IconoPulgarArriba } from "@/components/app/Iconos";
+import { duo } from "@/components/app/IconosDuo";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import {
   ConsultaRag,
@@ -46,12 +38,12 @@ import estilos from "./admin.module.css";
 
 type Pestana = "catalogo" | "reportes" | "usuarios" | "metricas" | "auditoria";
 
-const PESTANAS: { id: Pestana; nombre: string; Icono: typeof IconoPin }[] = [
-  { id: "catalogo", nombre: "Catálogo", Icono: IconoPin },
-  { id: "reportes", nombre: "Reportes", Icono: IconoBandera },
-  { id: "usuarios", nombre: "Usuarios", Icono: IconoPersonas },
-  { id: "metricas", nombre: "Métricas", Icono: IconoDestello },
-  { id: "auditoria", nombre: "Auditoría RAG", Icono: IconoBuscar },
+const PESTANAS: { id: Pestana; nombre: string; Icono: ReturnType<typeof duo> }[] = [
+  { id: "catalogo", nombre: "Catálogo", Icono: duo("catalogo") },
+  { id: "reportes", nombre: "Reportes", Icono: duo("bandera") },
+  { id: "usuarios", nombre: "Usuarios", Icono: duo("usuarios") },
+  { id: "metricas", nombre: "Métricas", Icono: duo("barras") },
+  { id: "auditoria", nombre: "Auditoría RAG", Icono: duo("lupa") },
 ];
 
 const ETIQUETA_ESTADO: Record<EstadoLugar, string> = { ACTIVO: "Activo", EN_REVISION: "En revisión", INACTIVO: "Inactivo" };
@@ -245,11 +237,11 @@ function PanelAdminContenido() {
   if (!esAdmin(sesion)) return <main className={estilos.pagina} aria-busy="true" />;
 
   const cifras = [
-    { valor: resumen?.lugaresActivos, etiqueta: "Lugares activos", extra: resumen?.lugaresEnRevision ? `${resumen.lugaresEnRevision} en revisión` : undefined, clase: estilos.cifraLugares, Icono: IconoPin },
-    { valor: resumen?.estudiantes, etiqueta: "Estudiantes", clase: estilos.cifraEstudiantes, Icono: IconoPersonas },
-    { valor: resumen?.comunidadesHoy, etiqueta: "Comunidades hoy", clase: estilos.cifraComunidades, Icono: IconoPersonas },
-    { valor: resumen?.consultasRagSemana, etiqueta: "Consultas RAG (7 días)", clase: estilos.cifraRag, Icono: IconoBuscar },
-    { valor: resumen?.reportesPendientes, etiqueta: "Reportes pendientes", clase: estilos.cifraReportes, Icono: IconoBandera },
+    { valor: resumen?.lugaresActivos, etiqueta: "Lugares activos", extra: resumen?.lugaresEnRevision ? `${resumen.lugaresEnRevision} en revisión` : undefined, clase: estilos.cifraLugares, Icono: duo("lugar") },
+    { valor: resumen?.estudiantes, etiqueta: "Estudiantes", clase: estilos.cifraEstudiantes, Icono: duo("birrete") },
+    { valor: resumen?.comunidadesHoy, etiqueta: "Comunidades hoy", clase: estilos.cifraComunidades, Icono: duo("grupo") },
+    { valor: resumen?.consultasRagSemana, etiqueta: "Consultas RAG (7 días)", clase: estilos.cifraRag, Icono: duo("asistente") },
+    { valor: resumen?.reportesPendientes, etiqueta: "Reportes pendientes", clase: estilos.cifraReportes, Icono: duo("bandera") },
   ];
 
   return (
@@ -276,7 +268,7 @@ function PanelAdminContenido() {
         {cifras.map(({ valor, etiqueta, extra, clase, Icono }) => (
           <motion.div key={etiqueta} className={`${estilos.cifra} ${clase}`} whileHover={reducir ? undefined : { y: -3 }}>
             <span className={estilos.cifraIcono} aria-hidden="true">
-              <Icono tamano={18} />
+              <Icono tamano={30} />
             </span>
             <span className={estilos.cifraValor}>{valor === undefined ? "—" : <Odometro valor={valor} />}</span>
             <span className={estilos.cifraEtiqueta}>{etiqueta}</span>
@@ -306,7 +298,7 @@ function PanelAdminContenido() {
                 />
               )}
               <span className={estilos.textoPestana}>
-                <Icono tamano={16} /> {nombre}
+                <Icono tamano={20} /> {nombre}
               </span>
             </motion.button>
           ))}

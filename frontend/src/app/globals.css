@@ -99,6 +99,8 @@ main {
 .hz-lateral { display: grid; gap: 16px; }
 .hz-vista-dia { display: block; }
 .hz-vista-grilla { display: none; }
+/* La grilla baja un poco para que Breaki quede recostado sobre su borde, en la esquina de las horas. */
+.hz-mascota { position: absolute; top: 0; left: 18px; z-index: 2; pointer-events: none; }
 
 .hz-btn { font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 0 18px; border-radius: 14px; border: 1.5px solid var(--borde); background: var(--superficie); color: var(--ucb-marino); font-weight: 700; cursor: pointer; transition: transform 160ms var(--curva-salida), background-color 200ms ease, box-shadow 200ms ease; }
 .hz-btn:active:not(:disabled) { transform: scale(0.97); }
@@ -184,7 +186,7 @@ main {
   .hz-head-acciones { grid-column: 2; grid-row: 1; align-self: start; }
   .hz-cifras { grid-column: 1 / -1; }
   .hz-vista-dia { display: none; }
-  .hz-vista-grilla { display: block; }
+  .hz-vista-grilla { display: block; position: relative; padding-top: 89px; }
   .hz-lateral { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 

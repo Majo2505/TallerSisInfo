@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { ErrorApi } from "@/lib/api";
 import { Puente, duracionMin, tuTiempo } from "@/lib/puentes";
 import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendaciones";
-import { IconoDestello, IconoFlechaDerecha } from "./Iconos";
+import { IconoFlechaDerecha } from "./Iconos";
+import Mascota from "./Mascota";
 import { RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import estilos from "./ChatRecomendaciones.module.css";
 import TarjetaRecomendacion from "./TarjetaRecomendacion";
@@ -73,9 +74,26 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
   return (
     <section className={estilos.chat} aria-label="Chat con el asistente">
       <div className={estilos.hilo} role="log" aria-live="polite">
+        {mensajes.length === 0 && (
+          <motion.div
+            className={estilos.presentacion}
+            initial={reducir ? false : { opacity: 0, transform: "translateY(10px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            transition={{ duration: 0.5, ease: SALIDA }}
+          >
+            <span className={estilos.mascotaGrande}>
+              <Mascota tamano={92} saludar />
+            </span>
+            <span className={estilos.presentacionTexto}>
+              <strong>Soy Breaki</strong>
+              <span>Conozco cada rincón del campus y cuánto dura tu puente.</span>
+            </span>
+          </motion.div>
+        )}
+
         <motion.div className={`${estilos.fila} ${estilos.filaIa}`} {...entrada}>
           <span className={estilos.avatar} aria-hidden="true">
-            <IconoDestello tamano={16} />
+            <Mascota tamano={34} />
           </span>
           <div className={estilos.burbujaIa}>
             ¡Hola! Cuéntame qué te gustaría hacer
@@ -115,7 +133,7 @@ export default function ChatRecomendaciones({ puente }: { puente?: Puente }) {
             ) : (
               <motion.div key={m.id} className={`${estilos.fila} ${estilos.filaIa}`} {...entrada} layout={!reducir}>
                 <span className={estilos.avatar} aria-hidden="true">
-                  <IconoDestello tamano={16} />
+                  <Mascota tamano={34} pensando={m.estado === "pensando"} />
                 </span>
                 <div className={estilos.respuesta}>
                   {m.estado === "pensando" && (

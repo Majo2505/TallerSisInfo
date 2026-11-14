@@ -41,11 +41,48 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 11px;
-  background: var(--ucb-marino);
-  color: var(--ucb-amarillo);
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--ucb-amarillo-suave);
+}
+
+/* Chat vacío: Breaki se presenta arriba, con un halo amarillo detrás. */
+.presentacion {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 4px 4px 10px;
+}
+
+.mascotaGrande {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 116px;
+  height: 116px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 60%, rgba(253, 213, 55, 0.4), rgba(253, 213, 55, 0) 68%);
+}
+
+.presentacionTexto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.presentacionTexto strong {
+  color: var(--ucb-marino);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.presentacionTexto span {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .respuesta {
