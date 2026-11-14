@@ -157,6 +157,28 @@
   max-width: 820px;
 }
 
+/* Crear: el formulario y, al lado, una escena que muestra cómo funciona (solo donde hay espacio). */
+.crearFila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+
+.crearFila > :last-child {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .crearFila {
+    grid-template-columns: minmax(0, 820px) minmax(260px, 1fr);
+    align-items: stretch;
+  }
+
+  .crearFila > :last-child {
+    display: grid;
+  }
+}
+
 .chip {
   justify-self: start;
   padding: 6px 12px;
