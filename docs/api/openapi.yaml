@@ -1646,10 +1646,12 @@ paths:
       operationId: buscarCompaneros
       summary: Compañeros con tiempo libre compatible con uno de tus puentes.
       description: |
-        Cruce por franja horaria: mismo día y 30 minutos o más en común. Orden por compatibilidad: más minutos en común
-        primero; en empate, más franjas compartidas en la semana. Solo cruza estudiantes de tu sede activa que aceptaron
-        aparecer, y exige que tú también lo hayas aceptado. Siempre 200 si el puente es tuyo: mira `estado`
-        (`OK`, `SIN_RESULTADOS`, `SIN_ZONA` o `NO_VISIBLE`). No devuelve correos ni ids.
+        HU12: quienes coinciden contigo en tiempo libre **y** en el test de afinidad. Tiempo: mismo día y 30 minutos o
+        más en común. Test: afinidad de 35 o más y al menos una respuesta en común. Si falla una de las dos, no aparece.
+        Orden por `compatibilidad` (60 % test + 40 % tiempo). Solo cruza estudiantes de tu sede activa que aceptaron
+        aparecer y que hicieron el test; exige que tú también. Siempre 200 si el puente es tuyo: mira `estado`
+        (`OK`, `SIN_RESULTADOS`, `SIN_ZONA`, `NO_VISIBLE` o `SIN_TEST`). Por privacidad, solo el nombre corto y nunca el
+        correo; el `usuarioId` sirve para saludar (`POST /api/conexiones`).
       security:
         - Bearer: []
       parameters:
@@ -1723,6 +1725,159 @@ paths:
                 $ref: '#/components/schemas/ErrorNegocioDto'
         '401':
           $ref: '#/components/responses/NoAutorizado'
+  /api/afinidad/test:
+    get:
+      tags: [Matching]
+      operationId: obtenerTestAfinidad
+      summary: Las preguntas del test de afinidad (unos 2 minutos) y, si ya lo hiciste, tus respuestas.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Test. `completado` es `false` si no lo hiciste o si es de una versión vieja.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAfinidadDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+    put:
+      tags: [Matching]
+      operationId: guardarTestAfinidad
+      summary: Guarda o reemplaza tus respuestas del test.
+      description: |
+        Todas las preguntas son obligatorias salvo las de «Valores y creencias». En las `UNICA`, exactamente una opción;
+        en las `MULTIPLE`, de 1 a `maximo`, sin repetir. Rehacerlo conserva la fecha de la primera vez.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarTestRequest'
+      responses:
+        '200':
+          description: Test guardado (`completado` en `true`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestAfinidadDto'
+        '400':
+          description: Falta una obligatoria, pregunta u opción que no existe, repetidas o más del máximo (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+  /api/conexiones:
+    get:
+      tags: [Matching]
+      operationId: listarConexiones
+      summary: Saludos recibidos y enviados (pendientes) y conexiones aceptadas.
+      description: Las aceptadas traen el nombre completo y el correo de la otra persona; el resto, solo el nombre corto.
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Tus conexiones.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConexionesDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+    post:
+      tags: [Matching]
+      operationId: saludar
+      summary: Saluda a alguien que «Libres contigo» te muestra para uno de tus puentes.
+      description: |
+        Se vuelve a calcular el matching: solo se puede saludar a quien coincide contigo en ese momento. Una conexión por
+        pareja (en cualquier sentido) y hasta 5 saludos sin respuesta. Avisa al otro con `CONEXION_SOLICITADA`.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaludarRequest'
+      responses:
+        '201':
+          description: Saludo enviado (`PENDIENTE`, sin correo).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConexionDto'
+        '400':
+          description: Faltan datos o te saludas a ti mismo (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: El puente no existe o no es tuyo (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: Ya hay una conexión (`YA_EXISTE`), 5 saludos sin respuesta (`DEMASIADOS_PENDIENTES`) o ya no coinciden (`NO_COINCIDEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/conexiones/{id}:
+    put:
+      tags: [Matching]
+      operationId: responderConexion
+      summary: Acepta o rechaza un saludo que recibiste.
+      description: |
+        Solo quien lo recibió, una vez. Al aceptar, los dos ven el nombre completo y el correo del otro y quien saludó
+        recibe `CONEXION_ACEPTADA`. El rechazo es silencioso: a quien saludó se le sigue mostrando `PENDIENTE`.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int32, example: 3 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResponderConexionRequest'
+      responses:
+        '200':
+          description: Saludo respondido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConexionDto'
+        '400':
+          description: Falta `aceptar` o es tu propio saludo (`VALIDACION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: El saludo no existe o no es tuyo (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: Ya estaba respondido (`YA_RESPONDIDA`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /health:
     get:
       tags: [Health]
@@ -2291,7 +2446,7 @@ components:
           example: ENTRE_CLASES
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13) o `COMUNIDAD_CERRADA` (HU14).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13), `COMUNIDAD_CERRADA` (HU14) o `CONEXION_SOLICITADA` y `CONEXION_ACEPTADA` (HU12, saludos de Libres contigo).
       properties:
         id:
           type: integer
@@ -2300,7 +2455,7 @@ components:
           example: 31
         tipo:
           type: string
-          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA]
+          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA, CONEXION_SOLICITADA, CONEXION_ACEPTADA]
           description: Tipo de aviso.
           example: PUENTE_DISPONIBLE
         mensaje:
@@ -2814,8 +2969,10 @@ components:
         visible: { type: boolean, example: true }
     CompaneroCompatibleDto:
       type: object
+      description: Coincide contigo en tiempo libre y en el test. Sin correo ni nombre completo hasta que se conecten.
       properties:
-        nombre: { type: string, example: Ana Quiroga }
+        usuarioId: { type: integer, format: int32, example: 4, description: Para saludar con `POST /api/conexiones`. }
+        nombre: { type: string, example: Ana Q., description: Nombre corto (nombre y la inicial del apellido). }
         carrera: { type: string, nullable: true, example: Ingeniería de Sistemas }
         semestre: { type: integer, format: int32, nullable: true, example: 5 }
         horaInicio: { type: string, example: '09:30:00', description: Inicio del tramo en común. }
@@ -2823,10 +2980,28 @@ components:
         minutosEnComun: { type: integer, format: int32, minimum: 30, example: 90 }
         porcentaje: { type: integer, format: int32, minimum: 1, maximum: 100, example: 100 }
         franjasCompartidas: { type: integer, format: int32, minimum: 1, example: 1 }
+        afinidad: { type: integer, format: int32, minimum: 35, maximum: 100, example: 74, description: Qué tanto se parecen según el test. }
+        compatibilidad: { type: integer, format: int32, minimum: 0, maximum: 100, example: 84, description: 60 % afinidad + 40 % tiempo (`porcentaje`). }
+        enComun:
+          type: array
+          maxItems: 3
+          description: Lo que más los conecta.
+          items: { type: string }
+          example: [Videojuegos, El mismo humor, Hacer cosas juntos]
+        conexion:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ConexionResumenDto'
+    ConexionResumenDto:
+      type: object
+      properties:
+        id: { type: integer, format: int32, example: 2 }
+        estado: { type: string, enum: [PENDIENTE, ACEPTADA, RECHAZADA], description: Un saludo tuyo rechazado se muestra PENDIENTE. }
+        enviadaPorMi: { type: boolean, example: true }
     ResultadoMatchingDto:
       type: object
       properties:
-        estado: { type: string, enum: [OK, SIN_RESULTADOS, SIN_ZONA, NO_VISIBLE] }
+        estado: { type: string, enum: [OK, SIN_RESULTADOS, SIN_ZONA, NO_VISIBLE, SIN_TEST] }
         mensaje: { type: string, nullable: true, example: Por ahora nadie de tu campus está libre contigo a esa hora. }
         puente:
           $ref: '#/components/schemas/PuenteDto'
@@ -2836,6 +3011,98 @@ components:
           maxItems: 20
           items:
             $ref: '#/components/schemas/CompaneroCompatibleDto'
+    OpcionTestDto:
+      type: object
+      properties:
+        id: { type: string, example: videojuegos }
+        texto: { type: string, example: Jugar videojuegos }
+    PreguntaTestDto:
+      type: object
+      properties:
+        id: { type: string, example: planes }
+        bloque: { type: string, example: Tus gustos }
+        texto: { type: string, example: ¿Qué harías con una hora libre? }
+        tipo: { type: string, enum: [UNICA, MULTIPLE] }
+        maximo: { type: integer, format: int32, example: 3 }
+        opcional: { type: boolean, example: false }
+        opciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpcionTestDto'
+    TestAfinidadDto:
+      type: object
+      properties:
+        version: { type: integer, format: int32, example: 1 }
+        minutosEstimados: { type: integer, format: int32, example: 2 }
+        preguntas:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreguntaTestDto'
+        completado: { type: boolean, example: true }
+        respuestas:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: array
+            items: { type: string }
+          example: { planes: [videojuegos, musica], grupo: [rompo] }
+        actualizadoEn: { type: string, format: date-time, nullable: true }
+    GuardarTestRequest:
+      type: object
+      required: [respuestas]
+      properties:
+        respuestas:
+          type: object
+          description: Id de pregunta → ids de las opciones elegidas.
+          additionalProperties:
+            type: array
+            items: { type: string }
+          example: { planes: [videojuegos, musica], grupo: [rompo] }
+    ConexionDto:
+      type: object
+      properties:
+        id: { type: integer, format: int32, example: 3 }
+        estado: { type: string, enum: [PENDIENTE, ACEPTADA, RECHAZADA] }
+        enviadaPorMi: { type: boolean, example: false }
+        nombre: { type: string, example: Ana Q., description: Completo solo si está ACEPTADA. }
+        carrera: { type: string, nullable: true, example: Ingeniería de Sistemas }
+        semestre: { type: integer, format: int32, nullable: true, example: 5 }
+        compatibilidad: { type: integer, format: int32, example: 84 }
+        enComun:
+          type: array
+          items: { type: string }
+          example: [Videojuegos]
+        diaSemana: { type: integer, format: int32, minimum: 1, maximum: 6, example: 1 }
+        horaInicio: { type: string, example: '09:30:00' }
+        horaFin: { type: string, example: '10:30:00' }
+        correo: { type: string, nullable: true, example: ana.quiroga@ucb.edu.bo, description: Solo si está ACEPTADA. }
+        creadaEn: { type: string, format: date-time }
+    ConexionesDto:
+      type: object
+      properties:
+        recibidas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConexionDto'
+        enviadas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConexionDto'
+        aceptadas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConexionDto'
+    SaludarRequest:
+      type: object
+      required: [usuarioId, puenteId]
+      properties:
+        usuarioId: { type: integer, format: int32, example: 4 }
+        puenteId: { type: integer, format: int32, example: 21 }
+    ResponderConexionRequest:
+      type: object
+      required: [aceptar]
+      properties:
+        aceptar: { type: boolean, example: true }
     ActividadExtraidaDto:
       type: object
       description: Datos de la actividad. Un campo en `null` es un dato que falta (ver `faltantes`).
