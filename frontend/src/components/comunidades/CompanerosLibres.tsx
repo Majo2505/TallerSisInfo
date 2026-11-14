@@ -20,6 +20,7 @@ import { CompaneroCompatible, ResultadoMatching, buscarCompaneros, guardarConfig
 import { Puente, duracionMin, esDespuesDeClases, hhmm, listarPuentes } from "@/lib/puentes";
 import { useEventoEnVivo } from "@/lib/tiempoReal";
 import estilos from "./CompanerosLibres.module.css";
+import { EscenaCoincidir } from "./EscenasComunidades";
 import TestAfinidad from "./TestAfinidad";
 
 const DIAS = ["", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -162,13 +163,18 @@ export default function CompanerosLibres() {
 
   return (
     <section className={estilos.seccion} aria-labelledby="libres-titulo">
-      <span className={estilos.chip}>Tiempo libre y gustos en común</span>
-      <h2 id="libres-titulo" className={estilos.subtitulo}>
-        Compañeros libres contigo
-      </h2>
-      <p className={estilos.texto}>
-        Gente de tu campus que está libre a la misma hora que tú y con quien tienes cosas en común. Salúdala y, si acepta, coordinen para verse.
-      </p>
+      <div className={estilos.cabecera}>
+        <div className={estilos.cabeceraTexto}>
+          <span className={estilos.chip}>Tiempo libre y gustos en común</span>
+          <h2 id="libres-titulo" className={estilos.subtitulo}>
+            Compañeros libres contigo
+          </h2>
+          <p className={estilos.texto}>
+            Gente de tu campus que está libre a la misma hora que tú y con quien tienes cosas en común. Salúdala y, si acepta, coordinen para verse.
+          </p>
+        </div>
+        <EscenaCoincidir />
+      </div>
 
       <AnimatePresence mode="wait" initial={false}>
         {carga.tipo === "cargando" && (
