@@ -1,14 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "motion/react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import FondoVivo from "@/components/app/FondoVivo";
 import { IconoFlechaDerecha } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { useSesion } from "@/lib/useSesion";
 import { rutaDeEntrada } from "@/services/authService";
-import { Icono, Informacion } from "./Iconos";
+import fotoEstudiantes from "./fotos/estudiantes.webp";
+import fotoValeria from "./fotos/valeria.webp";
+import { Icono } from "./Iconos";
 import styles from "./Onboarding.module.css";
 import { PASOS } from "./pasos";
 
@@ -86,96 +88,158 @@ export default function Onboarding({ forzar = false }: Props) {
   }
 
   const variantes = {
-    entra: (dir: number) => ({ opacity: 0, x: reducir ? 0 : dir * 60, filter: "blur(8px)" }),
+    entra: (dir: number) => ({ opacity: 0, x: reducir ? 0 : dir * 40, filter: "blur(6px)" }),
     centro: { opacity: 1, x: 0, filter: "blur(0px)" },
-    sale: (dir: number) => ({ opacity: 0, x: reducir ? 0 : dir * -60, filter: "blur(8px)" }),
+    sale: (dir: number) => ({ opacity: 0, x: reducir ? 0 : dir * -40, filter: "blur(6px)" }),
   };
 
   return (
-    <div className={styles.pantalla} style={{ "--brillo": paso.brillo } as React.CSSProperties}>
-      <FondoVivo />
+    <div className={styles.pantalla}>
+      {/* La foto y el velo se pintan aunque se esté verificando la sesión: así no hay pantalla vacía. */}
+      <motion.div
+        className={styles.foto}
+        initial={reducir ? false : { scale: 1.08, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.6, ease: SALIDA }}
+        aria-hidden="true"
+      >
+        <Image
+          src={fotoEstudiantes}
+          alt=""
+          fill
+          placeholder="blur"
+          fetchPriority="high"
+          sizes="100vw"
+          className={styles.fotoImagen}
+        />
+      </motion.div>
+      <div className={styles.velo} aria-hidden="true" />
+
       {!verificando && (
-        <main className={styles.contenedor}>
+        <div className={styles.contenedor}>
           <header className={styles.cabecera}>
             <span className={styles.marca}>
               Break<span>U</span>
             </span>
-            <button type="button" className={styles.saltar} onClick={terminar}>
-              Saltar
-            </button>
-          </header>
 
-          <AnimatePresence mode="wait" custom={direccion} initial={false}>
-            <motion.section
-              key={indice}
-              className={styles.contenido}
-              aria-live="polite"
-              custom={direccion}
-              variants={variantes}
-              initial="entra"
-              animate="centro"
-              exit="sale"
-              transition={{ duration: 0.38, ease: SALIDA }}
-              drag={reducir ? false : "x"}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.18}
-              onDragEnd={alSoltar}
-            >
-              {}
-              <div className={styles.ilustracion} aria-hidden="true">
-                <span className={styles.anillo1} />
-                <span className={styles.anillo2} />
-                <span className={styles.orbita}>
-                  <span className={styles.satelite} />
-                </span>
-                <motion.span
-                  className={styles.icono}
-                  initial={reducir ? false : { scale: 0.8, rotate: -12 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", bounce: 0.45, duration: 0.7, delay: 0.1 }}
-                >
-                  <Icono nombre={paso.icono} tamano={44} />
-                </motion.span>
-              </div>
-
-              <h1 className={styles.titulo}>{paso.titulo}</h1>
-              <p className={styles.texto}>{paso.texto}</p>
-              <p className={styles.nota}>
-                <Informacion />
-                <span>{paso.nota}</span>
-              </p>
-            </motion.section>
-          </AnimatePresence>
-
-          <footer className={styles.pie}>
-            <div className={styles.puntos}>
-              {PASOS.map((_, i) => (
+            <nav className={styles.pasos} aria-label="Pasos de la introducción">
+              {PASOS.map((p, i) => (
                 <button
-                  key={i}
+                  key={p.etiqueta}
                   type="button"
-                  className={styles.punto}
-                  aria-label={`Paso ${i + 1} de ${PASOS.length}`}
+                  className={styles.pasoEnlace}
                   aria-current={i === indice ? "step" : undefined}
                   onClick={() => irA(i)}
                 >
-                  {i === indice && <motion.span layoutId="punto-activo" className={styles.puntoActivo} transition={RESORTE_TOQUE} />}
+                  {p.etiqueta}
+                  {i === indice && (
+                    <motion.span layoutId="paso-activo" className={styles.pasoSubrayado} transition={RESORTE_TOQUE} />
+                  )}
                 </button>
               ))}
-            </div>
-            <motion.button
-              type="button"
-              className={styles.boton}
-              onClick={siguiente}
-              whileTap={{ scale: 0.97 }}
-              transition={RESORTE_TOQUE}
-            >
-              <span>{paso.boton}</span>
-              <span className={styles.botonFlecha}>
+            </nav>
+
+            <button type="button" className={styles.entrar} onClick={terminar} aria-label="Iniciar sesión">
+              <span>Iniciar sesión</span>
+              <IconoFlechaDerecha tamano={16} />
+            </button>
+          </header>
+
+          {/* En el celular, la barra de pasos se vuelve una línea de progreso. */}
+          <div
+            className={styles.progreso}
+            role="progressbar"
+            aria-label="Progreso de la introducción"
+            aria-valuemin={1}
+            aria-valuemax={PASOS.length}
+            aria-valuenow={indice + 1}
+            aria-valuetext={`Paso ${indice + 1} de ${PASOS.length}: ${paso.etiqueta}`}
+          >
+            {PASOS.map((p, i) => (
+              <button
+                key={p.etiqueta}
+                type="button"
+                className={styles.segmento}
+                data-lleno={i <= indice || undefined}
+                aria-label={`Ir al paso ${i + 1}: ${p.etiqueta}`}
+                onClick={() => irA(i)}
+              />
+            ))}
+          </div>
+
+          <main className={styles.principal}>
+            <AnimatePresence mode="wait" custom={direccion} initial={false}>
+              <motion.section
+                key={indice}
+                className={styles.contenido}
+                aria-live="polite"
+                custom={direccion}
+                variants={variantes}
+                initial="entra"
+                animate="centro"
+                exit="sale"
+                transition={{ duration: 0.34, ease: SALIDA }}
+                drag={reducir ? false : "x"}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.14}
+                onDragEnd={alSoltar}
+              >
+                <h1 className={styles.titulo}>
+                  {paso.titulo[0]}
+                  <span className={styles.acento}>{paso.titulo[1]}</span>
+                  {paso.titulo[2]}
+                </h1>
+                <p className={styles.texto}>{paso.texto}</p>
+                <p className={styles.nota}>
+                  <Icono nombre={paso.icono} tamano={18} />
+                  <span>{paso.nota}</span>
+                </p>
+              </motion.section>
+            </AnimatePresence>
+
+            <div className={styles.acciones}>
+              <motion.button
+                type="button"
+                className={styles.primario}
+                onClick={siguiente}
+                whileTap={{ scale: 0.97 }}
+                transition={RESORTE_TOQUE}
+              >
+                <span>{paso.boton}</span>
                 <IconoFlechaDerecha tamano={18} />
+              </motion.button>
+              {indice > 0 ? (
+                <button type="button" className={styles.secundario} onClick={anterior}>
+                  Atrás
+                </button>
+              ) : (
+                <button type="button" className={styles.secundario} onClick={terminar}>
+                  <span>Ya tengo cuenta</span>
+                  <IconoFlechaDerecha tamano={16} />
+                </button>
+              )}
+            </div>
+          </main>
+
+          <motion.figure
+            className={styles.testimonio}
+            initial={reducir ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: SALIDA, delay: 0.5 }}
+          >
+            <figcaption className={styles.autora}>
+              <Image src={fotoValeria} alt="" width={48} height={48} className={styles.avatar} />
+              <span>
+                <strong>Valeria Quispe</strong>
+                <small>Ing. de Sistemas · 5.º semestre</small>
               </span>
-            </motion.button>
-          </footer>
-        </main>
+            </figcaption>
+            <blockquote className={styles.cita}>
+              «Los martes tenía dos horas muertas y siempre terminaba en el celular. Ahora BreakU me avisa cuando empieza
+              mi puente y ya sé a dónde ir: la biblio para repasar o la cafetería con mis amigas.»
+            </blockquote>
+          </motion.figure>
+        </div>
       )}
     </div>
   );

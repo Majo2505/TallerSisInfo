@@ -1,73 +1,164 @@
+/* Onboarding: portada a pantalla completa con foto, como la página de entrada de un producto. */
+
 .pantalla {
   position: relative;
-  overflow: hidden;
   isolation: isolate;
-  min-height: 100dvh;
+  overflow: hidden;
+  min-height: 100svh;
   background: var(--ucb-marino);
   color: #fff;
-  touch-action: pan-y;
 }
 
+.pantalla ::selection {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+/* ---------- Foto y velo ---------- */
+
+.foto {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  transform-origin: 70% 40%;
+}
+
+.fotoImagen {
+  object-fit: cover;
+  object-position: 68% 40%;
+}
+
+/* El velo lleva el marino de la UCB: oscurece donde va el texto y deja ver a los estudiantes. */
+.velo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(5, 40, 69, 0.55) 0%, rgba(5, 40, 69, 0) 18%),
+    linear-gradient(0deg, rgba(5, 40, 69, 0.7) 0%, rgba(5, 40, 69, 0) 34%),
+    linear-gradient(
+      90deg,
+      rgba(5, 40, 69, 0.96) 0%,
+      rgba(5, 40, 69, 0.86) 30%,
+      rgba(5, 40, 69, 0.42) 56%,
+      rgba(5, 40, 69, 0.08) 78%
+    );
+}
+
+/* ---------- Estructura ---------- */
+
 .contenedor {
-  position: relative;
   box-sizing: border-box;
-  min-height: 100dvh;
-  max-width: 560px;
+  min-height: 100svh;
+  width: 100%;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  padding:
+    max(20px, env(safe-area-inset-top))
+    clamp(16px, 4.5vw, 72px)
+    max(clamp(20px, 4vh, 48px), env(safe-area-inset-bottom));
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .cabecera {
+  grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 24px;
 }
 
 .marca {
+  flex-shrink: 0;
   font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
 }
 
 .marca span {
   color: var(--ucb-amarillo);
 }
 
-.saltar {
+/* Los pasos hacen de menú, como las secciones de una página. */
+.pasos {
+  display: flex;
+  gap: clamp(8px, 2.4vw, 36px);
+}
+
+.pasoEnlace {
+  position: relative;
   min-height: 44px;
-  padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 200ms ease;
+}
+
+.pasoEnlace[aria-current="step"] {
+  color: #fff;
+}
+
+.pasoSubrayado {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--ucb-amarillo);
+}
+
+.entrar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: #fff;
   font: inherit;
+  font-size: 0.95rem;
   font-weight: 700;
-  font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 200ms ease, transform 160ms var(--curva-salida);
+  touch-action: manipulation;
+  user-select: none;
+  transition: background-color 200ms ease, transform 140ms var(--curva-salida);
 }
 
-.saltar:active {
-  transform: scale(0.96);
+.entrar:active {
+  transform: scale(0.97);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .saltar:hover {
-    background: rgba(255, 255, 255, 0.16);
-  }
+/* Solo en el celular: los pasos como una línea de progreso. */
+.progreso {
+  display: none;
+}
+
+.principal {
+  grid-row: 3;
+  align-self: center;
+  max-width: 660px;
+  padding: clamp(32px, 8vh, 96px) 0 clamp(28px, 5vh, 56px);
 }
 
 .contenido {
-  align-self: center;
   display: grid;
-  gap: 16px;
+  gap: 20px;
   justify-items: start;
-  padding: 28px 0;
   cursor: grab;
   touch-action: pan-y;
 }
@@ -76,220 +167,316 @@
   cursor: grabbing;
 }
 
-.ilustracion {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 168px;
-  height: 168px;
-  margin-bottom: 12px;
-}
-
-.anillo1,
-.anillo2 {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--brillo) 45%, transparent);
-}
-
-.anillo2 {
-  inset: 26px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brillo) 22%, transparent), transparent 70%);
-  border-color: color-mix(in srgb, var(--brillo) 70%, transparent);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .anillo1 {
-    animation: ondear 3.2s var(--curva-salida) infinite;
-  }
-
-  .orbita {
-    animation: girar 7s linear infinite;
-  }
-}
-
-@keyframes ondear {
-  0% {
-    transform: scale(0.85);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.25);
-    opacity: 0;
-  }
-}
-
-@keyframes girar {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.orbita {
-  position: absolute;
-  inset: 10px;
-  border-radius: 50%;
-}
-
-.satelite {
-  position: absolute;
-  top: -5px;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  margin-left: -5px;
-  border-radius: 50%;
-  background: var(--brillo);
-  box-shadow: 0 0 14px var(--brillo);
-}
-
-.icono {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 84px;
-  height: 84px;
-  border-radius: 26px;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  color: var(--brillo);
-  box-shadow: 0 20px 40px -16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-
 .titulo {
   margin: 0;
+  max-width: 13ch;
   font-family: var(--fuente-titulo), system-ui, sans-serif;
-  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-size: clamp(2.35rem, 1.1rem + 4.4vw, 4.75rem);
   font-weight: 800;
   line-height: 1.02;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.038em;
   text-wrap: balance;
+}
+
+.acento {
+  color: var(--ucb-amarillo);
 }
 
 .texto {
   margin: 0;
-  max-width: 34ch;
-  font-size: 1.1rem;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.82);
+  max-width: 46ch;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: clamp(1rem, 0.94rem + 0.3vw, 1.175rem);
+  line-height: 1.6;
+  text-wrap: pretty;
 }
 
 .nota {
-  margin: 6px 0 0;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  font-weight: 700;
-  font-size: 0.92rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.93rem;
+  font-weight: 600;
 }
 
 .nota svg {
   flex-shrink: 0;
-  color: var(--brillo);
+  color: var(--ucb-amarillo);
 }
 
-.pie {
-  display: grid;
-  gap: 18px;
-}
+/* ---------- Botones ---------- */
 
-.puntos {
+.acciones {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
 }
 
-.punto {
-  position: relative;
-  width: 26px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-
-.punto::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 19px;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.punto[aria-current="step"] {
-  width: 46px;
-}
-
-.puntoActivo {
-  position: absolute;
-  z-index: 1;
-  left: 0;
-  right: 0;
-  top: 19px;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--ucb-amarillo);
-  box-shadow: 0 0 12px rgba(253, 213, 55, 0.6);
-}
-
-.boton {
-  position: relative;
-  overflow: hidden;
-  display: flex;
+.primario,
+.secundario {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 58px;
-  padding: 0 8px 0 22px;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.primario {
+  padding: 0 24px 0 28px;
   border: 0;
-  border-radius: 18px;
   background: var(--ucb-amarillo);
   color: var(--ucb-marino);
-  font: inherit;
-  font-weight: 800;
-  font-size: 1.08rem;
-  cursor: pointer;
-  box-shadow: 0 14px 30px -12px rgba(253, 213, 55, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: 0 14px 32px -14px rgba(253, 213, 55, 0.7);
 }
 
-.botonFlecha {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
-  background: var(--ucb-marino);
-  color: var(--ucb-amarillo);
-  transition: transform 300ms var(--curva-salida);
+.primario svg {
+  transition: transform 220ms var(--curva-salida);
 }
+
+.secundario {
+  padding: 0 24px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  background: rgba(5, 40, 69, 0.18);
+  color: #fff;
+  transition: background-color 200ms ease, border-color 200ms ease, transform 140ms var(--curva-salida);
+}
+
+.secundario:active {
+  transform: scale(0.97);
+}
+
+.pasoEnlace:focus-visible,
+.entrar:focus-visible,
+.primario:focus-visible,
+.secundario:focus-visible,
+.segmento:focus-visible {
+  outline: 3px solid var(--ucb-amarillo);
+  outline-offset: 3px;
+}
+
+/* ---------- Testimonio ---------- */
+
+.testimonio {
+  grid-row: 4;
+  align-self: end;
+  box-sizing: border-box;
+  max-width: 470px;
+  margin: 0;
+  padding: 20px 22px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  /* El vidrio esmerilado separa la cita de la foto sin taparla. */
+  background: rgba(5, 40, 69, 0.52);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.5);
+}
+
+.autora {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--ucb-amarillo);
+  object-fit: cover;
+}
+
+.autora > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.autora strong {
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.autora small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.cita {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ---------- Hover (solo con mouse) ---------- */
 
 @media (hover: hover) and (pointer: fine) {
-  .boton:hover .botonFlecha {
+  .pasoEnlace:hover {
+    color: #fff;
+  }
+
+  .entrar:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .primario:hover svg {
     transform: translateX(3px);
+  }
+
+  .secundario:hover {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 
-@media (min-width: 900px) {
-  .contenedor {
-    padding-top: 36px;
-    padding-bottom: 48px;
+/* ---------- Tablet y celular ---------- */
+
+@media (max-width: 860px) {
+  .pasos {
+    display: none;
+  }
+
+  .progreso {
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 18px;
+  }
+
+  .segmento {
+    position: relative;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  /* La línea visible es fina; el botón es más alto para que se pueda tocar. */
+  .segmento::before {
+    content: "";
+    position: absolute;
+    inset: 9px 0;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.28);
+    transition: background-color 260ms var(--curva-salida);
+  }
+
+  .segmento[data-lleno]::before {
+    background: var(--ucb-amarillo);
+  }
+
+  /* En vertical, la foto ocupa la parte de arriba (sin ampliarla de más) y se funde con el marino. */
+  .foto,
+  .velo {
+    bottom: auto;
+    height: min(64svh, 640px);
+  }
+
+  .fotoImagen {
+    object-position: 70% 50%;
+  }
+
+  .velo {
+    background:
+      linear-gradient(180deg, rgba(5, 40, 69, 0.72) 0%, rgba(5, 40, 69, 0.05) 26%),
+      linear-gradient(0deg, var(--ucb-marino) 0%, rgba(5, 40, 69, 0.82) 22%, rgba(5, 40, 69, 0.2) 52%, rgba(5, 40, 69, 0) 70%);
+  }
+
+  .principal {
+    align-self: end;
+    padding: max(calc(min(64svh, 640px) - 230px), 120px) 0 24px;
   }
 
   .titulo {
-    font-size: 3.4rem;
+    max-width: 15ch;
   }
 
-  .ilustracion {
-    width: 200px;
-    height: 200px;
+  .acciones {
+    margin-top: 26px;
+  }
+
+  .primario,
+  .secundario {
+    flex: 1 1 auto;
+  }
+
+  .testimonio {
+    max-width: none;
+    padding: 16px 18px 18px;
+  }
+
+  .cita {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    font-size: 0.9rem;
+  }
+}
+
+/* Pantallas bajas de escritorio (laptops de 768 px): todo entra sin desplazar. */
+@media (min-width: 861px) and (max-height: 820px) {
+  .principal {
+    padding: 20px 0 24px;
+  }
+
+  .contenido {
+    gap: 14px;
+  }
+
+  .titulo {
+    font-size: clamp(2.35rem, 0.8rem + 4.2vw, 4rem);
+  }
+
+  .acciones {
+    margin-top: 22px;
+  }
+
+  .cita {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 359px) {
+  .entrar span {
+    display: none;
+  }
+
+  .entrar {
+    width: 46px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .acciones {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primario svg,
+  .segmento::before {
+    transition: none;
   }
 }
