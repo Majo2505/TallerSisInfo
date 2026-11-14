@@ -18,6 +18,8 @@ public static class ReglasPurga
         Participaciones,
         /// <summary>Todas sus notificaciones (apuntan a comunidades, eventos, reportes y sanciones).</summary>
         Notificaciones,
+        /// <summary>HU12: sus saludos (enviados y recibidos), los avisos de OTROS que apuntan a ellos y su test de afinidad.</summary>
+        Conexiones,
         /// <summary>Sus eventos: antes, las notificaciones y los reportes de OTROS usuarios que apuntan a ellos; las fotos se borran en cascada.</summary>
         Eventos,
         /// <summary>Los reportes que envió (las notificaciones que apuntan a ellos ya se borraron).</summary>

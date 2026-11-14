@@ -48,6 +48,7 @@ public class PurgaUsuarioService
                         actualizadas.AddRange(await _repo.EliminarParticipacionesAsync(usuarioId, ct));
                         break;
                     case ReglasPurga.Paso.Notificaciones: await _repo.EliminarNotificacionesAsync(usuarioId, ct); break;
+                    case ReglasPurga.Paso.Conexiones: await _repo.EliminarConexionesAsync(usuarioId, ct); break;
                     case ReglasPurga.Paso.Eventos: await _repo.EliminarEventosAsync(usuarioId, ct); break;
                     case ReglasPurga.Paso.Reportes: await _repo.EliminarReportesAsync(usuarioId, ct); break;
                     case ReglasPurga.Paso.Recomendaciones: await _repo.EliminarRecomendacionesAsync(usuarioId, ct); break;

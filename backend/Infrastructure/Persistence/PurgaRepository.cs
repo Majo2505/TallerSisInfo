@@ -68,6 +68,18 @@ public sealed class PurgaRepository : IPurgaRepository
     public Task EliminarNotificacionesAsync(int usuarioId, CancellationToken ct = default)
         => _db.Database.ExecuteSqlAsync($"DELETE FROM notificacion WHERE usuario_id = {usuarioId}", ct);
 
+    public async Task EliminarConexionesAsync(int usuarioId, CancellationToken ct = default)
+    {
+        // fk_notif_conexion no lleva ON DELETE: primero los avisos de OTROS usuarios que apuntan a sus conexiones.
+        await _db.Database.ExecuteSqlAsync($"""
+                DELETE FROM notificacion WHERE conexion_id IN (
+                  SELECT id FROM conexion WHERE solicitante_id = {usuarioId} OR destinatario_id = {usuarioId})
+                """, ct);
+        await _db.Database.ExecuteSqlAsync(
+            $"DELETE FROM conexion WHERE solicitante_id = {usuarioId} OR destinatario_id = {usuarioId}", ct);
+        await _db.Database.ExecuteSqlAsync($"DELETE FROM test_afinidad WHERE usuario_id = {usuarioId}", ct);
+    }
+
     public async Task EliminarEventosAsync(int usuarioId, CancellationToken ct = default)
     {
         // fk_notif_evento y fk_rep_evento no llevan ON DELETE: primero lo de OTROS usuarios que apunta a estos eventos.
