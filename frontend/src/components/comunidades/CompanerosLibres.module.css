@@ -516,3 +516,480 @@
     transition: none;
   }
 }
+
+/* ---------- HU12: invitación al test ---------- */
+
+.invitacion {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: clamp(22px, 4vw, 34px);
+  border-radius: 28px;
+  background: linear-gradient(150deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #fff;
+  box-shadow: var(--sombra-3);
+}
+
+.invitacion::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -80px;
+  bottom: -120px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(253, 213, 55, 0.3), transparent 65%);
+}
+
+.invitacionTexto {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.invitacionTexto strong {
+  max-width: 24ch;
+  font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.invitacionTexto p {
+  margin: 0;
+  max-width: 54ch;
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.55;
+}
+
+.invitacionTexto small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.datosTest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.datosTest li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.datosTest svg {
+  color: var(--ucb-amarillo);
+}
+
+.botonAmarillo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 14px 28px -14px rgba(0, 0, 0, 0.6);
+}
+
+/* Una tarjeta de ejemplo: muestra qué vas a ver cuando termines. */
+.invitacionVista {
+  display: grid;
+  gap: 10px;
+  justify-items: stretch;
+  rotate: 3deg;
+}
+
+.vistaTarjeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.55);
+}
+
+.vistaAvatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.vistaLineas {
+  display: grid;
+  gap: 6px;
+}
+
+.vistaLineas span {
+  height: 9px;
+  border-radius: 6px;
+  background: var(--fondo-suave);
+}
+
+.vistaLineas span:last-child {
+  width: 60%;
+}
+
+.vistaTarjeta b {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.vistaChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 18px;
+}
+
+.vistaChips span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+/* ---------- HU12: test hecho, lo que los conecta y saludos ---------- */
+
+.barraTest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.testHecho {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e2f3ef;
+  color: var(--exito);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.enlace {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ucb-azul-medio);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.conecta {
+  display: grid;
+  gap: 6px;
+}
+
+.conectaTitulo {
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.enComun {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.enComun li {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.accion {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--borde-suave);
+}
+
+.saludar {
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  overflow-wrap: anywhere;
+}
+
+.saludar:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.estadoConexion {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.estadoConexion[data-tono="exito"] {
+  color: var(--exito);
+}
+
+.respuestas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.respuestas .primario,
+.respuestas .secundario {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+}
+
+.teSaludo {
+  margin-right: auto;
+  color: var(--ucb-marino);
+  font-weight: 800;
+}
+
+/* Dentro de la tarjeta: «Te saludó» arriba y los dos botones a lo ancho, en partes iguales. */
+.accion .respuestas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.accion .teSaludo {
+  grid-column: 1 / -1;
+}
+
+.accion .respuestas .primario,
+.accion .respuestas .secundario {
+  justify-self: stretch;
+}
+
+.notaPrivacidad {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.notaPrivacidad svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--exito);
+}
+
+/* ---------- HU12: te quieren conocer y tus conexiones ---------- */
+
+.conexiones {
+  display: grid;
+  gap: 18px;
+}
+
+.grupoConexiones {
+  display: grid;
+  gap: 10px;
+}
+
+.grupoTitulo {
+  margin: 0;
+  color: var(--ucb-marino);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.listaConexiones {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saludo,
+.conexion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+}
+
+.saludo {
+  border: 1.5px solid #f1d36a;
+  box-shadow: 0 0 0 3px var(--ucb-amarillo-suave), var(--sombra-1);
+}
+
+.conexion {
+  border: 1px solid #bfe3da;
+}
+
+.avatarConectado {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--exito);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.conexionTexto {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.conexionTexto strong {
+  color: var(--ucb-marino);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.conexionTexto small {
+  color: var(--texto-suave);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.cuando {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ucb-marino);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.escribir {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 48px;
+  padding: 8px 16px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, var(--ucb-marino-2), var(--ucb-marino));
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.escribir small {
+  max-width: 220px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saludar:focus-visible,
+.enlace:focus-visible,
+.escribir:focus-visible,
+.botonAmarillo:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .saludar:hover,
+  .escribir:hover {
+    box-shadow: var(--sombra-2);
+  }
+}
+
+@media (max-width: 720px) {
+  .invitacion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .invitacionVista {
+    display: none;
+  }
+
+  .saludo,
+  .conexion {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .saludo .respuestas,
+  .escribir {
+    grid-column: 1 / -1;
+  }
+
+  .escribir small {
+    max-width: none;
+  }
+
+  .botonAmarillo {
+    width: 100%;
+  }
+}
