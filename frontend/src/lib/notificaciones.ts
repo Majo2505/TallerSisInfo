@@ -2,7 +2,14 @@ import { pedirApi } from "./api";
 
 export type Notificacion = {
   id: number;
-  tipo: "PUENTE_DISPONIBLE" | "DESPUES_DE_CLASES" | "INVITACION_COMUNIDAD" | "COMUNIDAD_CERRADA" | "SANCION_ADVERTENCIA";
+  tipo:
+    | "PUENTE_DISPONIBLE"
+    | "DESPUES_DE_CLASES"
+    | "INVITACION_COMUNIDAD"
+    | "COMUNIDAD_CERRADA"
+    | "SANCION_ADVERTENCIA"
+    | "CONEXION_SOLICITADA"
+    | "CONEXION_ACEPTADA";
   mensaje: string;
   fecha: string | null;
   horaInicio: string | null;

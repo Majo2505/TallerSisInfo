@@ -1,14 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { IconoAjustes, IconoCalendario, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
+import {
+  IconoAjustes,
+  IconoCalendario,
+  IconoCandado,
+  IconoCheck,
+  IconoDestello,
+  IconoPersonas,
+  IconoReloj,
+} from "@/components/app/Iconos";
 import { Odometro, RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
+import { TestAfinidad as Test, obtenerTest } from "@/lib/afinidad";
+import { Conexion, Conexiones, listarConexiones, responderSaludo, saludar } from "@/lib/conexiones";
 import { iniciales } from "@/lib/iniciales";
-import { ResultadoMatching, buscarCompaneros, guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
+import { CompaneroCompatible, ResultadoMatching, buscarCompaneros, guardarConfiguracionMatching, obtenerConfiguracionMatching } from "@/lib/matching";
 import { Puente, duracionMin, esDespuesDeClases, hhmm, listarPuentes } from "@/lib/puentes";
+import { useEventoEnVivo } from "@/lib/tiempoReal";
 import estilos from "./CompanerosLibres.module.css";
+import TestAfinidad from "./TestAfinidad";
 
 const DIAS = ["", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const CORTOS = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -36,7 +48,7 @@ function puenteSiguiente(puentes: Puente[]): Puente | undefined {
 type Carga =
   | { tipo: "cargando" }
   | { tipo: "error"; mensaje: string }
-  | { tipo: "listo"; puentes: Puente[]; visible: boolean };
+  | { tipo: "listo"; puentes: Puente[]; visible: boolean; test: Test; conexiones: Conexiones };
 
 type Busqueda = { tipo: "buscando" } | { tipo: "error"; mensaje: string } | { tipo: "listo"; resultado: ResultadoMatching };
 
@@ -48,15 +60,15 @@ export default function CompanerosLibres() {
   const [intento, setIntento] = useState(0);
   const [aceptando, setAceptando] = useState(false);
   const [errorAceptar, setErrorAceptar] = useState("");
-
+  const [testAbierto, setTestAbierto] = useState(false);
   const [intentoCarga, setIntentoCarga] = useState(0);
 
   useEffect(() => {
     let activo = true;
-    Promise.all([listarPuentes(), obtenerConfiguracionMatching()])
-      .then(([puentes, config]) => {
+    Promise.all([listarPuentes(), obtenerConfiguracionMatching(), obtenerTest(), listarConexiones()])
+      .then(([puentes, config, test, conexiones]) => {
         if (!activo) return;
-        setCarga({ tipo: "listo", puentes, visible: config.visible });
+        setCarga({ tipo: "listo", puentes, visible: config.visible, test, conexiones });
         setElegido((actual) => (actual && puentes.some((p) => p.id === actual) ? actual : (puenteSiguiente(puentes)?.id ?? null)));
       })
       .catch((e: Error) => activo && setCarga({ tipo: "error", mensaje: e.message }));
@@ -66,9 +78,10 @@ export default function CompanerosLibres() {
   }, [intentoCarga]);
 
   const visible = carga.tipo === "listo" && carga.visible;
+  const conTest = carga.tipo === "listo" && carga.test.completado;
 
   useEffect(() => {
-    if (!visible || elegido === null) return;
+    if (!visible || !conTest || elegido === null) return;
     let activo = true;
     buscarCompaneros(elegido)
       .then((resultado) => activo && setBusqueda({ tipo: "listo", resultado }))
@@ -76,7 +89,22 @@ export default function CompanerosLibres() {
     return () => {
       activo = false;
     };
-  }, [visible, elegido, intento]);
+  }, [visible, conTest, elegido, intento]);
+
+  const refrescarConexiones = useCallback(async () => {
+    try {
+      const conexiones = await listarConexiones();
+      setCarga((c) => (c.tipo === "listo" ? { ...c, conexiones } : c));
+    } catch {
+      // Si falla, la próxima acción o el próximo aviso lo pone al día.
+    }
+  }, []);
+
+  // Un saludo nuevo o aceptado llega como aviso: se actualizan las listas sin recargar.
+  useEventoEnVivo("avisosCambiaron", () => {
+    void refrescarConexiones();
+    setIntento((n) => n + 1);
+  });
 
   function elegir(id: number) {
     if (id === elegido) return;
@@ -89,7 +117,7 @@ export default function CompanerosLibres() {
     setIntento((n) => n + 1);
   }
 
-  async function aceptar() {
+  async function aceptarVisibilidad() {
     setAceptando(true);
     setErrorAceptar("");
     try {
@@ -102,6 +130,29 @@ export default function CompanerosLibres() {
     }
   }
 
+  function alTerminarTest(test: Test) {
+    setTestAbierto(false);
+    setCarga((c) => (c.tipo === "listo" ? { ...c, test } : c));
+    setBusqueda({ tipo: "buscando" });
+    setIntento((n) => n + 1);
+  }
+
+  /** Tras saludar o responder, la tarjeta cambia al instante y las listas se ponen al día. */
+  function actualizarCompanero(usuarioId: number, cambio: Partial<CompaneroCompatible>) {
+    setBusqueda((b) =>
+      b.tipo === "listo"
+        ? {
+            tipo: "listo",
+            resultado: {
+              ...b.resultado,
+              companeros: b.resultado.companeros.map((c) => (c.usuarioId === usuarioId ? { ...c, ...cambio } : c)),
+            },
+          }
+        : b,
+    );
+    void refrescarConexiones();
+  }
+
   const aparecer = {
     initial: reducir ? false : ({ opacity: 0, y: 12, filter: "blur(4px)" } as const),
     animate: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -111,11 +162,13 @@ export default function CompanerosLibres() {
 
   return (
     <section className={estilos.seccion} aria-labelledby="libres-titulo">
-      <span className={estilos.chip}>Con tus puentes reales</span>
+      <span className={estilos.chip}>Tiempo libre y gustos en común</span>
       <h2 id="libres-titulo" className={estilos.subtitulo}>
         Compañeros libres contigo
       </h2>
-      <p className={estilos.texto}>Gente de tu campus con un puente que se cruza con el tuyo, de quien más tiempo comparte contigo a quien menos.</p>
+      <p className={estilos.texto}>
+        Gente de tu campus que está libre a la misma hora que tú y con quien tienes cosas en común. Salúdala y, si acepta, coordinen para verse.
+      </p>
 
       <AnimatePresence mode="wait" initial={false}>
         {carga.tipo === "cargando" && (
@@ -162,8 +215,8 @@ export default function CompanerosLibres() {
             <div className={estilos.consentimientoTexto}>
               <strong>Encuentra a quién está libre contigo</strong>
               <p>
-                Para ver a tus compañeros, ellos también tienen que poder encontrarte. Solo verán tu nombre, tu carrera y el tramo libre que
-                comparten. Nunca tu correo.
+                Para ver a tus compañeros, ellos también tienen que poder encontrarte. Solo verán tu nombre corto, tu carrera, el tramo libre que
+                comparten y lo que tienen en común. Tu correo, solo si aceptas conectar.
               </p>
               {errorAceptar && (
                 <motion.p
@@ -180,30 +233,235 @@ export default function CompanerosLibres() {
               <motion.button
                 type="button"
                 className={estilos.primario}
-                onClick={() => void aceptar()}
+                onClick={() => void aceptarVisibilidad()}
                 disabled={aceptando}
                 whileTap={{ scale: 0.97 }}
                 transition={RESORTE_TOQUE}
               >
-                {aceptando ? "Guardando…" : "Aceptar y ver compañeros"}
+                {aceptando ? "Guardando…" : "Aceptar y continuar"}
               </motion.button>
               <small>Puedes cambiarlo cuando quieras en Perfil → Ajustes.</small>
             </div>
           </motion.div>
         )}
 
-        {carga.tipo === "listo" && carga.puentes.length > 0 && carga.visible && (
+        {carga.tipo === "listo" && carga.puentes.length > 0 && carga.visible && !carga.test.completado && (
+          <motion.div key="test" {...aparecer}>
+            <InvitacionTest
+              preguntas={carga.test.preguntas.length}
+              minutos={carga.test.minutosEstimados}
+              conBorrador={tieneBorrador()}
+              onEmpezar={() => setTestAbierto(true)}
+            />
+          </motion.div>
+        )}
+
+        {carga.tipo === "listo" && carga.puentes.length > 0 && carga.visible && carga.test.completado && (
           <motion.div key="matching" className={estilos.matching} {...aparecer}>
+            <TusConexiones conexiones={carga.conexiones} onRespondida={(c) => actualizarPorConexion(c)} />
+
+            <div className={estilos.barraTest}>
+              <span className={estilos.testHecho}>
+                <IconoCheck tamano={15} />
+                Test hecho
+              </span>
+              <button type="button" className={estilos.enlace} onClick={() => setTestAbierto(true)}>
+                Editar mis respuestas
+              </button>
+            </div>
+
             <SelectorPuentes puentes={carga.puentes} elegido={elegido} onElegir={elegir} />
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={`${elegido}-${busqueda.tipo}`} {...aparecer}>
-                <Resultado busqueda={busqueda} onReintentar={reintentar} />
+                <Resultado busqueda={busqueda} onReintentar={reintentar} onCambio={actualizarCompanero} />
               </motion.div>
             </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {testAbierto && carga.tipo === "listo" && (
+        <TestAfinidad test={carga.test} onCerrar={() => setTestAbierto(false)} onListo={alTerminarTest} />
+      )}
     </section>
+  );
+
+  /** Responder desde «Te quieren conocer» también actualiza la tarjeta de esa persona en la lista. */
+  function actualizarPorConexion(c: Conexion) {
+    setBusqueda((b) =>
+      b.tipo === "listo"
+        ? {
+            tipo: "listo",
+            resultado: {
+              ...b.resultado,
+              companeros: b.resultado.companeros.map((x) => (x.conexion?.id === c.id ? { ...x, conexion: { ...x.conexion, estado: c.estado } } : x)),
+            },
+          }
+        : b,
+    );
+    void refrescarConexiones();
+  }
+}
+
+function tieneBorrador(): boolean {
+  try {
+    return window.sessionStorage.getItem("breaku.testAfinidad.borrador") !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Antes del test no se muestra a nadie: se invita a hacerlo y se explica qué se comparte. */
+function InvitacionTest({ preguntas, minutos, conBorrador, onEmpezar }: { preguntas: number; minutos: number; conBorrador: boolean; onEmpezar: () => void }) {
+  return (
+    <div className={estilos.invitacion}>
+      <div className={estilos.invitacionTexto}>
+        <strong>Antes de presentarte a alguien, cuéntanos un poco de ti</strong>
+        <p>
+          Coincidir en tiempo libre es el primer paso. Para que valga la pena, te mostramos solo a quienes además comparten tus gustos, tu forma de
+          ser o lo que buscas.
+        </p>
+        <ul className={estilos.datosTest}>
+          <li>
+            <IconoReloj tamano={16} />
+            Unos {minutos} minutos
+          </li>
+          <li>
+            <IconoDestello tamano={16} />
+            {preguntas} preguntas de opción múltiple
+          </li>
+          <li>
+            <IconoCandado tamano={16} />
+            Valores y creencias, opcionales
+          </li>
+        </ul>
+        <motion.button type="button" className={estilos.botonAmarillo} onClick={onEmpezar} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
+          {conBorrador ? "Seguir con el test" : "Hacer el test"}
+        </motion.button>
+        <small>Nadie ve tus respuestas: a otra persona solo le mostramos lo que tienen en común.</small>
+      </div>
+      <div className={estilos.invitacionVista} aria-hidden="true">
+        <span className={estilos.vistaTarjeta}>
+          <span className={estilos.vistaAvatar}>AQ</span>
+          <span className={estilos.vistaLineas}>
+            <span />
+            <span />
+          </span>
+          <b>87 %</b>
+        </span>
+        <span className={estilos.vistaChips}>
+          <span>Videojuegos</span>
+          <span>El mismo humor</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Saludos recibidos y conexiones aceptadas: lo que más importa, arriba. */
+function TusConexiones({ conexiones, onRespondida }: { conexiones: Conexiones; onRespondida: (c: Conexion) => void }) {
+  const { recibidas, aceptadas } = conexiones;
+  if (recibidas.length === 0 && aceptadas.length === 0) return null;
+
+  return (
+    <div className={estilos.conexiones}>
+      {recibidas.length > 0 && (
+        <div className={estilos.grupoConexiones}>
+          <h3 className={estilos.grupoTitulo}>Te quieren conocer</h3>
+          <ul className={estilos.listaConexiones}>
+            {recibidas.map((c) => (
+              <li key={c.id}>
+                <SaludoRecibido conexion={c} onRespondida={onRespondida} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aceptadas.length > 0 && (
+        <div className={estilos.grupoConexiones}>
+          <h3 className={estilos.grupoTitulo}>Tus conexiones</h3>
+          <ul className={estilos.listaConexiones}>
+            {aceptadas.map((c) => (
+              <li key={c.id} className={estilos.conexion}>
+                <span className={estilos.avatarConectado} aria-hidden="true">
+                  {iniciales(c.nombre)}
+                </span>
+                <div className={estilos.conexionTexto}>
+                  <strong>{c.nombre}</strong>
+                  <small>{[c.carrera, `${c.afinidad} % de afinidad`].filter(Boolean).join(" · ")}</small>
+                  <span className={estilos.cuando}>
+                    <IconoReloj tamano={14} />
+                    Libres el {DIAS[c.diaSemana]} de {hhmm(c.horaInicio)} a {hhmm(c.horaFin)}
+                  </span>
+                </div>
+                {c.correo && (
+                  <a className={estilos.escribir} href={`mailto:${c.correo}?subject=${encodeURIComponent("¡Hola! Nos conectó BreakU")}`}>
+                    <span>Escribirle</span>
+                    <small>{c.correo}</small>
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SaludoRecibido({ conexion, onRespondida }: { conexion: Conexion; onRespondida: (c: Conexion) => void }) {
+  const [enviando, setEnviando] = useState<"si" | "no" | null>(null);
+  const [error, setError] = useState("");
+
+  async function responder(aceptar: boolean) {
+    setEnviando(aceptar ? "si" : "no");
+    setError("");
+    try {
+      onRespondida(await responderSaludo(conexion.id, aceptar));
+    } catch (e) {
+      setError((e as Error).message);
+      setEnviando(null);
+    }
+  }
+
+  return (
+    <div className={estilos.saludo}>
+      <span className={estilos.avatar} aria-hidden="true">
+        {iniciales(conexion.nombre)}
+      </span>
+      <div className={estilos.conexionTexto}>
+        <strong>
+          {conexion.nombre} te saludó · {conexion.afinidad} % de afinidad
+        </strong>
+        <small>
+          {conexion.carrera ? `${conexion.carrera} · ` : ""}libres el {DIAS[conexion.diaSemana]} de {hhmm(conexion.horaInicio)} a {hhmm(conexion.horaFin)}
+        </small>
+        {conexion.enComun.length > 0 && <EnComun cosas={conexion.enComun} />}
+        {error && (
+          <p className={estilos.error} role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+      <div className={estilos.respuestas}>
+        <button type="button" className={estilos.primario} onClick={() => void responder(true)} disabled={enviando !== null}>
+          {enviando === "si" ? "Aceptando…" : "Aceptar"}
+        </button>
+        <button type="button" className={estilos.secundario} onClick={() => void responder(false)} disabled={enviando !== null}>
+          Ahora no
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EnComun({ cosas }: { cosas: string[] }) {
+  return (
+    <ul className={estilos.enComun} aria-label="Lo que los conecta">
+      {cosas.map((c) => (
+        <li key={c}>{c}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -248,7 +506,15 @@ function SelectorPuentes({ puentes, elegido, onElegir }: { puentes: Puente[]; el
   );
 }
 
-function Resultado({ busqueda, onReintentar }: { busqueda: Busqueda; onReintentar: () => void }) {
+function Resultado({
+  busqueda,
+  onReintentar,
+  onCambio,
+}: {
+  busqueda: Busqueda;
+  onReintentar: () => void;
+  onCambio: (usuarioId: number, cambio: Partial<CompaneroCompatible>) => void;
+}) {
   const reducir = useReducedMotion();
 
   if (busqueda.tipo === "buscando") return <Esqueleto />;
@@ -288,9 +554,9 @@ function Resultado({ busqueda, onReintentar }: { busqueda: Busqueda; onReintenta
           <IconoReloj tamano={22} />
         </span>
         <strong>
-          Nadie libre el {DIAS[puente.diaSemana]} de {hhmm(puente.horaInicio)} a {hhmm(puente.horaFin)}
+          Nadie con quien coincidas el {DIAS[puente.diaSemana]} de {hhmm(puente.horaInicio)} a {hhmm(puente.horaFin)}
         </strong>
-        <p>{resultado.mensaje} Prueba con otro de tus puentes.</p>
+        <p>{resultado.mensaje}</p>
       </div>
     );
 
@@ -304,7 +570,7 @@ function Resultado({ busqueda, onReintentar }: { busqueda: Busqueda; onReintenta
         <span className={estilos.cifra}>
           <Odometro valor={cantidad} />
         </span>
-        {cantidad === 1 ? "compañero libre" : "compañeros libres"} contigo el {DIAS[puente.diaSemana]}, de {hhmm(puente.horaInicio)} a{" "}
+        {cantidad === 1 ? "persona coincide" : "personas coinciden"} contigo el {DIAS[puente.diaSemana]}, de {hhmm(puente.horaInicio)} a{" "}
         {hhmm(puente.horaFin)}
       </p>
 
@@ -320,7 +586,7 @@ function Resultado({ busqueda, onReintentar }: { busqueda: Busqueda; onReintenta
           const meta = [c.carrera, c.semestre ? `Semestre ${c.semestre}` : null].filter(Boolean).join(" · ");
           return (
             <motion.li
-              key={`${c.nombre}-${c.horaInicio}`}
+              key={c.usuarioId}
               className={i === 0 ? estilos.tarjetaTop : estilos.tarjeta}
               variants={{
                 oculto: { opacity: 0, y: 16, filter: "blur(4px)" },
@@ -336,10 +602,15 @@ function Resultado({ busqueda, onReintentar }: { busqueda: Busqueda; onReintenta
                   <strong>{c.nombre}</strong>
                   {meta && <small>{meta}</small>}
                 </div>
-                <span className={estilos.porcentaje} aria-label={`${c.porcentaje} % de tu puente`}>
-                  {c.porcentaje}
+                <span className={estilos.porcentaje} aria-label={`${c.compatibilidad} % compatibles`}>
+                  {c.compatibilidad}
                   <small>%</small>
                 </span>
+              </div>
+
+              <div className={estilos.conecta}>
+                <span className={estilos.conectaTitulo}>Lo que los conecta</span>
+                <EnComun cosas={c.enComun} />
               </div>
 
               <div className={estilos.linea}>
@@ -361,14 +632,118 @@ function Resultado({ busqueda, onReintentar }: { busqueda: Busqueda; onReintenta
               <p className={estilos.juntos}>
                 <IconoReloj tamano={15} />
                 <span>
-                  Libres juntos de <strong>{hhmm(c.horaInicio)}</strong> a <strong>{hhmm(c.horaFin)}</strong> · <span className={estilos.duracion}>{duracion(c.minutosEnComun)}</span>
+                  Libres juntos de <strong>{hhmm(c.horaInicio)}</strong> a <strong>{hhmm(c.horaFin)}</strong> ·{" "}
+                  <span className={estilos.duracion}>{duracion(c.minutosEnComun)}</span>
                 </span>
               </p>
-              {c.franjasCompartidas > 1 && <span className={estilos.franjas}>Coinciden en {c.franjasCompartidas} puentes esta semana</span>}
+
+              <AccionConexion companero={c} puenteId={puente.id} onCambio={onCambio} />
             </motion.li>
           );
         })}
       </motion.ol>
+      <p className={estilos.notaPrivacidad}>
+        <IconoCandado tamano={15} />
+        Al saludar, le llega un aviso con tu nombre corto. Si acepta, los dos ven el correo del otro para coordinar.
+      </p>
+    </div>
+  );
+}
+
+/** El botón de cada tarjeta según el estado del saludo con esa persona. */
+function AccionConexion({
+  companero,
+  puenteId,
+  onCambio,
+}: {
+  companero: CompaneroCompatible;
+  puenteId: number;
+  onCambio: (usuarioId: number, cambio: Partial<CompaneroCompatible>) => void;
+}) {
+  const reducir = useReducedMotion();
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
+  const conexion = companero.conexion;
+
+  async function enviarSaludo() {
+    setEnviando(true);
+    setError("");
+    try {
+      const c = await saludar(companero.usuarioId, puenteId);
+      onCambio(companero.usuarioId, { conexion: { id: c.id, estado: c.estado, enviadaPorMi: true } });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function responder(aceptar: boolean) {
+    if (!conexion) return;
+    setEnviando(true);
+    setError("");
+    try {
+      const c = await responderSaludo(conexion.id, aceptar);
+      onCambio(companero.usuarioId, { conexion: { ...conexion, estado: c.estado } });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  let contenido: React.ReactNode;
+  if (!conexion) {
+    contenido = (
+      <motion.button type="button" className={estilos.saludar} onClick={() => void enviarSaludo()} disabled={enviando} whileTap={{ scale: 0.97 }}>
+        {enviando ? "Saludando…" : `Saludar a ${companero.nombre.split(" ")[0]}`}
+      </motion.button>
+    );
+  } else if (conexion.estado === "ACEPTADA") {
+    contenido = (
+      <span className={estilos.estadoConexion} data-tono="exito">
+        <IconoCheck tamano={15} />
+        Conectados · su correo está arriba
+      </span>
+    );
+  } else if (conexion.enviadaPorMi) {
+    contenido = (
+      <span className={estilos.estadoConexion}>
+        <IconoCheck tamano={15} />
+        Saludo enviado · te avisamos si acepta
+      </span>
+    );
+  } else if (conexion.estado === "PENDIENTE") {
+    contenido = (
+      <div className={estilos.respuestas}>
+        <span className={estilos.teSaludo}>Te saludó</span>
+        <button type="button" className={estilos.primario} onClick={() => void responder(true)} disabled={enviando}>
+          Aceptar
+        </button>
+        <button type="button" className={estilos.secundario} onClick={() => void responder(false)} disabled={enviando}>
+          Ahora no
+        </button>
+      </div>
+    );
+  } else {
+    contenido = <span className={estilos.estadoConexion}>No aceptaste su saludo</span>;
+  }
+
+  return (
+    <div className={estilos.accion}>
+      {contenido}
+      {error && (
+        <motion.p
+          key={error}
+          className={estilos.error}
+          role="alert"
+          initial={reducir ? false : { x: 0 }}
+          animate={{ x: [0, -8, 8, -5, 5, 0] }}
+          transition={{ duration: 0.42 }}
+        >
+          {error}
+        </motion.p>
+      )}
     </div>
   );
 }
