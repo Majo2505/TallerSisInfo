@@ -102,8 +102,8 @@
   overflow: hidden;
   border-radius: 18px;
   background:
-    radial-gradient(120% 90% at 50% 110%, color-mix(in srgb, var(--tinte) 14%, transparent), transparent 60%),
-    var(--fondo-escena);
+    radial-gradient(90% 120% at 85% 0%, color-mix(in srgb, var(--tinte) 45%, transparent), transparent 62%),
+    linear-gradient(170deg, #0a3558 0%, var(--ucb-marino) 70%);
   animation: aparecer 650ms var(--curva-salida) both;
   animation-delay: calc(200ms + var(--i, 0) * 80ms);
 }
@@ -137,56 +137,35 @@
   line-height: 1.4;
 }
 
-.piel { fill: #f6c9a4; }
-.pelo { fill: var(--ucb-marino); }
-.peloB { fill: #7a3e1d; }
-.tinta { fill: var(--ucb-marino); }
-.linea { fill: none; stroke: var(--ucb-marino); stroke-width: 1.4; stroke-linecap: round; }
-.lineaTinte { fill: none; stroke: var(--tinte); stroke-width: 2.4; stroke-linecap: round; }
-.ropa { fill: var(--ropa); }
-.ropaB { fill: var(--ucb-amarillo); }
-.ropaC { fill: var(--ucb-celeste); }
-.mueble { fill: var(--ucb-marino); }
-.taza { fill: #ffffff; }
-.acento { fill: var(--ucb-amarillo); }
-.decoTinte { fill: var(--tinte); opacity: 0.45; }
+.amarillo { fill: var(--ucb-amarillo); }
+.halo { fill: var(--ucb-amarillo); opacity: 0.12; }
+.estrella { fill: #ffffff; opacity: 0.55; }
+.loma { fill: #0b3a62; }
+.banca { fill: none; stroke: #3f6f99; stroke-width: 3; stroke-linecap: round; }
+.taza { fill: #e9f1f9; }
+.asa { fill: none; stroke: #e9f1f9; stroke-width: 2; }
+.tazaAmarilla { fill: var(--ucb-amarillo); }
+.asaAmarilla { fill: none; stroke: var(--ucb-amarillo); stroke-width: 2; }
+.vapor { fill: none; stroke: #ffffff; stroke-width: 1.6; stroke-linecap: round; opacity: 0.5; }
 
-.cabeceo { transform-origin: 50% 100%; }
-.bostezo { fill: var(--ucb-marino); }
-.estrella { fill: var(--tinte); opacity: 0.4; }
-.zeta { fill: var(--tinte); font-size: 9px; font-weight: 800; opacity: 0; }
+.cono { fill: var(--ucb-amarillo); opacity: 0.16; }
+.brazoLampara { fill: none; stroke: #3f6f99; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.mesa { fill: #0b3a62; }
+.pagina { fill: #f4f7fb; }
+.paginaGira { transform-origin: 0% 50%; }
+.renglon { fill: none; stroke: #9db4cb; stroke-width: 1.2; stroke-linecap: round; }
+.libros { fill: #1d5c91; }
+.librosB { fill: #3f6f99; }
 
-.luz { fill: var(--ucb-amarillo); opacity: 0.22; }
-.lampara { fill: none; stroke: var(--ucb-marino); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.pantalla { fill: var(--ucb-amarillo); }
-.auricular { fill: none; stroke: var(--ucb-marino); stroke-width: 2.6; }
-.foco { transform-origin: 50% 100%; opacity: 0.5; }
-.manoIzq,
-.manoDer { fill: #f6c9a4; }
+.cancha { fill: #0b3a62; }
+.carril { fill: none; stroke: #ffffff; stroke-width: 1; opacity: 0.25; stroke-dasharray: 4 5; }
+.sombraPelota { fill: #000000; opacity: 0.25; }
+.costura { fill: none; stroke: var(--ucb-marino); stroke-width: 1.2; opacity: 0.6; }
 
-.suelo { fill: none; stroke: var(--tinte); stroke-width: 1.5; stroke-dasharray: 3 5; opacity: 0.4; }
-.sombra { fill: var(--ucb-marino); opacity: 0.2; }
-.pierna { fill: none; stroke: var(--ucb-marino); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-.brazo { fill: none; stroke: #f6c9a4; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.torso { fill: none; stroke: var(--ropa); stroke-width: 9; stroke-linecap: round; }
-.vincha { fill: none; stroke: var(--ucb-amarillo); stroke-width: 2.2; stroke-linecap: round; }
-.gota { fill: #8fc0ef; opacity: 0; }
-.piernaDelante,
-.brazoDelante { transform-origin: 0% 0%; }
-.piernaAtras,
-.brazoAtras { transform-origin: 100% 0%; }
-
-.burbuja { fill: #ffffff; }
-.puntoTinte { fill: var(--tinte); }
-.jaja { fill: var(--tinte); font-size: 6.5px; font-weight: 800; text-anchor: middle; }
-.burbuja1,
-.burbuja2 { transform-origin: 50% 100%; }
-.burbuja2 { opacity: 0; }
-.cabezaA,
-.cabezaB,
-.cabezaC { transform-origin: 50% 100%; }
-
-.ojos { animation: parpadear 4s ease infinite; animation-delay: calc(var(--i, 0) * 700ms); }
+.globoBlanco { fill: #f4f7fb; }
+.punto { fill: var(--ucb-marino); }
+.lineaGlobo { fill: none; stroke: var(--ucb-marino); stroke-width: 2.4; stroke-linecap: round; opacity: 0.6; }
+.globo { transform-origin: 50% 100%; }
 
 @media (hover: hover) and (pointer: fine) {
   .tarjeta:hover {
@@ -197,204 +176,72 @@
   .tarjeta:hover::before {
     opacity: 1;
   }
-
-  :global(.animo-escena):hover .cabeceo { animation: cabecear 2.6s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .bostezo { animation: bostezar 2.6s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .zeta { animation: zetas 1.8s var(--curva-salida) infinite; }
-  :global(.animo-escena):hover .z2 { animation-delay: 300ms; }
-  :global(.animo-escena):hover .z3 { animation-delay: 600ms; }
-  :global(.animo-escena):hover .estrella { animation: titilar 1.4s ease infinite; }
-
-  :global(.animo-escena):hover .manoIzq { animation: teclear 0.5s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .manoDer { animation: teclear 0.5s var(--curva-movimiento) 250ms infinite; }
-  :global(.animo-escena):hover .foco { animation: enfocar 1.4s ease infinite; }
-  :global(.animo-escena):hover .luz { animation: iluminar 2s ease infinite; }
-
-  :global(.animo-escena):hover .corredor { animation: rebote 0.3s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .piernaDelante { animation: piernaDelante 0.6s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .piernaAtras { animation: piernaAtras 0.6s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .brazoDelante { animation: brazoDelante 0.6s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .brazoAtras { animation: brazoAtras 0.6s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .sombra { animation: sombra 0.3s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .velocidad { animation: velocidad 0.6s linear infinite; }
-  :global(.animo-escena):hover .gota { animation: gota 1.2s var(--curva-salida) infinite; }
-
-  :global(.animo-escena):hover .burbuja1 { animation: burbuja1 3.2s var(--curva-salida) infinite; }
-  :global(.animo-escena):hover .burbuja2 { animation: burbuja2 3.2s var(--curva-salida) infinite; }
-  :global(.animo-escena):hover .cabezaA { animation: hablar 3.2s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .cabezaB { animation: asentir 3.2s var(--curva-movimiento) infinite; }
-  :global(.animo-escena):hover .cabezaC { animation: reir 3.2s var(--curva-movimiento) infinite; }
 }
 
-@media (hover: none) {
-  .cabeceo { animation: cabecear 3.4s var(--curva-movimiento) infinite; }
-  .bostezo { animation: bostezar 3.4s var(--curva-movimiento) infinite; }
-  .zeta { animation: zetas 2.4s var(--curva-salida) infinite; }
-  .z2 { animation-delay: 400ms; }
-  .z3 { animation-delay: 800ms; }
-  .manoIzq { animation: teclear 0.7s var(--curva-movimiento) infinite; }
-  .manoDer { animation: teclear 0.7s var(--curva-movimiento) 350ms infinite; }
-  .foco { animation: enfocar 2s ease infinite; }
-  .corredor { animation: rebote 0.4s var(--curva-movimiento) infinite; }
-  .piernaDelante { animation: piernaDelante 0.8s var(--curva-movimiento) infinite; }
-  .piernaAtras { animation: piernaAtras 0.8s var(--curva-movimiento) infinite; }
-  .brazoDelante { animation: brazoDelante 0.8s var(--curva-movimiento) infinite; }
-  .brazoAtras { animation: brazoAtras 0.8s var(--curva-movimiento) infinite; }
-  .sombra { animation: sombra 0.4s var(--curva-movimiento) infinite; }
-  .burbuja1 { animation: burbuja1 4s var(--curva-salida) infinite; }
-  .burbuja2 { animation: burbuja2 4s var(--curva-salida) infinite; }
-  .cabezaA { animation: hablar 4s var(--curva-movimiento) infinite; }
-  .cabezaB { animation: asentir 4s var(--curva-movimiento) infinite; }
-  .cabezaC { animation: reir 4s var(--curva-movimiento) infinite; }
+@media (prefers-reduced-motion: no-preference) {
+  .estrella { animation: titilar 3.2s ease-in-out infinite; }
+  .d2 { animation-delay: -1.1s; }
+  .d3 { animation-delay: -2.2s; }
+  .luna { transform-origin: 50% 50%; animation: mecerLuna 7s var(--curva-movimiento) infinite; }
+  .vapor { animation: vapor 3s var(--curva-salida) infinite; }
+  .vapor.d2 { animation-delay: -1.5s; }
+  .cono { animation: luz 4s ease-in-out infinite; }
+  .paginaGira { animation: pasarPagina 6s var(--curva-movimiento) infinite; }
+  .pelota { animation: botar 1.6s cubic-bezier(0.33, 0, 0.67, 1) infinite; transform-origin: 50% 100%; }
+  .sombraPelota { transform-origin: 50% 50%; animation: sombraBote 1.6s cubic-bezier(0.33, 0, 0.67, 1) infinite; }
+  .g1 { animation: globoA 6s var(--curva-salida) infinite; }
+  .g2 { animation: globoB 6s var(--curva-salida) infinite; }
+  .punto { animation: escribir 1.2s ease-in-out infinite; }
+  .punto:nth-of-type(2) { animation-delay: 0.15s; }
+  .punto:nth-of-type(3) { animation-delay: 0.3s; }
 }
-
-.tarjeta[data-elegido] .cabeceo,
-.tarjeta:focus-visible .cabeceo { animation: cabecear 2.6s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .zeta,
-.tarjeta:focus-visible .zeta { animation: zetas 1.8s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .manoIzq,
-.tarjeta:focus-visible .manoIzq { animation: teclear 0.5s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .manoDer,
-.tarjeta:focus-visible .manoDer { animation: teclear 0.5s var(--curva-movimiento) 250ms infinite; }
-.tarjeta[data-elegido] .foco,
-.tarjeta:focus-visible .foco { animation: enfocar 1.4s ease infinite; }
-.tarjeta[data-elegido] .corredor,
-.tarjeta:focus-visible .corredor { animation: rebote 0.3s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .piernaDelante,
-.tarjeta:focus-visible .piernaDelante { animation: piernaDelante 0.6s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .piernaAtras,
-.tarjeta:focus-visible .piernaAtras { animation: piernaAtras 0.6s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .brazoDelante,
-.tarjeta:focus-visible .brazoDelante { animation: brazoDelante 0.6s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .brazoAtras,
-.tarjeta:focus-visible .brazoAtras { animation: brazoAtras 0.6s var(--curva-movimiento) infinite; }
-.tarjeta[data-elegido] .burbuja2,
-.tarjeta:focus-visible .burbuja2 { animation: burbuja2 3.2s var(--curva-salida) infinite; }
-.tarjeta[data-elegido] .cabezaC,
-.tarjeta:focus-visible .cabezaC { animation: reir 3.2s var(--curva-movimiento) infinite; }
 
 @keyframes aparecer {
   from { opacity: 0; transform: translateY(10px) scale(0.96); }
 }
-
-@keyframes parpadear {
-  0%, 92%, 100% { transform: scaleY(1); }
-  95% { transform: scaleY(0.1); }
-}
-
-@keyframes cabecear {
-  0%, 8% { transform: rotate(0deg) translateY(0); }
-  50% { transform: rotate(16deg) translateY(2px); }
-  57% { transform: rotate(-6deg) translateY(-1px); }
-  66%, 100% { transform: rotate(0deg) translateY(0); }
-}
-
-@keyframes bostezar {
-  0%, 12%, 55%, 100% { transform: scale(1, 1); }
-  28%, 42% { transform: scale(1.4, 2.4); }
-}
-
-@keyframes zetas {
-  0% { opacity: 0; transform: translate(0, 4px) scale(0.6); }
-  30% { opacity: 1; }
-  100% { opacity: 0; transform: translate(6px, -12px) scale(1.15); }
-}
-
 @keyframes titilar {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.6); }
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 0.9; transform: scale(1.2); }
 }
-
-@keyframes teclear {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2.5px); }
+@keyframes mecerLuna {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
 }
-
-@keyframes enfocar {
-  0%, 100% { opacity: 0.3; transform: scale(0.85); }
-  50% { opacity: 1; transform: scale(1.1); }
+@keyframes vapor {
+  0% { opacity: 0; transform: translateY(4px); }
+  40% { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-8px); }
 }
-
-@keyframes iluminar {
-  0%, 100% { opacity: 0.18; }
-  50% { opacity: 0.4; }
+@keyframes luz {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.24; }
 }
-
-@keyframes rebote {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2.5px); }
+@keyframes pasarPagina {
+  0%, 55% { transform: scaleX(1); }
+  75%, 100% { transform: scaleX(-1); }
 }
-
-@keyframes piernaDelante {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(55deg); }
+@keyframes botar {
+  0%, 100% { transform: translateY(16px) scale(1.08, 0.92); }
+  12% { transform: translateY(10px) scale(0.96, 1.04); }
+  50% { transform: translateY(-6px) scale(1, 1); }
 }
-
-@keyframes piernaAtras {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-55deg); }
+@keyframes sombraBote {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(0.55); opacity: 0.12; }
 }
-
-@keyframes brazoDelante {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(65deg); }
+@keyframes globoA {
+  0% { opacity: 0; transform: translateY(6px) scale(0.92); }
+  8%, 46% { opacity: 1; transform: translateY(0) scale(1); }
+  54%, 100% { opacity: 0; transform: translateY(-4px) scale(0.96); }
 }
-
-@keyframes brazoAtras {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-60deg); }
+@keyframes globoB {
+  0%, 46% { opacity: 0; transform: translateY(6px) scale(0.92); }
+  54%, 92% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-4px) scale(0.96); }
 }
-
-@keyframes sombra {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(0.85); }
-}
-
-@keyframes velocidad {
-  0% { transform: translateX(4px); opacity: 0.3; }
-  50% { opacity: 1; }
-  100% { transform: translateX(-6px); opacity: 0.3; }
-}
-
-@keyframes gota {
-  0% { opacity: 0; transform: translate(0, 0); }
-  20% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-8px, 5px); }
-}
-
-@keyframes burbuja1 {
-  0% { opacity: 0; transform: scale(0.6); }
-  8% { opacity: 1; transform: scale(1.06); }
-  12%, 40% { opacity: 1; transform: scale(1); }
-  46%, 100% { opacity: 0; transform: scale(0.85); }
-}
-
-@keyframes burbuja2 {
-  0%, 48% { opacity: 0; transform: scale(0.6); }
-  56% { opacity: 1; transform: scale(1.06); }
-  60%, 88% { opacity: 1; transform: scale(1); }
-  95%, 100% { opacity: 0; transform: scale(0.85); }
-}
-
-@keyframes hablar {
-  0%, 40%, 100% { transform: rotate(0deg); }
-  6% { transform: rotate(-5deg); }
-  14% { transform: rotate(4deg); }
-  22% { transform: rotate(-4deg); }
-  30% { transform: rotate(3deg); }
-}
-
-@keyframes asentir {
-  0%, 25%, 55%, 75%, 100% { transform: translateY(0); }
-  15%, 65% { transform: translateY(1.6px); }
-}
-
-@keyframes reir {
-  0%, 50%, 90%, 100% { transform: rotate(0deg) translateY(0); }
-  56% { transform: rotate(-10deg) translateY(-1.5px); }
-  63% { transform: rotate(-3deg) translateY(0); }
-  70% { transform: rotate(-10deg) translateY(-1.5px); }
-  77% { transform: rotate(-3deg) translateY(0); }
+@keyframes escribir {
+  0%, 100% { opacity: 0.35; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-1.5px); }
 }
 
 @media (min-width: 720px) {
@@ -420,5 +267,4 @@
   .svg * {
     animation: none !important;
   }
-  .burbuja1 { opacity: 1; }
 }

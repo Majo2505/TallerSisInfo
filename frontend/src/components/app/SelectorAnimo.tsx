@@ -103,135 +103,81 @@ export default function SelectorAnimo({ onElegir }: { onElegir: (estado: EstadoA
   );
 }
 
-function Cara({ x, y, ojos = "abiertos", boca = "sonrisa" }: { x: number; y: number; ojos?: "abiertos" | "cerrados"; boca?: "sonrisa" | "recta" | "risa" }) {
-  return (
-    <g>
-      {ojos === "abiertos" ? (
-        <g className={estilos.ojos}>
-          <circle cx={x - 3} cy={y} r="1.15" className={estilos.tinta} />
-          <circle cx={x + 3} cy={y} r="1.15" className={estilos.tinta} />
-        </g>
-      ) : (
-        <path d={`M${x - 4.6} ${y} q1.6 1.3 3.2 0 M${x + 1.4} ${y} q1.6 1.3 3.2 0`} className={estilos.linea} />
-      )}
-      {boca === "sonrisa" && <path d={`M${x - 2} ${y + 4} q2 1.6 4 0`} className={estilos.linea} />}
-      {boca === "recta" && <path d={`M${x - 1.6} ${y + 4.4} h3.2`} className={estilos.linea} />}
-      {boca === "risa" && <path d={`M${x - 2.4} ${y + 3.6} q2.4 3.4 4.8 0Z`} className={estilos.tinta} />}
-    </g>
-  );
-}
-
+/*
+ * Escenas de noche en azul marino con luz amarilla, en el mismo tono que la foto de la portada: objetos y siluetas,
+ * sin caras. El movimiento es lento (vapor, luz, una página, una pelota) y se apaga con «reducir movimiento».
+ */
 function Escena({ estado }: { estado: EstadoAnimo }) {
   switch (estado) {
     case "cansado":
       return (
-        <svg viewBox="0 0 120 64" className={estilos.svg}>
-          <path d="M22 10a6 6 0 1 0 6 9 5 5 0 0 1-6-9Z" className={estilos.decoTinte} />
-          <circle className={`${estilos.estrella} ${estilos.e1}`} cx="34" cy="8" r="1.2" />
-          <circle className={`${estilos.estrella} ${estilos.e2}`} cx="96" cy="30" r="1" />
-          <path d="M44 50q0-15 16-15t16 15Z" className={estilos.ropa} />
-          <g className={estilos.cabeceo}>
-            <circle cx="60" cy="27" r="10" className={estilos.piel} />
-            <path d="M50 26q0-11 10-11t10 11q-3-5-10-5t-10 5Z" className={estilos.pelo} />
-            <Cara x={60} y={28.5} ojos="cerrados" boca="recta" />
-            <ellipse className={estilos.bostezo} cx="60" cy="33.2" rx="1.6" ry="1.2" />
-          </g>
-          <rect x="41" y="45" width="17" height="5" rx="2.5" className={estilos.ropa} />
-          <rect x="62" y="45" width="17" height="5" rx="2.5" className={estilos.ropa} />
-          <rect x="28" y="50" width="64" height="5" rx="2.5" className={estilos.mueble} />
-          <rect x="82" y="41" width="8" height="9" rx="2" className={estilos.taza} />
-          <text className={`${estilos.zeta} ${estilos.z1}`} x="72" y="20">z</text>
-          <text className={`${estilos.zeta} ${estilos.z2}`} x="77" y="13">z</text>
-          <text className={`${estilos.zeta} ${estilos.z3}`} x="82" y="7">Z</text>
+        <svg viewBox="0 0 160 80" preserveAspectRatio="xMidYMid slice" className={estilos.svg}>
+          <circle cx="122" cy="22" r="22" className={estilos.halo} />
+          <path d="M126 10a12 12 0 1 0 8 20 10 10 0 0 1-8-20Z" className={`${estilos.amarillo} ${estilos.luna}`} />
+          <circle cx="28" cy="14" r="1.3" className={`${estilos.estrella} ${estilos.d1}`} />
+          <circle cx="58" cy="9" r="1" className={`${estilos.estrella} ${estilos.d2}`} />
+          <circle cx="92" cy="18" r="1.2" className={`${estilos.estrella} ${estilos.d3}`} />
+          <path d="M0 66 Q40 52 80 60 T160 56 V80 H0Z" className={estilos.loma} />
+          <path d="M36 58h44M40 58v10M76 58v10M36 52h44" className={estilos.banca} />
+          <rect x="92" y="54" width="10" height="11" rx="2.5" className={estilos.taza} />
+          <path d="M102 57.5h2.5a2.5 2.5 0 0 1 0 5H102" className={estilos.asa} />
+          <path d="M95 50q-2-3 0-6t0-6" className={`${estilos.vapor} ${estilos.d1}`} />
+          <path d="M99 50q-2-3 0-6t0-6" className={`${estilos.vapor} ${estilos.d2}`} />
         </svg>
       );
     case "enfocado":
       return (
-        <svg viewBox="0 0 120 64" className={estilos.svg}>
-          <path className={estilos.luz} d="M100 30 84 55h24Z" />
-          <path d="M92 55h14M99 55l-4-16 8-9" className={estilos.lampara} />
-          <path d="M99 24l9 4-4 6Z" className={estilos.pantalla} />
-          <g className={estilos.foco}>
-            <path d="M60 9V5M50 11l-2.5-3M70 11l2.5-3" className={estilos.lineaTinte} />
-          </g>
-          <path d="M44 51q0-15 16-15t16 15Z" className={estilos.ropa} />
-          <circle cx="60" cy="25" r="10" className={estilos.piel} />
-          <path d="M50 24q0-11 10-11t10 11q-4-4-10-4t-10 4Z" className={estilos.pelo} />
-          <path d="M49 25a11 11 0 0 1 22 0" className={estilos.auricular} />
-          <rect x="46.5" y="21.5" width="4.5" height="8" rx="2" className={estilos.acento} />
-          <rect x="69" y="21.5" width="4.5" height="8" rx="2" className={estilos.acento} />
-          <path d="M53 22.4l4 1.1M67 22.4l-4 1.1" className={estilos.linea} />
-          <Cara x={60} y={27} boca="recta" />
-          <rect x="43" y="36" width="34" height="15" rx="2.5" className={estilos.mueble} />
-          <circle cx="60" cy="43.5" r="2" className={estilos.acento} />
-          <circle className={estilos.manoIzq} cx="49" cy="50" r="3" />
-          <circle className={estilos.manoDer} cx="71" cy="50" r="3" />
-          <rect x="35" y="50.5" width="50" height="4" rx="2" className={estilos.mueble} />
+        <svg viewBox="0 0 160 80" preserveAspectRatio="xMidYMid slice" className={estilos.svg}>
+          <path d="M40 30 H58 L84 70 H16Z" className={estilos.cono} />
+          <path d="M26 70V46l23-20" className={estilos.brazoLampara} />
+          <path d="M40 30a9 8 0 0 1 18 0Z" className={estilos.amarillo} />
+          <rect x="0" y="70" width="160" height="10" className={estilos.mesa} />
+          <path d="M84 68 L60 64 V48 L84 52Z" className={estilos.pagina} />
+          <path d="M84 68 L108 64 V48 L84 52Z" className={estilos.pagina} />
+          <path d="M84 52 L108 48 V64 L84 68Z" className={`${estilos.paginaGira} ${estilos.pagina}`} />
+          <path d="M64 55l14 2M64 59l14 2M90 56l14-2M90 60l14-2" className={estilos.renglon} />
+          <rect x="116" y="62" width="30" height="8" rx="2" className={estilos.libros} />
+          <rect x="119" y="54" width="25" height="8" rx="2" className={estilos.librosB} />
+          <rect x="117" y="46" width="27" height="8" rx="2" className={estilos.libros} />
+          <circle cx="130" cy="20" r="1.2" className={`${estilos.estrella} ${estilos.d2}`} />
+          <circle cx="148" cy="30" r="1" className={`${estilos.estrella} ${estilos.d3}`} />
         </svg>
       );
     case "energia":
       return (
-        <svg viewBox="0 0 120 64" className={estilos.svg}>
-          <path d="M22 57h76" className={estilos.suelo} />
-          <ellipse className={estilos.sombra} cx="60" cy="57" rx="11" ry="2" />
-          <g className={estilos.velocidad}>
-            <path d="M28 22h10M24 31h12M29 40h8" className={estilos.lineaTinte} />
+        <svg viewBox="0 0 160 80" preserveAspectRatio="xMidYMid slice" className={estilos.svg}>
+          <path d="M0 80 L62 46 H98 L160 80Z" className={estilos.cancha} />
+          <path d="M80 46V80M40 80 L70 46M120 80 L90 46" className={estilos.carril} />
+          <ellipse cx="112" cy="66" rx="10" ry="2.6" className={estilos.sombraPelota} />
+          <g className={estilos.pelota}>
+            <circle cx="112" cy="40" r="10" className={estilos.amarillo} />
+            <path d="M103 36q9 4 18 0M104 45q8-4 16 0" className={estilos.costura} />
           </g>
-          <g className={estilos.corredor}>
-            <path className={`${estilos.pierna} ${estilos.piernaAtras}`} d="M58 40l-6 8-7 2" />
-            <path className={`${estilos.brazo} ${estilos.brazoAtras}`} d="M61 26l-7 5-4-3" />
-            <path className={estilos.torso} d="M62 24l-4 16" />
-            <path className={`${estilos.pierna} ${estilos.piernaDelante}`} d="M58 40l8 7-2 8" />
-            <path className={`${estilos.brazo} ${estilos.brazoDelante}`} d="M61 26l7 6 6-4" />
-            <circle cx="64" cy="16" r="7" className={estilos.piel} />
-            <path d="M57 15q1-8 8-8 6 0 7 6-4-2-8-1t-7 3Z" className={estilos.pelo} />
-            <path d="M57.4 13.6q7-3.2 14-1" className={estilos.vincha} />
-            <circle cx="67" cy="16.5" r="1.1" className={estilos.tinta} />
-            <path d="M66 19.6q1.6 1.2 3.2 0" className={estilos.linea} />
-            <path className={estilos.gota} d="M55 13q-2 3 0 4 2-1 0-4Z" />
-          </g>
+          <circle cx="140" cy="14" r="1.2" className={`${estilos.estrella} ${estilos.d1}`} />
         </svg>
       );
     case "social":
       return (
-        <svg viewBox="0 0 120 64" className={estilos.svg}>
-          <g className={estilos.burbuja1}>
-            <rect x="14" y="3" width="22" height="12" rx="6" className={estilos.burbuja} />
-            <path d="M23 15l-2 4 6-4Z" className={estilos.burbuja} />
-            <circle cx="20" cy="9" r="1.3" className={estilos.puntoTinte} />
-            <circle cx="25" cy="9" r="1.3" className={estilos.puntoTinte} />
-            <circle cx="30" cy="9" r="1.3" className={estilos.puntoTinte} />
+        <svg viewBox="0 0 160 80" preserveAspectRatio="xMidYMid slice" className={estilos.svg}>
+          <g className={`${estilos.globo} ${estilos.g1}`}>
+            <rect x="26" y="10" width="44" height="20" rx="10" className={estilos.globoBlanco} />
+            <path d="M38 30l-3 6 9-6Z" className={estilos.globoBlanco} />
+            <circle cx="40" cy="20" r="2" className={estilos.punto} />
+            <circle cx="48" cy="20" r="2" className={estilos.punto} />
+            <circle cx="56" cy="20" r="2" className={estilos.punto} />
           </g>
-          <g className={estilos.burbuja2}>
-            <rect x="84" y="2" width="24" height="12" rx="6" className={estilos.burbuja} />
-            <path d="M91 14l-1 4 5-4Z" className={estilos.burbuja} />
-            <text x="96" y="10.4" className={estilos.jaja}>jaja</text>
+          <g className={`${estilos.globo} ${estilos.g2}`}>
+            <rect x="88" y="8" width="46" height="20" rx="10" className={estilos.amarillo} />
+            <path d="M120 28l4 6-10-6Z" className={estilos.amarillo} />
+            <path d="M98 18h26" className={estilos.lineaGlobo} />
           </g>
-          <path d="M22 47q0-11 11-11t11 11Z" className={estilos.ropa} />
-          <path d="M49 47q0-12 11-12t11 12Z" className={estilos.ropaB} />
-          <path d="M76 47q0-11 11-11t11 11Z" className={estilos.ropaC} />
-          <g className={estilos.cabezaA}>
-            <circle cx="33" cy="28" r="7" className={estilos.piel} />
-            <path d="M26 27q0-8 7-8t7 8q-3-3-7-3t-7 3Z" className={estilos.pelo} />
-            <Cara x={33} y={29} />
-          </g>
-          <g className={estilos.cabezaB}>
-            <circle cx="60" cy="25" r="7.5" className={estilos.piel} />
-            <path d="M52.5 24q0-8.5 7.5-8.5t7.5 8.5l-1 6q1-7-6.5-9.5-7 2.5-6.5 9.5Z" className={estilos.peloB} />
-            <Cara x={60} y={26.5} />
-          </g>
-          <g className={estilos.cabezaC}>
-            <circle cx="87" cy="28" r="7" className={estilos.piel} />
-            <circle cx="82" cy="22" r="3" className={estilos.pelo} />
-            <circle cx="87" cy="20.5" r="3.2" className={estilos.pelo} />
-            <circle cx="92" cy="22" r="3" className={estilos.pelo} />
-            <Cara x={87} y={29} boca="risa" />
-          </g>
-          <rect x="28" y="46" width="64" height="4" rx="2" className={estilos.mueble} />
-          <rect x="34" y="50" width="3" height="9" rx="1.5" className={estilos.mueble} />
-          <rect x="83" y="50" width="3" height="9" rx="1.5" className={estilos.mueble} />
-          <rect x="45" y="40" width="6" height="6" rx="1.5" className={estilos.taza} />
-          <rect x="70" y="40" width="6" height="6" rx="1.5" className={estilos.acento} />
+          <rect x="0" y="66" width="160" height="14" className={estilos.mesa} />
+          <rect x="54" y="50" width="14" height="16" rx="3" className={estilos.taza} />
+          <path d="M68 54h3a3 3 0 0 1 0 6h-3" className={estilos.asa} />
+          <rect x="92" y="50" width="14" height="16" rx="3" className={estilos.tazaAmarilla} />
+          <path d="M92 54h-3a3 3 0 0 0 0 6h3" className={estilos.asaAmarilla} />
+          <path d="M59 46q-2-3 0-6t0-6" className={`${estilos.vapor} ${estilos.d1}`} />
+          <path d="M99 46q-2-3 0-6t0-6" className={`${estilos.vapor} ${estilos.d2}`} />
         </svg>
       );
   }
