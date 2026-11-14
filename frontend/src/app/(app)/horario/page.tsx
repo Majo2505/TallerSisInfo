@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import fotoEscritorio from "@/components/app/fotos/escritorio.webp";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCalendario, IconoCheck, IconoMas } from "@/components/app/Iconos";
 import { Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
@@ -179,7 +180,7 @@ export default function HorarioPage() {
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 0.6, ease: SALIDA }}
       >
-        <FondoVivo />
+        <FondoVivo foto={fotoEscritorio} enfoque="82% 50%" />
         <div>
           <h1>Mi horario académico</h1>
           <p className="hz-sub">

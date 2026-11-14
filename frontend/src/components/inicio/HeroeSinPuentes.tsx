@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
+import fotoBanca from "@/components/app/fotos/banca.webp";
 import { IconoCalendario, IconoFlechaDerecha } from "@/components/app/Iconos";
 import { MotionLink, Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import estilos from "./HeroeSinPuentes.module.css";
@@ -37,7 +38,7 @@ export default function HeroeSinPuentes({ cargando, error, proximo, rutaIa }: Pr
 
   return (
     <section className={estilos.heroe} onPointerMove={seguirPuntero}>
-      <FondoVivo />
+      <FondoVivo foto={fotoBanca} enfoque="78% 45%" />
       <div className={estilos.texto}>
         <p className={estilos.etiqueta}>
           <span className={estilos.punto} aria-hidden="true" /> {etiqueta}
@@ -84,29 +85,6 @@ export default function HeroeSinPuentes({ cargando, error, proximo, rutaIa }: Pr
         </div>
       </div>
 
-      <Calendario dia={proximo?.corto ?? "—"} />
     </section>
-  );
-}
-
-function Calendario({ dia }: { dia: string }) {
-  return (
-    <svg className={estilos.calendario} viewBox="0 0 140 120" aria-hidden="true">
-      <circle className={`${estilos.estrella} ${estilos.e1}`} cx="16" cy="22" r="2.2" />
-      <circle className={`${estilos.estrella} ${estilos.e2}`} cx="126" cy="16" r="1.8" />
-      <circle className={`${estilos.estrella} ${estilos.e3}`} cx="130" cy="92" r="2" />
-      <path className={`${estilos.destello} ${estilos.d1}`} d="M20 84l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" />
-      <g className={estilos.cuerpo}>
-        <rect x="30" y="22" width="80" height="84" rx="14" fill="#ffffff" />
-        <rect x="30" y="22" width="80" height="24" rx="14" fill="#fdd537" />
-        <rect x="30" y="34" width="80" height="12" fill="#fdd537" />
-        <rect x="46" y="14" width="6" height="16" rx="3" fill="#052845" />
-        <rect x="88" y="14" width="6" height="16" rx="3" fill="#052845" />
-        <text x="70" y="88" className={estilos.dia}>
-          {dia}
-        </text>
-        <rect className={estilos.hoja} x="30" y="46" width="80" height="60" rx="0" fill="#e8eef6" />
-      </g>
-    </svg>
   );
 }

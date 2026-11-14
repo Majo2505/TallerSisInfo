@@ -374,6 +374,12 @@
   position: relative;
 }
 
+/* Más alta que antes: lleva encima el sello de verificado y la puntuación. */
+.lugarPortada > svg,
+.lugarPortada > img {
+  height: 108px;
+}
+
 .lugarSello,
 .lugarPuntaje {
   position: absolute;

@@ -2,6 +2,7 @@
 
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
+import fotoBanca from "@/components/app/fotos/banca.webp";
 import { IconoCalendario, IconoFlechaDerecha } from "@/components/app/Iconos";
 import { MotionLink, Odometro, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import estilos from "./HeroePuente.module.css";
@@ -48,7 +49,7 @@ export default function HeroePuente({ activo, despuesDeClases = false, minutos, 
       onPointerLeave={soltar}
       style={{ rotateX: girarX, rotateY: girarY, transformPerspective: 1200 }}
     >
-      <FondoVivo />
+      <FondoVivo foto={fotoBanca} enfoque="78% 45%" />
 
       <div className={estilos.cuerpo}>
         <div className={estilos.datos}>
