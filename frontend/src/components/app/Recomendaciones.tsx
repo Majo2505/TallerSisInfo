@@ -7,7 +7,9 @@ import { ESTADOS_ANIMO, EstadoAnimo } from "@/lib/maqueta";
 import { Puente, duracionMin, esDespuesDeClases, hhmm, listarPuentes } from "@/lib/puentes";
 import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendaciones";
 import { useSesion } from "@/lib/useSesion";
+import fotoGradas from "@/components/onboarding/fotos/estudiantes.webp";
 import FondoVivo from "./FondoVivo";
+import MejorValorados from "./MejorValorados";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import { Selector } from "./Selectores";
@@ -92,6 +94,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
         </Pieza>
 
         <Pieza as="header" className={estilos.cabecera}>
+          <FondoVivo foto={fotoGradas} enfoque="80% 40%" />
           {minutos && (
             <span className={estilos.libres}>
               <IconoRayo tamano={14} /> <Odometro valor={minutos} /> min libres
@@ -178,6 +181,12 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
             </AnimatePresence>
           </Pieza>
         )}
+
+        {modo === "animo" && puentes && puentes.length > 0 && (
+          <Pieza>
+            <MejorValorados puenteId={puenteId} />
+          </Pieza>
+        )}
       </Entrada>
     );
   }
@@ -196,7 +205,7 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
       </Pieza>
 
       <Pieza as="header" className={estilos.resumen}>
-        <FondoVivo />
+        <FondoVivo foto={fotoGradas} enfoque="80% 40%" />
         <span className={estilos.resumenAnimo}>
           <Icono tamano={16} /> {actual.nombre}
         </span>

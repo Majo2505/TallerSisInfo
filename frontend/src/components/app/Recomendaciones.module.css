@@ -52,10 +52,35 @@
   }
 }
 
+/* Portada con foto, como el onboarding: el texto blanco sobre el velo marino. */
 .cabecera {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
+  align-content: end;
   gap: 10px;
+  min-height: clamp(220px, 28vw, 300px);
+  padding: clamp(22px, 4vw, 40px);
+  border-radius: 28px;
+  background: var(--ucb-marino);
+  color: #fff;
+  box-shadow: var(--sombra-3);
 }
+
+.cabecera .titulo {
+  color: #fff;
+}
+
+.cabecera .bajada {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cabecera .libres {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
 
 .libres {
   justify-self: start;
@@ -102,7 +127,9 @@
   isolation: isolate;
   overflow: hidden;
   display: grid;
+  align-content: end;
   gap: 6px;
+  min-height: 180px;
   padding: 24px;
   border-radius: 26px;
   background: var(--ucb-marino);
@@ -250,10 +277,10 @@
 .notaRespaldo {
   margin: 0 0 12px;
   padding: 10px 14px;
-  border-left: 3px solid var(--ucb-amarillo);
-  border-radius: 0 12px 12px 0;
-  background: var(--superficie);
-  color: var(--texto-suave);
+  border-radius: 12px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--ucb-amarillo-oscuro);
+  font-weight: 600;
   font-size: 0.92rem;
 }
 
