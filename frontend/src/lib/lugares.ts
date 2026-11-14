@@ -15,6 +15,9 @@ export type LugarViable = {
   actividadesSugeridas: string[];
   /** Ruta de la foto real (con versión), o null: se muestra la ilustración de la categoría. */
   fotoUrl?: string | null;
+  /** De 1 a 5, a partir de los votos de los estudiantes; null si nadie votó. */
+  puntuacion?: number | null;
+  votos?: number;
 };
 
 export type ResultadoLugares = {

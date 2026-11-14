@@ -25,6 +25,7 @@ import { LugarViable, ResultadoLugares, buscarLugaresViables } from "@/lib/lugar
 import { ESTADOS_ANIMO } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, esDespuesDeClases, hhmm, soloEntreClases } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
+import Puntuacion, { SelloVerificado } from "@/components/app/Puntuacion";
 import estilos from "./inicio.module.css";
 
 const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
@@ -399,7 +400,19 @@ export default function Inicio() {
                 whileHover={reducir ? undefined : { y: -4 }}
                 transition={RESORTE_TOQUE}
               >
-                <ArteCategoria categoria={CON_ILUSTRACION.includes(l.categoria.toLowerCase()) ? l.categoria : "Descanso"} fotoUrl={l.fotoUrl} />
+                <div className={estilos.lugarPortada}>
+                  <ArteCategoria categoria={CON_ILUSTRACION.includes(l.categoria.toLowerCase()) ? l.categoria : "Descanso"} fotoUrl={l.fotoUrl} />
+                  {l.validado && (
+                    <span className={estilos.lugarSello}>
+                      <SelloVerificado />
+                    </span>
+                  )}
+                  {l.puntuacion != null && (
+                    <span className={estilos.lugarPuntaje}>
+                      <Puntuacion valor={l.puntuacion} votos={l.votos} variante="sobreFoto" />
+                    </span>
+                  )}
+                </div>
                 <span className={`${estilos.lugarCategoria} ${estilos[`cat_${l.categoria.toLowerCase()}`] ?? ""}`}>{l.categoria}</span>
                 <h3 className={estilos.lugarNombre}>{l.nombre}</h3>
                 <p className={estilos.lugarMeta}>

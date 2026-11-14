@@ -30,7 +30,24 @@
 
 .portada > svg,
 .portada > img {
-  height: 96px;
+  height: 148px;
+}
+
+/* Sobre la imagen, como en una tarjeta de lugar: verificado arriba a la derecha y la puntuación abajo. */
+.sello,
+.puntaje {
+  position: absolute;
+  z-index: 1;
+}
+
+.sello {
+  top: 18px;
+  right: 18px;
+}
+
+.puntaje {
+  left: 18px;
+  bottom: 8px;
 }
 
 .mejor {

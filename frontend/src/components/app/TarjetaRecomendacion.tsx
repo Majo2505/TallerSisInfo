@@ -6,6 +6,7 @@ import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { Recomendacion, Valoracion, guardarFeedback } from "@/lib/recomendaciones";
 import { IconoCheck, IconoDestello, IconoPin, IconoPulgarAbajo, IconoPulgarArriba, IconoReloj } from "./Iconos";
 import { NumeroAnimado, RESORTE_TOQUE, SALIDA } from "./Movimiento";
+import Puntuacion, { SelloVerificado } from "./Puntuacion";
 import estilos from "./TarjetaRecomendacion.module.css";
 
 const OPCIONES: { valor: Valoracion; etiqueta: string; Icono: typeof IconoPulgarArriba }[] = [
@@ -31,6 +32,14 @@ export default function TarjetaRecomendacion({ recomendacion: r, destacada = fal
       <div className={estilos.portada}>
         <ArteCategoria categoria={r.categoria} fotoUrl={r.fotoUrl} />
         {destacada && <span className={estilos.mejor}>Mejor opción</span>}
+        {r.verificado && (
+          <span className={estilos.sello}>
+            <SelloVerificado />
+          </span>
+        )}
+        <span className={estilos.puntaje}>
+          <Puntuacion valor={r.puntuacion} votos={r.votos} variante="sobreFoto" />
+        </span>
       </div>
 
       <div className={estilos.cuerpo}>
