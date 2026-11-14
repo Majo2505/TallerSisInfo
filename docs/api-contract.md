@@ -774,6 +774,7 @@ completo y el correo de quien saludó, y le avisa con `CONEXION_ACEPTADA`. El av
 | Asociación | El voto va en la fila de `recomendacion`, que pertenece a una consulta (`log_auditoria_rag.usuario_id`). Solo se valoran recomendaciones propias; la de otro responde 404 | ✅ Definido |
 | Sin duplicados | Una sola valoración por recomendación: votar de nuevo reemplaza la anterior y actualiza `fecha_feedback`; repetir el mismo voto no escribe | ✅ Definido |
 | Para qué sirve | `GET /api/admin/metricas` muestra me gusta y no me sirve de la semana, en total y por lugar | ✅ Definido |
+| Puntuación del lugar | De 1 a 5 con un decimal: `1 + 4 × (me gusta + 1) / (votos + 2)` (`ReglasFeedback.Puntuacion`). El voto imaginario de cada lado evita que un solo voto dé 5,0 o 1,0. Sin votos → `null`. Va como `puntuacion` y `votos` en el catálogo del admin (`GET /api/admin/lugares`), en los lugares viables y en cada recomendación (que además trae `verificado` = `lugar.validado`) | ✅ Definido (Maite) |
 
 ### `PATCH /api/recomendaciones/{id}/feedback`
 
