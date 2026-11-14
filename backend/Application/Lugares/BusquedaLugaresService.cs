@@ -73,6 +73,14 @@ public class BusquedaLugaresService : IRecuperadorLugares
             .Take(maximo)
             .ToList();
 
+        // La puntuación sale de los votos de los estudiantes (HU9): una consulta para todos los candidatos.
+        var votos = await _lugares.ContarVotosAsync(candidatos.Select(c => c.LugarId).ToList(), ct);
+        candidatos = candidatos
+            .Select(c => votos.TryGetValue(c.LugarId, out var v)
+                ? c with { Puntuacion = ReglasFeedback.Puntuacion(v.MeGusta, v.NoMeSirve), Votos = v.MeGusta + v.NoMeSirve }
+                : c)
+            .ToList();
+
         return (zona, candidatos);
     }
 
@@ -80,5 +88,6 @@ public class BusquedaLugaresService : IRecuperadorLugares
 
     private static LugarViableDto ADto(LugarCandidato c) =>
         new(c.LugarId, c.Nombre, c.Categoria, c.Descripcion, c.DistanciaM, c.TiempoTrasladoMin, c.DuracionEstimadaMin,
-            c.Validado, c.TipoLugar, c.Modalidad ?? [], c.NivelEnergia ?? [], c.ActividadesSugeridas ?? [], c.FotoUrl);
+            c.Validado, c.TipoLugar, c.Modalidad ?? [], c.NivelEnergia ?? [], c.ActividadesSugeridas ?? [], c.FotoUrl,
+            c.Puntuacion, c.Votos);
 }

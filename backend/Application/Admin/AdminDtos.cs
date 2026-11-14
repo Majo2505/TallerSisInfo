@@ -20,7 +20,10 @@ public record LugarAdminDto(
     int VecesRecomendado,
     bool Validado = true,
     bool Recomendable = true,
-    string? TipoLugar = null
+    string? TipoLugar = null,
+    /// <summary>De 1 a 5, a partir de los votos de los estudiantes; null si nadie votó.</summary>
+    decimal? Puntuacion = null,
+    int Votos = 0
 );
 
 public record CambioEstadoLugarDto(string Estado);

@@ -15,7 +15,9 @@ public record LugarViableDto(
     List<string> Modalidad,
     List<string> NivelEnergia,
     List<string> ActividadesSugeridas,
-    string? FotoUrl);
+    string? FotoUrl,
+    decimal? Puntuacion = null,
+    int Votos = 0);
 
 public record ResultadoBusquedaLugaresDto(
     string Estado,

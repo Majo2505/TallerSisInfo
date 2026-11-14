@@ -37,12 +37,15 @@ public class AdminRepository : IAdminRepository
                        l.duracion_estimada_min AS DuracionEstimadaMin, l.hora_apertura AS HoraApertura,
                        l.hora_cierre AS HoraCierre, l.validado AS Validado, l.recomendable AS Recomendable,
                        l.tipo_lugar AS TipoLugar,
-                       (SELECT COUNT(*) FROM recomendacion r WHERE r.lugar_id = l.id) AS VecesRecomendado
+                       (SELECT COUNT(*) FROM recomendacion r WHERE r.lugar_id = l.id) AS VecesRecomendado,
+                       (SELECT COUNT(*) FROM recomendacion r WHERE r.lugar_id = l.id AND r.feedback = 'LIKE') AS MeGusta,
+                       (SELECT COUNT(*) FROM recomendacion r WHERE r.lugar_id = l.id AND r.feedback = 'DISLIKE') AS NoMeSirve
                 FROM lugar l JOIN categoria c ON c.id = l.categoria_id
                 ORDER BY FIELD(l.estado, 'EN_REVISION', 'ACTIVO', 'INACTIVO'), l.nombre
                 """).ToListAsync(ct);
         return filas.Select(f => new LugarAdminDto(f.Id, f.Nombre, f.Categoria, f.Estado, f.DuracionEstimadaMin,
-            Hora(f.HoraApertura), Hora(f.HoraCierre), (int)f.VecesRecomendado, f.Validado, f.Recomendable, f.TipoLugar)).ToList();
+            Hora(f.HoraApertura), Hora(f.HoraCierre), (int)f.VecesRecomendado, f.Validado, f.Recomendable, f.TipoLugar,
+            ReglasFeedback.Puntuacion((int)f.MeGusta, (int)f.NoMeSirve), (int)(f.MeGusta + f.NoMeSirve))).ToList();
     }
 
     public async Task<string?> CambiarEstadoLugarAsync(int lugarId, string estado, int adminId, CancellationToken ct = default)
@@ -373,6 +376,8 @@ public class AdminRepository : IAdminRepository
         public bool Recomendable { get; set; }
         public string? TipoLugar { get; set; }
         public long VecesRecomendado { get; set; }
+        public long MeGusta { get; set; }
+        public long NoMeSirve { get; set; }
     }
 
     private sealed class FilaCategoria
