@@ -1,0 +1,193 @@
+/* Barra fija: transparente sobre la foto, píldora blanca flotante al bajar. */
+
+.barra {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  padding: max(12px, env(safe-area-inset-top)) clamp(12px, 3vw, 32px) 0;
+  pointer-events: none;
+}
+
+.pildora {
+  pointer-events: auto;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1240px;
+  min-height: 68px;
+  margin: 0 auto;
+  padding: 10px 10px 10px 26px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #fff;
+  transition:
+    background-color 320ms var(--curva-salida),
+    border-color 320ms var(--curva-salida),
+    box-shadow 320ms var(--curva-salida),
+    color 320ms var(--curva-salida);
+}
+
+.barra[data-flotante] .pildora {
+  border-color: var(--borde-suave);
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  color: var(--ucb-marino);
+  box-shadow: 0 2px 4px rgba(5, 40, 69, 0.04), 0 18px 40px -18px rgba(5, 40, 69, 0.3);
+}
+
+.marca {
+  flex-shrink: 0;
+  color: inherit;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-decoration: none;
+}
+
+.marca span {
+  color: var(--ucb-amarillo);
+}
+
+.barra[data-flotante] .marca span {
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.enlaces {
+  display: flex;
+  gap: clamp(12px, 2.6vw, 40px);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+}
+
+.acciones {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.enlaces + .acciones {
+  margin-left: 0;
+}
+
+.entrar,
+.registro {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  touch-action: manipulation;
+  user-select: none;
+  transition: transform 140ms var(--curva-salida), background-color 200ms ease, border-color 200ms ease;
+}
+
+.entrar {
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  color: inherit;
+}
+
+.barra[data-flotante] .entrar {
+  border-color: var(--borde);
+}
+
+.registro {
+  padding-right: 16px;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+.entrar:active,
+.registro:active {
+  transform: scale(0.97);
+}
+
+.corto {
+  display: none;
+}
+
+.marca:focus-visible,
+.enlace:focus-visible,
+.entrar:focus-visible,
+.registro:focus-visible {
+  outline: 3px solid var(--ucb-amarillo);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .enlace:hover {
+    text-decoration-line: underline;
+    text-decoration-color: var(--ucb-amarillo);
+  }
+
+  .entrar:hover {
+    border-color: currentColor;
+  }
+
+  .registro:hover {
+    background: #ffde5c;
+  }
+}
+
+@media (max-width: 900px) {
+  .enlaces {
+    display: none;
+  }
+
+  .enlaces + .acciones {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .pildora {
+    min-height: 60px;
+    padding: 8px 8px 8px 18px;
+    gap: 8px;
+  }
+
+  .marca {
+    font-size: 1.3rem;
+  }
+
+  .entrar,
+  .registro {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.88rem;
+  }
+
+  .registro svg {
+    display: none;
+  }
+
+  .largo {
+    display: none;
+  }
+
+  .corto {
+    display: inline;
+  }
+}

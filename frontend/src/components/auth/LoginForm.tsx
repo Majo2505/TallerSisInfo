@@ -114,10 +114,10 @@ function IconoEscudo() {
   );
 }
 
-export default function LoginForm() {
+export default function LoginForm({ modoInicial = "login" }: { modoInicial?: Modo }) {
   const router = useRouter();
   const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
-  const [modo, setModo] = useState<Modo>("login");
+  const [modo, setModo] = useState<Modo>(modoInicial);
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
@@ -314,8 +314,15 @@ export default function LoginForm() {
                 />
                 {}
                 <label htmlFor="terminos">
-                  Acepto los <strong>términos de uso</strong> y entiendo que BREAKU solo utiliza mi ubicación para
-                  generar recomendaciones activas, nunca la almacena ni la comparte.
+                  Acepto los{" "}
+                  <a href="/terminos" target="_blank" rel="noopener">
+                    términos y condiciones
+                  </a>{" "}
+                  y la{" "}
+                  <a href="/privacidad" target="_blank" rel="noopener">
+                    política de privacidad
+                  </a>
+                  . BREAKU solo usa mi ubicación con mi permiso y guarda el campus, nunca mis coordenadas.
                 </label>
               </div>
               {errores.terminos && (
