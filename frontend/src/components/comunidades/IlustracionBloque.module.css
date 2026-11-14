@@ -1,0 +1,186 @@
+.escena {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.escena * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sombra {
+  fill: rgba(5, 40, 69, 0.08);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flotar {
+    animation: flotar 4s ease-in-out infinite;
+  }
+
+  .nota {
+    animation: subir 3.6s var(--curva-salida) infinite;
+  }
+
+  .n2 {
+    animation-delay: 1.4s;
+  }
+
+  .burbuja {
+    animation: hablar 5s var(--curva-salida) infinite;
+  }
+
+  .b2 {
+    animation-delay: 1.2s;
+  }
+
+  .izq {
+    animation: acercarIzq 4.4s var(--curva-movimiento) infinite;
+  }
+
+  .der {
+    animation: acercarDer 4.4s var(--curva-movimiento) infinite;
+  }
+
+  .corazon {
+    animation: aparecerCorazon 4.4s var(--curva-movimiento) infinite;
+  }
+
+  /* El sol y la luna giran sobre el arco y se turnan. */
+  .giro {
+    transform-box: view-box;
+    transform-origin: 80px 96px;
+    animation: turnarse 7s var(--curva-movimiento) infinite;
+  }
+
+  .latir {
+    animation: latir 2.6s ease-in-out infinite;
+  }
+
+  .chispa {
+    animation: titilar 2.8s ease-in-out infinite;
+  }
+
+  .c2 {
+    animation-delay: 1.3s;
+  }
+}
+
+@keyframes flotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes subir {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+  25% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(1);
+  }
+}
+
+@keyframes hablar {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+  14%,
+  78% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes acercarIzq {
+  0%,
+  100% {
+    transform: translateX(-10px);
+  }
+  45%,
+  70% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes acercarDer {
+  0%,
+  100% {
+    transform: translateX(10px);
+  }
+  45%,
+  70% {
+    transform: translateX(-4px);
+  }
+}
+
+@keyframes aparecerCorazon {
+  0%,
+  30%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  48%,
+  68% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes turnarse {
+  0%,
+  30% {
+    transform: rotate(0deg);
+  }
+  50%,
+  80% {
+    transform: rotate(180deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes latir {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  70% {
+    transform: scale(1.07);
+  }
+  80% {
+    transform: scale(0.98);
+  }
+}
+
+@keyframes titilar {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
