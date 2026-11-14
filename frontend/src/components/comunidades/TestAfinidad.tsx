@@ -6,6 +6,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { IconoCandado, IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda } from "@/components/app/Iconos";
 import { RESORTE_TOQUE, SALIDA } from "@/components/app/Movimiento";
 import { type PreguntaTest, type RespuestasTest, type TestAfinidad as Test, alternar, guardarTest, preguntaLista } from "@/lib/afinidad";
+import CaminoTest from "./CaminoTest";
+import IlustracionBloque from "./IlustracionBloque";
 import estilos from "./TestAfinidad.module.css";
 
 const CLAVE_BORRADOR = "breaku.testAfinidad.borrador";
@@ -66,6 +68,17 @@ export default function TestAfinidad({ test, onCerrar, onListo }: Props) {
     }
     return orden;
   }, [preguntas]);
+
+  // El camino: una parada por bloque, con cuántas preguntas tiene y cuántas ya respondió.
+  const paradas = bloques.map((b) => ({
+    nombre: b.nombre,
+    opcional: b.opcional,
+    total: b.preguntas.length,
+    respondidas: b.preguntas.filter((p) => (respuestas[p.id]?.length ?? 0) > 0).length,
+    primera: preguntas.indexOf(b.preguntas[0]),
+  }));
+  const bloqueActual = Math.max(0, paradas.findIndex((p) => p.nombre === pregunta.bloque));
+  const avanceEnBloque = (indice - paradas[bloqueActual].primera) / paradas[bloqueActual].total;
 
   useEffect(() => guardarBorrador(respuestas), [respuestas]);
 
@@ -186,6 +199,19 @@ export default function TestAfinidad({ test, onCerrar, onListo }: Props) {
               animate={{ scaleX: (indice + 1) / preguntas.length }}
               transition={reducir ? { duration: 0 } : { duration: 0.45, ease: SALIDA }}
             />
+            {/* Una parada por bloque sobre la barra: el mismo camino del costado, en corto. */}
+            {bloques.slice(1).map((b) => {
+              const primera = preguntas.indexOf(b.preguntas[0]);
+              return (
+                <span
+                  key={b.nombre}
+                  className={estilos.hito}
+                  data-pasado={indice >= primera || undefined}
+                  style={{ left: `${(primera / preguntas.length) * 100}%` }}
+                  aria-hidden="true"
+                />
+              );
+            })}
           </div>
         </header>
 
@@ -195,34 +221,13 @@ export default function TestAfinidad({ test, onCerrar, onListo }: Props) {
             <p className={estilos.recorridoCuenta}>
               {respondidas} de {preguntas.length} respondidas
             </p>
-            <ol className={estilos.bloques}>
-              {bloques.map((b) => {
-                const primero = preguntas.indexOf(b.preguntas[0]);
-                const actual = b.nombre === pregunta.bloque;
-                const hecho = !actual && b.preguntas.every((p) => preguntaLista(p, respuestas[p.id]) && (respuestas[p.id]?.length ?? 0) > 0);
-                return (
-                  <li key={b.nombre}>
-                    <button
-                      type="button"
-                      className={estilos.bloque}
-                      data-estado={actual ? "actual" : hecho ? "hecho" : "pendiente"}
-                      aria-current={actual ? "step" : undefined}
-                      onClick={() => ir(primero)}
-                      disabled={enviando}
-                    >
-                      <span className={estilos.bloqueMarca} aria-hidden="true">
-                        {hecho ? <IconoCheck tamano={13} /> : null}
-                      </span>
-                      <span className={estilos.bloqueNombre}>
-                        {b.nombre}
-                        {b.opcional && <small>Opcional</small>}
-                      </span>
-                      <span className={estilos.bloqueCuenta}>{b.preguntas.length}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
+            <CaminoTest
+              paradas={paradas}
+              actual={bloqueActual}
+              avanceEnBloque={avanceEnBloque}
+              deshabilitado={enviando}
+              onIr={ir}
+            />
             <p className={estilos.privacidad}>
               <IconoCandado tamano={16} />
               <span>
@@ -233,6 +238,20 @@ export default function TestAfinidad({ test, onCerrar, onListo }: Props) {
           </aside>
 
           <section className={estilos.principal}>
+            {/* La escena del bloque: cambia solo al pasar de bloque, no en cada pregunta. */}
+            <div className={estilos.ilustracion}>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={pregunta.bloque}
+                  initial={reducir ? false : { opacity: 0, scale: 0.94, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                  exit={reducir ? undefined : { opacity: 0, scale: 0.96, filter: "blur(4px)" }}
+                  transition={{ duration: 0.32, ease: SALIDA }}
+                >
+                  <IlustracionBloque bloque={pregunta.bloque} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <AnimatePresence mode="wait" custom={direccion} initial={false}>
               <motion.div
                 key={pregunta.id}

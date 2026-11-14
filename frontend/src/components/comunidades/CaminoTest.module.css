@@ -1,0 +1,170 @@
+.camino {
+  position: relative;
+  width: 100%;
+  margin: 4px 0 6px;
+}
+
+.lienzo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* El camino que falta: punteado, como un sendero por recorrer. */
+.pendiente {
+  fill: none;
+  stroke: var(--borde);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 2 9;
+}
+
+/* Lo recorrido: trazo lleno, marino. */
+.hecho {
+  fill: none;
+  stroke: var(--ucb-marino);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.paradas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parada {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.boton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.marca {
+  position: relative;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--borde);
+  border-radius: 50%;
+  background: var(--superficie);
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+  transition: transform 200ms var(--curva-salida), background-color 240ms ease, border-color 240ms ease;
+}
+
+.marca b {
+  font-weight: 800;
+}
+
+.boton[data-estado="hecho"] .marca {
+  border-color: var(--exito);
+  background: var(--exito);
+  color: #fff;
+}
+
+.boton[data-estado="actual"] .marca {
+  border-color: var(--ucb-marino);
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  transform: scale(1.12);
+}
+
+/* Un aro que sale de la parada actual: «estás aquí». */
+.latido {
+  position: absolute;
+  inset: -6px;
+  border: 2px solid var(--ucb-amarillo);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .latido {
+    animation: latido 2.4s var(--curva-salida) infinite;
+  }
+}
+
+@keyframes latido {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.85);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* El nombre del bloque, al costado de la parada (del lado con más espacio). */
+.texto {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  gap: 1px;
+  width: max-content;
+  max-width: 150px;
+  translate: 0 -50%;
+  text-align: left;
+  pointer-events: none;
+}
+
+.boton[data-lado="derecha"] .texto {
+  left: 44px;
+}
+
+.boton[data-lado="izquierda"] .texto {
+  right: 44px;
+  text-align: right;
+}
+
+.texto strong {
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.texto small {
+  color: var(--texto-tenue);
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.boton[data-estado="actual"] .texto strong,
+.boton[data-estado="hecho"] .texto strong {
+  color: var(--ucb-marino);
+}
+
+.boton:focus-visible .marca {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 3px;
+}
+
+.boton:active .marca {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .boton:hover:not([data-estado="actual"]) .marca {
+    border-color: var(--ucb-marino);
+  }
+}

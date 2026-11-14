@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
+import fotoCafeteria from "@/components/onboarding/fotos/cafeteria.webp";
+import { EscenaBuscando, EscenaCrear } from "@/components/comunidades/EscenasComunidades";
 import FondoVivo from "@/components/app/FondoVivo";
 import { IconoCheck, IconoFlechaDerecha, IconoFlechaIzquierda, IconoPersonas, IconoReloj } from "@/components/app/Iconos";
 import { Entrada, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
@@ -301,7 +303,7 @@ function Comunidades() {
 
       <Pieza as="header" className={estilos.portada}>
         <div onPointerMove={seguirPuntero} className={estilos.portadaInterior}>
-          <FondoVivo />
+          <FondoVivo foto={fotoCafeteria} enfoque="62% 35%" />
           <span className={estilos.etiqueta}>
             <IconoPersonas tamano={14} /> Comunidades efímeras
           </span>
@@ -372,6 +374,7 @@ function Comunidades() {
             {pestana === "libres" ? (
               <CompanerosLibres />
             ) : pestana === "crear" ? (
+              <div className={estilos.crearFila}>
               <section className={estilos.crear} aria-labelledby="crear-titulo">
                 <span className={estilos.chip}>Solicitud libre</span>
                 <h2 id="crear-titulo" className={estilos.subtitulo}>
@@ -576,6 +579,8 @@ function Comunidades() {
                 </AnimatePresence>
                 <p className={estilos.nota}>Sin historial de conversación · Solicitud puntual · Sin chat grupal</p>
               </section>
+              <EscenaCrear />
+              </div>
             ) : (
               <section className={estilos.descubrir} aria-label="Comunidades activas de hoy" aria-busy={cargandoDescubrir}>
                 {errorDescubrir && (
@@ -596,6 +601,7 @@ function Comunidades() {
                     <span>Esa actividad ya terminó o ya no está disponible.</span>
                   </div>
                 )}
+                {descubrir?.estado === "SIN_RESULTADOS" && <EscenaBuscando />}
                 {descubrir?.mensaje && (
                   <div className={estilos.avisoDescubrir} role="status">
                     <span>{descubrir.mensaje}</span>

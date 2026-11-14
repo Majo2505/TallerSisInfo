@@ -1,0 +1,188 @@
+/* Íconos vivos: movimientos chicos, lentos y con pausa. Todo con transform/opacity; nada si se reduce el movimiento. */
+
+.icono {
+  display: block;
+  overflow: visible;
+}
+
+.icono * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Luna: se mece como al dormirse; la chispa titila. */
+  .lunaCuerpo {
+    animation: mecer 6s ease-in-out infinite;
+  }
+
+  .chispa {
+    animation: titilar 3s ease-in-out infinite;
+  }
+
+  /* Objetivo: una onda sale del aro, como un radar que encuentra algo. */
+  .onda {
+    animation: radar 3.6s var(--curva-salida) infinite;
+  }
+
+  /* Rayo: un pequeño salto y parpadeo, y luego reposa. */
+  .rayoCuerpo {
+    animation: chispazo 4.5s ease-in-out infinite;
+  }
+
+  /* Personas: se mueven por turnos, como en una charla. */
+  .persona1 {
+    animation: asentir 4s ease-in-out infinite;
+  }
+
+  .persona2 {
+    animation: asentir 4s ease-in-out 2s infinite;
+  }
+
+  /* Grupo: los tres puntos se juntan y se vuelven a abrir. */
+  .punto1 {
+    animation: juntarIzq 5s var(--curva-movimiento) infinite;
+  }
+
+  .punto3 {
+    animation: juntarDer 5s var(--curva-movimiento) infinite;
+  }
+
+  .punto2 {
+    animation: latir 5s var(--curva-movimiento) infinite;
+  }
+
+  /* Brújula: la aguja busca el norte y se queda. */
+  .aguja {
+    animation: buscarNorte 5.5s var(--curva-movimiento) infinite;
+  }
+
+  /* Al pasar el mouse por la tarjeta, el ícono se anima más rápido: responde a la persona. */
+  @media (hover: hover) and (pointer: fine) {
+    :global(.icono-vivo-anfitrion):hover .icono * {
+      animation-duration: 1.6s;
+    }
+  }
+}
+
+@keyframes mecer {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes titilar {
+  0%,
+  60%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  75% {
+    opacity: 0.2;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes radar {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.7);
+  }
+  60%,
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes chispazo {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  76% {
+    opacity: 0.45;
+    transform: translateY(-1.5px) scale(1.08);
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  86% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes asentir {
+  0%,
+  40%,
+  100% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-1.6px);
+  }
+}
+
+@keyframes juntarIzq {
+  0%,
+  20%,
+  100% {
+    transform: translateX(0);
+  }
+  45%,
+  70% {
+    transform: translateX(3.5px);
+  }
+}
+
+@keyframes juntarDer {
+  0%,
+  20%,
+  100% {
+    transform: translateX(0);
+  }
+  45%,
+  70% {
+    transform: translateX(-3.5px);
+  }
+}
+
+@keyframes latir {
+  0%,
+  20%,
+  100% {
+    transform: scale(1);
+  }
+  45%,
+  70% {
+    transform: scale(1.25);
+  }
+}
+
+@keyframes buscarNorte {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-35deg);
+  }
+  38% {
+    transform: rotate(18deg);
+  }
+  52% {
+    transform: rotate(-6deg);
+  }
+  62%,
+  90% {
+    transform: rotate(0deg);
+  }
+}

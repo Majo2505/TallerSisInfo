@@ -70,6 +70,47 @@
   }
 }
 
+/* ---------- Con foto ---------- */
+
+.fotoMarco {
+  position: absolute;
+  inset: 0;
+}
+
+.foto {
+  object-fit: cover;
+}
+
+/* El texto va a la izquierda: ahí el marino casi tapa la foto; a la derecha deja ver a las personas. */
+.velo {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(5, 40, 69, 0.55) 0%, rgba(5, 40, 69, 0) 45%),
+    linear-gradient(90deg, rgba(5, 40, 69, 0.95) 0%, rgba(5, 40, 69, 0.84) 34%, rgba(5, 40, 69, 0.4) 64%, rgba(5, 40, 69, 0.12) 100%);
+}
+
+/* La foto entra acercándose, una sola vez por pantalla: CSS para que no se trabe mientras carga la página. */
+@media (prefers-reduced-motion: no-preference) {
+  .fotoMarco {
+    animation: acercar 1400ms var(--curva-salida) both;
+  }
+}
+
+@keyframes acercar {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+/* En el celular el texto ocupa todo el ancho: velo parejo para que se lea. */
+@media (max-width: 700px) {
+  .velo {
+    background: linear-gradient(180deg, rgba(5, 40, 69, 0.62) 0%, rgba(5, 40, 69, 0.9) 100%);
+  }
+}
+
 .foco {
   position: absolute;
   inset: 0;

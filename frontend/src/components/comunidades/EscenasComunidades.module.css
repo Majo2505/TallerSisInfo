@@ -1,0 +1,404 @@
+/* ---------- Escena de «Crear» ---------- */
+
+.crear {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  min-height: 100%;
+  padding: 28px 26px;
+  overflow: hidden;
+  border: 1px solid var(--borde-suave);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(253, 213, 55, 0.22), transparent 45%),
+    linear-gradient(160deg, #ffffff 30%, #eef4fb 100%);
+}
+
+.mensaje {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.mensaje p {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 18px 18px 18px 6px;
+  background: var(--ucb-marino);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.avatarYo {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.flecha {
+  display: flex;
+  gap: 5px;
+  padding-left: 48px;
+}
+
+.flecha span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--borde);
+}
+
+.grupo {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 20px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+}
+
+.grupoChip {
+  justify-self: start;
+  margin-bottom: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e2f3ef;
+  color: var(--exito);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.grupo strong {
+  color: var(--ucb-marino);
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.grupo small {
+  color: var(--texto-suave);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.van {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.cara {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: -8px;
+  border: 2px solid var(--superficie);
+  border-radius: 50%;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.c1 {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+.c2 {
+  background: var(--ucb-celeste);
+  color: #fff;
+}
+
+.c3 {
+  background: var(--ucb-turquesa);
+  color: #fff;
+}
+
+.vanTexto {
+  margin-left: 18px;
+  color: var(--ucb-marino);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.pie {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+/*
+ * La secuencia dura 8 s y se repite: mensaje (0–10 %), puntos (10–25 %), tarjeta (25–35 %) y llegan las caras
+ * (40, 50, 60 %). Todo queda quieto hasta el 90 % y se desvanece para volver a empezar.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .mensaje,
+  .flecha span,
+  .grupo,
+  .cara {
+    animation-duration: 8s;
+    animation-iteration-count: infinite;
+    animation-timing-function: var(--curva-salida);
+    animation-fill-mode: both;
+  }
+
+  .mensaje {
+    animation-name: entraMensaje;
+  }
+
+  .flecha span {
+    animation-name: puntito;
+  }
+
+  .flecha span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .flecha span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .grupo {
+    animation-name: entraGrupo;
+  }
+
+  .c1 {
+    animation-name: llegaUno;
+  }
+
+  .c2 {
+    animation-name: llegaDos;
+  }
+
+  .c3 {
+    animation-name: llegaTres;
+  }
+}
+
+@keyframes entraMensaje {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  6%,
+  94% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes puntito {
+  0%,
+  7% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+  14%,
+  94% {
+    opacity: 0.6;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes entraGrupo {
+  0%,
+  14% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  22%,
+  94% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes llegaUno {
+  0%,
+  28% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  33%,
+  94% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes llegaDos {
+  0%,
+  36% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  41%,
+  94% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes llegaTres {
+  0%,
+  44% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  49%,
+  94% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- Radar de «Descubrir» ---------- */
+
+.radar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 180px;
+  height: 180px;
+  margin: 8px auto 4px;
+}
+
+.onda {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(29, 92, 145, 0.35);
+  border-radius: 50%;
+  opacity: 0.35;
+}
+
+.o2 {
+  inset: 22%;
+}
+
+.o3 {
+  inset: 40%;
+}
+
+.centro {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--ucb-marino);
+  color: var(--ucb-amarillo);
+  box-shadow: 0 14px 30px -14px rgba(5, 40, 69, 0.8);
+}
+
+.punto {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--superficie);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.p1 {
+  top: 12%;
+  left: 24%;
+  background: var(--ucb-amarillo);
+}
+
+.p2 {
+  top: 30%;
+  right: 8%;
+  background: var(--ucb-celeste);
+}
+
+.p3 {
+  bottom: 14%;
+  left: 14%;
+  background: var(--ucb-turquesa);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .onda {
+    inset: 40%;
+    animation: expandir 3.6s var(--curva-salida) infinite;
+  }
+
+  .o2 {
+    animation-delay: 1.2s;
+  }
+
+  .o3 {
+    animation-delay: 2.4s;
+  }
+
+  .punto {
+    animation: asomar 3.6s ease-in-out infinite;
+  }
+
+  .p2 {
+    animation-delay: 1.2s;
+  }
+
+  .p3 {
+    animation-delay: 2.4s;
+  }
+}
+
+@keyframes expandir {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+
+@keyframes asomar {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  30%,
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

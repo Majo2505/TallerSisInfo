@@ -6,13 +6,9 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { AvisoFlotante, useAviso } from "@/components/app/Aviso";
 import {
-  IconoBrujula,
   IconoFlechaDerecha,
-  IconoLuna,
-  IconoObjetivo,
   IconoPersonas,
   IconoPin,
-  IconoRayo,
   IconoReloj,
 } from "@/components/app/Iconos";
 import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
@@ -26,6 +22,7 @@ import { ESTADOS_ANIMO } from "@/lib/maqueta";
 import { Puente, listarPuentes, duracionMin, esDespuesDeClases, hhmm, soloEntreClases } from "@/lib/puentes";
 import { useSesion } from "@/lib/useSesion";
 import Puntuacion, { SelloVerificado } from "@/components/app/Puntuacion";
+import IconoVivo, { type NombreIconoVivo } from "@/components/app/IconoVivo";
 import estilos from "./inicio.module.css";
 
 const CON_ILUSTRACION = ["comida", "estudio", "descanso", "deporte"];
@@ -51,11 +48,11 @@ function textoSugerencias(
 
 const DIAS_SEMANA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-const ICONO_ESTADO = {
-  cansado: IconoLuna,
-  enfocado: IconoObjetivo,
-  energia: IconoRayo,
-  social: IconoPersonas,
+const ICONO_ESTADO: Record<string, NombreIconoVivo> = {
+  cansado: "luna",
+  enfocado: "objetivo",
+  energia: "rayo",
+  social: "personas",
 };
 
 const aMin = (h: string) => {
@@ -444,12 +441,12 @@ export default function Inicio() {
         <h2 className={estilos.subtitulo}>¿Cómo te sientes?</h2>
         <div className={estilos.estados}>
           {ESTADOS_ANIMO.map((e) => {
-            const Icono = ICONO_ESTADO[e.id];
+            const icono = ICONO_ESTADO[e.id];
             return (
               <motion.button
                 key={e.id}
                 type="button"
-                className={`${estilos.estado} ${estilos[`estado_${e.id}`]}`}
+                className={`${estilos.estado} ${estilos[`estado_${e.id}`]} icono-vivo-anfitrion`}
                 onClick={() => router.push(`${rutaIa}${rutaIa.includes("?") ? "&" : "?"}estado=${e.id}`)}
                 onPointerMove={seguirPuntero}
                 whileHover={reducir ? undefined : { y: -3 }}
@@ -457,7 +454,7 @@ export default function Inicio() {
                 transition={RESORTE_TOQUE}
               >
                 <span className={estilos.estadoIcono}>
-                  <Icono tamano={20} />
+                  <IconoVivo nombre={icono} tamano={20} />
                 </span>
                 <span className={estilos.estadoTexto}>
                   <strong>{e.nombre}</strong>
@@ -470,18 +467,18 @@ export default function Inicio() {
       </Pieza>
 
       <Pieza as="section" className={estilos.atajos}>
-        <MotionLink href="/comunidades" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
+        <MotionLink href="/comunidades" className={`${estilos.atajo} icono-vivo-anfitrion`} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
           <span className={estilos.atajoIcono}>
-            <IconoPersonas tamano={20} />
+            <IconoVivo nombre="grupo" tamano={20} />
           </span>
           <span>
             <strong>Grupo rápido</strong>
             <small>Crea o únete a uno</small>
           </span>
         </MotionLink>
-        <MotionLink href="/campus" className={estilos.atajo} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
+        <MotionLink href="/campus" className={`${estilos.atajo} icono-vivo-anfitrion`} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
           <span className={estilos.atajoIcono}>
-            <IconoBrujula tamano={20} />
+            <IconoVivo nombre="brujula" tamano={20} />
           </span>
           <span>
             <strong>Descubrir</strong>

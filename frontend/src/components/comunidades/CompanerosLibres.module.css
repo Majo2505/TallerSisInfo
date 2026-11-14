@@ -993,3 +993,20 @@
     width: 100%;
   }
 }
+
+/* Los íconos de los estados vacíos flotan suave: la pantalla no queda muerta mientras no hay nada. */
+@media (prefers-reduced-motion: no-preference) {
+  .estadoIcono {
+    animation: flotarIcono 4s ease-in-out infinite;
+  }
+}
+
+@keyframes flotarIcono {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}

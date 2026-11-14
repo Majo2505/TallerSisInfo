@@ -78,11 +78,31 @@
 }
 
 .barra {
+  position: relative;
   grid-column: 1 / -1;
   height: 8px;
-  overflow: hidden;
   border-radius: 999px;
   background: #e3e8ef;
+}
+
+/* Paradas del camino sobre la barra: se rellenan cuando las pasas. */
+.hito {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2px solid #c6d0dc;
+  border-radius: 50%;
+  background: var(--fondo-app);
+  translate: -50% -50%;
+  transition: background-color 300ms ease, border-color 300ms ease, transform 300ms var(--curva-salida);
+}
+
+.hito[data-pasado] {
+  border-color: var(--ucb-marino);
+  background: var(--ucb-amarillo);
+  transform: scale(1.15);
 }
 
 .barraLlena {
@@ -231,10 +251,20 @@
 /* ---------- La pregunta ---------- */
 
 .principal {
+  position: relative;
   display: grid;
   align-content: start;
   gap: 18px;
   min-height: calc(100dvh - 120px);
+}
+
+/* La escena del bloque, arriba a la derecha; en pantallas angostas no hay lugar y se omite. */
+.ilustracion {
+  position: absolute;
+  top: clamp(4px, 3vh, 32px);
+  right: 0;
+  width: 168px;
+  pointer-events: none;
 }
 
 .pregunta {
@@ -423,6 +453,12 @@
 
   .opcion:hover:not([aria-pressed="true"]):not([data-lleno]) {
     border-color: var(--ucb-marino);
+  }
+}
+
+@media (max-width: 1080px) {
+  .ilustracion {
+    display: none;
   }
 }
 
