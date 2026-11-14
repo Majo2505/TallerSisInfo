@@ -64,9 +64,13 @@ const TIPOS = {
   COMUNIDAD_CERRADA: { titulo: "El grupo se llenó", clase: "cerrada", Icono: IconoPersonas },
   // HU28: la advertencia del administrador. No lleva a otra pantalla: el aviso ya dice el motivo.
   SANCION_ADVERTENCIA: { titulo: "Advertencia del administrador", clase: "advertencia", Icono: IconoBandera },
+  // HU12: saludos de «Libres contigo». Llevan a esa pestaña, donde se responden o se ve el correo.
+  CONEXION_SOLICITADA: { titulo: "Alguien quiere conocerte", clase: "invitacion", Icono: IconoPersonas },
+  CONEXION_ACEPTADA: { titulo: "Aceptaron tu saludo", clase: "invitacion", Icono: IconoPersonas },
 } as const;
 
 function rutaDe(n: Notificacion): string {
+  if (n.tipo === "CONEXION_SOLICITADA" || n.tipo === "CONEXION_ACEPTADA") return "/comunidades?pestana=libres";
   if (n.tipo === "PUENTE_DISPONIBLE" || n.tipo === "DESPUES_DE_CLASES") return n.duracionMinutos ? `/recomendaciones?min=${n.duracionMinutos}` : "/recomendaciones";
   return n.comunidadId ? `/comunidades?pestana=descubrir&comunidad=${n.comunidadId}` : "/comunidades?pestana=descubrir";
 }
