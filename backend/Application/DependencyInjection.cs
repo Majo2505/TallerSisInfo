@@ -35,6 +35,8 @@ public static class DependencyInjection
         services.AddScoped<UbicacionService>();
         services.AddScoped<PerfilService>();
         services.AddScoped<MatchingService>();
+        services.AddScoped<AfinidadService>();
+        services.AddScoped<ConexionService>();
 
         // Lugares y recomendaciones (HU6, HU7)
         services.AddScoped<BusquedaLugaresService>();
