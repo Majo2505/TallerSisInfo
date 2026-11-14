@@ -8,7 +8,7 @@ import { Logo } from "@/components/auth/Iconos";
 import Notificaciones from "@/components/notificaciones/Notificaciones";
 import { iniciales } from "@/lib/iniciales";
 import { useSesion } from "@/lib/useSesion";
-import { esAdmin } from "@/services/authService";
+import { cerrarSesion, esAdmin } from "@/services/authService";
 import {
   IconoBrujula,
   IconoCalendario,
@@ -16,6 +16,7 @@ import {
   IconoInicio,
   IconoPersona,
   IconoPersonas,
+  IconoSalir,
 } from "./Iconos";
 import ShellAdmin from "./ShellAdmin";
 import estilos from "./ShellApp.module.css";
@@ -48,6 +49,11 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
 
   const activa = (ruta: string) => pathname === ruta || pathname.startsWith(`${ruta}/`);
 
+  function salir() {
+    cerrarSesion();
+    router.replace("/login");
+  }
+
   return (
     <div className={estilos.app}>
       <header className={estilos.barra}>
@@ -79,6 +85,9 @@ export default function ShellApp({ children }: { children: React.ReactNode }) {
           <Link href="/perfil" className={estilos.avatar} aria-label={`Mi perfil, ${sesion.usuario.nombre}`}>
             {iniciales(sesion.usuario.nombre)}
           </Link>
+          <button type="button" className={estilos.salir} onClick={salir} aria-label="Cerrar sesión" title="Cerrar sesión">
+            <IconoSalir tamano={18} />
+          </button>
         </div>
       </header>
 

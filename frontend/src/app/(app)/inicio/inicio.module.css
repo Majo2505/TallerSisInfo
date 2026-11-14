@@ -370,6 +370,26 @@
   display: none;
 }
 
+.lugarPortada {
+  position: relative;
+}
+
+.lugarSello,
+.lugarPuntaje {
+  position: absolute;
+  z-index: 1;
+}
+
+.lugarSello {
+  top: 8px;
+  right: 8px;
+}
+
+.lugarPuntaje {
+  left: 8px;
+  bottom: 8px;
+}
+
 .lugar {
   scroll-snap-align: start;
   display: grid;

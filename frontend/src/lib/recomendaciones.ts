@@ -11,6 +11,11 @@ export type Recomendacion = {
   explicacion: string;
   feedback: "LIKE" | "DISLIKE" | null;
   fotoUrl?: string | null;
+  /** De 1 a 5, a partir de los votos de los estudiantes; null si nadie votó. */
+  puntuacion?: number | null;
+  votos?: number;
+  /** Verificado por el equipo de BreakU. */
+  verificado?: boolean;
 };
 
 export type RespuestaRecomendacion = {

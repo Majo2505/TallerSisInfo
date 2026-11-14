@@ -23,6 +23,9 @@ export type LugarAdmin = {
   validado: boolean;
   recomendable: boolean;
   tipoLugar: string | null;
+  /** De 1 a 5, a partir de los votos de los estudiantes; null si nadie votó. */
+  puntuacion?: number | null;
+  votos?: number;
 };
 
 export type ReporteAdmin = {

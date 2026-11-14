@@ -41,6 +41,7 @@ import { ErrorApi } from "@/lib/api";
 import { reporteDeUsuario, usuarioParaSancionar } from "@/lib/reglasUsuarios";
 import { useSesion } from "@/lib/useSesion";
 import { esAdmin } from "@/services/authService";
+import Puntuacion from "@/components/app/Puntuacion";
 import estilos from "./admin.module.css";
 
 type Pestana = "catalogo" | "reportes" | "usuarios" | "metricas" | "auditoria";
@@ -351,6 +352,7 @@ function PanelAdminContenido() {
                     <span role="columnheader">Estado</span>
                     <span role="columnheader">Duración</span>
                     <span role="columnheader">Recomendado</span>
+                    <span role="columnheader">Rating</span>
                     <span role="columnheader">Acciones</span>
                   </div>
                   {lugares?.map((l, i) => (
@@ -380,6 +382,9 @@ function PanelAdminContenido() {
                       </span>
                       <span role="cell" data-etiqueta="Recomendado">
                         {l.vecesRecomendado} {l.vecesRecomendado === 1 ? "vez" : "veces"}
+                      </span>
+                      <span role="cell" data-etiqueta="Rating">
+                        <Puntuacion valor={l.puntuacion} votos={l.votos} />
                       </span>
                       <span role="cell" className={estilos.accionesFila}>
                         {!l.validado && (
