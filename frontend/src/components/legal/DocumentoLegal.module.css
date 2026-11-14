@@ -1,0 +1,209 @@
+.pagina {
+  min-height: 100svh;
+  background: var(--fondo-app);
+  color: var(--texto);
+}
+
+.pagina ::selection {
+  background: var(--ucb-amarillo);
+  color: var(--ucb-marino);
+}
+
+/* globals.css le da padding a todo <main>; aquí no. */
+.principal {
+  padding: 0;
+}
+
+.portada {
+  padding: 150px clamp(16px, 4.5vw, 64px) 120px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(253, 213, 55, 0.22), transparent 40%),
+    var(--ucb-marino);
+  color: #fff;
+}
+
+.portadaMarco {
+  display: grid;
+  gap: 14px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.portada h1 {
+  margin: 0;
+  font-family: var(--fuente-titulo), system-ui, sans-serif;
+  font-size: clamp(2.2rem, 1.3rem + 3.4vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.036em;
+  text-wrap: balance;
+}
+
+.portada p {
+  margin: 0;
+  max-width: 60ch;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.portada small {
+  color: var(--ucb-amarillo);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 28px;
+  max-width: 1240px;
+  margin: -72px auto 0;
+  padding: 0 clamp(16px, 4.5vw, 64px) clamp(72px, 10vw, 120px);
+}
+
+.hoja {
+  box-sizing: border-box;
+  padding: clamp(28px, 5vw, 56px);
+  border: 1px solid var(--borde-suave);
+  border-radius: 28px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+}
+
+.hoja > :first-child {
+  margin-top: 0;
+}
+
+.hoja h2 {
+  margin: 44px 0 12px;
+  color: var(--ucb-marino);
+  font-size: clamp(1.3rem, 1.15rem + 0.5vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  scroll-margin-top: 110px;
+}
+
+.hoja h3 {
+  margin: 24px 0 6px;
+  color: var(--ucb-marino);
+  font-size: 1.06rem;
+  font-weight: 800;
+}
+
+.hoja p,
+.hoja li {
+  max-width: 70ch;
+  color: var(--texto);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.hoja p {
+  margin: 0 0 12px;
+}
+
+.hoja ul {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
+}
+
+.hoja li + li {
+  margin-top: 6px;
+}
+
+.hoja li::marker {
+  color: var(--ucb-amarillo-oscuro);
+}
+
+.hoja strong {
+  color: var(--ucb-marino);
+}
+
+.hoja a {
+  color: var(--ucb-azul-medio);
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+
+/* Nota destacada dentro del documento (lo más importante en una línea). */
+.hoja aside {
+  margin: 0 0 8px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--ucb-amarillo-suave);
+  color: var(--texto);
+  line-height: 1.6;
+}
+
+.otros {
+  position: sticky;
+  top: 108px;
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 24px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+}
+
+.otros h2 {
+  margin: 0;
+  color: var(--ucb-marino);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.otros ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.otros a {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--ucb-azul-medio);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.otros p {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.otros a:focus-visible,
+.hoja a:focus-visible {
+  outline: 3px solid var(--ucb-amarillo);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .otros a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+
+@media (max-width: 900px) {
+  .cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .otros {
+    position: static;
+  }
+
+  .portada {
+    padding-top: 120px;
+  }
+}
