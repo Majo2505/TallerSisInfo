@@ -89,9 +89,38 @@
   transform: scale(0.94);
 }
 
+.salir {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--borde-suave);
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 160ms var(--curva-salida), background-color 200ms ease, color 200ms ease;
+}
+
+.salir:active {
+  transform: scale(0.92);
+}
+
+.salir:focus-visible {
+  outline: 3px solid var(--ucb-celeste);
+  outline-offset: 2px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .avatar:hover {
     transform: scale(1.06);
+  }
+
+  .salir:hover {
+    background: var(--error-fondo);
+    color: var(--error);
   }
 }
 
