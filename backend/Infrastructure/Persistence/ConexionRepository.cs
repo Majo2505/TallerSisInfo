@@ -70,7 +70,7 @@ public sealed class ConexionRepository : IConexionRepository
     private const string Columnas = """
         SELECT id AS Id, solicitante_id AS SolicitanteId, destinatario_id AS DestinatarioId,
                CAST(dia_semana AS SIGNED) AS DiaSemana, hora_inicio AS HoraInicio, hora_fin AS HoraFin,
-               CAST(afinidad AS SIGNED) AS Compatibilidad,
+               CAST(afinidad AS SIGNED) AS Afinidad,
                CAST(en_comun AS CHAR) AS EnComun, estado AS Estado, creada_en AS CreadaEn, respondida_en AS RespondidaEn
           FROM conexion
         """;
@@ -110,7 +110,7 @@ public sealed class ConexionRepository : IConexionRepository
                     INSERT INTO conexion (solicitante_id, destinatario_id, dia_semana, hora_inicio, hora_fin, afinidad, en_comun,
                                           estado, creada_en)
                     VALUES ({c.SolicitanteId}, {c.DestinatarioId}, {c.DiaSemana}, {c.HoraInicio.ToTimeSpan()},
-                            {c.HoraFin.ToTimeSpan()}, {c.Compatibilidad}, CAST({enComun} AS JSON), {ReglasConexion.Pendiente},
+                            {c.HoraFin.ToTimeSpan()}, {c.Afinidad}, CAST({enComun} AS JSON), {ReglasConexion.Pendiente},
                             {ahoraUtc})
                     """, ct);
         }
@@ -169,7 +169,7 @@ public sealed class ConexionRepository : IConexionRepository
         var filas = await _db.Database.SqlQueryRaw<FilaConexion>($"{Columnas} {filtro}", valores).ToListAsync(ct);
         return filas.Select(f => new ConexionGuardada(
                 f.Id, f.SolicitanteId, f.DestinatarioId, (int)f.DiaSemana, TimeOnly.FromTimeSpan(f.HoraInicio),
-                TimeOnly.FromTimeSpan(f.HoraFin), (int)f.Compatibilidad,
+                TimeOnly.FromTimeSpan(f.HoraFin), (int)f.Afinidad,
                 JsonSerializer.Deserialize<List<string>>(f.EnComun) ?? [], f.Estado, f.CreadaEn, f.RespondidaEn))
             .ToList();
     }
@@ -182,7 +182,7 @@ public sealed class ConexionRepository : IConexionRepository
         public long DiaSemana { get; set; }
         public TimeSpan HoraInicio { get; set; }
         public TimeSpan HoraFin { get; set; }
-        public long Compatibilidad { get; set; }
+        public long Afinidad { get; set; }
         public string EnComun { get; set; } = "[]";
         public string Estado { get; set; } = "";
         public DateTime CreadaEn { get; set; }

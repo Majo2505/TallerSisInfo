@@ -67,8 +67,8 @@ public class ConexionService
         var inicio = TimeOnly.Parse(companero.HoraInicio);
         var fin = TimeOnly.Parse(companero.HoraFin);
         var nueva = new ConexionNueva(usuarioId, otroId, resultado.Puente.DiaSemana, inicio, fin,
-            companero.Compatibilidad, companero.EnComun);
-        var aviso = ReglasConexion.MensajeSolicitada(ReglasDescubrir.NombreCorto(yo.Nombre), companero.Compatibilidad,
+            companero.Afinidad, companero.EnComun);
+        var aviso = ReglasConexion.MensajeSolicitada(ReglasDescubrir.NombreCorto(yo.Nombre), companero.Afinidad,
             resultado.Puente.DiaSemana, inicio, fin);
 
         var id = await _repo.CrearAsync(nueva, aviso, DateTime.UtcNow, ct);
@@ -123,7 +123,7 @@ public class ConexionService
         return new ConexionDto(
             c.Id, resumen.Estado, resumen.EnviadaPorMi,
             aceptada ? otro.Nombre : ReglasDescubrir.NombreCorto(otro.Nombre),
-            otro.Carrera, otro.Semestre, c.Compatibilidad, c.EnComun, c.DiaSemana,
+            otro.Carrera, otro.Semestre, c.Afinidad, c.EnComun, c.DiaSemana,
             c.HoraInicio.ToString("HH:mm:ss"), c.HoraFin.ToString("HH:mm:ss"),
             aceptada ? otro.Correo : null,
             c.CreadaEn);

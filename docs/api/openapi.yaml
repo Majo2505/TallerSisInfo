@@ -3067,7 +3067,7 @@ components:
         nombre: { type: string, example: Ana Q., description: Completo solo si está ACEPTADA. }
         carrera: { type: string, nullable: true, example: Ingeniería de Sistemas }
         semestre: { type: integer, format: int32, nullable: true, example: 5 }
-        compatibilidad: { type: integer, format: int32, example: 84 }
+        afinidad: { type: integer, format: int32, example: 74, description: La del test (igual para los dos), no la compatibilidad del matching. }
         enComun:
           type: array
           items: { type: string }

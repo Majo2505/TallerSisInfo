@@ -16,13 +16,13 @@ public interface IAfinidadRepository
 
 public record ConexionGuardada(
     int Id, int SolicitanteId, int DestinatarioId, int DiaSemana, TimeOnly HoraInicio, TimeOnly HoraFin,
-    int Compatibilidad, List<string> EnComun, string Estado, DateTime CreadaEn, DateTime? RespondidaEn);
+    int Afinidad, List<string> EnComun, string Estado, DateTime CreadaEn, DateTime? RespondidaEn);
 
 public record PersonaConexion(int Id, string Nombre, string? Carrera, int? Semestre, string Correo);
 
 public record ConexionNueva(
     int SolicitanteId, int DestinatarioId, int DiaSemana, TimeOnly HoraInicio, TimeOnly HoraFin,
-    int Compatibilidad, List<string> EnComun);
+    int Afinidad, List<string> EnComun);
 
 /// <summary>HU12: los saludos entre estudiantes (tabla <c>conexion</c>) y sus avisos.</summary>
 public interface IConexionRepository

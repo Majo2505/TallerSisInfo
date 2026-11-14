@@ -227,7 +227,7 @@ public class ReglasConexionTests
 
     [Fact]
     public void El_aviso_dice_quien_cuanto_y_cuando()
-        => Assert.Equal("Ana Q. (87 % compatible) quiere coincidir contigo el miércoles de 10:30 a 11:45. Respóndele en Libres contigo.",
+        => Assert.Equal("Ana Q. (87 % de afinidad) quiere coincidir contigo el miércoles de 10:30 a 11:45. Respóndele en Libres contigo.",
             ReglasConexion.MensajeSolicitada("Ana Q.", 87, 3, new TimeOnly(10, 30), new TimeOnly(11, 45)));
 
     [Fact]
@@ -305,7 +305,7 @@ public class LibresContigoServiciosTests
         {
             var id = c.Conexiones.Count + 1;
             c.Conexiones.Add(new ConexionGuardada(id, n.SolicitanteId, n.DestinatarioId, n.DiaSemana, n.HoraInicio, n.HoraFin,
-                n.Compatibilidad, n.EnComun, ReglasConexion.Pendiente, ahoraUtc, null));
+                n.Afinidad, n.EnComun, ReglasConexion.Pendiente, ahoraUtc, null));
             c.Avisos.Add((n.DestinatarioId, mensajeAviso));
             return Task.FromResult(id);
         }
@@ -398,7 +398,7 @@ public class LibresContigoServiciosTests
         Assert.Null(dto.Correo);
         var (para, mensaje) = Assert.Single(c.Avisos);
         Assert.Equal(Ana, para);
-        Assert.StartsWith("Maite A. (100 % compatible) quiere coincidir contigo el martes de 10:00 a 12:00", mensaje);
+        Assert.StartsWith("Maite A. (100 % de afinidad) quiere coincidir contigo el martes de 10:00 a 12:00", mensaje);
         Assert.Contains(Ana, c.TiempoReal);
     }
 

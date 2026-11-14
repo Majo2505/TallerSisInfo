@@ -732,19 +732,21 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 ```json
 {
   "recibidas": [ { "id": 3, "estado": "PENDIENTE", "enviadaPorMi": false, "nombre": "Maite A.", "carrera": "Ingeniería de Sistemas",
-                   "semestre": 5, "compatibilidad": 100, "enComun": ["Videojuegos"], "diaSemana": 1,
+                   "semestre": 5, "afinidad": 100, "enComun": ["Videojuegos"], "diaSemana": 1,
                    "horaInicio": "09:30:00", "horaFin": "10:30:00", "correo": null, "creadaEn": "2026-11-14T15:00:00Z" } ],
   "enviadas": [],
   "aceptadas": [ { "id": 1, "estado": "ACEPTADA", "nombre": "Ana Quiroga", "correo": "ana.quiroga@ucb.edu.bo" } ]
 }
 ```
 
-`recibidas` y `enviadas` son las pendientes; `aceptadas`, en cualquier sentido, con nombre completo y correo.
+`recibidas` y `enviadas` son las pendientes; `aceptadas`, en cualquier sentido, con nombre completo y correo. `afinidad` es la
+del test (se guarda al saludar en `conexion.afinidad`): es la misma vista desde los dos lados, a diferencia de la
+compatibilidad del matching, que depende del puente de cada uno.
 
 ### `POST /api/conexiones`
 
 Body `{ "usuarioId": 4, "puenteId": 21 }`. Responde **201** con la conexión (`PENDIENTE`, nombre corto, sin correo) y avisa
-al otro con `CONEXION_SOLICITADA` (si tiene los avisos encendidos): «Maite A. (100 % compatible) quiere coincidir contigo el
+al otro con `CONEXION_SOLICITADA` (si tiene los avisos encendidos): «Maite A. (100 % de afinidad) quiere coincidir contigo el
 lunes de 09:30 a 10:30. Respóndele en Libres contigo.».
 
 | Código | Caso |

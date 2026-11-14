@@ -22,6 +22,7 @@ public record ConexionResumenDto(int Id, string Estado, bool EnviadaPorMi);
 /// <summary>
 /// Una conexión. Antes de aceptarse solo trae el nombre corto; aceptada, también el nombre completo y el correo.
 /// Un saludo que la otra persona rechazó se le muestra a quien lo envió como PENDIENTE (el rechazo es silencioso).
+/// <c>Afinidad</c> es la del test, que es la misma vista desde los dos lados (la compatibilidad depende del puente de cada uno).
 /// </summary>
 public record ConexionDto(
     int Id,
@@ -30,7 +31,7 @@ public record ConexionDto(
     string Nombre,
     string? Carrera,
     int? Semestre,
-    int Compatibilidad,
+    int Afinidad,
     List<string> EnComun,
     int DiaSemana,
     string HoraInicio,

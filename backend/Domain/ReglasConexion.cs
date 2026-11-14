@@ -40,8 +40,8 @@ public static class ReglasConexion
     };
 
     /// <summary>El aviso para quien recibe el saludo. Nunca pasa de 200 caracteres (la columna mensaje).</summary>
-    public static string MensajeSolicitada(string nombreCorto, int compatibilidad, int diaSemana, TimeOnly inicio, TimeOnly fin) =>
-        Recortar($"{nombreCorto} ({compatibilidad} % compatible) quiere coincidir contigo el {Dia(diaSemana)} " +
+    public static string MensajeSolicitada(string nombreCorto, int afinidad, int diaSemana, TimeOnly inicio, TimeOnly fin) =>
+        Recortar($"{nombreCorto} ({afinidad} % de afinidad) quiere coincidir contigo el {Dia(diaSemana)} " +
                  $"de {inicio:HH\\:mm} a {fin:HH\\:mm}. Respóndele en Libres contigo.");
 
     /// <summary>El aviso para quien saludó, cuando la otra persona acepta.</summary>
