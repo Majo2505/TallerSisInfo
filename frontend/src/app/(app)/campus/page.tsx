@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import FondoVivo from "@/components/app/FondoVivo";
+import fotoGradas from "@/components/onboarding/fotos/estudiantes.webp";
 import { IconoBuscar, IconoCheck, IconoPin } from "@/components/app/Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from "@/components/app/Movimiento";
 import { Selector } from "@/components/app/Selectores";
@@ -51,6 +52,7 @@ export default function Campus() {
   const [errorLugares, setErrorLugares] = useState<ErrorPara | null>(null);
   const [intento, setIntento] = useState(0);
   const [categoria, setCategoria] = useState("Todos");
+  const [orden, setOrden] = useState<"cerca" | "valorados">("cerca");
   const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
@@ -97,10 +99,16 @@ export default function Campus() {
 
   const lugares = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
-    return (resultado?.lugares ?? []).filter(
+    const filtrados = (resultado?.lugares ?? []).filter(
       (l) => (categoria === "Todos" || l.categoria === categoria) && (!texto || l.nombre.toLowerCase().includes(texto)),
     );
-  }, [resultado, categoria, busqueda]);
+    // «Mejor valorados»: por la puntuación de los estudiantes; los que aún no tienen votos, al final y por cercanía.
+    return orden === "valorados"
+      ? [...filtrados].sort((a, b) => (b.puntuacion ?? -1) - (a.puntuacion ?? -1) || a.distanciaM - b.distanciaM)
+      : filtrados;
+  }, [resultado, categoria, busqueda, orden]);
+
+  const hayVotos = resultado?.lugares.some((l) => l.puntuacion != null) ?? false;
 
   const elegirPuente = (id: number) => {
     setPuenteId(id);
@@ -119,7 +127,7 @@ export default function Campus() {
     <Entrada as="main" className={estilos.pagina}>
       <Pieza as="header" className={estilos.cabecera}>
         <div onPointerMove={seguirPuntero} className={estilos.portada}>
-          <FondoVivo />
+          <FondoVivo foto={fotoGradas} enfoque="30% 35%" />
           <span className={estilos.etiqueta}>
             <IconoCheck tamano={14} /> Lugares verificados
           </span>
@@ -190,6 +198,36 @@ export default function Campus() {
               </motion.button>
             ))}
           </div>
+
+          {hayVotos && (
+            <div className={estilos.filtros} role="group" aria-label="Ordenar lugares">
+              {(
+                [
+                  ["cerca", "Más cerca"],
+                  ["valorados", "Mejor valorados"],
+                ] as const
+              ).map(([id, texto]) => (
+                <motion.button
+                  key={id}
+                  type="button"
+                  className={orden === id ? estilos.filtroActivo : estilos.filtro}
+                  aria-pressed={orden === id}
+                  onClick={() => setOrden(id)}
+                  whileTap={{ scale: 0.95 }}
+                  transition={RESORTE_TOQUE}
+                >
+                  {orden === id && (
+                    <motion.span
+                      layoutId="orden-campus"
+                      className={estilos.pastilla}
+                      transition={reducir ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
+                    />
+                  )}
+                  <span className={estilos.textoFiltro}>{texto}</span>
+                </motion.button>
+              ))}
+            </div>
+          )}
         </Pieza>
       )}
 

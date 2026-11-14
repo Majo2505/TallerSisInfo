@@ -1,5 +1,6 @@
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import { IconoPin, IconoReloj } from "@/components/app/Iconos";
+import Puntuacion, { SelloVerificado } from "@/components/app/Puntuacion";
 import estilos from "@/components/app/TarjetaLugar.module.css";
 import { LugarViable } from "@/lib/lugares";
 
@@ -18,6 +19,14 @@ export default function TarjetaLugarViable({ lugar, minutosDisponibles }: Props)
     <article className={`${estilos.tarjeta} lugar-arte`}>
       <div className={estilos.portada}>
         <ArteCategoria categoria={arte} fotoUrl={lugar.fotoUrl} />
+        {lugar.validado && (
+          <span className={estilos.sello}>
+            <SelloVerificado />
+          </span>
+        )}
+        <span className={estilos.puntaje}>
+          <Puntuacion valor={lugar.puntuacion} votos={lugar.votos} variante="sobreFoto" />
+        </span>
       </div>
       <div className={estilos.cuerpo}>
         <span className={estilos.categoria}>{lugar.categoria}</span>

@@ -23,8 +23,25 @@
 
 .portada > svg,
 .portada > img {
-  height: 112px;
+  height: 136px;
   border-radius: 18px;
+}
+
+/* Sobre la imagen: verificado arriba a la derecha y la puntuación abajo a la izquierda. */
+.sello,
+.puntaje {
+  position: absolute;
+  z-index: 1;
+}
+
+.sello {
+  top: 16px;
+  right: 16px;
+}
+
+.puntaje {
+  left: 16px;
+  bottom: 8px;
 }
 
 .comida {

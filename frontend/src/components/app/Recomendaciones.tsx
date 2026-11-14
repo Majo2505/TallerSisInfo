@@ -9,7 +9,6 @@ import { RespuestaRecomendacion, pedirRecomendaciones } from "@/lib/recomendacio
 import { useSesion } from "@/lib/useSesion";
 import fotoGradas from "@/components/onboarding/fotos/estudiantes.webp";
 import FondoVivo from "./FondoVivo";
-import MejorValorados from "./MejorValorados";
 import { IconoDestello, IconoFlechaIzquierda, IconoLuna, IconoObjetivo, IconoPersonas, IconoRayo } from "./Iconos";
 import { Entrada, Odometro, Pieza, RESORTE_TOQUE, SALIDA } from "./Movimiento";
 import { Selector } from "./Selectores";
@@ -179,12 +178,6 @@ export default function Recomendaciones({ estadoInicial, minutosLibres, puenteIn
                 {modo === "animo" ? <SelectorAnimo onElegir={setEstado} /> : <ChatRecomendaciones puente={puente} />}
               </motion.div>
             </AnimatePresence>
-          </Pieza>
-        )}
-
-        {modo === "animo" && puentes && puentes.length > 0 && (
-          <Pieza>
-            <MejorValorados puenteId={puenteId} />
           </Pieza>
         )}
       </Entrada>
