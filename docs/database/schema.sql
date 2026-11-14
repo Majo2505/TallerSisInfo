@@ -376,6 +376,49 @@ CREATE TABLE sancion (
   CONSTRAINT fk_sancion_reporte FOREIGN KEY (reporte_id)    REFERENCES reporte (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+-- HU12 (ampliación): el test de afinidad de cada estudiante y los «saludos» entre quienes coinciden.
+CREATE TABLE test_afinidad (
+  usuario_id      INT          NOT NULL,
+  version         TINYINT      NOT NULL,
+  respuestas      JSON         NOT NULL,
+  completado_en   DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  actualizado_en  DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  PRIMARY KEY (usuario_id),
+  CONSTRAINT ck_test_version    CHECK (version >= 1),
+  CONSTRAINT ck_test_respuestas CHECK (JSON_TYPE(respuestas) = 'OBJECT'),
+  CONSTRAINT ck_test_fechas     CHECK (actualizado_en >= completado_en),
+  CONSTRAINT fk_test_usuario    FOREIGN KEY (usuario_id) REFERENCES usuario (id)
+) ENGINE=InnoDB;
+
+CREATE TABLE conexion (
+  id               INT          NOT NULL AUTO_INCREMENT,
+  solicitante_id   INT          NOT NULL,
+  destinatario_id  INT          NOT NULL,
+  par_menor        INT          GENERATED ALWAYS AS (LEAST(solicitante_id, destinatario_id)) STORED,
+  par_mayor        INT          GENERATED ALWAYS AS (GREATEST(solicitante_id, destinatario_id)) STORED,
+  dia_semana       SMALLINT     NOT NULL,
+  hora_inicio      TIME         NOT NULL,
+  hora_fin         TIME         NOT NULL,
+  afinidad         TINYINT      NOT NULL,
+  en_comun         JSON         NOT NULL,
+  estado           VARCHAR(10)  NOT NULL DEFAULT 'PENDIENTE',
+  creada_en        DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
+  respondida_en    DATETIME(6)  NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT uq_conexion_par UNIQUE (par_menor, par_mayor),
+  KEY ix_conexion_destinatario (destinatario_id, estado),
+  KEY ix_conexion_solicitante  (solicitante_id, estado),
+  CONSTRAINT ck_conexion_distintos CHECK (solicitante_id <> destinatario_id),
+  CONSTRAINT ck_conexion_estado    CHECK (estado IN ('PENDIENTE','ACEPTADA','RECHAZADA')),
+  CONSTRAINT ck_conexion_respuesta CHECK ((estado = 'PENDIENTE') = (respondida_en IS NULL)),
+  CONSTRAINT ck_conexion_dia       CHECK (dia_semana BETWEEN 1 AND 6),
+  CONSTRAINT ck_conexion_horas     CHECK (hora_fin > hora_inicio),
+  CONSTRAINT ck_conexion_afinidad  CHECK (afinidad BETWEEN 0 AND 100),
+  CONSTRAINT ck_conexion_en_comun  CHECK (JSON_TYPE(en_comun) = 'ARRAY'),
+  CONSTRAINT fk_conexion_solicitante  FOREIGN KEY (solicitante_id)  REFERENCES usuario (id),
+  CONSTRAINT fk_conexion_destinatario FOREIGN KEY (destinatario_id) REFERENCES usuario (id)
+) ENGINE=InnoDB;
+
 CREATE TABLE notificacion (
   id                  BIGINT       NOT NULL AUTO_INCREMENT,
   usuario_id          INT          NOT NULL,
@@ -384,6 +427,7 @@ CREATE TABLE notificacion (
   evento_id           INT          NULL,
   reporte_id          INT          NULL,
   sancion_id          INT          NULL,
+  conexion_id         INT          NULL,
   puente_fecha        DATE         NULL,
   puente_hora_inicio  TIME         NULL,
   puente_hora_fin     TIME         NULL,
@@ -397,32 +441,38 @@ CREATE TABLE notificacion (
   CONSTRAINT uq_notif_evento  UNIQUE (usuario_id, evento_id, tipo),
   CONSTRAINT uq_notif_reporte UNIQUE (usuario_id, reporte_id, tipo),
   CONSTRAINT uq_notif_sancion UNIQUE (usuario_id, sancion_id, tipo),
+  CONSTRAINT uq_notif_conexion UNIQUE (usuario_id, conexion_id, tipo),
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
   CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA',
-                                           'EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','REPORTE_RESUELTO','SANCION_ADVERTENCIA')),
-  -- Cada aviso apunta solo a lo suyo: un puente, una comunidad, un evento, un reporte o una sanción.
+                                           'EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','REPORTE_RESUELTO','SANCION_ADVERTENCIA',
+                                           'CONEXION_SOLICITADA','CONEXION_ACEPTADA')),
+  -- Cada aviso apunta solo a lo suyo: un puente, una comunidad, un evento, un reporte, una sanción o una conexión.
   CONSTRAINT ck_notif_ref CHECK (
        (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES')
           AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
     OR (tipo IN ('INVITACION_COMUNIDAD','COMUNIDAD_CERRADA') AND comunidad_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)
+          AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
     OR (tipo IN ('EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO') AND evento_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)
+          AND comunidad_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
     OR (tipo = 'REPORTE_RESUELTO' AND reporte_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND sancion_id IS NULL)
+          AND comunidad_id IS NULL AND evento_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
     OR (tipo = 'SANCION_ADVERTENCIA' AND sancion_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL)),
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND conexion_id IS NULL)
+    OR (tipo IN ('CONEXION_SOLICITADA','CONEXION_ACEPTADA') AND conexion_id IS NOT NULL
+          AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)),
   CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
   CONSTRAINT fk_notif_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id),
   CONSTRAINT fk_notif_evento    FOREIGN KEY (evento_id)    REFERENCES evento (id),
   CONSTRAINT fk_notif_reporte   FOREIGN KEY (reporte_id)   REFERENCES reporte (id),
-  CONSTRAINT fk_notif_sancion   FOREIGN KEY (sancion_id)   REFERENCES sancion (id)
+  CONSTRAINT fk_notif_sancion   FOREIGN KEY (sancion_id)   REFERENCES sancion (id),
+  CONSTRAINT fk_notif_conexion  FOREIGN KEY (conexion_id)  REFERENCES conexion (id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE historial_cambio (
