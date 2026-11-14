@@ -640,19 +640,27 @@ Requiere JWT. El usuario siempre sale del token. Los errores usan `{ "codigo", "
 | `GET /api/lugares/{id}/foto` | **Público** (la etiqueta `img` no manda el token). Con `?v=` responde `Cache-Control: public, max-age=31536000, immutable`; la versión cambia cada vez que el admin sube otra. `404 NO_ENCONTRADO` si no tiene | ✅ Definido |
 | Tamaño | Hasta 2 MB por foto (`ck_foto_bytes`). El panel la achica a 1600 px de lado como máximo y la convierte a WebP antes de subirla | ✅ Definido |
 
-## 7b. Matching de compañeros con puente compatible (HU12 — responsable: Maite)
+## 7b. Libres contigo: matching por tiempo libre y afinidad (HU12 — responsable: Maite)
 
-Compañeros de tu misma sede que están libres al mismo tiempo que tú. Sin IA: es un cruce de horarios.
+Compañeros de tu misma sede que están libres al mismo tiempo que tú **y** con quienes tienes cosas en común según un test
+corto (unos 2 minutos). El objetivo es conectar: puedes saludar a quien te sale y, si acepta, los dos ven el correo del otro.
+Sin IA: es un cruce de horarios y de respuestas.
 
 ### Reglas
 
 | Regla | Valor | Estado |
 |---|---|---|
 | Cruce por franja horaria | Dos puentes son compatibles si caen el **mismo día** y comparten **30 minutos o más**. Se devuelve el tramo en común: inicio = el más tardío de los dos inicios; fin = el más temprano de los dos fines. Si solo se tocan (fin = inicio), no se cruzan | ✅ Definido |
-| Orden por compatibilidad | Primero quien comparte más minutos; en empate, quien coincide en más puentes de tu semana. `porcentaje` = minutos en común ÷ duración de tu puente | ✅ Definido |
+| Test de afinidad | 11 preguntas de opción múltiple en 5 bloques: tus gustos (qué harías con una hora libre, de qué hablarías horas, música), tu forma de ser (en un grupo nuevo, tu puente ideal), cómo conectas (qué te da confianza, qué buscas), tu día a día (energía, cómo estudias) y valores y creencias (**opcional**). Las preguntas salen del backend (`Domain/ReglasAfinidad.cs`, `GET /api/afinidad/test`) | ✅ Definido (Maite) |
+| Sin test, nadie | Si no hiciste el test, el resultado es `SIN_TEST` y no se muestra a nadie. Solo aparece quien también lo hizo | ✅ Definido |
+| Afinidad (0–100) | Por pregunta respondida por los dos: varias respuestas → con al menos una en común, 0,4 + 0,6 × Dice; una respuesta → igual 1, vecina en escala 0,5, distinta 0. Promedio ponderado (gustos y cómo conectas pesan más). Las opcionales solo cuentan si las respondieron los dos | ✅ Definido |
+| Coincidir en las dos cosas | Se muestra solo si coinciden en tiempo (30 min) **y** en el test (afinidad ≥ 35 y al menos una cosa en común). Si falla una, no aparece | ✅ Definido |
+| Compatibilidad | La que se muestra: 60 % afinidad + 40 % tiempo compartido (`porcentaje`). Orden: compatibilidad, luego minutos en común | ✅ Definido |
+| Lo que los conecta | `enComun`: hasta 3 respuestas compartidas, de las preguntas de más peso. «Otra religión» no se muestra (no implica la misma) | ✅ Definido |
 | Quién aparece | Estudiantes activos, de tu misma sede (y la sede activa), que aceptaron aparecer (`usuario.visible_matching`). Nunca tú mismo | ✅ Definido |
 | Reciprocidad | Para ver a otros, tienes que aceptar aparecer. Si no, el resultado es `NO_VISIBLE` | ✅ Definido |
-| Privacidad | El consentimiento arranca desactivado. No se devuelve el correo ni el id de nadie. Cada cambio queda en `historial_cambio` | ✅ Definido |
+| Privacidad | Antes de conectar solo se ve el nombre corto («Ana Q.»), la carrera, el semestre, la compatibilidad y lo que los conecta; nunca el correo. Se devuelve el id interno, que hace falta para saludar. Al aceptar un saludo, los dos ven el nombre completo y el correo institucional. El rechazo es silencioso | ✅ Definido |
+| Saludos | Solo a quien el matching te muestra en ese momento para ese puente (se recalcula al saludar). Una conexión por pareja, en cualquier sentido (`uq_conexion_par`). Hasta 5 saludos sin respuesta | ✅ Definido |
 | Tope | Hasta 20 compañeros por puente | 🟡 Propuesta (Maite) |
 
 ### `GET /api/matching?puenteId={id}`
@@ -664,20 +672,26 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 | `OK` | Hay compañeros | `null` |
 | `SIN_ZONA` | No elegiste campus o tu sede ya no está activa | `Elige tu campus para encontrar compañeros con tiempo libre compatible.` |
 | `NO_VISIBLE` | No aceptaste aparecer | `Para ver a tus compañeros, primero acepta que ellos también te encuentren.` |
+| `SIN_TEST` | No hiciste el test de afinidad | `Haz el test de afinidad (unos 2 minutos) para ver con quién coincides, además de en tiempo libre.` |
 | `SIN_RESULTADOS` | Nadie está libre contigo | `Por ahora nadie de tu campus está libre contigo a esa hora.` |
+| `SIN_RESULTADOS` | Hay gente libre, pero nadie coincide en el test | `Hay gente libre a esa hora, pero nadie con quien coincidas también en el test. Prueba con otro de tus puentes.` |
 
 ```json
 {
   "estado": "OK",
   "mensaje": null,
-  "puente": { "id": 5, "diaSemana": 1, "horaInicio": "09:30:00", "horaFin": "11:00:00" },
-  "minutosPuente": 90,
+  "puente": { "id": 21, "diaSemana": 1, "horaInicio": "09:30:00", "horaFin": "10:30:00", "tipo": "ENTRE_CLASES" },
+  "minutosPuente": 60,
   "companeros": [
-    { "nombre": "Ana Quiroga", "carrera": "Ingeniería de Sistemas", "semestre": 5,
-      "horaInicio": "09:30:00", "horaFin": "11:00:00", "minutosEnComun": 90, "porcentaje": 100, "franjasCompartidas": 1 }
+    { "usuarioId": 4, "nombre": "Lucía R.", "carrera": "Psicología", "semestre": 7,
+      "horaInicio": "09:30:00", "horaFin": "10:30:00", "minutosEnComun": 60, "porcentaje": 100, "franjasCompartidas": 1,
+      "afinidad": 74, "compatibilidad": 84, "enComun": ["Videojuegos", "El mismo humor", "Hacer cosas juntos"],
+      "conexion": { "id": 2, "estado": "PENDIENTE", "enviadaPorMi": true } }
   ]
 }
 ```
+
+`conexion` es `null` si todavía no hay saludo. Si la otra persona rechazó tu saludo, igual se te muestra `PENDIENTE`.
 
 **Errores**
 
@@ -690,6 +704,67 @@ Siempre responde **200** cuando el puente es tuyo; el campo `estado` dice qué p
 ### `GET /api/matching/configuracion` y `PUT /api/matching/configuracion`
 
 `GET` devuelve `{ "visible": false, "desde": null }`. `PUT` recibe `{ "visible": true }` (obligatorio; sin él responde 400 `VALIDACION`) y devuelve lo mismo con la fecha del consentimiento. Al retirarlo, `desde` vuelve a `null`.
+
+### `GET /api/afinidad/test` y `PUT /api/afinidad/test`
+
+`GET` devuelve las preguntas y, si ya lo hiciste, tus respuestas (para editarlas):
+
+```json
+{
+  "version": 1, "minutosEstimados": 2, "completado": false, "respuestas": null, "actualizadoEn": null,
+  "preguntas": [
+    { "id": "planes", "bloque": "Tus gustos", "texto": "¿Qué harías con una hora libre?", "tipo": "MULTIPLE", "maximo": 3,
+      "opcional": false, "opciones": [ { "id": "deporte", "texto": "Hacer deporte" } ] }
+  ]
+}
+```
+
+`PUT` recibe `{ "respuestas": { "planes": ["videojuegos", "musica"], "grupo": ["rompo"], ... } }` y devuelve lo mismo con
+`completado: true`. Rehacerlo reemplaza las respuestas (conserva `completado_en`).
+
+| Código | Caso |
+|---|---|
+| 400 | Falta una obligatoria, pregunta u opción que no existe, repetidas, más del máximo o más de una en una de `UNICA` (`VALIDACION`, con el motivo) |
+| 401 | Sin token o token inválido |
+
+### `GET /api/conexiones`
+
+```json
+{
+  "recibidas": [ { "id": 3, "estado": "PENDIENTE", "enviadaPorMi": false, "nombre": "Maite A.", "carrera": "Ingeniería de Sistemas",
+                   "semestre": 5, "afinidad": 100, "enComun": ["Videojuegos"], "diaSemana": 1,
+                   "horaInicio": "09:30:00", "horaFin": "10:30:00", "correo": null, "creadaEn": "2026-11-14T15:00:00Z" } ],
+  "enviadas": [],
+  "aceptadas": [ { "id": 1, "estado": "ACEPTADA", "nombre": "Ana Quiroga", "correo": "ana.quiroga@ucb.edu.bo" } ]
+}
+```
+
+`recibidas` y `enviadas` son las pendientes; `aceptadas`, en cualquier sentido, con nombre completo y correo. `afinidad` es la
+del test (se guarda al saludar en `conexion.afinidad`): es la misma vista desde los dos lados, a diferencia de la
+compatibilidad del matching, que depende del puente de cada uno.
+
+### `POST /api/conexiones`
+
+Body `{ "usuarioId": 4, "puenteId": 21 }`. Responde **201** con la conexión (`PENDIENTE`, nombre corto, sin correo) y avisa
+al otro con `CONEXION_SOLICITADA` (si tiene los avisos encendidos): «Maite A. (100 % de afinidad) quiere coincidir contigo el
+lunes de 09:30 a 10:30. Respóndele en Libres contigo.».
+
+| Código | Caso |
+|---|---|
+| 400 | Faltan `usuarioId` o `puenteId`, o te saludas a ti mismo (`VALIDACION`) |
+| 404 | El puente no es tuyo (`NO_ENCONTRADO`) |
+| 409 | Ya hay una conexión con esa persona, en cualquier sentido (`YA_EXISTE`); ya tienes 5 saludos sin respuesta (`DEMASIADOS_PENDIENTES`); ya no coinciden en ese puente o no te sale en el matching (`NO_COINCIDEN`) |
+
+### `PUT /api/conexiones/{id}`
+
+Body `{ "aceptar": true }`. Solo quien recibió el saludo responde, una vez. Al aceptar, devuelve la conexión con el nombre
+completo y el correo de quien saludó, y le avisa con `CONEXION_ACEPTADA`. El aviso del saludo se apaga. Rechazar no avisa.
+
+| Código | Caso |
+|---|---|
+| 400 | Falta `aceptar`, o intentas responder tu propio saludo (`VALIDACION`) |
+| 404 | El saludo no existe o no es tuyo (`NO_ENCONTRADO`) |
+| 409 | Ya estaba respondido (`YA_RESPONDIDA`) |
 
 ## 7c. Valoración de recomendaciones (HU9 — responsable: Amira)
 

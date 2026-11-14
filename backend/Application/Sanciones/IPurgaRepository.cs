@@ -22,6 +22,9 @@ public interface IPurgaRepository
 
     Task EliminarNotificacionesAsync(int usuarioId, CancellationToken ct = default);
 
+    /// <summary>HU12: borra sus conexiones (y antes los avisos de otros que apuntan a ellas) y su test de afinidad.</summary>
+    Task EliminarConexionesAsync(int usuarioId, CancellationToken ct = default);
+
     /// <summary>Borra los eventos del usuario; antes, los avisos y los reportes de otros que apuntan a ellos. La foto se borra en cascada.</summary>
     Task EliminarEventosAsync(int usuarioId, CancellationToken ct = default);
 

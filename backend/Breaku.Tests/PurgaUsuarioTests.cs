@@ -89,6 +89,8 @@ public class ReglasPurgaTests
         Assert.True(En(Paso.ComunidadesCreadas) < En(Paso.LogsAuditoria), "log_id en NULL antes de borrar los logs");
         Assert.True(En(Paso.ComunidadesCreadas) < En(Paso.Participaciones));
         Assert.True(En(Paso.Notificaciones) < En(Paso.Eventos), "notificacion.evento_id → evento");
+        Assert.True(En(Paso.Notificaciones) < En(Paso.Conexiones), "sus avisos de conexión se van con sus notificaciones");
+        Assert.True(En(Paso.Conexiones) < En(Paso.Usuario), "conexion y test_afinidad → usuario");
         Assert.True(En(Paso.Notificaciones) < En(Paso.Reportes), "notificacion.reporte_id → reporte");
         Assert.True(En(Paso.Eventos) < En(Paso.Usuario));
         Assert.True(En(Paso.Recomendaciones) < En(Paso.LugaresRecuperados), "recomendacion → lugar_recuperado");
@@ -163,6 +165,7 @@ public class PurgaUsuarioServiceTests
         }
 
         public Task EliminarNotificacionesAsync(int usuarioId, CancellationToken ct = default) => Anotar("Notificaciones");
+        public Task EliminarConexionesAsync(int usuarioId, CancellationToken ct = default) => Anotar("Conexiones");
         public Task EliminarEventosAsync(int usuarioId, CancellationToken ct = default) => Anotar("Eventos");
         public Task EliminarReportesAsync(int usuarioId, CancellationToken ct = default) => Anotar("Reportes");
         public Task EliminarRecomendacionesAsync(int usuarioId, CancellationToken ct = default) => Anotar("Recomendaciones");
@@ -225,7 +228,7 @@ public class PurgaUsuarioServiceTests
         await servicio.PurgarAsync(Yo, eliminarCuenta: false);
 
         Assert.Equal(
-            ["Participaciones", "Notificaciones", "Eventos", "Reportes", "Recomendaciones", "LugaresRecuperados", "Logs",
+            ["Participaciones", "Notificaciones", "Conexiones", "Eventos", "Reportes", "Recomendaciones", "LugaresRecuperados", "Logs",
              "Puentes", "Horarios", "Historial", "Anonimizar"],
             Pasos(repo));
         Assert.DoesNotContain("Sanciones", repo.Llamadas);

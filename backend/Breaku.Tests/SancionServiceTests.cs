@@ -142,6 +142,7 @@ public class SancionServiceTests
         public Task EliminarComunidadAsync(int comunidadId, CancellationToken ct = default) => Task.CompletedTask;
         public Task<List<(int ComunidadId, int Confirmados)>> EliminarParticipacionesAsync(int usuarioId, CancellationToken ct = default) => Task.FromResult(new List<(int, int)>());
         public Task EliminarNotificacionesAsync(int usuarioId, CancellationToken ct = default) { Purgas.Add((usuarioId, false)); return Task.CompletedTask; }
+        public Task EliminarConexionesAsync(int usuarioId, CancellationToken ct = default) => Task.CompletedTask;
         public Task EliminarEventosAsync(int usuarioId, CancellationToken ct = default) => Task.CompletedTask;
         public Task EliminarReportesAsync(int usuarioId, CancellationToken ct = default) => Task.CompletedTask;
         public Task EliminarRecomendacionesAsync(int usuarioId, CancellationToken ct = default) => Task.CompletedTask;
@@ -442,6 +443,7 @@ public class SancionServiceTests
         public Task EliminarComunidadAsync(int comunidadId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<List<(int ComunidadId, int Confirmados)>> EliminarParticipacionesAsync(int usuarioId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task EliminarNotificacionesAsync(int usuarioId, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task EliminarConexionesAsync(int usuarioId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task EliminarEventosAsync(int usuarioId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task EliminarReportesAsync(int usuarioId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task EliminarRecomendacionesAsync(int usuarioId, CancellationToken ct = default) => throw new NotSupportedException();
