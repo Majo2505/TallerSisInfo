@@ -2,6 +2,7 @@ using Breaku.Application.Eventos;
 using Breaku.Application.Horarios;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 
 namespace Breaku.Infrastructure.Persistence;
@@ -137,43 +138,71 @@ public sealed class EventoRepository : IEventoRepository
         => ListarAsync(_db.Eventos.AsNoTracking()
             .Where(e => e.Estado == Evento.EstadoPendiente && e.Fin > ahoraUtc), ct);
 
-    public async Task<ResultadoModeracionEvento> ModerarAsync(
-        int eventoId,
-        string estado,
-        string? motivo,
-        DateTime ahoraUtc,
-        CancellationToken ct = default)
+    public async Task<ResultadoModeracionEvento> ModerarAsync(ModeracionEvento m, CancellationToken ct = default)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         var bloqueado = await _db.Database
-            .SqlQuery<int>($"SELECT id AS Value FROM evento WHERE id = {eventoId} FOR UPDATE")
+            .SqlQuery<int>($"SELECT id AS Value FROM evento WHERE id = {m.EventoId} FOR UPDATE")
             .ToListAsync(ct);
         if (bloqueado.Count == 0) return ResultadoModeracionEvento.NoEncontrado;
 
-        var evento = await _db.Eventos.FirstAsync(e => e.Id == eventoId, ct);
-        if (evento.Estado != Evento.EstadoPendiente) return ResultadoModeracionEvento.YaRevisado;
-        if (evento.Fin <= ahoraUtc) return ResultadoModeracionEvento.Finalizado;
+        var evento = await _db.Eventos.FirstAsync(e => e.Id == m.EventoId, ct);
+        if (evento.Estado != m.EstadoEsperado) return ResultadoModeracionEvento.YaRevisado;
+        if (evento.Fin <= m.AhoraUtc) return ResultadoModeracionEvento.Finalizado;
 
-        evento.Estado = estado;
-        evento.Motivo = estado == Evento.EstadoRechazado ? motivo : null;
-        evento.UpdatedAt = ahoraUtc;
+        var antes = Foto(evento);
+        if (m.Cambios is { } c)
+        {
+            evento.Titulo = c.Titulo;
+            evento.Descripcion = c.Descripcion;
+            evento.LugarId = c.LugarId;
+            evento.LugarTexto = c.LugarTexto;
+            evento.Inicio = c.InicioUtc;
+            evento.Fin = c.FinUtc;
+            evento.Asistencia = c.Asistencia;
+            evento.VisitaMin = c.VisitaMin;
+            evento.VisitaMax = c.VisitaMax;
+        }
+        evento.Estado = m.EstadoNuevo;
+        evento.Motivo = m.EstadoNuevo == Evento.EstadoRechazado ? m.Motivo : null;
+        evento.UpdatedAt = m.AhoraUtc;
         await _db.SaveChangesAsync(ct);
 
-        var tipo = estado == Evento.EstadoPublicado ? Notificacion.TipoEventoAprobado : Notificacion.TipoEventoRechazado;
-        var mensaje = estado == Evento.EstadoPublicado
-            ? $"Tu evento «{evento.Titulo}» fue aprobado y publicado."
-            : $"Tu evento «{evento.Titulo}» fue rechazado. Revisa el motivo en Mis eventos.";
-        if (mensaje.Length > 200) mensaje = mensaje[..200];
+        // HU26: quién lo moderó y qué cambió, como los cambios de lugares del admin.
+        var anteriores = JsonSerializer.Serialize(antes);
+        var nuevos = JsonSerializer.Serialize(Foto(evento));
+        await _db.Database.ExecuteSqlAsync($"""
+                INSERT INTO historial_cambio (entidad, entidad_id, accion, valores_anteriores, valores_nuevos, usuario_id)
+                VALUES ('EVENTO', {evento.Id}, 'UPDATE', CAST({anteriores} AS JSON), CAST({nuevos} AS JSON), {m.AdminId})
+                """, ct);
 
+        // uq_notif_evento (usuario, evento, tipo): si ya hubo un aviso igual, se reactiva con el texto nuevo.
+        var mensaje = ReglasEvento.AvisoModeracion(m.TipoAviso, evento.Titulo, m.Motivo);
         await _db.Database.ExecuteSqlAsync($"""
                 INSERT INTO notificacion (usuario_id, tipo, evento_id, mensaje, leida, activa, created_at)
-                VALUES ({evento.CreadorId}, {tipo}, {evento.Id}, {mensaje}, FALSE, TRUE, {ahoraUtc})
+                VALUES ({evento.CreadorId}, {m.TipoAviso}, {evento.Id}, {mensaje}, FALSE, TRUE, {m.AhoraUtc})
                 ON DUPLICATE KEY UPDATE mensaje = VALUES(mensaje), leida = FALSE, activa = TRUE,
                                         created_at = VALUES(created_at)
                 """, ct);
         await tx.CommitAsync(ct);
         return ResultadoModeracionEvento.Actualizado;
     }
+
+    /// <summary>Lo que se guarda del evento en historial_cambio (sin la foto).</summary>
+    private static Dictionary<string, object?> Foto(Evento e) => new()
+    {
+        ["estado"] = e.Estado,
+        ["motivo"] = e.Motivo,
+        ["titulo"] = e.Titulo,
+        ["descripcion"] = e.Descripcion,
+        ["lugar_id"] = e.LugarId,
+        ["lugar_texto"] = e.LugarTexto,
+        ["inicio"] = DateTime.SpecifyKind(e.Inicio, DateTimeKind.Utc),
+        ["fin"] = DateTime.SpecifyKind(e.Fin, DateTimeKind.Utc),
+        ["asistencia"] = e.Asistencia,
+        ["visita_min"] = e.VisitaMin,
+        ["visita_max"] = e.VisitaMax
+    };
 
     private async Task<List<EventoListado>> ListarAsync(IQueryable<Evento> eventos, CancellationToken ct)
     {

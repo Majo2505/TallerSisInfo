@@ -50,7 +50,21 @@ export type EventoCampus = {
   createdAt: string;
 };
 
-export type DecidirEvento = { estado: "PUBLICADO" | "RECHAZADO"; motivo?: string | null };
+/** HU26: datos corregidos por el admin al aprobar. Mismos campos que el formulario de HU23, sin la foto. */
+export type CambiosEventoApi = {
+  titulo: string;
+  descripcion: string | null;
+  inicio: string;
+  fin: string;
+  lugarId: number | null;
+  lugarTexto: string | null;
+  asistencia: "FIJA" | "LIBRE" | "";
+  visitaMin: number | null;
+  visitaMax: number | null;
+};
+
+/** Aprobar o rechazar un pendiente. Con `cambios`, el admin lo edita y lo aprueba en un solo paso. */
+export type DecidirEvento = { estado: "PUBLICADO" | "RECHAZADO"; motivo?: string | null; cambios?: CambiosEventoApi | null };
 
 /** HU24: lee un afiche (JPG, PNG, PDF) o un texto pegado. No crea nada: solo devuelve el borrador. */
 export function leerFlyer(entrada: File | string): Promise<LecturaFlyer> {
@@ -73,6 +87,14 @@ export const moderarEvento = (id: number, decision: DecidirEvento) =>
   pedirApi<void>(`/api/admin/eventos/${id}/moderacion`, {
     method: "PATCH",
     body: JSON.stringify(decision),
+  });
+/** HU26: los publicados que todavía no terminaron, para poder bajarlos. */
+export const listarEventosPublicadosAdmin = () => pedirApi<EventoCampus[]>("/api/admin/eventos/publicados");
+/** HU26: baja un evento publicado. Queda oculto (RECHAZADO, no se borra) y el autor recibe un aviso con el motivo. */
+export const bajarEvento = (id: number, motivo: string) =>
+  pedirApi<void>(`/api/admin/eventos/${id}/bajar`, {
+    method: "PATCH",
+    body: JSON.stringify({ motivo }),
   });
 
 /** HU22: evento publicado que ve cualquier estudiante. No trae estado ni motivo: eso es solo de moderacion. */

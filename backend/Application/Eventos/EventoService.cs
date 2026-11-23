@@ -201,28 +201,91 @@ public sealed class EventoService
             .Select(ADto)
             .ToList();
 
-    public async Task ModerarAsync(int eventoId, ResolverEventoRequest request, CancellationToken ct = default)
+    /// <summary>HU26: aprobar (opcionalmente con cambios) o rechazar un evento PENDIENTE.</summary>
+    public async Task ModerarAsync(int eventoId, int adminId, ResolverEventoRequest request, CancellationToken ct = default)
     {
         var estado = request.Estado?.Trim().ToUpperInvariant();
         if (estado is not (Evento.EstadoPublicado or Evento.EstadoRechazado))
             throw new ReglaNegocioException("VALIDACION", "Elige aprobar o rechazar el evento.");
+        if (estado == Evento.EstadoRechazado && request.Cambios is not null)
+            throw new ReglaNegocioException("VALIDACION", ReglasEvento.MensajeCambiosSoloAlAprobar);
 
-        var motivo = ReglasSeguridadIa.Sanear(request.Motivo ?? "").Trim();
-        if (estado == Evento.EstadoRechazado && string.IsNullOrWhiteSpace(motivo))
-            throw new ReglaNegocioException("VALIDACION", "Escribe el motivo del rechazo.");
-        if (motivo.Length > 500) throw new ReglaNegocioException("VALIDACION", "El motivo no puede superar 500 caracteres.");
-        if (estado == Evento.EstadoPublicado) motivo = "";
+        var motivo = estado == Evento.EstadoRechazado
+            ? MotivoObligatorio(request.Motivo, ReglasEvento.MensajeFaltaMotivoRechazo)
+            : null;
+        var cambios = request.Cambios is null ? null : await ValidarCambiosAsync(request.Cambios, ct);
+        var tipo = estado == Evento.EstadoPublicado ? Notificacion.TipoEventoAprobado : Notificacion.TipoEventoRechazado;
 
-        var resultado = await _repository.ModerarAsync(
-            eventoId, estado, string.IsNullOrEmpty(motivo) ? null : motivo, _reloj.GetUtcNow().UtcDateTime, ct);
-        if (resultado == ResultadoModeracionEvento.NoEncontrado)
-            throw new ReglaNegocioException("NO_ENCONTRADO", "El evento no existe.");
-        if (resultado == ResultadoModeracionEvento.YaRevisado)
-            throw new ReglaNegocioException("YA_REVISADO", ReglasEvento.MensajeEventoNoPendiente);
-        if (resultado == ResultadoModeracionEvento.Finalizado)
-            throw new ReglaNegocioException("EVENTO_FINALIZADO", ReglasEvento.MensajeEventoFinalizado);
+        var resultado = await _repository.ModerarAsync(new ModeracionEvento(
+            eventoId, adminId, Evento.EstadoPendiente, estado, motivo, tipo, cambios, _reloj.GetUtcNow().UtcDateTime), ct);
+        LanzarSiNoSeAplico(resultado, ReglasEvento.MensajeEventoNoPendiente);
 
         if (_avisos is not null) await _avisos.EventoRevisadoAsync(eventoId, ct);
+    }
+
+    /// <summary>HU26: bajar un evento PUBLICADO. Queda RECHAZADO (oculto, no se borra) y el autor recibe EVENTO_BAJADO.</summary>
+    public async Task BajarAsync(int eventoId, int adminId, BajarEventoRequest request, CancellationToken ct = default)
+    {
+        var motivo = MotivoObligatorio(request.Motivo, ReglasEvento.MensajeFaltaMotivoBaja);
+        var resultado = await _repository.ModerarAsync(new ModeracionEvento(
+            eventoId, adminId, Evento.EstadoPublicado, Evento.EstadoRechazado, motivo, Notificacion.TipoEventoBajado, null,
+            _reloj.GetUtcNow().UtcDateTime), ct);
+        LanzarSiNoSeAplico(resultado, ReglasEvento.MensajeEventoNoPublicado);
+    }
+
+    /// <summary>HU26: los eventos PUBLICADOS que todavía no terminaron, para que el admin pueda bajarlos.</summary>
+    public async Task<List<EventoDto>> ListarPublicadosAdminAsync(CancellationToken ct = default)
+    {
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        return (await _repository.ListarPublicadosAsync(ahora, ahora.AddYears(1), ct))
+            .OrderBy(e => e.Evento.Inicio)
+            .Select(ADto)
+            .ToList();
+    }
+
+    private static string MotivoObligatorio(string? motivo, string mensajeSiFalta)
+    {
+        var limpio = ReglasSeguridadIa.Sanear(motivo ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(limpio)) throw new ReglaNegocioException("VALIDACION", mensajeSiFalta);
+        if (limpio.Length > ReglasEvento.MaximoMotivo) throw new ReglaNegocioException("VALIDACION", ReglasEvento.MensajeMotivoLargo);
+        return limpio;
+    }
+
+    private static void LanzarSiNoSeAplico(ResultadoModeracionEvento resultado, string mensajeEstado)
+    {
+        switch (resultado)
+        {
+            case ResultadoModeracionEvento.NoEncontrado:
+                throw new ReglaNegocioException("NO_ENCONTRADO", "El evento no existe.");
+            case ResultadoModeracionEvento.YaRevisado:
+                throw new ReglaNegocioException("YA_REVISADO", mensajeEstado);
+            case ResultadoModeracionEvento.Finalizado:
+                throw new ReglaNegocioException("EVENTO_FINALIZADO", ReglasEvento.MensajeEventoFinalizado);
+        }
+    }
+
+    /// <summary>Valida lo que el admin corrigió con las mismas reglas del formulario (HU23). La foto no se toca.</summary>
+    private async Task<CambiosEvento> ValidarCambiosAsync(EventoFormularioRequest cambios, CancellationToken ct)
+    {
+        var (titulo, descripcion, lugarTexto, asistencia, error) = NormalizarYValidar(cambios);
+        if (error is not null) throw new ReglaNegocioException("VALIDACION", error);
+
+        var lugar = await ResolverLugarAsync(cambios.LugarId, lugarTexto, ct);
+        var lugarCatalogado = lugar is { Estado: ReglasBusquedaLugares.EstadoActivo, Validado: true };
+        var nombreLugar = lugarCatalogado ? lugar!.Nombre : lugarTexto;
+        if (string.IsNullOrWhiteSpace(nombreLugar))
+            throw new ReglaNegocioException("VALIDACION", "Selecciona un lugar o escribe dónde será el evento.");
+
+        return new CambiosEvento(
+            titulo,
+            descripcion,
+            lugarCatalogado ? lugar!.Id : null,
+            lugarCatalogado ? null : nombreLugar.Trim(),
+            cambios.Inicio!.Value.UtcDateTime,
+            cambios.Fin!.Value.UtcDateTime,
+            asistencia,
+            cambios.VisitaMin is int min ? (short)min : null,
+            cambios.VisitaMax is int max ? (short)max : null);
     }
 
     /// <summary>

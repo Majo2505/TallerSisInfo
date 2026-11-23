@@ -58,7 +58,40 @@ public sealed record FotoEvento(
     string Estado,
     bool CreadorSuspendido);
 
-public sealed record ResolverEventoRequest(string? Estado, string? Motivo);
+/// <summary>
+/// Aprobar (<c>PUBLICADO</c>) o rechazar (<c>RECHAZADO</c>, con motivo) un evento pendiente. Con <c>Cambios</c>, el admin
+/// lo edita y lo aprueba en un solo paso (solo al aprobar). La foto no se cambia aquí.
+/// </summary>
+public sealed record ResolverEventoRequest(string? Estado, string? Motivo, EventoFormularioRequest? Cambios = null);
+
+/// <summary>Bajar un evento ya publicado: queda RECHAZADO, oculto y sin borrarse. El motivo es obligatorio.</summary>
+public sealed record BajarEventoRequest(string? Motivo);
+
+/// <summary>Datos ya validados con los que el admin corrige un evento al aprobarlo.</summary>
+public sealed record CambiosEvento(
+    string Titulo,
+    string? Descripcion,
+    int? LugarId,
+    string? LugarTexto,
+    DateTime InicioUtc,
+    DateTime FinUtc,
+    string Asistencia,
+    short? VisitaMin,
+    short? VisitaMax);
+
+/// <summary>
+/// Una acción de moderación: el evento tiene que estar en <c>EstadoEsperado</c> y pasa a <c>EstadoNuevo</c>. El cambio, el
+/// registro en historial_cambio (con el admin) y el aviso al autor (<c>TipoAviso</c>) se guardan en una sola transacción.
+/// </summary>
+public sealed record ModeracionEvento(
+    int EventoId,
+    int AdminId,
+    string EstadoEsperado,
+    string EstadoNuevo,
+    string? Motivo,
+    string TipoAviso,
+    CambiosEvento? Cambios,
+    DateTime AhoraUtc);
 
 public enum ResultadoModeracionEvento
 {

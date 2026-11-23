@@ -17,6 +17,8 @@ export type Notificacion = {
     | "REPORTE_RESUELTO"
     | "EVENTO_APROBADO"
     | "EVENTO_RECHAZADO"
+    // HU26: el administrador bajó un evento ya publicado. El mensaje trae el motivo.
+    | "EVENTO_BAJADO"
     // Para el administrador (migración 030): quedan leídos para todos los admins cuando uno los resuelve.
     | "REPORTE_NUEVO"
     | "EVENTO_POR_REVISAR";

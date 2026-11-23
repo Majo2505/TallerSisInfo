@@ -29,10 +29,9 @@ public interface IEventoRepository
     Task<EventoListado?> ObtenerPublicadoAsync(int eventoId, DateTime ahoraUtc, CancellationToken ct = default);
 
     Task<List<EventoListado>> ListarPendientesAsync(DateTime ahoraUtc, CancellationToken ct = default);
-    Task<ResultadoModeracionEvento> ModerarAsync(
-        int eventoId,
-        string estado,
-        string? motivo,
-        DateTime ahoraUtc,
-        CancellationToken ct = default);
+    /// <summary>
+    /// Aplica la moderación si el evento sigue en el estado esperado y no terminó: cambia estado, motivo y (si hay) los datos
+    /// editados, deja el cambio en historial_cambio con el admin y crea o reactiva el aviso del autor. Todo en una transacción.
+    /// </summary>
+    Task<ResultadoModeracionEvento> ModerarAsync(ModeracionEvento moderacion, CancellationToken ct = default);
 }
