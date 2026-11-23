@@ -704,3 +704,98 @@
     flex: 1;
   }
 }
+
+/* HU34: fechas del afiche (un evento por cada una) y resultado de cada fecha. */
+.listaFechas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listaFechas li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 6px 6px 14px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.listaFechas li span { min-width: 0; overflow-wrap: anywhere; }
+
+.quitarFecha {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ucb-azul-medio);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 140ms var(--curva-salida);
+}
+
+.quitarFecha:active { transform: scale(0.97); }
+
+@media (hover: hover) and (pointer: fine) {
+  .quitarFecha:hover { background: var(--fondo-suave); }
+}
+
+.resultados {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+}
+
+.resultadosCabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.resultadosCabecera h2 { margin: 0; color: var(--ucb-marino); font-size: 1.05rem; }
+
+.resultados ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+.resultados li {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 4px 14px;
+  padding: 10px 14px;
+  border-radius: 13px;
+  line-height: 1.45;
+}
+
+.resultadoFecha { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.resultado_publicado { background: var(--exito-fondo); color: var(--exito); }
+
+.resultado_revision { background: #fff3cc; color: #725600; }
+
+.resultado_error { background: var(--error-fondo); color: var(--error); }
+
+@media (max-width: 640px) {
+  .resultados li { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quitarFecha { transition: none; }
+  .quitarFecha:active { transform: none; }
+}
