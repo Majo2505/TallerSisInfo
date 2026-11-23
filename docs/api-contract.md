@@ -1250,6 +1250,21 @@ Reglas: solo el dueño (otro usuario recibe `404`); solo si el evento es editabl
 
 El evento indica si tiene foto con `fotoUrl` (`null` = sin foto). La imagen se pide con `GET /api/eventos/{id}/foto` (JWT: el navegador debe enviarla con el token, no sirve un `<img src>` directo); la ven el dueño, el admin y, si el evento está PUBLICADO y su creador no está suspendido, los demás.
 
+## 7k. Moderación de eventos por el admin (HU26)
+
+Todo bajo `/api/admin/eventos`, solo rol `ADMIN` (`401` sin sesión, `403` si no es admin). Cada acción cambia el estado, deja el cambio en `historial_cambio` (`entidad = EVENTO`, con el id del admin y los valores antes y después) y crea o reactiva el aviso al autor, todo en una sola transacción. Un evento bajado **no se borra**: queda `RECHAZADO`, oculto y con su motivo.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `/pendientes` | Eventos `PENDIENTE` que todavía no terminaron, con motivo y foto (los vencidos caducan por fecha, sin cambiar su estado) |
+| `GET` | `/publicados` | Eventos `PUBLICADO` que todavía no terminaron, para poder bajarlos |
+| `PATCH` | `/{id}/moderacion` | `{ "estado": "PUBLICADO" \| "RECHAZADO", "motivo": "…", "cambios": { …campos del formulario de HU23… } }`. `RECHAZADO` exige motivo. Con `cambios` (solo al aprobar) el admin edita y publica en un paso; se validan con las mismas reglas del formulario y la foto no cambia. Aviso: `EVENTO_APROBADO` o `EVENTO_RECHAZADO` |
+| `PATCH` | `/{id}/bajar` | `{ "motivo": "…" }` (obligatorio). Pasa un `PUBLICADO` a `RECHAZADO`. Aviso: `EVENTO_BAJADO` |
+
+Respuestas: `204` si se aplicó; `400 VALIDACION` (falta el motivo, motivo de más de 500 caracteres, `cambios` al rechazar, campos editados inválidos); `404 NO_ENCONTRADO`; `409 YA_REVISADO` (ya no está en el estado esperado: ya revisado, o ya no está publicado) o `409 EVENTO_FINALIZADO` (ya terminó).
+
+El aviso al autor incluye el motivo y cabe en 200 caracteres: si no entra, se recorta el motivo (y si hace falta el título) con «…». El motivo completo queda en el evento y se ve en «Mis eventos». Como `uq_notif_evento` no admite dos avisos iguales, un segundo aviso del mismo tipo reactiva el anterior con el texto nuevo.
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |

@@ -28,6 +28,47 @@ public static class ReglasEvento
 
     public const string MensajeEventoFinalizado = "El evento ya terminó, así que no se puede revisar.";
 
+    // HU26: moderación de eventos por el admin.
+    public const int MaximoMotivo = 500;
+    public const int MaximoAviso = 200;
+    public const string MensajeEventoNoPublicado = "El evento ya no está publicado.";
+    public const string MensajeFaltaMotivoRechazo = "Escribe el motivo del rechazo.";
+    public const string MensajeFaltaMotivoBaja = "Escribe el motivo para bajar el evento.";
+    public const string MensajeMotivoLargo = "El motivo no puede superar 500 caracteres.";
+    public const string MensajeCambiosSoloAlAprobar = "Solo se puede editar un evento al aprobarlo.";
+
+    /// <summary>
+    /// Texto del aviso al autor cuando el admin aprueba, rechaza o baja su evento. Incluye el motivo y cabe en
+    /// <see cref="MaximoAviso"/> caracteres: si no entra, se recorta primero el motivo y después el título, con «…».
+    /// </summary>
+    public static string AvisoModeracion(string tipo, string titulo, string? motivo)
+    {
+        string Armar(string t, string? m) => tipo switch
+        {
+            Notificacion.TipoEventoAprobado => $"Tu evento «{t}» fue aprobado y ya está publicado.",
+            Notificacion.TipoEventoBajado => $"Tu evento «{t}» fue retirado del apartado de eventos. Motivo: {m}",
+            _ => $"Tu evento «{t}» fue rechazado. Motivo: {m}"
+        };
+
+        titulo = titulo.Trim();
+        motivo = motivo?.Trim();
+        var texto = Armar(titulo, motivo);
+        if (texto.Length <= MaximoAviso) return texto;
+
+        if (!string.IsNullOrEmpty(motivo))
+        {
+            var sobra = texto.Length - MaximoAviso + 1; // +1 por «…»
+            if (motivo.Length - sobra >= 20)
+                return Armar(titulo, motivo[..(motivo.Length - sobra)].TrimEnd() + "…");
+            motivo = motivo[..Math.Min(motivo.Length, 19)].TrimEnd() + "…";
+            texto = Armar(titulo, motivo);
+            if (texto.Length <= MaximoAviso) return texto;
+        }
+
+        var sobraTitulo = texto.Length - MaximoAviso + 1;
+        return Armar(titulo[..Math.Max(1, titulo.Length - sobraTitulo)].TrimEnd() + "…", motivo);
+    }
+
     private static readonly TimeSpan DesfaseBolivia = TimeSpan.FromHours(-4);
 
     public static string? Validar(

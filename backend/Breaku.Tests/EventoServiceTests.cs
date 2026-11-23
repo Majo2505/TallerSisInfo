@@ -8,6 +8,7 @@ namespace Breaku.Tests;
 public sealed class EventoServiceTests
 {
     private const int Usuario = 7;
+    private const int Admin = 2;
     private static readonly DateTimeOffset Ahora = new(2026, 11, 17, 16, 0, 0, TimeSpan.Zero);
 
     private sealed class RelojFijo(DateTimeOffset ahora) : TimeProvider
@@ -99,21 +100,27 @@ public sealed class EventoServiceTests
                 .Where(e => e.Estado == Evento.EstadoPendiente && e.Fin > ahoraUtc)
                 .Select(AListado).ToList());
 
-        public Task<ResultadoModeracionEvento> ModerarAsync(
-            int eventoId,
-            string estado,
-            string? motivo,
-            DateTime ahoraUtc,
-            CancellationToken ct = default)
+        public List<ModeracionEvento> Moderaciones { get; } = [];
+
+        public Task<ResultadoModeracionEvento> ModerarAsync(ModeracionEvento m, CancellationToken ct = default)
         {
-            var evento = Eventos.FirstOrDefault(e => e.Id == eventoId);
+            var evento = Eventos.FirstOrDefault(e => e.Id == m.EventoId);
             if (evento is null) return Task.FromResult(ResultadoModeracionEvento.NoEncontrado);
-            if (evento.Estado != Evento.EstadoPendiente) return Task.FromResult(ResultadoModeracionEvento.YaRevisado);
-            if (evento.Fin <= ahoraUtc) return Task.FromResult(ResultadoModeracionEvento.Finalizado);
-            evento.Estado = estado;
-            evento.Motivo = motivo;
-            evento.UpdatedAt = ahoraUtc;
+            if (evento.Estado != m.EstadoEsperado) return Task.FromResult(ResultadoModeracionEvento.YaRevisado);
+            if (evento.Fin <= m.AhoraUtc) return Task.FromResult(ResultadoModeracionEvento.Finalizado);
+            if (m.Cambios is { } c)
+            {
+                evento.Titulo = c.Titulo;
+                evento.LugarId = c.LugarId;
+                evento.LugarTexto = c.LugarTexto;
+                evento.Inicio = c.InicioUtc;
+                evento.Fin = c.FinUtc;
+            }
+            evento.Estado = m.EstadoNuevo;
+            evento.Motivo = m.EstadoNuevo == Evento.EstadoRechazado ? m.Motivo : null;
+            evento.UpdatedAt = m.AhoraUtc;
             VecesModerado++;
+            Moderaciones.Add(m);
             return Task.FromResult(ResultadoModeracionEvento.Actualizado);
         }
 
@@ -569,7 +576,7 @@ public sealed class EventoServiceTests
 
         Assert.Equal("Vigente", Assert.Single(pendientes).Titulo);
         var error = await Assert.ThrowsAsync<ReglaNegocioException>(
-            () => servicio.ModerarAsync(1, new ResolverEventoRequest(Evento.EstadoPublicado, null)));
+            () => servicio.ModerarAsync(1, Admin, new ResolverEventoRequest(Evento.EstadoPublicado, null)));
         Assert.Equal("EVENTO_FINALIZADO", error.Codigo);
         Assert.Equal(Evento.EstadoPendiente, repo.Eventos.Single(e => e.Id == 1).Estado);
     }
@@ -605,9 +612,9 @@ public sealed class EventoServiceTests
         var (servicio, repo) = CrearServicio();
         var creada = await servicio.CrearAsync(Usuario, false, Solicitud(lugarId: null), null);
 
-        await servicio.ModerarAsync(creada.Id, new ResolverEventoRequest(Evento.EstadoPublicado, null));
+        await servicio.ModerarAsync(creada.Id, Admin, new ResolverEventoRequest(Evento.EstadoPublicado, null));
         var repetida = await Assert.ThrowsAsync<ReglaNegocioException>(
-            () => servicio.ModerarAsync(creada.Id, new ResolverEventoRequest(Evento.EstadoRechazado, "No cumple")));
+            () => servicio.ModerarAsync(creada.Id, Admin, new ResolverEventoRequest(Evento.EstadoRechazado, "No cumple")));
 
         Assert.Equal(1, repo.VecesModerado);
         Assert.Equal("YA_REVISADO", repetida.Codigo);
@@ -644,7 +651,7 @@ public sealed class EventoServiceTests
     {
         var (servicio, _, avisos) = ConAvisos();
         var creado = await servicio.CrearAsync(Usuario, false, Solicitud(lugarId: null, lugarTexto: "Patio lateral"), null);
-        await servicio.ModerarAsync(creado.Id, new ResolverEventoRequest(Evento.EstadoPublicado, null));
+        await servicio.ModerarAsync(creado.Id, Admin, new ResolverEventoRequest(Evento.EstadoPublicado, null));
         Assert.Equal(["evento-por-revisar:1", "evento-revisado:1"], avisos.Llamadas);
 
         var otro = await servicio.CrearAsync(Usuario, false, Solicitud(lugarId: null, lugarTexto: "Patio trasero"), null);
@@ -735,5 +742,163 @@ public sealed class EventoServiceTests
             var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.ObtenerPublicadoAsync(id));
             Assert.Equal("NO_ENCONTRADO", error.Codigo);
         }
+    }
+
+    // ── HU26: moderación de eventos por el admin ──
+
+    [Fact]
+    public async Task El_admin_edita_y_aprueba_en_un_solo_paso()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), lugarId: null, lugarTexto: "Patio",
+            estado: Evento.EstadoPendiente));
+
+        await servicio.ModerarAsync(1, Admin, new ResolverEventoRequest(
+            Evento.EstadoPublicado, null, Solicitud(titulo: "  Feria corregida  ", lugarId: 3)));
+
+        var evento = Assert.Single(repo.Eventos);
+        Assert.Equal(Evento.EstadoPublicado, evento.Estado);
+        Assert.Equal("Feria corregida", evento.Titulo);
+        Assert.Equal(3, evento.LugarId);
+        Assert.Null(evento.LugarTexto);
+        var m = Assert.Single(repo.Moderaciones);
+        Assert.Equal((Admin, Notificacion.TipoEventoAprobado), (m.AdminId, m.TipoAviso));
+    }
+
+    [Fact]
+    public async Task Editar_y_aprobar_valida_los_campos_como_el_formulario()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.ModerarAsync(1, Admin,
+            new ResolverEventoRequest(Evento.EstadoPublicado, null, Solicitud(titulo: "   "))));
+
+        Assert.Equal("VALIDACION", error.Codigo);
+        Assert.Equal(Evento.EstadoPendiente, repo.Eventos[0].Estado);
+        Assert.Empty(repo.Moderaciones);
+    }
+
+    [Fact]
+    public async Task No_se_puede_editar_al_rechazar()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.ModerarAsync(1, Admin,
+            new ResolverEventoRequest(Evento.EstadoRechazado, "Spam", Solicitud())));
+
+        Assert.Equal(ReglasEvento.MensajeCambiosSoloAlAprobar, error.Message);
+    }
+
+    [Fact]
+    public async Task Rechazar_exige_motivo_y_lo_manda_al_autor()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+
+        var sinMotivo = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.ModerarAsync(1, Admin, new ResolverEventoRequest(Evento.EstadoRechazado, "  ")));
+        Assert.Equal(ReglasEvento.MensajeFaltaMotivoRechazo, sinMotivo.Message);
+
+        await servicio.ModerarAsync(1, Admin, new ResolverEventoRequest(Evento.EstadoRechazado, "Es publicidad"));
+
+        Assert.Equal((Evento.EstadoRechazado, "Es publicidad"), (repo.Eventos[0].Estado, repo.Eventos[0].Motivo));
+        var m = Assert.Single(repo.Moderaciones);
+        Assert.Equal((Notificacion.TipoEventoRechazado, "Es publicidad"), (m.TipoAviso, m.Motivo));
+    }
+
+    [Fact]
+    public async Task Bajar_un_publicado_lo_oculta_con_motivo_y_avisa_al_autor()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2)));
+
+        await servicio.BajarAsync(1, Admin, new BajarEventoRequest("Contenido ofensivo"));
+
+        Assert.Equal((Evento.EstadoRechazado, "Contenido ofensivo"), (repo.Eventos[0].Estado, repo.Eventos[0].Motivo));
+        Assert.Empty(await servicio.ListarPublicadosAsync("semana"));
+        var m = Assert.Single(repo.Moderaciones);
+        Assert.Equal((Admin, Evento.EstadoPublicado, Notificacion.TipoEventoBajado), (m.AdminId, m.EstadoEsperado, m.TipoAviso));
+    }
+
+    [Fact]
+    public async Task Bajar_exige_motivo_y_solo_sirve_para_publicados()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2)));
+        repo.Eventos.Add(EventoVisible(2, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+
+        var sinMotivo = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(1, Admin, new BajarEventoRequest(null)));
+        Assert.Equal(("VALIDACION", ReglasEvento.MensajeFaltaMotivoBaja), (sinMotivo.Codigo, sinMotivo.Message));
+
+        var pendiente = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(2, Admin, new BajarEventoRequest("Spam")));
+        Assert.Equal(("YA_REVISADO", ReglasEvento.MensajeEventoNoPublicado), (pendiente.Codigo, pendiente.Message));
+
+        var noExiste = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(99, Admin, new BajarEventoRequest("Spam")));
+        Assert.Equal("NO_ENCONTRADO", noExiste.Codigo);
+    }
+
+    [Fact]
+    public async Task El_admin_ve_los_publicados_que_no_terminaron_para_bajarlos()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddDays(10), ahora.AddDays(10).AddHours(1)));
+        repo.Eventos.Add(EventoVisible(2, ahora.AddHours(1), ahora.AddHours(2)));
+        repo.Eventos.Add(EventoVisible(3, ahora.AddHours(-3), ahora.AddHours(-2)));
+        repo.Eventos.Add(EventoVisible(4, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+
+        var lista = await servicio.ListarPublicadosAdminAsync();
+
+        Assert.Equal([2, 1], lista.Select(e => e.Id));
+    }
+}
+
+public sealed class AvisoModeracionTests
+{
+    [Fact]
+    public void El_aviso_de_rechazo_y_de_baja_llevan_el_motivo()
+    {
+        Assert.Equal("Tu evento «Feria» fue rechazado. Motivo: Es publicidad",
+            ReglasEvento.AvisoModeracion(Notificacion.TipoEventoRechazado, "Feria", "Es publicidad"));
+        Assert.Equal("Tu evento «Feria» fue retirado del apartado de eventos. Motivo: Spam",
+            ReglasEvento.AvisoModeracion(Notificacion.TipoEventoBajado, "Feria", "Spam"));
+        Assert.Equal("Tu evento «Feria» fue aprobado y ya está publicado.",
+            ReglasEvento.AvisoModeracion(Notificacion.TipoEventoAprobado, "Feria", null));
+    }
+
+    [Theory]
+    [InlineData(10, 500)]
+    [InlineData(120, 500)]
+    [InlineData(120, 5)]
+    [InlineData(190, 0)]
+    public void El_aviso_siempre_cabe_en_200_caracteres(int largoTitulo, int largoMotivo)
+    {
+        foreach (var tipo in new[] { Notificacion.TipoEventoRechazado, Notificacion.TipoEventoBajado, Notificacion.TipoEventoAprobado })
+        {
+            var aviso = ReglasEvento.AvisoModeracion(tipo, new string('t', largoTitulo),
+                largoMotivo == 0 ? null : new string('m', largoMotivo));
+            Assert.True(aviso.Length <= ReglasEvento.MaximoAviso, $"{tipo}: {aviso.Length}");
+        }
+    }
+
+    [Fact]
+    public void Un_motivo_largo_se_recorta_con_puntos_suspensivos()
+    {
+        var aviso = ReglasEvento.AvisoModeracion(Notificacion.TipoEventoRechazado, "Feria", new string('m', 500));
+
+        Assert.Equal(ReglasEvento.MaximoAviso, aviso.Length);
+        Assert.EndsWith("…", aviso);
+        Assert.StartsWith("Tu evento «Feria» fue rechazado. Motivo: mmm", aviso);
     }
 }

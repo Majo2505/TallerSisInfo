@@ -188,3 +188,55 @@ export function presentacionEvento(
     cancelable: estado !== "CANCELADO" && !empezo,
   };
 }
+
+/** HU26: el formulario de «Editar y aprobar» del admin, con los datos actuales del evento. */
+export function camposDesdeEvento(evento: {
+  titulo: string;
+  descripcion: string | null;
+  inicio: string;
+  fin: string;
+  lugarId: number | null;
+  lugar: string;
+  asistencia: "FIJA" | "LIBRE";
+  visitaMin: number | null;
+  visitaMax: number | null;
+}): CamposFormularioEvento & { descripcion: string } {
+  return {
+    titulo: evento.titulo,
+    descripcion: evento.descripcion ?? "",
+    inicio: fechaBoliviaParaFormulario(evento.inicio),
+    fin: fechaBoliviaParaFormulario(evento.fin),
+    lugarId: evento.lugarId === null ? "" : String(evento.lugarId),
+    lugarTexto: evento.lugarId === null ? evento.lugar : "",
+    asistencia: evento.asistencia,
+    visitaMin: evento.visitaMin === null ? "" : String(evento.visitaMin),
+    visitaMax: evento.visitaMax === null ? "" : String(evento.visitaMax),
+  };
+}
+
+/**
+ * HU26: los cambios del admin en JSON para `PATCH /api/admin/eventos/{id}/moderacion` (el formulario del estudiante va en
+ * FormData por la foto; aquí no hay foto). Con un lugar del catálogo se manda su nombre como respaldo, como en HU23.
+ */
+export function cambiosEventoParaApi(campos: CamposFormularioEvento & { descripcion: string }, nombreLugarSeleccionado?: string) {
+  const libre = campos.asistencia === "LIBRE";
+  return {
+    titulo: campos.titulo.trim(),
+    descripcion: campos.descripcion.trim() || null,
+    inicio: fechaBoliviaParaApi(campos.inicio),
+    fin: fechaBoliviaParaApi(campos.fin),
+    lugarId: campos.lugarId ? Number(campos.lugarId) : null,
+    lugarTexto: campos.lugarId ? nombreLugarSeleccionado ?? null : campos.lugarTexto.trim() || null,
+    asistencia: campos.asistencia,
+    visitaMin: libre && campos.visitaMin ? Number(campos.visitaMin) : null,
+    visitaMax: libre && campos.visitaMax ? Number(campos.visitaMax) : null,
+  };
+}
+
+/** HU26: el motivo para rechazar o bajar es obligatorio y llega como mucho a 500 caracteres. */
+export function validarMotivoModeracion(motivo: string, accion: "rechazar" | "bajar"): string | null {
+  const limpio = motivo.trim();
+  if (!limpio) return accion === "rechazar" ? "Escribe el motivo del rechazo." : "Escribe el motivo para bajar el evento.";
+  if (limpio.length > 500) return "El motivo no puede superar 500 caracteres.";
+  return null;
+}

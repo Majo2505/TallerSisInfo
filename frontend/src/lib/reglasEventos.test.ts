@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   ahoraBoliviaParaFormulario,
+  cambiosEventoParaApi,
+  camposDesdeEvento,
+  validarMotivoModeracion,
   etiquetaFecha,
   fechaHoraCompleta,
   motivosDeRevision,
@@ -138,4 +141,49 @@ test("motivos de revisión, como en el backend", () => {
   assert.deepEqual(motivosDeRevision("2026-11-17T09:00", "2026-11-17T11:00", true, false, ahora), ["La fecha de inicio ya pasó."]);
   // Sin lugar todavía (ni del catálogo ni escrito) o con la fecha a medias, no se adelanta nada.
   assert.deepEqual(motivosDeRevision("2026-11-18T", "", false, false, ahora), []);
+});
+
+test("HU26: editar y aprobar arranca con los datos actuales del evento", () => {
+  const campos = camposDesdeEvento({
+    titulo: "Feria",
+    descripcion: null,
+    inicio: "2026-11-20T10:00:00-04:00",
+    fin: "2026-11-20T12:00:00-04:00",
+    lugarId: null,
+    lugar: "Patio",
+    asistencia: "LIBRE",
+    visitaMin: 10,
+    visitaMax: 30,
+  });
+  assert.deepEqual(campos, {
+    titulo: "Feria",
+    descripcion: "",
+    inicio: "2026-11-20T10:00",
+    fin: "2026-11-20T12:00",
+    lugarId: "",
+    lugarTexto: "Patio",
+    asistencia: "LIBRE",
+    visitaMin: "10",
+    visitaMax: "30",
+  });
+});
+
+test("HU26: los cambios del admin van en JSON con la hora de Bolivia y sin visita si es fija", () => {
+  const cambios = cambiosEventoParaApi(
+    { ...CAMPOS, descripcion: "  ", lugarId: "3", lugarTexto: "", asistencia: "FIJA", visitaMin: "5", visitaMax: "9" },
+    "Biblioteca",
+  );
+  assert.equal(cambios.descripcion, null);
+  assert.equal(cambios.lugarId, 3);
+  assert.equal(cambios.lugarTexto, "Biblioteca");
+  assert.equal(cambios.visitaMin, null);
+  assert.equal(cambios.visitaMax, null);
+  assert.match(cambios.inicio, /-04:00$/);
+});
+
+test("HU26: rechazar o bajar exige un motivo de hasta 500 caracteres", () => {
+  assert.equal(validarMotivoModeracion("   ", "rechazar"), "Escribe el motivo del rechazo.");
+  assert.equal(validarMotivoModeracion("", "bajar"), "Escribe el motivo para bajar el evento.");
+  assert.equal(validarMotivoModeracion("x".repeat(501), "bajar"), "El motivo no puede superar 500 caracteres.");
+  assert.equal(validarMotivoModeracion("Es spam", "bajar"), null);
 });

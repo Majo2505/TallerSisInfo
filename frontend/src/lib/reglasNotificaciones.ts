@@ -32,6 +32,8 @@ const PRESENTACIONES: Record<string, PresentacionNotificacion> = {
   // HU23: el administrador revisó un evento pendiente. Lleva a «Mis eventos».
   EVENTO_APROBADO: { titulo: "Tu evento fue aprobado", clase: "reporte", icono: "calendario" },
   EVENTO_RECHAZADO: { titulo: "Tu evento fue rechazado", clase: "advertencia", icono: "calendario" },
+  // HU26: el administrador bajó un evento que ya estaba publicado. El mensaje trae el motivo.
+  EVENTO_BAJADO: { titulo: "Tu evento fue retirado", clase: "advertencia", icono: "calendario" },
   // Campanita del admin: algo espera su decisión. Llevan a la pestaña o pantalla donde se resuelve.
   REPORTE_NUEVO: { titulo: "Nuevo reporte", clase: "reporte", icono: "bandera" },
   EVENTO_POR_REVISAR: { titulo: "Evento por revisar", clase: "invitacion", icono: "calendario" },
@@ -70,6 +72,7 @@ export function rutaNotificacion(n: AvisoConDestino): string | null {
       return n.eventoId ? `/eventos/${n.eventoId}` : "/eventos";
     case "EVENTO_APROBADO":
     case "EVENTO_RECHAZADO":
+    case "EVENTO_BAJADO":
       return "/eventos?pestana=mios";
     case "CONEXION_SOLICITADA":
     case "CONEXION_ACEPTADA":

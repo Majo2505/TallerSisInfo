@@ -62,7 +62,6 @@ test("la advertencia de sanción conserva su presentación", () => {
 });
 
 test("un tipo desconocido usa la presentación genérica y no lanza error", () => {
-  assert.deepEqual(presentacionNotificacion("EVENTO_BAJADO"), PRESENTACION_GENERICA);
   assert.deepEqual(presentacionNotificacion("TIPO_NUEVO_DE_OTRA_HU"), PRESENTACION_GENERICA);
   assert.deepEqual(presentacionNotificacion(""), PRESENTACION_GENERICA);
   assert.equal(PRESENTACION_GENERICA.titulo, "Nuevo aviso");
@@ -71,4 +70,13 @@ test("un tipo desconocido usa la presentación genérica y no lanza error", () =
 test("los nombres heredados de Object no se toman por tipos conocidos", () => {
   assert.deepEqual(presentacionNotificacion("constructor"), PRESENTACION_GENERICA);
   assert.deepEqual(presentacionNotificacion("toString"), PRESENTACION_GENERICA);
+});
+
+test("HU26: el evento bajado por el admin se ve como advertencia y lleva a Mis eventos", () => {
+  assert.deepEqual(presentacionNotificacion("EVENTO_BAJADO"), {
+    titulo: "Tu evento fue retirado",
+    clase: "advertencia",
+    icono: "calendario",
+  });
+  assert.equal(rutaNotificacion({ tipo: "EVENTO_BAJADO", eventoId: 4 }), "/eventos?pestana=mios");
 });
