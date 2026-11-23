@@ -132,7 +132,8 @@ public class ExtraccionEventoService
             origen,
             evento = dto.Evento,
             faltantes = dto.Faltantes,
-            advertencias = dto.Advertencias
+            advertencias = dto.Advertencias,
+            sesiones = dto.Sesiones
         }, Json);
         await _repo.GuardarLogAsync(registro, ct);
 
@@ -186,9 +187,13 @@ public class ExtraccionEventoService
         return Formato.Desconocido;
     }
 
+    private static string? Formatear(DateTime? fecha) => fecha?.ToString("yyyy-MM-ddTHH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
     private static RespuestaExtraccionEventoDto ADto(ResultadoFlyer r) => new(0, r.Estado, r.Mensaje,
         new BorradorEventoDto(r.Evento.Titulo, r.Evento.Descripcion,
-            r.Evento.Inicio?.ToString("yyyy-MM-ddTHH:mm"), r.Evento.Fin?.ToString("yyyy-MM-ddTHH:mm"),
+            Formatear(r.Evento.Inicio), Formatear(r.Evento.Fin),
             r.Evento.LugarTexto, r.Evento.Asistencia, r.Evento.VisitaMin, r.Evento.VisitaMax),
-        r.Faltantes.ToList(), r.Advertencias.ToList(), null);
+        r.Faltantes.ToList(), r.Advertencias.ToList(),
+        (r.Sesiones ?? []).Select(s => new SesionEventoDto(Formatear(s.Inicio)!, Formatear(s.Fin))).ToList(),
+        null);
 }

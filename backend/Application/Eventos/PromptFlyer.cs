@@ -26,8 +26,14 @@ public static class PromptFlyer
            (feria, exposición, evento largo de entrada libre). Si no estás seguro, null.
         8. Si asistencia es LIBRE, visitaMinMin y visitaMaxMin sugieren una visita corta en minutos (entre 15 y 30 normalmente);
            si no, null.
-        9. Si el afiche tiene varios eventos, extrae el principal (el más destacado) y variosEventos = true.
+        9. Si el afiche tiene varios eventos DISTINTOS (con títulos o temas diferentes), extrae el principal (el más destacado)
+           y variosEventos = true. Varias fechas del MISMO evento (un ciclo de conferencias, funciones de una obra, un taller
+           que se repite) NO son eventos distintos: usa la regla 11 y deja variosEventos = false.
         10. advertencias: lista de textos cortos en español (máximo 5, cada uno de pocas palabras) para avisar si la imagen está
             borrosa, cortada o con partes ilegibles, o si no estás seguro de algún dato. Lista vacía si no hay nada que avisar.
+        11. sesiones: TODAS las fechas del mismo evento que trae el afiche, en orden, cada una con inicio y fin en el formato
+            de la regla 5 (incluye también la primera, la misma de inicio y fin). Incluye las fechas aunque ya hayan pasado:
+            la app decide cuáles usar. Si el afiche trae una sola fecha, sesiones tiene un elemento; si no trae ninguna, vacía.
+            Si una fecha no dice la hora de fin, deja su fin en null; no la inventes.
         """;
 }

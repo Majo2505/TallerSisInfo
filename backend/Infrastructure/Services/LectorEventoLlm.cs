@@ -26,10 +26,22 @@ public class LectorEventoLlm : ILectorEventoFlyer
             "visitaMinMin": { "type": ["integer", "null"] },
             "visitaMaxMin": { "type": ["integer", "null"] },
             "variosEventos": { "type": "boolean" },
-            "advertencias": { "type": "array", "items": { "type": "string" } }
+            "advertencias": { "type": "array", "items": { "type": "string" } },
+            "sesiones": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "inicio": { "type": ["string", "null"] },
+                  "fin": { "type": ["string", "null"] }
+                },
+                "required": ["inicio", "fin"],
+                "additionalProperties": false
+              }
+            }
           },
           "required": ["entendido", "legible", "titulo", "descripcion", "inicio", "fin", "lugar", "asistencia",
-                       "visitaMinMin", "visitaMaxMin", "variosEventos", "advertencias"],
+                       "visitaMinMin", "visitaMaxMin", "variosEventos", "advertencias", "sesiones"],
           "additionalProperties": false
         }
         """;
@@ -112,7 +124,8 @@ public class LectorEventoLlm : ILectorEventoFlyer
             var leido = JsonSerializer.Deserialize<EventoJson>(crudo, Json) ?? throw new JsonException("Respuesta vacía.");
             return new LecturaEvento(modelo, crudo, new EventoLeido(
                 leido.Entendido, leido.Legible, leido.Titulo, leido.Descripcion, leido.Inicio, leido.Fin, leido.Lugar,
-                leido.Asistencia, leido.VisitaMinMin, leido.VisitaMaxMin, leido.VariosEventos, leido.Advertencias ?? []));
+                leido.Asistencia, leido.VisitaMinMin, leido.VisitaMaxMin, leido.VariosEventos, leido.Advertencias ?? [],
+                (leido.Sesiones ?? []).OfType<SesionJson>().Select(s => new SesionLeida(s.Inicio, s.Fin)).ToList()));
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException)
         {
@@ -128,7 +141,10 @@ public class LectorEventoLlm : ILectorEventoFlyer
         new("LECTOR_NO_DISPONIBLE", "No pudimos leer el afiche en este momento. Inténtalo de nuevo en unos minutos o llena el formulario a mano.");
 
     private sealed record EventoJson(bool Entendido, bool Legible, string? Titulo, string? Descripcion, string? Inicio, string? Fin,
-        string? Lugar, string? Asistencia, int? VisitaMinMin, int? VisitaMaxMin, bool VariosEventos, List<string>? Advertencias);
+        string? Lugar, string? Asistencia, int? VisitaMinMin, int? VisitaMaxMin, bool VariosEventos, List<string>? Advertencias,
+        List<SesionJson?>? Sesiones = null);
+
+    private sealed record SesionJson(string? Inicio, string? Fin);
 }
 
 /// <summary>Sin LLM_API_KEY: no llama a nada.</summary>

@@ -20,22 +20,24 @@ public class LectorEventoSimulado : ILectorEventoFlyer
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1)) is { Success: true } m ? m.Groups[1].Value.Trim() : null;
 
         var titulo = Campo("Título");
-        string? inicio = null, fin = null;
-        var fecha = Campo("Fecha");
         var hora = Campo("Hora");
-        if (fecha is not null && DateTime.TryParseExact(fecha, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dia))
+        var h = hora is null ? null : Regex.Match(hora, @"^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$");
+
+        // HU34: «Fecha:» puede traer varias fechas del mismo evento («03/12/2026, 05/12/2026 y 07/12/2026»).
+        var sesiones = new List<SesionLeida>();
+        foreach (var fecha in (Campo("Fecha") ?? "").Split([",", " y "], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var h = hora is null ? null : Regex.Match(hora, @"^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$");
-            if (h is { Success: true })
-            {
-                inicio = $"{dia:yyyy-MM-dd}T{TimeOnly.Parse(h.Groups[1].Value, CultureInfo.InvariantCulture):HH:mm}";
-                fin = $"{dia:yyyy-MM-dd}T{TimeOnly.Parse(h.Groups[2].Value, CultureInfo.InvariantCulture):HH:mm}";
-            }
+            if (h is not { Success: true } ||
+                !DateTime.TryParseExact(fecha, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dia)) continue;
+            sesiones.Add(new SesionLeida(
+                $"{dia:yyyy-MM-dd}T{TimeOnly.Parse(h.Groups[1].Value, CultureInfo.InvariantCulture):HH:mm}",
+                $"{dia:yyyy-MM-dd}T{TimeOnly.Parse(h.Groups[2].Value, CultureInfo.InvariantCulture):HH:mm}"));
         }
+        var primera = sesiones.FirstOrDefault();
 
         var evento = titulo is null
-            ? new EventoLeido(false, true, null, null, null, null, null, null, null, null, false, [])
-            : new EventoLeido(true, true, titulo, Campo("Descripción"), inicio, fin, Campo("Lugar"), null, null, null, false, []);
+            ? new EventoLeido(false, true, null, null, null, null, null, null, null, null, false, [], [])
+            : new EventoLeido(true, true, titulo, Campo("Descripción"), primera?.Inicio, primera?.Fin, Campo("Lugar"), null, null, null, false, [], sesiones);
         return Task.FromResult(new LecturaEvento(NombreModelo, "{}", evento));
     }
 }
