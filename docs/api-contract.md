@@ -1218,6 +1218,9 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
   },
   "faltantes": ["fin"],
   "advertencias": ["La imagen está borrosa"],
+  "sesiones": [
+    { "inicio": "2026-11-20T08:00", "fin": "2026-11-20T13:00" }
+  ],
   "imagen": { "tipoMime": "image/jpeg", "contenidoBase64": "...", "bytes": 482113 }
 }
 ```
@@ -1231,9 +1234,12 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
 | `lugarTexto` | Solo texto; el cruce con el catálogo lo hace HU23 |
 | `advertencias` | Textos cortos: imagen borrosa, cortada o ilegible, datos dudosos, o «el afiche tiene más de un evento» (se toma el principal) |
 | `estado` | `COMPLETO` (los 4 obligatorios, imagen legible), `INCOMPLETO` (faltan datos o la imagen no es legible: `mensaje` «La imagen se ve borrosa; revisa los datos o súbela con más calidad»), `NO_ENTENDIDO` (no es un evento: **200**, no 400) |
+| `sesiones` | **HU34.** Todas las fechas futuras del **mismo** evento (ciclo de conferencias, funciones de teatro), ordenadas, **máximo 5**, cada una con `inicio` y `fin` en hora de Bolivia. `evento.inicio`/`evento.fin` son siempre la primera. Con una sola fecha trae un elemento; sin fecha válida, `[]`. Una fecha que ya empezó se excluye y va a `advertencias` («Dejamos fuera una fecha que ya pasó: 10/11 18:00.»); con más de 5 se toman las 5 más próximas y se avisa («El afiche trae 7 fechas; tomamos las 5 más próximas.»). Las repetidas se unen. Una fecha sin hora de fin toma la duración de otra fecha del mismo evento; si ninguna la trae, `fin` es `null` (nunca se inventa). Eventos **distintos** en el afiche no son sesiones: se toma el principal y se avisa |
 | `imagen` | Solo si el origen es PDF: página 1 en JPEG y solo si cabe en 2 MB (se reintenta con menos resolución); si no, `null`. Con JPG/PNG siempre `null` |
 
 Errores `400`: `VALIDACION` (vacío, los dos campos, más de 8 MB), `ARCHIVO_NO_ADMITIDO` (firma que no es JPG/PNG/PDF), `PDF_MUCHAS_PAGINAS`, `PDF_PROTEGIDO` (con contraseña), `PDF_INVALIDO` (corrupto), `SOLICITUD_NO_PERMITIDA` (texto que intenta manipular al asistente). `401` sin sesión, `429` por límite, `503 LECTOR_NO_DISPONIBLE` (sin `LLM_API_KEY` o el modelo falla). Cada lectura queda en `log_auditoria_rag` con `tipo = EXTRACCION_EVENTO`; `datos_extraidos` guarda el borrador, los faltantes y las advertencias. La regla «el texto que cae en `ReglasSeguridadIa` pasa a PENDIENTE» es de HU23 al publicar.
+
+**Crear un evento por fecha (HU34).** No hay endpoint nuevo: el cliente llama a `POST /api/eventos` una vez por cada fecha marcada, con el mismo título, descripción, lugar, tipo de asistencia y foto, y `Origen=FLYER`. Cada llamada es independiente y pasa por todas las reglas de HU23 (filtro de texto, lugar, horario 07:15–21:00) y por los duplicados de HU33: una fecha puede quedar `PUBLICADO` y otra `PENDIENTE`. El límite de **3 eventos creados por día** (hora de Bolivia, contando también cancelados) se aplica a cada una: la cuarta responde `409 LIMITE_DIARIO`. El admin no tiene límite. Para saber cuántas caben, el cliente cuenta en `GET /api/eventos/mios` los eventos con `createdAt` de hoy. Sesiones de un mismo evento en días distintos **no** son duplicados.
 
 ## 7j. Foto del evento al editar (HU23)
 

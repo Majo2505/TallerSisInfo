@@ -1455,6 +1455,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/eventos/extraer:
+    post:
+      tags: [Eventos]
+      operationId: extraerEvento
+      summary: Lee un afiche (foto o PDF) o un texto y devuelve un borrador de evento con sus fechas.
+      description: |
+        HU24 + HU34. No crea el evento: el cliente crea uno por cada fecha con `POST /api/eventos` y `Origen=FLYER`.
+        `sesiones` trae las fechas futuras del mismo evento (máximo 5, ordenadas, hora de Bolivia sin zona); `evento.inicio` y
+        `evento.fin` son siempre la primera. Las fechas pasadas se excluyen y se nombran en `advertencias`. Con eventos distintos
+        se toma el principal y se avisa. Usa la política de límite de IA (10 por minuto).
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo: { type: string, format: binary, description: 'JPG, PNG o PDF de hasta 8 MB (PDF de hasta 2 páginas). Uno solo de archivo o texto.' }
+                texto: { type: string, maxLength: 4000, description: Texto pegado del evento. }
+      responses:
+        '200':
+          description: Borrador (`COMPLETO`, `INCOMPLETO` o `NO_ENTENDIDO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaExtraccionEventoDto'
+              examples:
+                variasFechas:
+                  summary: Ciclo de conferencias con una fecha ya pasada
+                  value:
+                    consultaId: 210
+                    estado: COMPLETO
+                    mensaje: null
+                    evento: { titulo: 6to Ciclo de Conferencias sobre los ODS, descripcion: null, inicio: '2026-11-17T18:00', fin: '2026-11-17T20:00', lugarTexto: Auditorio, asistencia: FIJA, visitaMin: null, visitaMax: null }
+                    faltantes: []
+                    advertencias: ['Dejamos fuera una fecha que ya pasó: 10/11 18:00.']
+                    sesiones:
+                      - { inicio: '2026-11-17T18:00', fin: '2026-11-17T20:00' }
+                      - { inicio: '2026-11-19T18:00', fin: '2026-11-19T20:00' }
+                    imagen: null
+                unaFecha:
+                  summary: Una sola fecha (compatible con HU24)
+                  value:
+                    consultaId: 211
+                    estado: COMPLETO
+                    mensaje: null
+                    evento: { titulo: Feria de Ciencias, descripcion: null, inicio: '2026-11-20T08:00', fin: '2026-11-20T13:00', lugarTexto: Patio central, asistencia: LIBRE, visitaMin: 15, visitaMax: 30 }
+                    faltantes: []
+                    advertencias: []
+                    sesiones: [{ inicio: '2026-11-20T08:00', fin: '2026-11-20T13:00' }]
+                    imagen: null
+        '400':
+          description: '`VALIDACION`, `ARCHIVO_NO_ADMITIDO`, `PDF_MUCHAS_PAGINAS`, `PDF_PROTEGIDO`, `PDF_INVALIDO` o `SOLICITUD_NO_PERMITIDA`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '401':
+          description: Sin sesión.
+        '429':
+          description: Límite de IA (`DEMASIADAS_SOLICITUDES`).
+        '503':
+          description: '`LECTOR_NO_DISPONIBLE`: sin `LLM_API_KEY` o el modelo falló. Respuesta controlada y auditada.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
   /api/actividades/extraer:
     post:
       tags: [Actividades]
@@ -3432,6 +3501,56 @@ components:
             - $ref: '#/components/schemas/InvitacionDto'
           nullable: true
           description: HU13. A quiénes se invitó automáticamente o por qué no se invitó a nadie.
+    BorradorEventoDto:
+      type: object
+      description: Borrador leído del afiche. Fechas en hora de Bolivia sin zona; lo que no se pudo leer queda null.
+      properties:
+        titulo: { type: string, nullable: true }
+        descripcion: { type: string, nullable: true }
+        inicio: { type: string, nullable: true, example: '2026-11-17T18:00' }
+        fin: { type: string, nullable: true, example: '2026-11-17T20:00' }
+        lugarTexto: { type: string, nullable: true }
+        asistencia: { type: string, nullable: true, enum: [FIJA, LIBRE] }
+        visitaMin: { type: integer, nullable: true }
+        visitaMax: { type: integer, nullable: true }
+    SesionEventoDto:
+      type: object
+      description: HU34. Una fecha futura del evento (hora de Bolivia). `fin` es null si no se pudo leer ni deducir.
+      required: [inicio, fin]
+      properties:
+        inicio: { type: string, example: '2026-11-19T18:00' }
+        fin: { type: string, nullable: true, example: '2026-11-19T20:00' }
+    ImagenEventoDto:
+      type: object
+      properties:
+        tipoMime: { type: string, example: image/jpeg }
+        contenidoBase64: { type: string }
+        bytes: { type: integer }
+    RespuestaExtraccionEventoDto:
+      type: object
+      properties:
+        consultaId: { type: integer, format: int64 }
+        estado: { type: string, enum: [COMPLETO, INCOMPLETO, NO_ENTENDIDO] }
+        mensaje: { type: string, nullable: true }
+        evento:
+          $ref: '#/components/schemas/BorradorEventoDto'
+        faltantes:
+          type: array
+          items: { type: string, enum: [titulo, inicio, fin, lugar] }
+        advertencias:
+          type: array
+          items: { type: string }
+        sesiones:
+          type: array
+          maxItems: 5
+          description: HU34. Fechas futuras del mismo evento, ordenadas; la primera es la de `evento`. Una sola fecha → un elemento.
+          items:
+            $ref: '#/components/schemas/SesionEventoDto'
+        imagen:
+          allOf:
+            - $ref: '#/components/schemas/ImagenEventoDto'
+          nullable: true
+          description: Página 1 del PDF en JPEG, solo si cabe en 2 MB.
     RespuestaExtraccionDto:
       type: object
       properties:
