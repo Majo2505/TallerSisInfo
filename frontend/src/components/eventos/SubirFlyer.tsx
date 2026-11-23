@@ -23,6 +23,17 @@ import {
   validarArchivoFlyer,
   validarTextoFlyer,
 } from "@/lib/reglasFlyer";
+import { ahoraBoliviaParaFormulario } from "@/lib/reglasEventos";
+import {
+  SesionFlyer,
+  alternarMarca,
+  marcasIniciales,
+  sesionDisponible,
+  sesionesMarcadas,
+  textoCupo,
+  textoSesion,
+  tituloSesiones,
+} from "@/lib/reglasSesionesFlyer";
 import estilos from "./SubirFlyer.module.css";
 
 const MENSAJES = ["Leyendo el afiche…", "Buscando título, fecha y lugar…", "Revisando el horario del evento…", "Armando tu borrador…"];
@@ -45,6 +56,11 @@ export type BorradorFlyer = {
   advertencias: string[];
   imagen: ImagenFlyer | null;
   archivo: File | null;
+  /**
+   * HU34: fechas que el estudiante marcó cuando el afiche trae varias del mismo evento. Con 2 o más se crea un evento
+   * por cada una; vacío o una sola = el flujo de siempre (la fecha va en `evento`).
+   */
+  sesiones: SesionFlyer[];
 };
 
 type Paso = "elegir" | "leyendo" | "revisar";
@@ -55,6 +71,8 @@ type Props = {
   onBorrador: (borrador: BorradorFlyer) => void;
   /** Se llama justo antes de cerrar cuando el estudiante elige «Llenar a mano» (no se llama a la IA). */
   onLlenarAMano?: () => void;
+  /** HU34: cuántos eventos más puede crear hoy (límite de 3 por día). null o sin pasar = sin límite (admin). */
+  cupo?: number | null;
 };
 
 function Dato({ etiqueta, valor, falta, aviso }: { etiqueta: string; valor: string; falta: boolean; aviso?: boolean }) {
@@ -69,7 +87,7 @@ function Dato({ etiqueta, valor, falta, aviso }: { etiqueta: string; valor: stri
   );
 }
 
-export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Props) {
+export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano, cupo = null }: Props) {
   const reducir = useReducedMotion();
   const [paso, setPaso] = useState<Paso>("elegir");
   const [pestana, setPestana] = useState<Pestana>("archivo");
@@ -77,6 +95,8 @@ export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Prop
   const [vista, setVista] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
   const [lectura, setLectura] = useState<LecturaFlyer | null>(null);
+  // HU34: casillas de las fechas detectadas (mismo orden que lectura.sesiones).
+  const [marcas, setMarcas] = useState<boolean[]>([]);
   const [textoLeido, setTextoLeido] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState(0);
@@ -135,6 +155,7 @@ export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Prop
     try {
       const r = await leerFlyer(entrada);
       setLectura(r);
+      setMarcas(marcasIniciales(r.sesiones ?? [], cupo, ahoraBoliviaParaFormulario()));
       setTextoLeido(typeof entrada === "string" ? entrada : "");
       setPaso("revisar");
     } catch (e) {
@@ -155,17 +176,27 @@ export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Prop
     onCerrar();
   }
 
+  const sesiones = lectura?.sesiones ?? [];
+  const variasFechas = sesiones.length > 1;
+  const elegidas = sesionesMarcadas(sesiones, marcas);
+
   function usar() {
     if (!lectura || !sePuedeUsarBorrador(lectura.estado)) return;
+    if (variasFechas && elegidas.length === 0) return;
+    // Con varias fechas, el formulario muestra la primera marcada (la que se ve en la vista previa).
+    const primera = variasFechas ? elegidas[0] : null;
+    const evento = primera ? { ...lectura.evento, inicio: primera.inicio, fin: primera.fin ?? lectura.evento.fin } : lectura.evento;
+    const faltantes = primera ? lectura.faltantes.filter((c) => c !== "inicio" && !(c === "fin" && evento.fin)) : lectura.faltantes;
     onBorrador({
       consultaId: lectura.consultaId,
       estado: lectura.estado,
       mensaje: lectura.mensaje,
-      evento: lectura.evento,
-      faltantes: [...camposFaltantes(lectura.faltantes, lectura.evento)],
+      evento,
+      faltantes: [...camposFaltantes(faltantes, evento)],
       advertencias: lectura.advertencias,
       imagen: lectura.imagen,
       archivo: archivo && !esPdf(archivo) && pestana === "archivo" ? archivo : null,
+      sesiones: variasFechas ? elegidas : [],
     });
   }
 
@@ -354,7 +385,15 @@ export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Prop
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25, ease: SALIDA }}
             >
-              <Revision lectura={lectura} vista={vista} texto={textoLeido} />
+              <Revision lectura={lectura} vista={vista} texto={textoLeido} ocultarFechas={variasFechas} />
+              {variasFechas && sePuedeUsarBorrador(lectura.estado) && (
+                <Fechas
+                  sesiones={sesiones}
+                  marcas={marcas}
+                  cupo={cupo}
+                  onAlternar={(i) => setMarcas((m) => alternarMarca(m, i, sesiones, cupo, ahoraBoliviaParaFormulario()))}
+                />
+              )}
               <div className={estilos.acciones}>
                 <button type="button" className={estilos.manual} onClick={llenarAMano}>
                   Llenar a mano
@@ -363,8 +402,15 @@ export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Prop
                   Volver a subir
                 </button>
                 {sePuedeUsarBorrador(lectura.estado) && (
-                  <motion.button type="button" className={estilos.primario} onClick={usar} whileTap={{ scale: 0.97 }} transition={RESORTE_TOQUE}>
-                    Usar estos datos
+                  <motion.button
+                    type="button"
+                    className={estilos.primario}
+                    onClick={usar}
+                    disabled={variasFechas && elegidas.length === 0}
+                    whileTap={{ scale: 0.97 }}
+                    transition={RESORTE_TOQUE}
+                  >
+                    {variasFechas ? `Usar ${elegidas.length} ${elegidas.length === 1 ? "fecha" : "fechas"}` : "Usar estos datos"}
                   </motion.button>
                 )}
               </div>
@@ -376,7 +422,48 @@ export default function SubirFlyer({ onCerrar, onBorrador, onLlenarAMano }: Prop
   );
 }
 
-function Revision({ lectura, vista, texto }: { lectura: LecturaFlyer; vista: string | null; texto: string }) {
+/** HU34: «Detectamos N fechas» con una casilla por fecha. Las futuras vienen marcadas hasta donde alcanza el cupo de hoy. */
+function Fechas({ sesiones, marcas, cupo, onAlternar }: Readonly<{
+  sesiones: SesionFlyer[];
+  marcas: boolean[];
+  cupo: number | null;
+  onAlternar: (indice: number) => void;
+}>) {
+  const ahora = ahoraBoliviaParaFormulario();
+  const marcadas = marcas.filter(Boolean).length;
+  const aviso = textoCupo(sesiones.length, cupo);
+  const lleno = cupo !== null && marcadas >= cupo;
+  return (
+    <fieldset className={estilos.fechas}>
+      <legend>
+        {tituloSesiones(sesiones.length)}
+        <span>Se crea un evento por cada fecha marcada, con los mismos datos.</span>
+      </legend>
+      {aviso && <p className={cupo === 0 ? estilos.cupoLleno : estilos.cupo}>{aviso}</p>}
+      <ul>
+        {sesiones.map((s, i) => {
+          const disponible = sesionDisponible(s, ahora);
+          const bloqueada = !marcas[i] && (!disponible || lleno);
+          return (
+            <li key={s.inicio}>
+              <label className={bloqueada ? `${estilos.fecha} ${estilos.fechaBloqueada}` : estilos.fecha}>
+                <input type="checkbox" checked={Boolean(marcas[i])} disabled={bloqueada} onChange={() => onAlternar(i)} />
+                <span className={estilos.casilla} aria-hidden="true" />
+                <span className={estilos.textoFecha}>
+                  {textoSesion(s)}
+                  {!disponible && <small>{s.fin === null ? "Falta la hora de fin" : "Ya empezó"}</small>}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      {marcadas === 0 && cupo !== 0 && <p className={estilos.ayuda}>Marca al menos una fecha para continuar.</p>}
+    </fieldset>
+  );
+}
+
+function Revision({ lectura, vista, texto, ocultarFechas }: { lectura: LecturaFlyer; vista: string | null; texto: string; ocultarFechas: boolean }) {
   const { estado, evento, advertencias, imagen } = lectura;
 
   if (estado === "NO_ENTENDIDO") {
@@ -429,8 +516,12 @@ function Revision({ lectura, vista, texto }: { lectura: LecturaFlyer; vista: str
         <dl className={estilos.resumenDatos}>
           <Dato etiqueta={ETIQUETA_CAMPO.titulo} valor={evento.titulo ?? ""} falta={faltan.has("titulo")} />
           <Dato etiqueta={ETIQUETA_CAMPO.descripcion} valor={evento.descripcion ?? ""} falta={false} aviso={!evento.descripcion} />
-          <Dato etiqueta={ETIQUETA_CAMPO.inicio} valor={formatearFechaHora(evento.inicio)} falta={faltan.has("inicio")} />
-          <Dato etiqueta={ETIQUETA_CAMPO.fin} valor={formatearFechaHora(evento.fin)} falta={faltan.has("fin")} />
+          {!ocultarFechas && (
+            <>
+              <Dato etiqueta={ETIQUETA_CAMPO.inicio} valor={formatearFechaHora(evento.inicio)} falta={faltan.has("inicio")} />
+              <Dato etiqueta={ETIQUETA_CAMPO.fin} valor={formatearFechaHora(evento.fin)} falta={faltan.has("fin")} />
+            </>
+          )}
           <Dato etiqueta={ETIQUETA_CAMPO.lugar} valor={evento.lugarTexto ?? ""} falta={faltan.has("lugar")} />
           <Dato etiqueta={ETIQUETA_CAMPO.asistencia} valor={textoAsistencia(evento.asistencia)} falta={!evento.asistencia} />
           {evento.asistencia === "LIBRE" && <Dato etiqueta="Visita sugerida" valor={textoVisita(evento)} falta={!textoVisita(evento)} />}

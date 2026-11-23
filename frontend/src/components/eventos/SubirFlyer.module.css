@@ -150,3 +150,107 @@
 }
 
 .ayuda { margin: 0; color: var(--texto-suave); font-size: 0.9rem; }
+
+/* HU34: «Detectamos N fechas». Casilla propia (input oculto + .casilla), como en el resto de la app. */
+.fechas {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  min-width: 0;
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  background: var(--fondo-suave);
+}
+
+.fechas legend {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  float: left;
+  width: 100%;
+  color: var(--ucb-marino);
+  font-weight: 800;
+  font-size: 1.02rem;
+}
+
+.fechas legend span { color: var(--texto-suave); font-weight: 600; font-size: 0.88rem; }
+
+.fechas ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fecha {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--ucb-marino);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms var(--curva-salida);
+}
+
+.fecha input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+.fecha:has(input:checked) { border-color: var(--ucb-marino); }
+
+.fecha:active { transform: scale(0.98); }
+
+.fechaBloqueada { cursor: not-allowed; opacity: 0.55; }
+
+.fechaBloqueada:active { transform: none; }
+
+.textoFecha { display: grid; gap: 2px; min-width: 0; font-variant-numeric: tabular-nums; }
+
+.textoFecha small { color: var(--texto-suave); font-weight: 600; font-size: 0.8rem; }
+
+.casilla {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--borde);
+  background: var(--superficie);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.casilla::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  border-left: 2.5px solid var(--ucb-amarillo);
+  border-bottom: 2.5px solid var(--ucb-amarillo);
+  transform: rotate(-45deg) translateY(-1px);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.fecha input:checked + .casilla { border-color: var(--ucb-marino); background: var(--ucb-marino); }
+
+.fecha input:checked + .casilla::after { opacity: 1; }
+
+.fecha input:focus-visible + .casilla { outline: 3px solid var(--ucb-celeste); outline-offset: 2px; }
+
+.cupo, .cupoLleno { margin: 0; font-size: 0.9rem; font-weight: 700; line-height: 1.4; }
+
+.cupo { color: var(--ucb-marino); }
+
+.cupoLleno { color: var(--error-texto); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fecha, .casilla, .casilla::after { transition: none; }
+  .fecha:active { transform: none; }
+}
