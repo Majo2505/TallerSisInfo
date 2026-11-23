@@ -38,6 +38,14 @@ public sealed class AdminEventosController : ControllerBase
     public async Task<IActionResult> Publicados(CancellationToken ct)
         => Ok(await _service.ListarPublicadosAdminAsync(ct));
 
+    /// <summary>HU26: historial de eventos rechazados en revisión o bajados, con motivo, fecha y admin. Solo lectura.</summary>
+    [HttpGet("rechazados")]
+    [ProducesResponseType(typeof(List<EventoRechazadoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Rechazados(CancellationToken ct)
+        => Ok(await _service.ListarRechazadosAsync(ct));
+
     /// <summary>
     /// Aprobar o rechazar un evento pendiente. Con <c>cambios</c>, el admin lo edita y lo aprueba en un solo paso.
     /// </summary>

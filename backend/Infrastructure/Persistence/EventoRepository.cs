@@ -138,6 +138,52 @@ public sealed class EventoRepository : IEventoRepository
         => ListarAsync(_db.Eventos.AsNoTracking()
             .Where(e => e.Estado == Evento.EstadoPendiente && e.Fin > ahoraUtc), ct);
 
+    public async Task<List<EventoRechazado>> ListarRechazadosAsync(int maximo, CancellationToken ct = default)
+    {
+        var ids = await _db.Eventos.AsNoTracking()
+            .Where(e => e.Estado == Evento.EstadoRechazado)
+            .OrderByDescending(e => e.UpdatedAt)
+            .Take(maximo)
+            .Select(e => e.Id)
+            .ToListAsync(ct);
+        if (ids.Count == 0) return [];
+
+        var listados = await ListarAsync(_db.Eventos.AsNoTracking().Where(e => ids.Contains(e.Id)), ct);
+
+        // La última moderación que dejó cada evento en RECHAZADO (HU26). Los rechazados antes de HU26 no tienen fila.
+        var lista = string.Join(",", ids);
+        var moderaciones = await _db.Database.SqlQueryRaw<FilaModeracion>($"""
+                SELECT h.entidad_id AS EventoId,
+                       JSON_UNQUOTE(JSON_EXTRACT(h.valores_anteriores, '$.estado')) AS EstadoAnterior,
+                       u.nombre AS Admin,
+                       h.created_at AS Fecha
+                FROM historial_cambio h
+                LEFT JOIN usuario u ON u.id = h.usuario_id
+                WHERE h.entidad = 'EVENTO' AND h.entidad_id IN ({lista})
+                  AND JSON_UNQUOTE(JSON_EXTRACT(h.valores_nuevos, '$.estado')) = 'RECHAZADO'
+                ORDER BY h.created_at DESC, h.id DESC
+                """).ToListAsync(ct);
+        var ultima = moderaciones.GroupBy(m => m.EventoId).ToDictionary(g => g.Key, g => g.First());
+
+        return listados.Select(l =>
+        {
+            var m = ultima.GetValueOrDefault(l.Evento.Id);
+            return new EventoRechazado(
+                l,
+                m?.EstadoAnterior == Evento.EstadoPublicado,
+                m?.Admin,
+                m is null ? null : DateTime.SpecifyKind(m.Fecha, DateTimeKind.Utc));
+        }).ToList();
+    }
+
+    private sealed class FilaModeracion
+    {
+        public int EventoId { get; set; }
+        public string? EstadoAnterior { get; set; }
+        public string? Admin { get; set; }
+        public DateTime Fecha { get; set; }
+    }
+
     public async Task<ResultadoModeracionEvento> ModerarAsync(ModeracionEvento m, CancellationToken ct = default)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);

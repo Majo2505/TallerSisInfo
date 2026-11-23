@@ -64,6 +64,16 @@ public sealed record FotoEvento(
 /// </summary>
 public sealed record ResolverEventoRequest(string? Estado, string? Motivo, EventoFormularioRequest? Cambios = null);
 
+/// <summary>Un evento RECHAZADO tal como lo lee la base, con quién y cuándo lo moderó (si quedó en historial_cambio).</summary>
+public sealed record EventoRechazado(EventoListado Listado, bool FueBajado, string? Admin, DateTime? RechazadoEnUtc);
+
+/// <summary>
+/// HU26: un evento del historial de rechazados. <c>FueBajado</c> = estaba PUBLICADO y el admin lo bajó; si no, se rechazó
+/// en la revisión. <c>Admin</c> y <c>RechazadoEn</c> salen de historial_cambio; los rechazados antes de HU26 no los tienen,
+/// y entonces <c>RechazadoEn</c> es la última actualización del evento.
+/// </summary>
+public sealed record EventoRechazadoDto(EventoDto Evento, bool FueBajado, string? Admin, DateTimeOffset RechazadoEn);
+
 /// <summary>Bajar un evento ya publicado: queda RECHAZADO, oculto y sin borrarse. El motivo es obligatorio.</summary>
 public sealed record BajarEventoRequest(string? Motivo);
 

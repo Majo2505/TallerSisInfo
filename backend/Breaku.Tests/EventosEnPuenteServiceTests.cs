@@ -44,6 +44,7 @@ public sealed class EventosEnPuenteServiceTests
         public Task<EventoListado?> ObtenerPublicadoAsync(int eventoId, DateTime ahoraUtc, CancellationToken ct = default) => throw new NotSupportedException();
 
         public Task<List<EventoListado>> ListarPendientesAsync(DateTime ahoraUtc, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<List<EventoRechazado>> ListarRechazadosAsync(int maximo, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ResultadoModeracionEvento> ModerarAsync(ModeracionEvento moderacion, CancellationToken ct = default)
             => throw new NotSupportedException();
     }

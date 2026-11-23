@@ -414,3 +414,28 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- HU26: historial de rechazados ---------- */
+
+.estadoRechazado {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--error-fondo);
+  color: var(--error);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.motivoRechazo {
+  justify-self: stretch;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--error-borde);
+  border-radius: 14px;
+  background: var(--error-fondo);
+  color: var(--texto);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+

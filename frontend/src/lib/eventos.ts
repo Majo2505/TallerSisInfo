@@ -90,6 +90,9 @@ export const moderarEvento = (id: number, decision: DecidirEvento) =>
   });
 /** HU26: los publicados que todavía no terminaron, para poder bajarlos. */
 export const listarEventosPublicadosAdmin = () => pedirApi<EventoCampus[]>("/api/admin/eventos/publicados");
+/** HU26: historial de rechazados. `fueBajado` = estaba publicado y el admin lo bajó; si no, se rechazó en la revisión. */
+export type EventoRechazado = { evento: EventoCampus; fueBajado: boolean; admin: string | null; rechazadoEn: string };
+export const listarEventosRechazadosAdmin = () => pedirApi<EventoRechazado[]>("/api/admin/eventos/rechazados");
 /** HU26: baja un evento publicado. Queda oculto (RECHAZADO, no se borra) y el autor recibe un aviso con el motivo. */
 export const bajarEvento = (id: number, motivo: string) =>
   pedirApi<void>(`/api/admin/eventos/${id}/bajar`, {

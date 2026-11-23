@@ -30,6 +30,8 @@ public static class ReglasEvento
 
     // HU26: moderación de eventos por el admin.
     public const int MaximoMotivo = 500;
+    /// <summary>Cuántos eventos rechazados muestra el historial del admin.</summary>
+    public const int MaximoHistorialRechazados = 100;
     public const int MaximoAviso = 200;
     public const string MensajeEventoNoPublicado = "El evento ya no está publicado.";
     public const string MensajeFaltaMotivoRechazo = "Escribe el motivo del rechazo.";
