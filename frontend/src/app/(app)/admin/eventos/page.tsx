@@ -12,8 +12,10 @@ import { ErrorApi } from "@/lib/api";
 import {
   bajarEvento,
   EventoCampus,
+  EventoRechazado,
   listarEventosPendientes,
   listarEventosPublicadosAdmin,
+  listarEventosRechazadosAdmin,
   listarLugaresEventos,
   LugarEvento,
   moderarEvento,
@@ -29,7 +31,13 @@ import { formatearFechaHora } from "@/lib/reglasFlyer";
 import { useRefrescoAutomatico } from "@/lib/useRefrescoAutomatico";
 import estilos from "./eventos.module.css";
 
-type Pestana = "pendientes" | "publicados";
+type Pestana = "pendientes" | "publicados" | "rechazados";
+
+const NOMBRE_PESTANA: Record<Pestana, string> = {
+  pendientes: "En revisión",
+  publicados: "Publicados",
+  rechazados: "Descartados",
+};
 type Campos = CamposFormularioEvento & { descripcion: string };
 const OTRO_LUGAR = "__otro__";
 
@@ -40,6 +48,8 @@ export default function EventosPendientesPage() {
   const [pestana, setPestana] = useState<Pestana>("pendientes");
   const [eventos, setEventos] = useState<EventoCampus[]>([]);
   const [publicados, setPublicados] = useState<EventoCampus[]>([]);
+  // HU26: historial de rechazados y bajados (solo lectura).
+  const [rechazados, setRechazados] = useState<EventoRechazado[]>([]);
   const [lugares, setLugares] = useState<LugarEvento[]>([]);
   const [motivos, setMotivos] = useState<Record<number, string>>({});
   // HU26: el evento que el admin está editando antes de aprobarlo, con sus campos.
@@ -51,21 +61,30 @@ export default function EventosPendientesPage() {
 
   // Sin botón «Actualizar»: un evento nuevo en revisión (aviso en vivo) o volver a la pestaña trae las listas al día, sin parpadeo.
   const refrescar = useCallback(() => {
-    void Promise.allSettled([listarEventosPendientes(), listarEventosPublicadosAdmin()]).then(([p, pub]) => {
-      if (p.status === "fulfilled") setEventos(p.value);
-      if (pub.status === "fulfilled") setPublicados(pub.value);
-      if (p.status === "fulfilled" && pub.status === "fulfilled") setError("");
-    });
+    void Promise.allSettled([listarEventosPendientes(), listarEventosPublicadosAdmin(), listarEventosRechazadosAdmin()]).then(
+      ([p, pub, rech]) => {
+        if (p.status === "fulfilled") setEventos(p.value);
+        if (pub.status === "fulfilled") setPublicados(pub.value);
+        if (rech.status === "fulfilled") setRechazados(rech.value);
+        if (p.status === "fulfilled" && pub.status === "fulfilled") setError("");
+      },
+    );
   }, []);
   useRefrescoAutomatico(refrescar);
 
   useEffect(() => {
     let activo = true;
-    void Promise.allSettled([listarEventosPendientes(), listarEventosPublicadosAdmin(), listarLugaresEventos()]).then(
-      ([p, pub, l]) => {
+    void Promise.allSettled([
+      listarEventosPendientes(),
+      listarEventosPublicadosAdmin(),
+      listarLugaresEventos(),
+      listarEventosRechazadosAdmin(),
+    ]).then(
+      ([p, pub, l, rech]) => {
         if (!activo) return;
         if (p.status === "fulfilled") setEventos(p.value);
         if (pub.status === "fulfilled") setPublicados(pub.value);
+        if (rech.status === "fulfilled") setRechazados(rech.value);
         if (l.status === "fulfilled") setLugares(l.value);
         const fallo = [p, pub].find((r) => r.status === "rejected");
         if (fallo) setError(textoError((fallo as PromiseRejectedResult).reason, "No se pudieron cargar los eventos."));
@@ -112,7 +131,7 @@ export default function EventosPendientesPage() {
       () => moderarEvento(evento.id, { estado, motivo: estado === "RECHAZADO" ? motivo.trim() : null }),
       () => {
         setEventos((actuales) => actuales.filter((e) => e.id !== evento.id));
-        if (estado === "PUBLICADO") refrescar();
+        refrescar();
       },
       estado === "PUBLICADO" ? "Evento aprobado y estudiante notificado." : "Evento rechazado y estudiante notificado.",
     );
@@ -141,12 +160,17 @@ export default function EventosPendientesPage() {
     void ejecutar(
       evento,
       () => bajarEvento(evento.id, motivo.trim()),
-      () => setPublicados((actuales) => actuales.filter((e) => e.id !== evento.id)),
+      () => {
+        setPublicados((actuales) => actuales.filter((e) => e.id !== evento.id));
+        refrescar();
+      },
       "Evento bajado: ya no se muestra en Eventos y su autor recibió el aviso con el motivo.",
     );
   }
 
-  const lista = pestana === "pendientes" ? eventos : publicados;
+  const lista = pestana === "pendientes" ? eventos : pestana === "publicados" ? publicados : [];
+  const cantidad: Record<Pestana, number> = { pendientes: eventos.length, publicados: publicados.length, rechazados: rechazados.length };
+  const vacia = pestana === "rechazados" ? rechazados.length === 0 : lista.length === 0;
 
   return (
     <Entrada as="main" className={estilos.pagina}>
@@ -176,7 +200,7 @@ export default function EventosPendientesPage() {
       </Pieza>
 
       <div className={estilos.pestanas} role="tablist" aria-label="Eventos por estado">
-        {(["pendientes", "publicados"] as const).map((id) => (
+        {(["pendientes", "publicados", "rechazados"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -189,7 +213,7 @@ export default function EventosPendientesPage() {
               setMensaje("");
             }}
           >
-            {id === "pendientes" ? `En revisión (${eventos.length})` : `Publicados (${publicados.length})`}
+            {`${NOMBRE_PESTANA[id]} (${cantidad[id]})`}
           </button>
         ))}
       </div>
@@ -198,23 +222,33 @@ export default function EventosPendientesPage() {
       {mensaje && <p className={estilos.mensaje} role="status"><IconoCheck tamano={16} /> {mensaje}</p>}
 
       <Pieza as="section" className={estilos.lista}>
-        <h2 className={estilos.tituloLista}>{pestana === "pendientes" ? "En revisión" : "Publicados que todavía no terminaron"}</h2>
+        <h2 className={estilos.tituloLista}>
+          {pestana === "pendientes"
+            ? "En revisión"
+            : pestana === "publicados"
+              ? "Publicados que todavía no terminaron"
+              : "Historial de rechazados y bajados"}
+        </h2>
 
         {cargando ? (
           <div className={estilos.cargando} role="status" aria-label="Cargando eventos">
             <span className="hz-skeleton" />
             <span className="hz-skeleton" />
           </div>
-        ) : lista.length === 0 ? (
+        ) : vacia ? (
           <div className={estilos.vacio}>
             <span className={estilos.vacioIcono} aria-hidden="true"><IconoCheck tamano={26} /></span>
             <strong>Todo al día</strong>
             <span>
               {pestana === "pendientes"
                 ? "No hay eventos pendientes de revisión. Cuando alguien publique uno que necesite revisión, aparece aquí solo."
-                : "No hay eventos publicados por delante."}
+                : pestana === "publicados"
+                  ? "No hay eventos publicados por delante."
+                  : "Todavía no se rechazó ni se bajó ningún evento."}
             </span>
           </div>
+        ) : pestana === "rechazados" ? (
+          rechazados.map((r) => <TarjetaRechazado key={r.evento.id} rechazado={r} />)
         ) : lista.map((evento) => (
           <article key={evento.id} className={estilos.evento}>
             {evento.fotoUrl && <FotoEvento ruta={evento.fotoUrl} titulo={evento.titulo} />}
@@ -305,6 +339,8 @@ function FormularioEdicion({
   onAprobar: () => void;
 }) {
   const cambiar = <K extends keyof Campos>(campo: K, valor: Campos[K]) => onCambio({ ...campos, [campo]: valor });
+  // «Otro lugar» elegido en el selector: se muestra elegido aunque el nombre todavía esté vacío.
+  const [otroLugar, setOtroLugar] = useState(false);
   const seleccion = lugares.find((l) => String(l.id) === campos.lugarId);
   const opcionesLugar = [
     ...lugares.map((l) => ({ valor: String(l.id), etiqueta: l.nombre })),
@@ -340,9 +376,12 @@ function FormularioEdicion({
       <div className={estilos.campo}>
         <span>Lugar</span>
         <Selector
-          valor={campos.lugarId || (campos.lugarTexto ? OTRO_LUGAR : "")}
+          valor={campos.lugarId || (otroLugar || campos.lugarTexto ? OTRO_LUGAR : "")}
           opciones={opcionesLugar}
-          onCambio={(v) => cambiar("lugarId", v === OTRO_LUGAR ? "" : v)}
+          onCambio={(v) => {
+            setOtroLugar(v === OTRO_LUGAR);
+            cambiar("lugarId", v === OTRO_LUGAR ? "" : v);
+          }}
           etiqueta="Lugar"
           placeholder="Elige un lugar del catálogo"
         />
@@ -391,3 +430,31 @@ function FormularioEdicion({
     </form>
   );
 }
+
+/** HU26: un evento del historial de rechazados. Solo lectura: el motivo, cuándo y quién. */
+function TarjetaRechazado({ rechazado }: { rechazado: EventoRechazado }) {
+  const { evento, fueBajado, admin, rechazadoEn } = rechazado;
+  return (
+    <article className={estilos.evento}>
+      {evento.fotoUrl && <FotoEvento ruta={evento.fotoUrl} titulo={evento.titulo} />}
+      <div className={estilos.detalle}>
+        <span className={estilos.estadoRechazado}>{fueBajado ? "Bajado" : "Rechazado"}</span>
+        <h3>{evento.titulo}</h3>
+        <ul className={estilos.datos}>
+          <li><IconoReloj tamano={15} /> {formatearFechaHora(evento.inicio)} – {formatearFechaHora(evento.fin)}</li>
+          <li><IconoPin tamano={15} /> {evento.lugarId === null ? `Fuera del campus · ${evento.lugar}` : evento.lugar}</li>
+        </ul>
+        {evento.motivo && (
+          <p className={estilos.motivoRechazo}>
+            <strong>{fueBajado ? "Por qué se bajó:" : "Por qué se rechazó:"}</strong> {evento.motivo}
+          </p>
+        )}
+        <p className={estilos.ayudaEdicion}>
+          {fueBajado ? "Bajado" : "Rechazado"} el {formatearFechaHora(rechazadoEn)}
+          {admin ? ` por ${admin}` : ""}.
+        </p>
+      </div>
+    </article>
+  );
+}
+

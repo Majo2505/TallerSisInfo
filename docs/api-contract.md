@@ -1258,6 +1258,7 @@ Todo bajo `/api/admin/eventos`, solo rol `ADMIN` (`401` sin sesión, `403` si no
 |---|---|---|
 | `GET` | `/pendientes` | Eventos `PENDIENTE` que todavía no terminaron, con motivo y foto (los vencidos caducan por fecha, sin cambiar su estado) |
 | `GET` | `/publicados` | Eventos `PUBLICADO` que todavía no terminaron, para poder bajarlos |
+| `GET` | `/rechazados` | Historial de solo lectura: los últimos 100 eventos `RECHAZADO`, del más reciente al más antiguo. Cada uno trae `evento` (con su `motivo`), `fueBajado` (estaba publicado y se bajó, o se rechazó en la revisión), `admin` (nombre) y `rechazadoEn` (hora de Bolivia). `admin` y `fueBajado` salen de `historial_cambio`: los rechazados antes de HU26 vienen con `admin = null`, `fueBajado = false` y `rechazadoEn` igual a su última actualización |
 | `PATCH` | `/{id}/moderacion` | `{ "estado": "PUBLICADO" \| "RECHAZADO", "motivo": "…", "cambios": { …campos del formulario de HU23… } }`. `RECHAZADO` exige motivo. Con `cambios` (solo al aprobar) el admin edita y publica en un paso; se validan con las mismas reglas del formulario y la foto no cambia. Aviso: `EVENTO_APROBADO` o `EVENTO_RECHAZADO` |
 | `PATCH` | `/{id}/bajar` | `{ "motivo": "…" }` (obligatorio). Pasa un `PUBLICADO` a `RECHAZADO`. Aviso: `EVENTO_BAJADO` |
 

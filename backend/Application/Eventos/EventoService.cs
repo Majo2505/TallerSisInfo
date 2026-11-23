@@ -243,6 +243,18 @@ public sealed class EventoService
             .ToList();
     }
 
+    /// <summary>HU26: historial de eventos rechazados o bajados, del más reciente al más antiguo. Solo lectura.</summary>
+    public async Task<List<EventoRechazadoDto>> ListarRechazadosAsync(CancellationToken ct = default)
+        => (await _repository.ListarRechazadosAsync(ReglasEvento.MaximoHistorialRechazados, ct))
+            .Select(r => new EventoRechazadoDto(
+                ADto(r.Listado),
+                r.FueBajado,
+                r.Admin,
+                new DateTimeOffset(DateTime.SpecifyKind(r.RechazadoEnUtc ?? r.Listado.Evento.UpdatedAt, DateTimeKind.Utc))
+                    .ToOffset(TimeSpan.FromHours(-4))))
+            .OrderByDescending(r => r.RechazadoEn)
+            .ToList();
+
     private static string MotivoObligatorio(string? motivo, string mensajeSiFalta)
     {
         var limpio = ReglasSeguridadIa.Sanear(motivo ?? "").Trim();

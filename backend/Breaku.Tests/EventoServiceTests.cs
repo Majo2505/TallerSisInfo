@@ -102,6 +102,19 @@ public sealed class EventoServiceTests
 
         public List<ModeracionEvento> Moderaciones { get; } = [];
 
+        public Task<List<EventoRechazado>> ListarRechazadosAsync(int maximo, CancellationToken ct = default)
+            => Task.FromResult(Eventos
+                .Where(e => e.Estado == Evento.EstadoRechazado)
+                .OrderByDescending(e => e.UpdatedAt)
+                .Take(maximo)
+                .Select(e =>
+                {
+                    var m = Moderaciones.LastOrDefault(x => x.EventoId == e.Id && x.EstadoNuevo == Evento.EstadoRechazado);
+                    return new EventoRechazado(AListado(e), m?.EstadoEsperado == Evento.EstadoPublicado,
+                        m is null ? null : "Admin", m?.AhoraUtc);
+                })
+                .ToList());
+
         public Task<ResultadoModeracionEvento> ModerarAsync(ModeracionEvento m, CancellationToken ct = default)
         {
             var evento = Eventos.FirstOrDefault(e => e.Id == m.EventoId);
@@ -861,6 +874,34 @@ public sealed class EventoServiceTests
         var lista = await servicio.ListarPublicadosAdminAsync();
 
         Assert.Equal([2, 1], lista.Select(e => e.Id));
+    }
+
+    [Fact]
+    public async Task El_historial_de_rechazados_distingue_rechazados_y_bajados_del_mas_reciente_al_mas_antiguo()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+        repo.Eventos.Add(EventoVisible(2, ahora.AddHours(1), ahora.AddHours(2)));
+        var viejo = EventoVisible(3, ahora.AddDays(-5), ahora.AddDays(-5).AddHours(1), estado: Evento.EstadoRechazado);
+        viejo.Motivo = "Rechazado antes de HU26";
+        viejo.UpdatedAt = ahora.AddDays(-6);
+        repo.Eventos.Add(viejo);
+
+        await servicio.ModerarAsync(1, Admin, new ResolverEventoRequest(Evento.EstadoRechazado, "Spam"));
+        await servicio.BajarAsync(2, Admin, new BajarEventoRequest("Ofensivo"));
+
+        var historial = await servicio.ListarRechazadosAsync();
+
+        Assert.Equal([1, 2, 3], historial.Select(h => h.Evento.Id).OrderBy(id => id));
+        Assert.Equal(3, historial[^1].Evento.Id);
+        var bajado = historial.Single(h => h.Evento.Id == 2);
+        Assert.True(bajado.FueBajado);
+        Assert.Equal(("Ofensivo", "Admin"), (bajado.Evento.Motivo, bajado.Admin));
+        Assert.False(historial.Single(h => h.Evento.Id == 1).FueBajado);
+        var antiguo = historial.Single(h => h.Evento.Id == 3);
+        Assert.Null(antiguo.Admin);
+        Assert.Equal(viejo.UpdatedAt, antiguo.RechazadoEn.UtcDateTime);
     }
 }
 

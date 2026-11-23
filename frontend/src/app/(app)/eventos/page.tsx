@@ -98,6 +98,8 @@ function Eventos({ inicial }: { inicial: Pestana }) {
   const reducir = useReducedMotion();
   const [pestana, setPestana] = useState<Pestana>(inicial);
   const [campos, setCampos] = useState<Campos>(CAMPOS_VACIOS);
+  // «Otro lugar» elegido en el selector: se muestra elegido aunque el nombre todavía esté vacío.
+  const [otroLugar, setOtroLugar] = useState(false);
   const [lugares, setLugares] = useState<LugarEvento[]>([]);
   const [eventos, setEventos] = useState<EventoCampus[]>([]);
   // Foto del formulario: sin tocar, una nueva elegida, o (solo al editar) la actual marcada para quitar.
@@ -167,6 +169,7 @@ function Eventos({ inicial }: { inicial: Pestana }) {
 
   function limpiarFormulario() {
     setCampos(CAMPOS_VACIOS);
+    setOtroLugar(false);
     quitarFoto();
     setFotoActual(null);
     setEditando(null);
@@ -229,6 +232,7 @@ function Eventos({ inicial }: { inicial: Pestana }) {
   }
 
   function editar(evento: EventoCampus) {
+    setOtroLugar(evento.lugarId === null);
     setCampos({
       titulo: evento.titulo,
       descripcion: evento.descripcion ?? "",
@@ -275,6 +279,7 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     setFotoActual(null); // un borrador siempre crea un evento nuevo
     const turno = turnoFoto.current;
     setCampos(nuevos);
+    setOtroLugar(false);
     setMarcados(porCompletar);
     setAvisos(avisosDelBorrador(borrador));
     setDesdeFlyer(true);
@@ -415,9 +420,12 @@ function Eventos({ inicial }: { inicial: Pestana }) {
             <div className={estilos.campo}>
               <span id="etiqueta-lugar">Lugar <b>*</b> {marcaFalta("lugar")}</span>
               <Selector
-                valor={campos.lugarId || (campos.lugarTexto ? OTRO_LUGAR : "")}
+                valor={campos.lugarId || (otroLugar || campos.lugarTexto ? OTRO_LUGAR : "")}
                 opciones={opcionesLugar}
-                onCambio={(v) => cambiar("lugarId", v === OTRO_LUGAR ? "" : v)}
+                onCambio={(v) => {
+                  setOtroLugar(v === OTRO_LUGAR);
+                  cambiar("lugarId", v === OTRO_LUGAR ? "" : v);
+                }}
                 etiqueta="Lugar"
                 placeholder="Elige un lugar del catálogo o escribe uno"
                 invalido={faltan.has("lugar")}
