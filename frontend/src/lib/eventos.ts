@@ -1,8 +1,9 @@
 import { pedirApi } from "./api";
 import { EstadoFlyer, EventoLeido, FLYER_BYTES_MAX, FLYER_TIPOS } from "./reglasFlyer";
+import type { SesionFlyer } from "./reglasSesionesFlyer";
 
 export { FLYER_BYTES_MAX, FLYER_TIPOS };
-export type { EstadoFlyer };
+export type { EstadoFlyer, SesionFlyer };
 
 /** Borrador de evento que devuelve el servidor. inicio y fin van en hora de Bolivia, sin zona: «yyyy-MM-ddTHH:mm». */
 export type BorradorEvento = EventoLeido;
@@ -17,6 +18,8 @@ export type LecturaFlyer = {
   evento: BorradorEvento;
   faltantes: string[];
   advertencias: string[];
+  /** HU34: fechas futuras del mismo evento (máximo 5, ordenadas); la primera es la de `evento`. Una fecha → un elemento. */
+  sesiones?: SesionFlyer[];
   imagen: ImagenFlyer | null;
 };
 

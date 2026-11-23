@@ -55,7 +55,19 @@ import {
   validarFormularioEvento,
 } from "@/lib/reglasEventos";
 import { formatearFechaHora } from "@/lib/reglasFlyer";
+import {
+  ResultadoSesion,
+  SesionFlyer,
+  camposDeSesion,
+  cupoDeHoy,
+  resultadoCreado,
+  resultadoFallido,
+  resumenResultados,
+  textoSesion,
+} from "@/lib/reglasSesionesFlyer";
 import { useRefrescoAutomatico } from "@/lib/useRefrescoAutomatico";
+import { useSesion } from "@/lib/useSesion";
+import { esAdmin } from "@/services/authService";
 import estilos from "./eventos.module.css";
 
 type Pestana = "campus" | "crear" | "mios";
@@ -122,6 +134,11 @@ function Eventos({ inicial }: { inicial: Pestana }) {
   const turnoFoto = useRef(0);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+  // HU34: con 2 o más fechas elegidas del afiche se crea un evento por cada una; el resultado se muestra por fecha.
+  const [sesiones, setSesiones] = useState<SesionFlyer[]>([]);
+  const [resultados, setResultados] = useState<ResultadoSesion[]>([]);
+  const { sesion } = useSesion();
+  const variasFechas = editando === null && desdeFlyer && sesiones.length > 1;
 
   const obtenerDatos = useCallback(() => Promise.all([listarLugaresEventos(), listarMisEventos()]), []);
 
@@ -176,6 +193,55 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     setDesdeFlyer(false);
     setMarcados([]);
     setAvisos([]);
+    setSesiones([]);
+  }
+
+  /** HU34: quita una fecha de la lista; con una sola, el formulario vuelve a ser el de siempre con esa fecha. */
+  function quitarSesion(inicio: string) {
+    const quedan = sesiones.filter((s) => s.inicio !== inicio);
+    setSesiones(quedan);
+    if (quedan[0]) setCampos((actuales) => camposDeSesion(actuales, quedan[0]));
+  }
+
+  /** HU34: un POST /api/eventos por fecha (origen FLYER). Cada uno pasa sus reglas y puede fallar o quedar en revisión solo. */
+  async function guardarVarias() {
+    for (const s of sesiones) {
+      const problema = validarFormularioEvento(camposDeSesion(campos, s));
+      if (problema) {
+        setError(`${textoSesion(s)}: ${problema}`);
+        return;
+      }
+    }
+    setGuardando(true);
+    setError("");
+    setMensaje("");
+    setResultados([]);
+    const nombreLugar = lugares.find((l) => String(l.id) === campos.lugarId)?.nombre;
+    const { foto: fotoNueva } = datosDeFoto(estadoFoto);
+    const lista: ResultadoSesion[] = [];
+    for (const s of sesiones) {
+      try {
+        const creado = await crearEvento(formDataEvento(camposDeSesion(campos, s), fotoNueva, nombreLugar, "FLYER", false));
+        lista.push(resultadoCreado(s, creado.estado, creado.motivo));
+      } catch (e) {
+        lista.push(resultadoFallido(s, e instanceof ErrorApi ? e.codigo : undefined, e instanceof Error ? e.message : undefined));
+      }
+    }
+    setResultados(lista);
+    const resumen = resumenResultados(lista);
+    if (lista.some((r) => r.tono !== "error")) {
+      setMensaje(resumen);
+      limpiarFormulario();
+      setPestana("mios");
+    } else {
+      setError(resumen); // no se creó ninguno: el formulario se queda para corregir y volver a intentar
+    }
+    try {
+      setEventos(await listarMisEventos());
+    } catch {
+      // la lista se pone al día sola al volver a la pestaña
+    }
+    setGuardando(false);
   }
 
   async function guardar(e: React.FormEvent<HTMLFormElement>) {
@@ -193,8 +259,10 @@ function Eventos({ inicial }: { inicial: Pestana }) {
         return;
       }
     }
+    if (variasFechas) return guardarVarias();
 
     setGuardando(true);
+    setResultados([]);
     setError("");
     setMensaje("");
     try {
@@ -249,6 +317,8 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     setDesdeFlyer(false);
     setMarcados([]);
     setAvisos([]);
+    setSesiones([]);
+    setResultados([]);
     setEditando(evento.id);
     setPestana("crear");
     setMensaje("");
@@ -282,6 +352,8 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     setOtroLugar(false);
     setMarcados(porCompletar);
     setAvisos(avisosDelBorrador(borrador));
+    setSesiones(borrador.sesiones.length > 1 ? borrador.sesiones : []);
+    setResultados([]);
     setDesdeFlyer(true);
     setEditando(null);
     setMostrandoFlyer(false);
@@ -313,6 +385,9 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     { valor: OTRO_LUGAR, etiqueta: "Otro lugar (lo escribo yo)" },
   ];
   const avisoLugar = desdeFlyer && editando === null ? avisoLugarFueraDelCatalogo(campos) : null;
+  let etiquetaGuardar = "Publicar evento";
+  if (editando !== null) etiquetaGuardar = "Guardar cambios";
+  else if (variasFechas) etiquetaGuardar = `Publicar ${sesiones.length} eventos`;
   const marcaFalta = (campo: CampoFormulario) =>
     faltan.has(campo) ? <em className={estilos.falta}>falta</em> : null;
 
@@ -368,6 +443,23 @@ function Eventos({ inicial }: { inicial: Pestana }) {
         )}
       </AnimatePresence>
 
+      {resultados.length > 1 && (
+        <section className={estilos.resultados} aria-label="Resultado de cada fecha">
+          <div className={estilos.resultadosCabecera}>
+            <h2>Resultado de cada fecha</h2>
+            <button type="button" className={estilos.botonSecundario} onClick={() => setResultados([])}>Entendido</button>
+          </div>
+          <ul>
+            {resultados.map((r) => (
+              <li key={r.sesion.inicio} className={estilos[`resultado_${r.tono}`]}>
+                <span className={estilos.resultadoFecha}>{textoSesion(r.sesion)}</span>
+                <span>{r.texto}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {pestana === "campus" ? (
         <EventosDelCampus />
       ) : pestana === "crear" ? (
@@ -405,16 +497,32 @@ function Eventos({ inicial }: { inicial: Pestana }) {
               <small className={estilos.contador}>{campos.descripcion.length}/4000</small>
             </label>
 
-            <div className={estilos.dosColumnas}>
-              <div className={estilos.campo} role="group" aria-label="Empieza">
-                <span>Empieza <b>*</b> {marcaFalta("inicio")}</span>
-                <CampoFechaHora nombre="inicio" valor={campos.inicio} invalido={faltan.has("inicio")} onCambio={(v) => cambiar("inicio", v)} />
+            {variasFechas ? (
+              <div className={estilos.campo} role="group" aria-labelledby="etiqueta-fechas">
+                <span id="etiqueta-fechas">Fechas <b>*</b> <small>(se crea un evento por cada una)</small></span>
+                <ul className={estilos.listaFechas}>
+                  {sesiones.map((s) => (
+                    <li key={s.inicio}>
+                      <span>{textoSesion(s)}</span>
+                      <button type="button" className={estilos.quitarFecha} onClick={() => quitarSesion(s.inicio)} disabled={guardando} aria-label={`Quitar ${textoSesion(s)}`}>
+                        Quitar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div className={estilos.campo} role="group" aria-label="Termina">
-                <span>Termina <b>*</b> {marcaFalta("fin")}</span>
-                <CampoFechaHora nombre="fin" valor={campos.fin} invalido={faltan.has("fin")} onCambio={(v) => cambiar("fin", v)} />
+            ) : (
+              <div className={estilos.dosColumnas}>
+                <div className={estilos.campo} role="group" aria-label="Empieza">
+                  <span>Empieza <b>*</b> {marcaFalta("inicio")}</span>
+                  <CampoFechaHora nombre="inicio" valor={campos.inicio} invalido={faltan.has("inicio")} onCambio={(v) => cambiar("inicio", v)} />
+                </div>
+                <div className={estilos.campo} role="group" aria-label="Termina">
+                  <span>Termina <b>*</b> {marcaFalta("fin")}</span>
+                  <CampoFechaHora nombre="fin" valor={campos.fin} invalido={faltan.has("fin")} onCambio={(v) => cambiar("fin", v)} />
+                </div>
               </div>
-            </div>
+            )}
             <p className={estilos.ayuda}>Hora de Bolivia. Entre las 07:15 y las 21:00 del mismo día se publica al instante; fuera de ese horario pasa por revisión.</p>
 
             <div className={estilos.campo}>
@@ -522,7 +630,7 @@ function Eventos({ inicial }: { inicial: Pestana }) {
             <div className={estilos.accionesFormulario}>
               {editando !== null && <button type="button" className={estilos.botonSecundario} disabled={guardando} onClick={limpiarFormulario}>Salir de edición</button>}
               <button type="submit" className={estilos.botonPrimario} disabled={guardando || cargando || preparandoFoto}>
-                {guardando ? "Guardando…" : editando === null ? "Publicar evento" : "Guardar cambios"}
+                {guardando ? "Guardando…" : etiquetaGuardar}
               </button>
             </div>
           </form>
@@ -580,7 +688,11 @@ function Eventos({ inicial }: { inicial: Pestana }) {
       )}
 
       {mostrandoFlyer && (
-        <SubirFlyer onCerrar={() => setMostrandoFlyer(false)} onBorrador={(borrador) => void usarBorrador(borrador)} />
+        <SubirFlyer
+          onCerrar={() => setMostrandoFlyer(false)}
+          onBorrador={(borrador) => void usarBorrador(borrador)}
+          cupo={cupoDeHoy(eventos, new Date(ahora), esAdmin(sesion))}
+        />
       )}
     </Entrada>
   );
