@@ -258,6 +258,162 @@ public class ReglasFlyerTests
     }
 }
 
+/// <summary>HU34-BE: varias fechas del mismo evento en un afiche. Solo reglas puras: sin LLM ni base.</summary>
+public class ReglasSesionesFlyerTests
+{
+    private static readonly DateTime Ahora = new(2026, 11, 15, 10, 0, 0);   // sábado en Bolivia
+
+    private static EventoLeido ConSesiones(params (string? Inicio, string? Fin)[] fechas)
+        => FlyerFixtures.Evento(titulo: "6to Ciclo de Conferencias sobre los ODS", inicio: fechas[0].Inicio, fin: fechas[0].Fin, lugar: "Auditorio")
+            with { Sesiones = fechas.Select(f => new SesionLeida(f.Inicio, f.Fin)).ToList() };
+
+    private static string[] Inicios(ResultadoFlyer r) => r.Sesiones!.Select(s => s.Inicio.ToString("yyyy-MM-ddTHH:mm")).ToArray();
+
+    [Fact]
+    public void Varias_fechas_del_mismo_evento_salen_ordenadas_y_el_evento_conserva_la_primera()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-24T18:00", "2026-11-24T20:00"),
+            ("2026-11-17T18:00", "2026-11-17T20:00"),
+            ("2026-11-19T18:00", "2026-11-19T20:00")), Ahora);
+
+        Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
+        Assert.Equal(["2026-11-17T18:00", "2026-11-19T18:00", "2026-11-24T18:00"], Inicios(r));
+        Assert.All(r.Sesiones!, s => Assert.Equal(TimeSpan.FromHours(2), s.Fin - s.Inicio));
+        Assert.Equal(new DateTime(2026, 11, 17, 18, 0, 0), r.Evento.Inicio);
+        Assert.Equal(new DateTime(2026, 11, 17, 20, 0, 0), r.Evento.Fin);
+        Assert.DoesNotContain(ReglasFlyer.AvisoVariosEventos, r.Advertencias);
+    }
+
+    [Fact]
+    public void Una_fecha_que_ya_paso_se_excluye_y_queda_en_las_advertencias()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-10T18:00", "2026-11-10T20:00"),
+            ("2026-11-17T18:00", "2026-11-17T20:00")), Ahora);
+
+        Assert.Equal(["2026-11-17T18:00"], Inicios(r));
+        Assert.Equal(new DateTime(2026, 11, 17, 18, 0, 0), r.Evento.Inicio);   // la primera VÁLIDA, no la primera leída
+        Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
+        Assert.Contains("Dejamos fuera una fecha que ya pasó: 10/11 18:00.", r.Advertencias);
+    }
+
+    [Fact]
+    public void Una_fecha_que_ya_empezo_cuenta_como_pasada()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-15T09:00", "2026-11-15T12:00"),
+            ("2026-11-22T09:00", "2026-11-22T12:00")), Ahora);
+
+        Assert.Equal(["2026-11-22T09:00"], Inicios(r));
+        Assert.Contains(r.Advertencias, a => a.Contains("15/11 09:00"));
+    }
+
+    [Fact]
+    public void Con_mas_de_5_fechas_se_toman_las_5_mas_proximas_y_se_avisa()
+    {
+        var fechas = Enumerable.Range(16, 7).Select(d => ($"2026-11-{d}T18:00", (string?)$"2026-11-{d}T19:00")).ToArray();
+
+        var r = ReglasFlyer.Interpretar(ConSesiones(fechas.Select(f => ((string?)f.Item1, f.Item2)).ToArray()), Ahora);
+
+        Assert.Equal(ReglasFlyer.MaximoSesiones, r.Sesiones!.Count);
+        Assert.Equal("2026-11-20T18:00", Inicios(r)[^1]);
+        Assert.Contains(ReglasFlyer.AvisoDemasiadasSesiones(7), r.Advertencias);
+        Assert.Equal("El afiche trae 7 fechas; tomamos las 5 más próximas.", ReglasFlyer.AvisoDemasiadasSesiones(7));
+    }
+
+    [Fact]
+    public void Muchas_fechas_pasadas_se_resumen_en_un_solo_aviso_corto()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-01T18:00", "2026-11-01T20:00"), ("2026-11-03T18:00", "2026-11-03T20:00"),
+            ("2026-11-05T18:00", "2026-11-05T20:00"), ("2026-11-07T18:00", "2026-11-07T20:00"),
+            ("2026-11-20T18:00", "2026-11-20T20:00")), Ahora);
+
+        var aviso = Assert.Single(r.Advertencias);
+        Assert.Equal("Dejamos fuera 4 fechas que ya pasaron: 01/11 18:00, 03/11 18:00, 05/11 18:00 y 1 más.", aviso);
+        Assert.True(aviso.Length <= ReglasFlyer.MaximoLargoAdvertencia);
+    }
+
+    [Fact]
+    public void Una_sola_fecha_es_compatible_y_trae_una_sesion()
+    {
+        var r = ReglasFlyer.Interpretar(FlyerFixtures.Evento(), Ahora);   // sin sesiones: el lector de HU24
+
+        var sesion = Assert.Single(r.Sesiones!);
+        Assert.Equal(r.Evento.Inicio, sesion.Inicio);
+        Assert.Equal(r.Evento.Fin, sesion.Fin);
+        Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
+        Assert.Empty(r.Advertencias);
+    }
+
+    [Fact]
+    public void Si_todas_las_fechas_pasaron_no_hay_sesiones_y_se_pide_una_fecha_futura()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-01T18:00", "2026-11-01T20:00"),
+            ("2026-11-08T18:00", "2026-11-08T20:00")), Ahora);
+
+        Assert.Empty(r.Sesiones!);
+        Assert.Null(r.Evento.Inicio);
+        Assert.Equal(ReglasFlyer.MensajeFechaPasada, r.Mensaje);
+        Assert.Contains(r.Advertencias, a => a.StartsWith("Dejamos fuera 2 fechas"));
+    }
+
+    [Fact]
+    public void Las_fechas_repetidas_se_unen_y_las_ilegibles_se_ignoran()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-17T18:00", null),
+            ("2026-11-17T18:00", "2026-11-17T20:00"),
+            ("el martes", "2026-11-18T20:00"),
+            (null, null)), Ahora);
+
+        var sesion = Assert.Single(r.Sesiones!);
+        Assert.Equal(new DateTime(2026, 11, 17, 20, 0, 0), sesion.Fin);   // de las dos iguales gana la que trae el fin
+    }
+
+    [Fact]
+    public void Una_fecha_sin_hora_de_fin_toma_la_duracion_de_otra_fecha_del_mismo_evento()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(
+            ("2026-11-17T18:00", "2026-11-17T19:30"),
+            ("2026-11-19T18:00", null)), Ahora);
+
+        Assert.Equal(new DateTime(2026, 11, 19, 19, 30, 0), r.Sesiones![1].Fin);
+    }
+
+    [Fact]
+    public void Si_ninguna_fecha_trae_hora_de_fin_no_se_inventa()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(("2026-11-17T18:00", null), ("2026-11-19T18:00", null)), Ahora);
+
+        Assert.All(r.Sesiones!, s => Assert.Null(s.Fin));
+        Assert.Contains(ReglasFlyer.CampoFin, r.Faltantes);
+    }
+
+    [Fact]
+    public void Eventos_distintos_toman_el_principal_y_avisan()
+    {
+        var leido = ConSesiones(("2026-11-17T18:00", "2026-11-17T20:00")) with { VariosEventos = true };
+
+        var r = ReglasFlyer.Interpretar(leido, Ahora);
+
+        Assert.Contains(ReglasFlyer.AvisoVariosEventos, r.Advertencias);
+        Assert.Equal("6to Ciclo de Conferencias sobre los ODS", r.Evento.Titulo);
+        Assert.Single(r.Sesiones!);
+    }
+
+    [Fact]
+    public void Lo_que_no_es_un_evento_no_trae_sesiones()
+    {
+        var r = ReglasFlyer.Interpretar(ConSesiones(("2026-11-17T18:00", "2026-11-17T20:00")) with { Entendido = false }, Ahora);
+
+        Assert.Equal(ReglasExtraccion.EstadoNoEntendido, r.Estado);
+        Assert.True(r.Sesiones is null || r.Sesiones.Count == 0);
+    }
+}
+
 public class ExtraccionEventoServiceTests
 {
     private sealed class RelojFijo : TimeProvider
@@ -404,10 +560,61 @@ public class ExtraccionEventoServiceTests
         var r = await servicio.ExtraerAsync(7, null, "Feria de Ciencias");
         var json = JsonNode.Parse(JsonSerializer.Serialize(r, new JsonSerializerOptions(JsonSerializerDefaults.Web)))!;
 
-        Assert.Equal(["consultaId", "estado", "mensaje", "evento", "faltantes", "advertencias", "imagen"], json.AsObject().Select(p => p.Key).ToArray());
+        Assert.Equal(["consultaId", "estado", "mensaje", "evento", "faltantes", "advertencias", "sesiones", "imagen"], json.AsObject().Select(p => p.Key).ToArray());
+        var sesion = Assert.Single(json["sesiones"]!.AsArray());   // HU34: una sola fecha → un elemento
+        Assert.Equal(["inicio", "fin"], sesion!.AsObject().Select(p => p.Key).ToArray());
+        Assert.Equal("2026-11-20T08:00", sesion["inicio"]!.GetValue<string>());
         Assert.Equal(["titulo", "descripcion", "inicio", "fin", "lugarTexto", "asistencia", "visitaMin", "visitaMax"],
             json["evento"]!.AsObject().Select(p => p.Key).ToArray());
         Assert.Equal(15, json["evento"]!["visitaMin"]!.GetValue<int>());
+    }
+
+    // ── HU34: varias fechas ──────────────────────────────────────────
+
+    [Fact]
+    public async Task Un_afiche_con_varias_fechas_devuelve_las_sesiones_y_quedan_en_la_auditoria()
+    {
+        var (servicio, lector, repo) = Crear(_ => FlyerFixtures.Evento(titulo: "Obra: La casa de Bernarda Alba",
+            inicio: "2026-11-10T19:00", fin: "2026-11-10T21:00", lugar: "Teatro") with
+        {
+            Sesiones = [new("2026-11-10T19:00", "2026-11-10T21:00"), new("2026-11-21T19:00", "2026-11-21T21:00"), new("2026-11-18T19:00", "2026-11-18T21:00")]
+        });
+
+        var r = await servicio.ExtraerAsync(7, null, "Funciones de teatro el 10, 18 y 21 de noviembre a las 19:00");
+
+        Assert.Equal(1, lector.Llamadas);
+        Assert.Equal(["2026-11-18T19:00", "2026-11-21T19:00"], r.Sesiones.Select(s => s.Inicio).ToArray());
+        Assert.Equal(["2026-11-18T21:00", "2026-11-21T21:00"], r.Sesiones.Select(s => s.Fin!).ToArray());
+        Assert.Equal("2026-11-18T19:00", r.Evento.Inicio);
+        Assert.Equal(ReglasExtraccion.EstadoCompleto, r.Estado);
+        Assert.Contains("Dejamos fuera una fecha que ya pasó: 10/11 19:00.", r.Advertencias);
+
+        var datos = JsonNode.Parse(repo.Logs[0].DatosExtraidos!)!;
+        Assert.Equal(2, datos["sesiones"]!.AsArray().Count);
+        Assert.Equal(LogAuditoriaRag.EstadoOk, repo.Logs[0].Estado);
+    }
+
+    [Fact]
+    public async Task Mas_de_5_fechas_devuelven_5_y_el_aviso()
+    {
+        var sesiones = Enumerable.Range(16, 6).Select(d => new SesionLeida($"2026-11-{d}T18:00", $"2026-11-{d}T20:00")).ToList();
+        var (servicio, _, _) = Crear(_ => FlyerFixtures.Evento(inicio: sesiones[0].Inicio, fin: sesiones[0].Fin) with { Sesiones = sesiones });
+
+        var r = await servicio.ExtraerAsync(7, null, "Ciclo de conferencias");
+
+        Assert.Equal(5, r.Sesiones.Count);
+        Assert.Contains(ReglasFlyer.AvisoDemasiadasSesiones(6), r.Advertencias);
+    }
+
+    [Fact]
+    public async Task Sin_ninguna_fecha_valida_la_lista_de_sesiones_viene_vacia()
+    {
+        var (servicio, _, _) = Crear(_ => FlyerFixtures.Evento(inicio: null, fin: null));
+
+        var r = await servicio.ExtraerAsync(7, null, "Feria de Ciencias en el patio");
+
+        Assert.Empty(r.Sesiones);
+        Assert.Contains("inicio", r.Faltantes);
     }
 
     // ── Imagen y PDF ─────────────────────────────────────────────────
@@ -724,10 +931,40 @@ public class LectorEventoTests
         var propiedades = esquema["schema"]!["properties"]!.AsObject();
         Assert.True(propiedades.ContainsKey("advertencias"));
         Assert.True(propiedades.ContainsKey("legible"));
+        Assert.True(propiedades.ContainsKey("sesiones"));   // HU34
+        Assert.False(propiedades["sesiones"]!["items"]!["additionalProperties"]!.GetValue<bool>());
         var requeridas = esquema["schema"]!["required"]!.AsArray().Select(n => n!.GetValue<string>()).ToHashSet();
         Assert.True(propiedades.Select(p => p.Key).ToHashSet().SetEquals(requeridas));   // strict: todas requeridas
         Assert.False(esquema["schema"]!["additionalProperties"]!.GetValue<bool>());
         Assert.Contains("data:image/jpeg;base64,", servidor.Pedido!["messages"]![1]!["content"]!.ToJsonString());
+    }
+
+    [Fact]
+    public async Task Lee_las_sesiones_del_modelo_y_una_respuesta_sin_sesiones_sigue_funcionando()
+    {
+        var conSesiones = """
+            {"entendido":true,"legible":true,"titulo":"Ciclo ODS","descripcion":null,"inicio":"2026-11-17T18:00","fin":"2026-11-17T20:00",
+             "lugar":"Auditorio","asistencia":"FIJA","visitaMinMin":null,"visitaMaxMin":null,"variosEventos":false,"advertencias":[],
+             "sesiones":[{"inicio":"2026-11-17T18:00","fin":"2026-11-17T20:00"},{"inicio":"2026-11-19T18:00","fin":null}]}
+            """;
+        var lectura = await Lector(new ServidorFalso(Respuesta(conSesiones))).LeerAsync(new SolicitudLecturaEvento("x", [], "t"));
+
+        Assert.Equal([new SesionLeida("2026-11-17T18:00", "2026-11-17T20:00"), new SesionLeida("2026-11-19T18:00", null)], lectura.Evento.Sesiones);
+
+        var sinSesiones = """{"entendido":true,"legible":true,"titulo":"Charla","descripcion":null,"inicio":null,"fin":null,"lugar":null,"asistencia":null,"visitaMinMin":null,"visitaMaxMin":null,"variosEventos":false,"advertencias":[]}""";
+        var vieja = await Lector(new ServidorFalso(Respuesta(sinSesiones))).LeerAsync(new SolicitudLecturaEvento("x", [], "t"));
+        Assert.Empty(vieja.Evento.Sesiones!);
+    }
+
+    [Fact]
+    public async Task El_lector_simulado_lee_varias_fechas_del_mismo_evento()
+    {
+        var lectura = await new LectorEventoSimulado().LeerAsync(new SolicitudLecturaEvento("x", [],
+            "Título: Ciclo ODS Lugar: Auditorio Fecha: 17/11/2026, 19/11/2026 y 24/11/2026 Hora: 18:00-20:00"));
+
+        Assert.Equal(["2026-11-17T18:00", "2026-11-19T18:00", "2026-11-24T18:00"], lectura.Evento.Sesiones!.Select(s => s.Inicio!).ToArray());
+        Assert.Equal("2026-11-17T18:00", lectura.Evento.Inicio);
+        Assert.Equal("2026-11-17T20:00", lectura.Evento.Fin);
     }
 
     [Fact]

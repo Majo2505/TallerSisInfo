@@ -252,6 +252,42 @@ public sealed class EventoServiceTests
         Assert.Equal(4, repo.Eventos.Count);
     }
 
+    // HU34: el FE crea un evento por cada fecha del afiche con POST /api/eventos (origen FLYER). Cada uno se evalúa solo.
+    [Fact]
+    public async Task Cada_fecha_de_un_afiche_es_un_evento_aparte_que_puede_quedar_pendiente_por_separado()
+    {
+        var (servicio, repo) = CrearServicio();
+        var hora = TimeSpan.FromHours(-4);
+
+        var publicada = await servicio.CrearAsync(Usuario, false, Solicitud(origen: "FLYER",
+            inicio: new DateTimeOffset(2026, 11, 18, 18, 0, 0, hora), fin: new DateTimeOffset(2026, 11, 18, 20, 0, 0, hora)), null);
+        var deNoche = await servicio.CrearAsync(Usuario, false, Solicitud(origen: "FLYER",
+            inicio: new DateTimeOffset(2026, 11, 20, 20, 0, 0, hora), fin: new DateTimeOffset(2026, 11, 20, 22, 0, 0, hora)), null);
+
+        Assert.Equal(Evento.EstadoPublicado, publicada.Estado);
+        Assert.Equal(Evento.EstadoPendiente, deNoche.Estado);   // fuera del horario: solo esa fecha va a revisión
+        Assert.All(repo.Eventos, e => Assert.Equal(Evento.OrigenFlyer, e.Origen));
+        Assert.Equal(2, repo.Eventos.Select(e => e.Inicio.Date).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task Las_fechas_de_un_afiche_cuentan_en_el_limite_de_3_por_dia_y_el_admin_no_tiene_limite()
+    {
+        var (servicio, repo) = CrearServicio();
+        var hora = TimeSpan.FromHours(-4);
+        EventoFormularioRequest Fecha(int dia) => Solicitud(origen: "FLYER",
+            inicio: new DateTimeOffset(2026, 11, dia, 13, 0, 0, hora), fin: new DateTimeOffset(2026, 11, dia, 14, 0, 0, hora));
+
+        for (var dia = 18; dia < 21; dia++) await servicio.CrearAsync(Usuario, false, Fecha(dia), null);
+        var cuarta = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.CrearAsync(Usuario, false, Fecha(21), null));
+
+        Assert.Equal("LIMITE_DIARIO", cuarta.Codigo);
+        Assert.Equal(3, repo.Eventos.Count);
+
+        for (var dia = 18; dia < 23; dia++) await servicio.CrearAsync(Admin, true, Fecha(dia), null);
+        Assert.Equal(5, repo.Eventos.Count(e => e.CreadorId == Admin));
+    }
+
     [Fact]
     public async Task Un_evento_creado_desde_un_flyer_se_guarda_con_origen_FLYER_y_pasa_las_mismas_reglas()
     {
