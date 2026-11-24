@@ -15,6 +15,7 @@ import { Entrada, MotionLink, Pieza, RESORTE_TOQUE, SALIDA, seguirPuntero } from
 import ArteCategoria from "@/components/inicio/ArteCategoria";
 import HeroePuente from "@/components/inicio/HeroePuente";
 import HeroeSinPuentes from "@/components/inicio/HeroeSinPuentes";
+import AvisoUbicacionInicial from "@/components/ubicacion/AvisoUbicacionInicial";
 import { ComunidadActiva, listarComunidades } from "@/lib/comunidades";
 import { EventoEnPuente, listarEventosEnPuente } from "@/lib/eventos";
 import { Bloque, listarHorario } from "@/lib/horario";
@@ -286,7 +287,7 @@ export default function Inicio() {
         </h1>
       </Pieza>
 
-      {}
+      <AvisoUbicacionInicial />
       <Pieza as="section" className={estilos.marcoHeroe}>
         {foco ? (
           <HeroePuente

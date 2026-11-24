@@ -425,6 +425,11 @@ Las coordenadas se envían una sola vez al backend para encontrar la zona más c
 dentro de su `radio_max_m`; no se guardan ni se devuelven. Solo se persiste el campus
 seleccionado y, cuando corresponde, la fecha y el consentimiento explícito.
 
+**Interfaz (HU5).** En el primer acceso, si no hay zona elegida ni consentimiento, «Inicio» muestra un aviso que explica para qué
+se usaría la ubicación y ofrece dos caminos: ir a «Configuración de ubicación» (donde hay una casilla de autorización explícita
+antes de pedir el permiso del navegador) o elegir el campus a mano. El aviso se puede descartar y no vuelve a aparecer. Nunca
+llama a la geolocalización por su cuenta; el permiso se puede revocar desde el perfil en cualquier momento.
+
 Los errores usan el mismo formato que horarios y recomendaciones: `{ "codigo": "NO_ENCONTRADO", "mensaje": "..." }`
 (`NO_ENCONTRADO` con 404 y `FUERA_DE_ZONA` con 422).
 
