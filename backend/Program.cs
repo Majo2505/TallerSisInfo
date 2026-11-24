@@ -137,6 +137,8 @@ var app = builder.Build();
 if (detrasDeProxy) app.UseForwardedHeaders();
 app.UseMiddleware<ApiMetricsMiddleware>();
 app.UseCors(FrontendCorsPolicy);
+// HU37: todo error que ningún controlador capturó responde 500 ERROR_INESPERADO con un código de seguimiento (sin filtrar detalles).
+app.UseMiddleware<Breaku.Presentation.ErroresInesperadosMiddleware>();
 
 app.UseSwaggerDocumentation();
 
