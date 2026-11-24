@@ -243,6 +243,9 @@ public sealed class EventoService
             ? MotivoObligatorio(request.Motivo, ReglasEvento.MensajeFaltaMotivoRechazo)
             : null;
         var cambios = request.Cambios is null ? null : await ValidarCambiosAsync(request.Cambios, ct);
+        // HU37: el repositorio comprueba el fin ANTES de aplicar los cambios; aquí el fin que el admin deja también tiene que estar por delante.
+        if (cambios is not null && !ReglasEvento.FinCorregidoVigente(cambios.FinUtc, _reloj.GetUtcNow().UtcDateTime))
+            throw new ReglaNegocioException("VALIDACION", ReglasEvento.MensajeFinCorregidoPasado);
         var tipo = estado == Evento.EstadoPublicado ? Notificacion.TipoEventoAprobado : Notificacion.TipoEventoRechazado;
 
         var resultado = await _repository.ModerarAsync(new ModeracionEvento(

@@ -29,6 +29,10 @@ public static class ReglasEvento
     public const string MensajeRangoInvalido = "El rango debe ser hoy o semana.";
 
     public const string MensajeEventoFinalizado = "El evento ya terminó, así que no se puede revisar.";
+    public const string MensajeFinCorregidoPasado = "Con esos cambios el evento ya habría terminado: corrige la fecha de fin para poder aprobarlo.";
+
+    /// <summary>HU37: al editar y aprobar, el fin que deja el admin tiene que seguir por delante (el evento no puede quedar ya terminado).</summary>
+    public static bool FinCorregidoVigente(DateTime finUtc, DateTime ahoraUtc) => finUtc > ahoraUtc;
 
     // HU26: moderación de eventos por el admin.
     public const int MaximoMotivo = 500;

@@ -852,6 +852,43 @@ public sealed class EventoServiceTests
     }
 
     [Fact]
+    public async Task Editar_y_aprobar_no_deja_un_fin_que_ya_paso()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+        var inicioPasado = Ahora.AddHours(-3);
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.ModerarAsync(1, Admin,
+            new ResolverEventoRequest(Evento.EstadoPublicado, null, Solicitud(inicio: inicioPasado, fin: inicioPasado.AddHours(1)))));
+
+        Assert.Equal(("VALIDACION", ReglasEvento.MensajeFinCorregidoPasado), (error.Codigo, error.Message));
+        Assert.Equal(Evento.EstadoPendiente, repo.Eventos[0].Estado);
+        Assert.Empty(repo.Moderaciones);
+    }
+
+    [Fact]
+    public async Task Editar_y_aprobar_con_un_fin_por_delante_publica_con_los_cambios()
+    {
+        var (servicio, repo) = CrearServicio();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2), estado: Evento.EstadoPendiente));
+        var inicio = Ahora.AddHours(2);
+
+        await servicio.ModerarAsync(1, Admin,
+            new ResolverEventoRequest(Evento.EstadoPublicado, null, Solicitud(titulo: "Corregido", inicio: inicio, fin: inicio.AddHours(1))));
+
+        Assert.Equal((Evento.EstadoPublicado, "Corregido"), (repo.Eventos[0].Estado, repo.Eventos[0].Titulo));
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(0, false)]
+    [InlineData(-1, false)]
+    public void El_fin_corregido_tiene_que_estar_por_delante(int minutosHastaElFin, bool vigente)
+        => Assert.Equal(vigente, ReglasEvento.FinCorregidoVigente(Ahora.UtcDateTime.AddMinutes(minutosHastaElFin), Ahora.UtcDateTime));
+
+    [Fact]
     public async Task No_se_puede_editar_al_rechazar()
     {
         var (servicio, repo) = CrearServicio();
