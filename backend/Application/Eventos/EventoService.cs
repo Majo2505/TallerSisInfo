@@ -47,6 +47,19 @@ public sealed class EventoService
             throw new ReglaNegocioException("VALIDACION", "Selecciona un lugar o escribe dónde será el evento.");
 
         var ahora = _reloj.GetUtcNow();
+        var duplicado = await BuscarDuplicadoAsync(
+            titulo, request.LugarId, nombreLugar, request.Inicio!.Value, request.Fin!.Value, null, ct);
+        if (duplicado is not null && duplicado.CreadorId == usuarioId)
+            throw new ReglaNegocioException(ReglasEvento.CodigoEventoDuplicado,
+                ReglasEvento.MensajeEventoDuplicado(duplicado.Titulo, duplicado.Id));
+
+        var motivoDuplicado = duplicado is not null && !esAdmin
+            ? ReglasEvento.MotivoPosibleDuplicado(duplicado.Titulo, request.Inicio.Value)
+            : null;
+        var avisoDuplicado = duplicado is not null && esAdmin
+            ? ReglasEvento.AvisoDuplicadoAdmin(duplicado.Titulo, duplicado.Id)
+            : null;
+
         var evaluacion = ReglasEvento.Evaluar(
             esAdmin,
             lugarCatalogado,
@@ -66,12 +79,12 @@ public sealed class EventoService
             LugarTexto = lugarCatalogado ? null : nombreLugar.Trim(),
             Inicio = request.Inicio.Value.UtcDateTime,
             Fin = request.Fin.Value.UtcDateTime,
-            Estado = evaluacion.Estado,
+            Estado = motivoDuplicado is null ? evaluacion.Estado : Evento.EstadoPendiente,
             Origen = origen!,
             Asistencia = asistencia,
             VisitaMin = request.VisitaMin is int min ? (short)min : null,
             VisitaMax = request.VisitaMax is int max ? (short)max : null,
-            Motivo = evaluacion.Motivo,
+            Motivo = ReglasEvento.UnirMotivos(evaluacion.Motivo, motivoDuplicado),
             CreatedAt = ahora.UtcDateTime,
             UpdatedAt = ahora.UtcDateTime
         };
@@ -82,7 +95,9 @@ public sealed class EventoService
         if (!creado) throw new ReglaNegocioException("LIMITE_DIARIO", ReglasEvento.MensajeLimiteDiario);
         await AvisarAdminsAsync(evento, ct);
 
-        return ADto(new EventoListado(evento, nombreLugar, imagen is null ? null : ReglasEvento.VersionImagen(ahora.UtcDateTime)));
+        return ADto(
+            new EventoListado(evento, nombreLugar, imagen is null ? null : ReglasEvento.VersionImagen(ahora.UtcDateTime)),
+            avisoDuplicado);
     }
 
     public async Task<List<EventoPublicoDto>> ListarPublicadosAsync(string? rango, CancellationToken ct = default)
@@ -105,7 +120,7 @@ public sealed class EventoService
 
     public async Task<List<EventoDto>> ListarMiosAsync(int usuarioId, CancellationToken ct = default)
         => (await _repository.ListarMiosAsync(usuarioId, ct))
-            .Select(ADto)
+            .Select(e => ADto(e))
             .ToList();
 
     public async Task<EventoDto> ActualizarAsync(
@@ -136,8 +151,22 @@ public sealed class EventoService
         if (string.IsNullOrWhiteSpace(nombreLugar))
             throw new ReglaNegocioException("VALIDACION", "Selecciona un lugar o escribe dónde será el evento.");
 
+        var esAdmin = evento.Origen == Evento.OrigenAdmin;
+        var duplicado = await BuscarDuplicadoAsync(
+            titulo, request.LugarId, nombreLugar, request.Inicio!.Value, request.Fin!.Value, evento.Id, ct);
+        if (duplicado is not null && duplicado.CreadorId == usuarioId)
+            throw new ReglaNegocioException(ReglasEvento.CodigoEventoDuplicado,
+                ReglasEvento.MensajeEventoDuplicado(duplicado.Titulo, duplicado.Id));
+
+        var motivoDuplicado = duplicado is not null && !esAdmin
+            ? ReglasEvento.MotivoPosibleDuplicado(duplicado.Titulo, request.Inicio.Value)
+            : null;
+        var avisoDuplicado = duplicado is not null && esAdmin
+            ? ReglasEvento.AvisoDuplicadoAdmin(duplicado.Titulo, duplicado.Id)
+            : null;
+
         var evaluacion = ReglasEvento.Evaluar(
-            evento.Origen == Evento.OrigenAdmin,
+            esAdmin,
             lugarCatalogado,
             titulo,
             descripcion,
@@ -155,15 +184,15 @@ public sealed class EventoService
         evento.Asistencia = asistencia;
         evento.VisitaMin = request.VisitaMin is int min ? (short)min : null;
         evento.VisitaMax = request.VisitaMax is int max ? (short)max : null;
-        evento.Estado = evaluacion.Estado;
-        evento.Motivo = evaluacion.Motivo;
+        evento.Estado = motivoDuplicado is null ? evaluacion.Estado : Evento.EstadoPendiente;
+        evento.Motivo = ReglasEvento.UnirMotivos(evaluacion.Motivo, motivoDuplicado);
         evento.UpdatedAt = ahora.UtcDateTime;
 
         await _repository.GuardarCambiosAsync(evento, imagen, tipoMime, request.QuitarFoto, ct);
         await AvisarAdminsAsync(evento, ct);
         var actualizada = (await _repository.ListarMiosAsync(usuarioId, ct))
             .First(e => e.Evento.Id == evento.Id);
-        return ADto(actualizada);
+        return ADto(actualizada, avisoDuplicado);
     }
 
     public async Task<EventoDto> CancelarAsync(int eventoId, int usuarioId, CancellationToken ct = default)
@@ -198,7 +227,7 @@ public sealed class EventoService
 
     public async Task<List<EventoDto>> ListarPendientesAsync(CancellationToken ct = default)
         => (await _repository.ListarPendientesAsync(_reloj.GetUtcNow().UtcDateTime, ct))
-            .Select(ADto)
+            .Select(e => ADto(e))
             .ToList();
 
     /// <summary>HU26: aprobar (opcionalmente con cambios) o rechazar un evento PENDIENTE.</summary>
@@ -239,7 +268,7 @@ public sealed class EventoService
         var ahora = _reloj.GetUtcNow().UtcDateTime;
         return (await _repository.ListarPublicadosAsync(ahora, ahora.AddYears(1), ct))
             .OrderBy(e => e.Evento.Inicio)
-            .Select(ADto)
+            .Select(e => ADto(e))
             .ToList();
     }
 
@@ -339,6 +368,22 @@ public sealed class EventoService
     private static (string? TipoMime, string? Error) ValidarImagen(byte[]? imagen)
         => imagen is null ? (null, null) : ReglasEvento.ValidarImagen(imagen);
 
+    private async Task<ReglasEvento.CandidatoDuplicado?> BuscarDuplicadoAsync(
+        string titulo,
+        int? lugarId,
+        string lugarTexto,
+        DateTimeOffset inicio,
+        DateTimeOffset fin,
+        int? idActual,
+        CancellationToken ct)
+    {
+        var desde = inicio.UtcDateTime.AddDays(-ReglasEvento.MargenBusquedaDuplicadosDias);
+        var hasta = fin.UtcDateTime.AddDays(ReglasEvento.MargenBusquedaDuplicadosDias);
+        var candidatos = await _repository.BuscarCandidatosDuplicadoAsync(desde, hasta, ct);
+        return candidatos.FirstOrDefault(c => ReglasEvento.EsDuplicado(
+            c, titulo, lugarId, lugarTexto, inicio, fin, idActual));
+    }
+
     private static EventoPublicoDto APublicoDto(EventoListado item)
     {
         var evento = item.Evento;
@@ -361,7 +406,7 @@ public sealed class EventoService
             ReglasEvento.UrlImagen(evento.Id, item.FotoActualizadaEn));
     }
 
-    private static EventoDto ADto(EventoListado item)
+    private static EventoDto ADto(EventoListado item, string? aviso = null)
     {
         var evento = item.Evento;
         var offsetBolivia = TimeSpan.FromHours(-4);
@@ -383,6 +428,7 @@ public sealed class EventoService
             evento.VisitaMax,
             evento.Motivo,
             ReglasEvento.UrlImagen(evento.Id, item.FotoActualizadaEn),
-            Local(evento.CreatedAt, offsetBolivia));
+            Local(evento.CreatedAt, offsetBolivia),
+            aviso);
     }
 }

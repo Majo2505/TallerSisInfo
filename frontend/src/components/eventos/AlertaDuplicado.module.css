@@ -1,0 +1,140 @@
+.alerta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0;
+  padding: 16px 20px;
+  border: 1.5px solid var(--ucb-amarillo);
+  border-radius: 20px;
+  background: linear-gradient(115deg, #fff9e6 0%, #fffdf5 58%, #f2f8ff 100%);
+  box-shadow: 0 12px 34px rgba(90, 66, 14, 0.12);
+  overflow: hidden;
+}
+
+.alerta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 8% 20%, rgba(255, 255, 255, 0.75), transparent 42%);
+}
+
+.alerta.error {
+  border-color: var(--error-borde, #d98a8a);
+  background: linear-gradient(115deg, #fff0f0 0%, #fffaf8 60%, #f2f8ff 100%);
+  color: var(--error, #a32626);
+}
+
+.alerta.aviso {
+  border-color: var(--ucb-celeste, #2f7fd1);
+  background: linear-gradient(115deg, #eaf5ff 0%, #fbfdff 60%, #fff9e6 100%);
+  color: #1d5b98;
+}
+
+.ilustracion {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 62px;
+  width: 62px;
+  height: 62px;
+  color: #b07d12;
+  filter: drop-shadow(0 6px 10px rgba(120, 88, 10, 0.18));
+}
+
+.error .ilustracion {
+  color: #b23a3a;
+}
+
+.aviso .ilustracion {
+  color: #2f7fd1;
+}
+
+.ilustracion svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.contenido {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.etiqueta {
+  display: block;
+  margin-bottom: 4px;
+  color: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+
+.texto {
+  margin: 0;
+  color: var(--texto);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.pista {
+  margin: 6px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.84rem;
+}
+
+.compacta {
+  gap: 12px;
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.compacta .ilustracion {
+  flex-basis: 42px;
+  width: 42px;
+  height: 42px;
+}
+
+.compacta .etiqueta {
+  font-size: 0.84rem;
+}
+
+.compacta .texto {
+  font-size: 0.88rem;
+}
+
+.cerrar {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  margin-left: auto;
+  border: 0;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cerrar:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 560px) {
+  .alerta {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .ilustracion {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+  }
+}

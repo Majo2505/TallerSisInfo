@@ -19,6 +19,9 @@ public interface IEventoRepository
         DateTime desdeUtc,
         DateTime hastaUtc,
         CancellationToken ct = default);
+    /// <summary>HU33: candidatos PUBLICADOS o PENDIENTES con fechas que pueden cruzarse con la que se está creando.</summary>
+    Task<List<ReglasEvento.CandidatoDuplicado>> BuscarCandidatosDuplicadoAsync(
+        DateTime desdeUtc, DateTime hastaUtc, CancellationToken ct = default);
     Task<List<EventoListado>> ListarMiosAsync(int usuarioId, CancellationToken ct = default);
     Task<Evento?> ObtenerMioAsync(int eventoId, int usuarioId, CancellationToken ct = default);
     /// <summary>Guarda los cambios del evento. Una imagen nueva reemplaza la anterior; `quitarImagen` la borra (si no hay, no hace nada).</summary>

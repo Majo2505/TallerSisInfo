@@ -77,6 +77,18 @@ public sealed class EventoRepository : IEventoRepository
         return true;
     }
 
+    public Task<List<ReglasEvento.CandidatoDuplicado>> BuscarCandidatosDuplicadoAsync(
+        DateTime desdeUtc, DateTime hastaUtc, CancellationToken ct = default)
+        => _db.Eventos.AsNoTracking()
+            .Include(e => e.Lugar)
+            .Where(e => (e.Estado == Evento.EstadoPublicado || e.Estado == Evento.EstadoPendiente)
+                && e.Fin > desdeUtc
+                && e.Inicio < hastaUtc)
+            .Select(e => new ReglasEvento.CandidatoDuplicado(
+                e.Id, e.CreadorId, e.Titulo, e.Inicio, e.Fin, e.LugarId, e.LugarTexto,
+                e.Lugar != null ? e.Lugar.Nombre : null, e.Estado))
+            .ToListAsync(ct);
+
     public async Task<List<EventoListado>> ListarMiosAsync(int usuarioId, CancellationToken ct = default)
         => await ListarAsync(_db.Eventos.AsNoTracking().Where(e => e.CreadorId == usuarioId), ct);
 

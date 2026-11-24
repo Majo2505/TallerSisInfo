@@ -57,6 +57,17 @@ public sealed class EventoServiceTests
             return Task.FromResult(true);
         }
 
+        public Task<List<ReglasEvento.CandidatoDuplicado>> BuscarCandidatosDuplicadoAsync(
+            DateTime desdeUtc, DateTime hastaUtc, CancellationToken ct = default)
+            => Task.FromResult(Eventos
+                .Where(e => (e.Estado == Evento.EstadoPublicado || e.Estado == Evento.EstadoPendiente)
+                    && e.Fin > desdeUtc
+                    && e.Inicio < hastaUtc)
+                .Select(e => new ReglasEvento.CandidatoDuplicado(
+                    e.Id, e.CreadorId, e.Titulo, e.Inicio, e.Fin, e.LugarId, e.LugarTexto,
+                    Lugares.FirstOrDefault(l => l.Id == e.LugarId)?.Nombre, e.Estado))
+                .ToList());
+
         public Task<List<EventoListado>> ListarMiosAsync(int usuarioId, CancellationToken ct = default)
             => Task.FromResult(Eventos.Where(e => e.CreadorId == usuarioId).Select(AListado).ToList());
 
@@ -938,6 +949,113 @@ public sealed class EventoServiceTests
         var antiguo = historial.Single(h => h.Evento.Id == 3);
         Assert.Null(antiguo.Admin);
         Assert.Equal(viejo.UpdatedAt, antiguo.RechazadoEn.UtcDateTime);
+    }
+
+    // ── HU33: eventos duplicados ──
+
+    [Fact]
+    public async Task Reenviar_un_evento_igual_responde_409_y_no_guarda_otro()
+    {
+        var (servicio, repo) = CrearServicio();
+        var primero = await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.CrearAsync(Usuario, false, Solicitud(), null));
+
+        Assert.Equal(ReglasEvento.CodigoEventoDuplicado, error.Codigo);
+        Assert.Contains(primero.Titulo, error.Message);
+        Assert.Contains("#1", error.Message);
+        Assert.Single(repo.Eventos);
+    }
+
+    [Fact]
+    public async Task Otra_persona_que_repite_un_evento_lo_deja_pendiente_con_el_motivo()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        var dto = await servicio.CrearAsync(99, false, Solicitud(), null);
+
+        Assert.Equal(Evento.EstadoPendiente, dto.Estado);
+        Assert.Contains("Posible duplicado de «Feria de ciencias»", dto.Motivo);
+        Assert.Contains("17/11/2026", dto.Motivo);
+        Assert.Equal(2, repo.Eventos.Count);
+    }
+
+    [Fact]
+    public async Task El_admin_publica_el_duplicado_y_recibe_un_aviso_en_la_respuesta()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        var dto = await servicio.CrearAsync(Admin, true, Solicitud(), null);
+
+        Assert.Equal(Evento.EstadoPublicado, dto.Estado);
+        Assert.NotNull(dto.Aviso);
+        Assert.Contains("Feria de ciencias", dto.Aviso);
+        Assert.Contains("#1", dto.Aviso);
+        Assert.Equal(2, repo.Eventos.Count);
+    }
+
+    [Theory]
+    [InlineData(Evento.EstadoRechazado)]
+    [InlineData(Evento.EstadoCancelado)]
+    public async Task Un_evento_rechazado_o_cancelado_no_bloquea_al_siguiente(string estado)
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+        repo.Eventos.Single().Estado = estado;
+
+        var nuevo = await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        Assert.Equal(Evento.EstadoPublicado, nuevo.Estado);
+        Assert.Equal(2, repo.Eventos.Count);
+    }
+
+    [Fact]
+    public async Task Editar_un_evento_no_lo_compara_consigo_mismo()
+    {
+        var (servicio, repo) = CrearServicio();
+        var creado = await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        var editado = await servicio.ActualizarAsync(creado.Id, Usuario, Solicitud(titulo: "Feria corregida"), null);
+
+        Assert.Equal("Feria corregida", editado.Titulo);
+        Assert.Single(repo.Eventos);
+    }
+
+    [Fact]
+    public async Task La_tolerancia_de_tres_horas_solo_alcanza_a_las_fechas_cercanas()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+        var cercano = await servicio.CrearAsync(99, false, Solicitud(
+            inicio: new DateTimeOffset(2026, 11, 17, 15, 0, 0, TimeSpan.FromHours(-4)),
+            fin: new DateTimeOffset(2026, 11, 17, 16, 0, 0, TimeSpan.FromHours(-4))), null);
+        Assert.Equal(Evento.EstadoPendiente, cercano.Estado);
+
+        var (otroServicio, otroRepo) = CrearServicio();
+        await otroServicio.CrearAsync(Usuario, false, Solicitud(), null);
+        var lejano = await otroServicio.CrearAsync(99, false, Solicitud(
+            inicio: new DateTimeOffset(2026, 11, 17, 17, 0, 0, TimeSpan.FromHours(-4)),
+            fin: new DateTimeOffset(2026, 11, 17, 18, 0, 0, TimeSpan.FromHours(-4))), null);
+
+        Assert.Equal(Evento.EstadoPublicado, lejano.Estado);
+        Assert.Equal(2, repo.Eventos.Count);
+        Assert.Equal(2, otroRepo.Eventos.Count);
+    }
+
+    [Fact]
+    public async Task Titulo_distinto_o_lugar_distinto_no_son_duplicados()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        await servicio.CrearAsync(99, false, Solicitud(titulo: "Concierto de guitarra"), null);
+        await servicio.CrearAsync(99, false, Solicitud(lugarId: null, lugarTexto: "Patio lateral"), null);
+
+        Assert.Equal(3, repo.Eventos.Count);
+        Assert.All(repo.Eventos, e => Assert.DoesNotContain("Posible duplicado", e.Motivo ?? ""));
     }
 }
 

@@ -1455,6 +1455,112 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorNegocioDto'
+  /api/eventos:
+    post:
+      tags: [Eventos]
+      operationId: crearEvento
+      summary: Crea un evento (HU23) y aplica las reglas de duplicados de HU33.
+      description: |
+        `Origen` solo puede ser `FORMULARIO` o `FLYER` (un admin siempre guarda `ADMIN`; no se puede pedir desde el cliente).
+        Si coincide con un PUBLICADO o PENDIENTE en título, fechas y lugar: el mismo creador recibe `409 EVENTO_DUPLICADO`;
+        otra persona lo crea PENDIENTE con el motivo de posible duplicado; un admin lo publica y recibe `aviso`.
+        El estudiante tiene un límite de 3 eventos creados por día (hora de Bolivia): la cuarta respuesta es `409 LIMITE_DIARIO`.
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [Titulo, Inicio, Fin, Asistencia]
+              properties:
+                Titulo: { type: string, maxLength: 120 }
+                Descripcion: { type: string, nullable: true, maxLength: 4000 }
+                Inicio: { type: string, format: date-time, example: '2026-11-17T13:00:00-04:00' }
+                Fin: { type: string, format: date-time, example: '2026-11-17T14:00:00-04:00' }
+                LugarId: { type: integer, nullable: true }
+                LugarTexto: { type: string, nullable: true, maxLength: 150 }
+                Asistencia: { type: string, enum: [FIJA, LIBRE] }
+                VisitaMin: { type: integer, nullable: true }
+                VisitaMax: { type: integer, nullable: true }
+                Origen: { type: string, nullable: true, enum: [FORMULARIO, FLYER] }
+                Foto: { type: string, format: binary, nullable: true, description: 'JPG o PNG de hasta 2 MB.' }
+      responses:
+        '201':
+          description: Evento creado (PUBLICADO o PENDIENTE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+        '400':
+          $ref: '#/components/responses/DatosInvalidos'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '409':
+          $ref: '#/components/responses/EventoDuplicado'
+        '413':
+          description: La petición (foto incluida) supera el límite permitido.
+  /api/eventos/{id}:
+    put:
+      tags: [Eventos]
+      operationId: editarEvento
+      summary: Edita un evento propio (HU23) volviendo a comprobar los duplicados de HU33.
+      description: Solo el dueño; solo si está PENDIENTE o PUBLICADO y todavía no empezó. No se compara consigo mismo.
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [Titulo, Inicio, Fin, Asistencia]
+              properties:
+                Titulo: { type: string, maxLength: 120 }
+                Descripcion: { type: string, nullable: true, maxLength: 4000 }
+                Inicio: { type: string, format: date-time }
+                Fin: { type: string, format: date-time }
+                LugarId: { type: integer, nullable: true }
+                LugarTexto: { type: string, nullable: true, maxLength: 150 }
+                Asistencia: { type: string, enum: [FIJA, LIBRE] }
+                VisitaMin: { type: integer, nullable: true }
+                VisitaMax: { type: integer, nullable: true }
+                QuitarFoto: { type: boolean, default: false }
+                Foto: { type: string, format: binary, nullable: true, description: 'No se puede enviar junto con `QuitarFoto=true`.' }
+      responses:
+        '200':
+          description: Evento actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+        '400':
+          $ref: '#/components/responses/DatosInvalidos'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          description: No existe o no es tuyo (`NO_ENCONTRADO`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+        '409':
+          description: '`EVENTO_DUPLICADO` (otro evento tuyo coincide), `LIMITE_DIARIO`, `EVENTO_INICIADO` o `EVENTO_NO_EDITABLE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocioDto'
+            example:
+              codigo: EVENTO_DUPLICADO
+              mensaje: 'Ya existe un evento muy parecido: «Feria de ciencias» (evento #12). Revisa el título, la fecha y el lugar antes de volver a enviarlo.'
+        '413':
+          description: La petición (foto incluida) supera el límite permitido.
   /api/eventos/extraer:
     post:
       tags: [Eventos]
@@ -2439,6 +2545,15 @@ components:
           example:
             codigo: DUPLICADO
             mensaje: Ya registraste «Cálculo I» a esa hora ese día.
+    EventoDuplicado:
+      description: 'HU33: el mismo creador reenvía un evento con título similar, fechas cercanas y el mismo lugar (`codigo` = `EVENTO_DUPLICADO`). Otra persona lo crea PENDIENTE con el motivo de posible duplicado; un admin lo publica con `aviso`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorNegocioDto'
+          example:
+            codigo: EVENTO_DUPLICADO
+            mensaje: 'Ya existe un evento muy parecido: «Feria de ciencias» (evento #12). Revisa el título, la fecha y el lugar antes de volver a enviarlo.'
     DatosInvalidos:
       description: |
         Datos inválidos. Hay dos formas de respuesta:
@@ -2544,8 +2659,8 @@ components:
       properties:
         codigo:
           type: string
-          enum: [VALIDACION, DUPLICADO, NO_ENCONTRADO, SOLICITUD_NO_PERMITIDA, ASISTENTE_NO_DISPONIBLE]
-          description: '`VALIDACION` (400), `DUPLICADO` (409), `NO_ENCONTRADO` (404), `SOLICITUD_NO_PERMITIDA` (400) o `ASISTENTE_NO_DISPONIBLE` (503).'
+          enum: [VALIDACION, DUPLICADO, EVENTO_DUPLICADO, NO_ENCONTRADO, SOLICITUD_NO_PERMITIDA, ASISTENTE_NO_DISPONIBLE]
+          description: '`VALIDACION` (400), `DUPLICADO` (409, horarios), `EVENTO_DUPLICADO` (409, eventos), `NO_ENCONTRADO` (404), `SOLICITUD_NO_PERMITIDA` (400) o `ASISTENTE_NO_DISPONIBLE` (503).'
           example: DUPLICADO
         mensaje:
           type: string
@@ -3551,6 +3666,26 @@ components:
             - $ref: '#/components/schemas/ImagenEventoDto'
           nullable: true
           description: Página 1 del PDF en JPEG, solo si cabe en 2 MB.
+    EventoDto:
+      type: object
+      description: Evento tal como lo ve su creador o el admin. `motivo` explica por qué quedó PENDIENTE o RECHAZADO; `aviso` aparece solo cuando un admin publica un posible duplicado (HU33).
+      properties:
+        id: { type: integer, example: 12 }
+        titulo: { type: string, example: Feria de ciencias }
+        descripcion: { type: string, nullable: true }
+        inicio: { type: string, format: date-time, example: '2026-11-17T13:00:00-04:00' }
+        fin: { type: string, format: date-time, example: '2026-11-17T14:00:00-04:00' }
+        lugarId: { type: integer, nullable: true }
+        lugar: { type: string, example: Biblioteca }
+        estado: { type: string, enum: [PENDIENTE, PUBLICADO, RECHAZADO, CANCELADO] }
+        origen: { type: string, enum: [FORMULARIO, FLYER, ADMIN] }
+        asistencia: { type: string, enum: [FIJA, LIBRE] }
+        visitaMin: { type: integer, nullable: true }
+        visitaMax: { type: integer, nullable: true }
+        motivo: { type: string, nullable: true, example: 'Posible duplicado de «Feria de ciencias» (17/11/2026).' }
+        fotoUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        aviso: { type: string, nullable: true, description: 'HU33: solo al publicar un duplicado como admin.' }
     RespuestaExtraccionDto:
       type: object
       properties:

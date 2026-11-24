@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Breaku.Domain.Rules;
 
 namespace Breaku.Domain;
@@ -38,6 +40,116 @@ public static class ReglasEvento
     public const string MensajeFaltaMotivoBaja = "Escribe el motivo para bajar el evento.";
     public const string MensajeMotivoLargo = "El motivo no puede superar 500 caracteres.";
     public const string MensajeCambiosSoloAlAprobar = "Solo se puede editar un evento al aprobarlo.";
+
+    // HU33: detección de posibles duplicados, sin IA y sin tocar el esquema.
+    public const string CodigoEventoDuplicado = "EVENTO_DUPLICADO";
+    public const double SimilitudMinimaTitulo = 0.7;
+    public const int ToleranciaInicioHoras = 3;
+    public const int MargenBusquedaDuplicadosDias = 2;
+
+    private static readonly HashSet<string> PalabrasVacias = new(StringComparer.Ordinal)
+    {
+        "a", "al", "ante", "con", "como", "de", "del", "desde", "donde", "durante", "e", "el", "ella", "en",
+        "entre", "era", "es", "esa", "ese", "eso", "estas", "este", "esto", "estos", "la", "las", "le",
+        "lo", "los", "me", "mi", "mis", "muy", "nuestra", "nuestro", "nuestras", "nuestros", "o", "para",
+        "por", "que", "se", "sin", "sobre", "su", "sus", "tu", "tus", "un", "una", "unas", "unos", "y"
+    };
+
+    /// <summary>Un evento PUBLICADO o PENDIENTE con el que se compara uno nuevo. Nunca RECHAZADO ni CANCELADO.</summary>
+    public sealed record CandidatoDuplicado(
+        int Id,
+        int CreadorId,
+        string Titulo,
+        DateTime InicioUtc,
+        DateTime FinUtc,
+        int? LugarId,
+        string? LugarTexto,
+        string? NombreLugar,
+        string Estado);
+
+    /// <summary>Minusculas, sin tildes ni signos y con los espacios unificados.</summary>
+    public static string NormalizarTexto(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return "";
+        var sinTildes = texto.Normalize(NormalizationForm.FormD)
+            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            .ToArray();
+        var limpio = new string(sinTildes).Normalize(NormalizationForm.FormC)
+            .Select(c => char.IsLetterOrDigit(c) ? char.ToLowerInvariant(c) : ' ')
+            .ToArray();
+        return string.Join(' ', new string(limpio).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    /// <summary>Como <see cref="NormalizarTexto"/> pero sin palabras vacías: es lo que compara el título.</summary>
+    public static string NormalizarTitulo(string? titulo)
+        => string.Join(' ', NormalizarTexto(titulo)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(palabra => !PalabrasVacias.Contains(palabra)));
+
+    /// <summary>Similitud de Jaccard entre las palabras del título normalizado (0 a 1).</summary>
+    public static double SimilitudTitulos(string? primero, string? segundo)
+    {
+        var a = NormalizarTitulo(primero);
+        var b = NormalizarTitulo(segundo);
+        if (a == b) return a.Length == 0 ? 0 : 1;
+
+        var palabrasA = new HashSet<string>(a.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        var palabrasB = new HashSet<string>(b.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        var todas = new HashSet<string>(palabrasA);
+        todas.UnionWith(palabrasB);
+        return todas.Count == 0 ? 0 : (double)palabrasA.Intersect(palabrasB).Count() / todas.Count;
+    }
+
+    /// <summary>
+    /// Un candidato cuenta como duplicado solo si coincide el título, el lugar y el momento. Se ignora el propio id al editar.
+    /// </summary>
+    public static bool EsDuplicado(
+        CandidatoDuplicado candidato,
+        string titulo,
+        int? lugarId,
+        string lugarTexto,
+        DateTimeOffset inicio,
+        DateTimeOffset fin,
+        int? idActual = null)
+    {
+        if (candidato.Estado is not (Evento.EstadoPublicado or Evento.EstadoPendiente)) return false;
+        if (idActual is int propio && candidato.Id == propio) return false;
+        if (SimilitudTitulos(candidato.Titulo, titulo) < SimilitudMinimaTitulo) return false;
+        if (!MismoLugar(candidato, lugarId, lugarTexto)) return false;
+
+        var inicioCandidato = new DateTimeOffset(DateTime.SpecifyKind(candidato.InicioUtc, DateTimeKind.Utc));
+        var finCandidato = new DateTimeOffset(DateTime.SpecifyKind(candidato.FinUtc, DateTimeKind.Utc));
+        var mismoDia = inicio.ToOffset(DesfaseBolivia).Date == inicioCandidato.ToOffset(DesfaseBolivia).Date;
+        if (mismoDia && Math.Abs((inicio - inicioCandidato).TotalHours) <= ToleranciaInicioHoras) return true;
+
+        return inicio < finCandidato && inicioCandidato < fin;
+    }
+
+    private static bool MismoLugar(CandidatoDuplicado candidato, int? lugarId, string lugarTexto)
+    {
+        if (lugarId is int id && candidato.LugarId == id) return true;
+
+        if (lugarId is int && candidato.LugarId is int) return false;
+
+        var textoNuevo = NormalizarTexto(lugarTexto);
+        var textoCandidato = NormalizarTexto(candidato.LugarTexto ?? candidato.NombreLugar);
+        return textoNuevo.Length > 0 && textoNuevo == textoCandidato;
+    }
+
+    public static string MensajeEventoDuplicado(string titulo, int id)
+        => $"Ya existe un evento muy parecido: «{titulo}» (evento #{id}). Revisa el título, la fecha y el lugar antes de volver a enviarlo.";
+
+    public static string MotivoPosibleDuplicado(string titulo, DateTimeOffset inicio)
+        => $"Posible duplicado de «{titulo}» ({inicio.ToOffset(DesfaseBolivia):dd/MM/yyyy}).";
+
+    public static string AvisoDuplicadoAdmin(string titulo, int id)
+        => $"Se publicó igual: coincide con «{titulo}» (evento #{id}). Revisa ambos eventos.";
+
+    public static string UnirMotivos(params string?[] motivos)
+    {
+        var texto = string.Join(' ', motivos.Where(m => !string.IsNullOrWhiteSpace(m)));
+        return texto.Length <= MaximoMotivo ? texto : texto[..(MaximoMotivo - 1)] + "…";
+    }
 
     /// <summary>
     /// Texto del aviso al autor cuando el admin aprueba, rechaza o baja su evento. Incluye el motivo y cabe en
