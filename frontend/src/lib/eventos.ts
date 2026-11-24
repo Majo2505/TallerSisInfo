@@ -98,11 +98,14 @@ export const listarEventosPublicadosAdmin = () => pedirApi<EventoCampus[]>("/api
 /** HU26: historial de rechazados. `fueBajado` = estaba publicado y el admin lo bajó; si no, se rechazó en la revisión. */
 export type EventoRechazado = { evento: EventoCampus; fueBajado: boolean; admin: string | null; rechazadoEn: string };
 export const listarEventosRechazadosAdmin = () => pedirApi<EventoRechazado[]>("/api/admin/eventos/rechazados");
-/** HU26: baja un evento publicado. Queda oculto (RECHAZADO, no se borra) y el autor recibe un aviso con el motivo. */
-export const bajarEvento = (id: number, motivo: string) =>
+/**
+ * HU26: baja un evento publicado. Queda oculto (RECHAZADO, no se borra) y el autor recibe un aviso con el motivo.
+ * HU38: con `reporteId`, ese reporte queda resuelto y quien reportó recibe el aviso, todo a la vez.
+ */
+export const bajarEvento = (id: number, motivo: string, reporteId?: number | null) =>
   pedirApi<void>(`/api/admin/eventos/${id}/bajar`, {
     method: "PATCH",
-    body: JSON.stringify({ motivo }),
+    body: JSON.stringify({ motivo, reporteId: reporteId ?? null }),
   });
 
 /** HU22: evento publicado que ve cualquier estudiante. No trae estado ni motivo: eso es solo de moderacion. */

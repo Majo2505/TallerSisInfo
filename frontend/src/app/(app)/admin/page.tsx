@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { quitarComunidad } from "@/lib/comunidadesAdmin";
+import { bajarEvento } from "@/lib/eventos";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
@@ -36,7 +37,13 @@ import {
   obtenerResumen,
 } from "@/lib/admin";
 import { ErrorApi } from "@/lib/api";
-import { accionValidacionLugar, ETIQUETA_ACCION_VALIDACION, mensajeValidacionLugar, pideConfirmacionValidacion } from "@/lib/reglasAdmin";
+import {
+  accionModeracionDeReporte,
+  accionValidacionLugar,
+  ETIQUETA_ACCION_VALIDACION,
+  mensajeValidacionLugar,
+  pideConfirmacionValidacion,
+} from "@/lib/reglasAdmin";
 import { reporteDeUsuario, usuarioParaSancionar } from "@/lib/reglasUsuarios";
 import { MENSAJE_SIN_ETIQUETA, puedeActivarse } from "@/lib/reglasEtiquetas";
 import { useRefrescoAutomatico } from "@/lib/useRefrescoAutomatico";
@@ -251,6 +258,24 @@ function PanelAdminContenido() {
     try {
       await quitarComunidad(reporte.objetoId, motivo, reporte.id);
       aviso.mostrar(`Quitamos «${reporte.objeto}» y el reporte quedó resuelto. Le avisamos a ${reporte.autor}.`);
+      void listarReportes().then(setReportes).catch(() => undefined);
+      void obtenerResumen().then(setResumen).catch(() => undefined);
+      return true;
+    } catch (e) {
+      aviso.mostrar((e as Error).message);
+      return false;
+    } finally {
+      setResolviendoReporte(null);
+    }
+  }
+
+  // HU38: bajar el evento del reporte (queda oculto y el reporte, resuelto). No sanciona a quien lo creó.
+  async function bajarDesdeReporte(reporte: ReporteAdmin, motivo: string): Promise<boolean> {
+    if (!reporte.objetoId) return false;
+    setResolviendoReporte(reporte.id);
+    try {
+      await bajarEvento(reporte.objetoId, motivo, reporte.id);
+      aviso.mostrar(`Bajamos «${reporte.objeto}» y el reporte quedó resuelto. Le avisamos a ${reporte.autor}.`);
       void listarReportes().then(setReportes).catch(() => undefined);
       void obtenerResumen().then(setResumen).catch(() => undefined);
       return true;
@@ -527,8 +552,9 @@ function PanelAdminContenido() {
                           claseResolver={estilos.aprobar}
                           claseDescartar={estilos.desactivar}
                           onQuitarComunidad={
-                            r.objetoTipo === "COMUNIDAD" && r.objetoId ? (motivo) => quitarDesdeReporte(r, motivo) : undefined
+                            accionModeracionDeReporte(r) === "quitar" ? (motivo) => quitarDesdeReporte(r, motivo) : undefined
                           }
+                          onBajarEvento={accionModeracionDeReporte(r) === "bajar" ? (motivo) => bajarDesdeReporte(r, motivo) : undefined}
                         />
                       ) : (
                         r.respuesta && (

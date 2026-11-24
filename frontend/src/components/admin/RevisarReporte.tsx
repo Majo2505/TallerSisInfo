@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SALIDA } from "@/components/app/Movimiento";
 import { LARGO_MAXIMO_RESPUESTA } from "@/lib/admin";
+import { TEXTOS_MODERACION_REPORTE } from "@/lib/reglasAdmin";
 import { validarMotivoModeracion } from "@/lib/reglasEventos";
 import estilos from "./RevisarReporte.module.css";
 
@@ -21,13 +22,26 @@ type Props = {
    * No sanciona a quien la creó: «Sancionar» sigue aparte.
    */
   onQuitarComunidad?: (motivo: string) => Promise<boolean>;
+  /**
+   * HU38: solo en reportes de un evento PUBLICADO. Baja el evento con el motivo (obligatorio) y deja el reporte resuelto.
+   * No sanciona a quien lo creó. Si llegan los dos, manda la comunidad (un reporte es de una cosa o de la otra).
+   */
+  onBajarEvento?: (motivo: string) => Promise<boolean>;
 };
 
 /**
  * HU27: resolver o descartar un reporte pendiente con una respuesta opcional para el estudiante (hasta 500 caracteres).
  * La respuesta queda oculta tras «Responder al estudiante» para que la bandeja siga siendo fácil de recorrer.
  */
-export default function RevisarReporte({ objeto, ocupado, onRevisar, claseResolver, claseDescartar, onQuitarComunidad }: Props) {
+export default function RevisarReporte({
+  objeto,
+  ocupado,
+  onRevisar,
+  claseResolver,
+  claseDescartar,
+  onQuitarComunidad,
+  onBajarEvento,
+}: Props) {
   const reducir = useReducedMotion();
   const idCampo = useId();
   const idMotivo = useId();
@@ -37,13 +51,17 @@ export default function RevisarReporte({ objeto, ocupado, onRevisar, claseResolv
   const [motivo, setMotivo] = useState("");
   const [errorMotivo, setErrorMotivo] = useState("");
   const larga = respuesta.trim().length > LARGO_MAXIMO_RESPUESTA;
+  // HU35 / HU38: quitar la comunidad o bajar el evento reportado; los textos viven en reglasAdmin.ts.
+  const moderar = onQuitarComunidad ? onQuitarComunidad : onBajarEvento;
+  const accion = onQuitarComunidad ? "quitar" : onBajarEvento ? "bajar" : null;
+  const textos = accion ? TEXTOS_MODERACION_REPORTE[accion] : null;
 
   async function quitar() {
-    if (!onQuitarComunidad) return;
-    const falta = validarMotivoModeracion(motivo, "quitar");
+    if (!moderar || !accion) return;
+    const falta = validarMotivoModeracion(motivo, accion);
     if (falta) return setErrorMotivo(falta);
     setErrorMotivo("");
-    if (await onQuitarComunidad(motivo.trim())) {
+    if (await moderar(motivo.trim())) {
       setMotivo("");
       setQuitando(false);
     }
@@ -113,16 +131,16 @@ export default function RevisarReporte({ objeto, ocupado, onRevisar, claseResolv
             Responder al estudiante
           </button>
         )}
-        {onQuitarComunidad && !quitando && (
+        {textos && !quitando && (
           <button type="button" className={claseDescartar} disabled={ocupado} onClick={() => setQuitando(true)}>
-            Quitar comunidad
+            {textos.boton}
           </button>
         )}
       </span>
-      {onQuitarComunidad && quitando && (
+      {textos && quitando && (
         <div className={estilos.campo}>
           <label htmlFor={idMotivo}>
-            Motivo para quitar la comunidad <em>(obligatorio; le llega a quien la creó y a quienes iban)</em>
+            {textos.etiquetaMotivo} <em>{textos.pista}</em>
           </label>
           <textarea
             id={idMotivo}
@@ -136,14 +154,14 @@ export default function RevisarReporte({ objeto, ocupado, onRevisar, claseResolv
               setErrorMotivo("");
             }}
           />
-          <small>Queda oculta sin borrarse, el reporte se marca como resuelto y no sanciona a quien la creó.</small>
+          <small>{textos.ayuda}</small>
           {errorMotivo && <small role="alert">{errorMotivo}</small>}
           <span className={estilos.acciones}>
             <button type="button" className={claseResolver} disabled={ocupado} onClick={() => setQuitando(false)}>
               Cancelar
             </button>
             <button type="button" className={claseDescartar} disabled={ocupado} onClick={() => void quitar()}>
-              Confirmar y quitar
+              {textos.confirmar}
             </button>
           </span>
         </div>
