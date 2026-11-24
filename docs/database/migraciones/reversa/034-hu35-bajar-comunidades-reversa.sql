@@ -1,12 +1,13 @@
 SET NAMES utf8mb4;
 
--- Reversa de la 034 (HU35): las comunidades BAJADA vuelven a ACTIVA (no se pierde ninguna), se borran los avisos
--- COMUNIDAD_BAJADA y COMUNIDAD_RESTAURADA, y comunidad_efimera y notificacion quedan como en la 033.
+-- Reversa de la 034 (HU35): las comunidades BAJADA pasan a ARCHIVADA (no se pierde ninguna y, como las quitó un admin por
+-- inapropiadas, no vuelven a mostrarse ni a aceptar gente), se borran los avisos COMUNIDAD_BAJADA y COMUNIDAD_RESTAURADA, y
+-- comunidad_efimera y notificacion quedan como en la 033.
 
 DELETE FROM notificacion WHERE tipo IN ('COMUNIDAD_BAJADA','COMUNIDAD_RESTAURADA');
 
 ALTER TABLE comunidad_efimera DROP CHECK ck_com_baja;
-UPDATE comunidad_efimera SET estado = 'ACTIVA', motivo_baja = NULL, fecha_baja = NULL WHERE estado = 'BAJADA';
+UPDATE comunidad_efimera SET estado = 'ARCHIVADA', motivo_baja = NULL, fecha_baja = NULL WHERE estado = 'BAJADA';
 
 ALTER TABLE comunidad_efimera
   DROP CHECK ck_com_estado,
