@@ -1013,6 +1013,86 @@ public sealed class EventoServiceTests
     }
 
     [Fact]
+    public async Task Si_hay_un_duplicado_ajeno_y_otro_propio_responde_409_aunque_el_ajeno_este_primero()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(99, false, Solicitud(), null);                       // ajeno, primero en la lista
+        var propio = await servicio.CrearAsync(Usuario, false, Solicitud(), null);     // propio: queda PENDIENTE por el ajeno
+        Assert.Equal(Evento.EstadoPendiente, propio.Estado);
+        Assert.Equal(99, repo.Eventos[0].CreadorId);
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.CrearAsync(Usuario, false, Solicitud(), null));
+
+        Assert.Equal(ReglasEvento.CodigoEventoDuplicado, error.Codigo);
+        Assert.Contains($"#{propio.Id}", error.Message);
+        Assert.Equal(2, repo.Eventos.Count);
+    }
+
+    [Fact]
+    public async Task Si_solo_hay_un_duplicado_ajeno_queda_pendiente_con_el_motivo()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(99, false, Solicitud(), null);
+
+        var dto = await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        Assert.Equal(Evento.EstadoPendiente, dto.Estado);
+        Assert.Contains("Posible duplicado de «Feria de ciencias»", dto.Motivo);
+        Assert.Equal(2, repo.Eventos.Count);
+    }
+
+    [Fact]
+    public async Task Si_solo_hay_un_duplicado_propio_responde_409()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.CrearAsync(Usuario, false, Solicitud(), null));
+
+        Assert.Equal(ReglasEvento.CodigoEventoDuplicado, error.Codigo);
+        Assert.Single(repo.Eventos);
+    }
+
+    [Fact]
+    public async Task Si_el_propio_esta_cancelado_decide_el_ajeno_y_queda_pendiente()
+    {
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(99, false, Solicitud(), null);
+        await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+        repo.Eventos.Single(e => e.CreadorId == Usuario).Estado = Evento.EstadoCancelado;
+
+        var dto = await servicio.CrearAsync(Usuario, false, Solicitud(), null);
+
+        Assert.Equal(Evento.EstadoPendiente, dto.Estado);
+        Assert.Contains("Posible duplicado de «Feria de ciencias»", dto.Motivo);
+        Assert.Equal(3, repo.Eventos.Count);
+    }
+
+    [Fact]
+    public async Task Con_varios_duplicados_ajenos_el_motivo_nombra_el_de_inicio_mas_cercano()
+    {
+        const string baseTitulo = "Feria de ciencias tecnologia arte musica cultura";
+        var (servicio, repo) = CrearServicio();
+        await servicio.CrearAsync(90, false, Solicitud(titulo: baseTitulo + " uno"), null);
+        await servicio.CrearAsync(91, false, Solicitud(
+            titulo: baseTitulo + " dos",
+            inicio: new DateTimeOffset(2026, 11, 17, 14, 30, 0, TimeSpan.FromHours(-4)),
+            fin: new DateTimeOffset(2026, 11, 17, 15, 30, 0, TimeSpan.FromHours(-4))), null);
+
+        var dto = await servicio.CrearAsync(99, false, Solicitud(
+            titulo: baseTitulo,
+            inicio: new DateTimeOffset(2026, 11, 17, 14, 0, 0, TimeSpan.FromHours(-4)),
+            fin: new DateTimeOffset(2026, 11, 17, 15, 0, 0, TimeSpan.FromHours(-4))), null);
+
+        Assert.Equal(Evento.EstadoPendiente, dto.Estado);
+        Assert.Contains("«" + baseTitulo + " dos»", dto.Motivo);
+        Assert.DoesNotContain("uno»", dto.Motivo);
+        Assert.Equal(3, repo.Eventos.Count);
+    }
+
+    [Fact]
     public async Task Editar_un_evento_no_lo_compara_consigo_mismo()
     {
         var (servicio, repo) = CrearServicio();

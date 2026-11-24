@@ -48,7 +48,7 @@ public sealed class EventoService
 
         var ahora = _reloj.GetUtcNow();
         var duplicado = await BuscarDuplicadoAsync(
-            titulo, request.LugarId, nombreLugar, request.Inicio!.Value, request.Fin!.Value, null, ct);
+            titulo, request.LugarId, nombreLugar, request.Inicio!.Value, request.Fin!.Value, null, usuarioId, ct);
         if (duplicado is not null && duplicado.CreadorId == usuarioId)
             throw new ReglaNegocioException(ReglasEvento.CodigoEventoDuplicado,
                 ReglasEvento.MensajeEventoDuplicado(duplicado.Titulo, duplicado.Id));
@@ -153,7 +153,7 @@ public sealed class EventoService
 
         var esAdmin = evento.Origen == Evento.OrigenAdmin;
         var duplicado = await BuscarDuplicadoAsync(
-            titulo, request.LugarId, nombreLugar, request.Inicio!.Value, request.Fin!.Value, evento.Id, ct);
+            titulo, request.LugarId, nombreLugar, request.Inicio!.Value, request.Fin!.Value, evento.Id, usuarioId, ct);
         if (duplicado is not null && duplicado.CreadorId == usuarioId)
             throw new ReglaNegocioException(ReglasEvento.CodigoEventoDuplicado,
                 ReglasEvento.MensajeEventoDuplicado(duplicado.Titulo, duplicado.Id));
@@ -375,13 +375,16 @@ public sealed class EventoService
         DateTimeOffset inicio,
         DateTimeOffset fin,
         int? idActual,
+        int creadorId,
         CancellationToken ct)
     {
         var desde = inicio.UtcDateTime.AddDays(-ReglasEvento.MargenBusquedaDuplicadosDias);
         var hasta = fin.UtcDateTime.AddDays(ReglasEvento.MargenBusquedaDuplicadosDias);
         var candidatos = await _repository.BuscarCandidatosDuplicadoAsync(desde, hasta, ct);
-        return candidatos.FirstOrDefault(c => ReglasEvento.EsDuplicado(
+        // Se evalúan todos los que coinciden: los propios mandan sobre los ajenos (sin importar el orden de la lista).
+        var coincidentes = candidatos.Where(c => ReglasEvento.EsDuplicado(
             c, titulo, lugarId, lugarTexto, inicio, fin, idActual));
+        return ReglasEvento.ElegirDuplicado(coincidentes, creadorId, inicio);
     }
 
     private static EventoPublicoDto APublicoDto(EventoListado item)

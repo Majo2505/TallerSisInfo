@@ -125,6 +125,21 @@ public static class ReglasEvento
         return inicio < finCandidato && inicioCandidato < fin;
     }
 
+    /// <summary>
+    /// De todos los candidatos que coinciden, elige el que decide qué pasa: primero los del mismo creador (reenvío: 409) y,
+    /// si no hay propios, los de otras personas (queda PENDIENTE). En cada grupo gana el de inicio más cercano; si empatan, el
+    /// de menor id.
+    /// </summary>
+    public static CandidatoDuplicado? ElegirDuplicado(IEnumerable<CandidatoDuplicado> coincidentes, int creadorId, DateTimeOffset inicio)
+    {
+        var lista = coincidentes.ToList();
+        var propios = lista.Where(c => c.CreadorId == creadorId).ToList();
+        return (propios.Count > 0 ? propios : lista)
+            .OrderBy(c => Math.Abs((inicio - new DateTimeOffset(DateTime.SpecifyKind(c.InicioUtc, DateTimeKind.Utc))).TotalMinutes))
+            .ThenBy(c => c.Id)
+            .FirstOrDefault();
+    }
+
     private static bool MismoLugar(CandidatoDuplicado candidato, int? lugarId, string lugarTexto)
     {
         if (lugarId is int id && candidato.LugarId == id) return true;

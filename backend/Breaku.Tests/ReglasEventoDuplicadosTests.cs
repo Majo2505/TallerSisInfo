@@ -77,6 +77,47 @@ public sealed class ReglasEventoDuplicadosTests
         Assert.True(EsDuplicado(candidato, inicio: inicio, fin: inicio.AddHours(1)));
     }
 
+    // ── Elegir cuál de varios candidatos decide (propios primero, luego el más cercano) ──
+
+    [Fact]
+    public void Sin_candidatos_no_hay_duplicado()
+        => Assert.Null(ReglasEvento.ElegirDuplicado([], 7, Inicio));
+
+    [Fact]
+    public void Si_solo_hay_uno_ajeno_se_elige_ese()
+    {
+        var ajeno = Candidato(id: 1, creadorId: 99);
+
+        Assert.Same(ajeno, ReglasEvento.ElegirDuplicado([ajeno], 7, Inicio));
+    }
+
+    [Fact]
+    public void Si_solo_hay_uno_propio_se_elige_ese()
+    {
+        var propio = Candidato(id: 1, creadorId: 7);
+
+        Assert.Same(propio, ReglasEvento.ElegirDuplicado([propio], 7, Inicio));
+    }
+
+    [Fact]
+    public void El_propio_manda_sobre_el_ajeno_aunque_el_ajeno_este_primero_y_mas_cerca()
+    {
+        var ajeno = Candidato(id: 1, creadorId: 99, inicio: Inicio.UtcDateTime);
+        var propio = Candidato(id: 2, creadorId: 7, inicio: Inicio.AddHours(2).UtcDateTime, fin: Inicio.AddHours(3).UtcDateTime);
+
+        Assert.Same(propio, ReglasEvento.ElegirDuplicado([ajeno, propio], 7, Inicio));
+    }
+
+    [Fact]
+    public void Entre_varios_ajenos_se_elige_el_de_inicio_mas_cercano_y_si_empatan_el_de_menor_id()
+    {
+        var lejos = Candidato(id: 1, creadorId: 90, inicio: Inicio.AddHours(-2).UtcDateTime, fin: Inicio.AddHours(-1).UtcDateTime);
+        var cerca = Candidato(id: 2, creadorId: 91, inicio: Inicio.AddMinutes(30).UtcDateTime, fin: Inicio.AddHours(1.5).UtcDateTime);
+        var empateMayorId = Candidato(id: 4, creadorId: 92, inicio: Inicio.AddMinutes(-30).UtcDateTime, fin: Inicio.AddHours(0.5).UtcDateTime);
+
+        Assert.Same(cerca, ReglasEvento.ElegirDuplicado([lejos, empateMayorId, cerca], 7, Inicio));
+    }
+
     [Fact]
     public void Un_mismo_lugar_cuenta_por_id_y_por_texto_normalizado()
     {
