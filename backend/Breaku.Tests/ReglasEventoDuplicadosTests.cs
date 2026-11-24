@@ -69,7 +69,7 @@ public sealed class ReglasEventoDuplicadosTests
     }
 
     [Fact]
-    public void Dos_fechas_que_se_cruzan_son_duplicados_aunque_emprecen_con_mas_de_tres_horas_de_diferencia()
+    public void Dos_fechas_que_se_cruzan_son_duplicados_aunque_empiecen_con_mas_de_tres_horas_de_diferencia()
     {
         var candidato = Candidato(fin: Inicio.AddHours(5).UtcDateTime);
         var inicio = Inicio.AddHours(4);
