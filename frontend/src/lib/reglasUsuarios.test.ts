@@ -12,6 +12,7 @@ import {
   validarSancion,
   aceptaSanciones,
   hastaParaApi,
+  motivoSugeridoDeAlertas,
 } from "./reglasUsuarios.ts";
 
 const AHORA = new Date("2026-11-13T15:00:00");
@@ -98,4 +99,16 @@ test("solo los reportes de comunidades y eventos apuntan a un usuario", () => {
   assert.equal(reporteDeUsuario("EVENTO_INAPROPIADO"), true);
   assert.equal(reporteDeUsuario("LUGAR_INCORRECTO"), false);
   assert.equal(reporteDeUsuario("ERROR_APP"), false);
+});
+
+test("HU32: el motivo sugerido sale de la alerta activa más reciente, llegues por donde llegues", () => {
+  assert.equal(
+    motivoSugeridoDeAlertas([
+      { tipo: "ALERTA_REPORTES_ACUMULADOS", fecha: "2026-11-23T10:00:00Z" },
+      { tipo: "ALERTA_USUARIO_SOSPECHOSO", fecha: "2026-11-23T12:00:00Z" },
+    ]),
+    "Intentos repetidos bloqueados por seguridad",
+  );
+  assert.equal(motivoSugeridoDeAlertas([{ tipo: "ALERTA_REPORTES_ACUMULADOS", fecha: "2026-11-23T10:00:00Z" }]), "Reportes acumulados");
+  assert.equal(motivoSugeridoDeAlertas([]), "");
 });

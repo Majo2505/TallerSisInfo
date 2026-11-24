@@ -80,3 +80,22 @@ test("HU26: el evento bajado por el admin se ve como advertencia y lleva a Mis e
   });
   assert.equal(rutaNotificacion({ tipo: "EVENTO_BAJADO", eventoId: 4 }), "/eventos?pestana=mios");
 });
+
+test("HU32: las alertas al admin tienen título e ícono propios y llevan al detalle del estudiante", () => {
+  assert.deepEqual(presentacionNotificacion("ALERTA_USUARIO_SOSPECHOSO"), {
+    titulo: "Intentos bloqueados por seguridad",
+    clase: "advertencia",
+    icono: "bandera",
+  });
+  assert.equal(presentacionNotificacion("ALERTA_REPORTES_ACUMULADOS").titulo, "Reportes acumulados");
+  assert.equal(
+    rutaNotificacion({ tipo: "ALERTA_USUARIO_SOSPECHOSO", usuarioObjetivoId: 7 }),
+    "/admin?pestana=usuarios&usuario=7",
+  );
+  assert.equal(
+    rutaNotificacion({ tipo: "ALERTA_REPORTES_ACUMULADOS", usuarioObjetivoId: 9 }),
+    "/admin?pestana=usuarios&usuario=9",
+  );
+  assert.equal(rutaNotificacion({ tipo: "ALERTA_REPORTES_ACUMULADOS" }), "/admin?pestana=alertas");
+});
+

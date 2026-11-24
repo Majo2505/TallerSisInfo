@@ -69,7 +69,7 @@ public static class DependencyInjection
         services.AddScoped(sp => new ExtraccionEventoService(
             sp.GetRequiredService<ILectorEventoFlyer>(), sp.GetRequiredService<IConvertidorPdf>(),
             sp.GetRequiredService<IExtraccionRepository>(), TimeProvider.System,
-            sp.GetRequiredService<ILogger<ExtraccionEventoService>>()));
+            sp.GetRequiredService<ILogger<ExtraccionEventoService>>(), sp.GetRequiredService<IAvisosAdmin>()));
 
         // Sanciones y baja de usuarios (HU28); la purga la reutiliza HU29
         services.AddScoped(sp => new PurgaUsuarioService(sp.GetRequiredService<IPurgaRepository>(), sp.GetRequiredService<ITransaccion>(),
@@ -92,6 +92,7 @@ public static class DependencyInjection
 
         // Campanita del admin: reportes nuevos y eventos por revisar.
         services.AddScoped<IAvisosAdmin, AvisosAdminService>();
+        services.AddScoped<AlertasAdminService>();
 
         return services;
     }

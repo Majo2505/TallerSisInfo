@@ -400,8 +400,9 @@ export default function Notificaciones({ recarga, admin = false }: Props) {
                   {admin ? (
                     <footer className={estilos.pieBandeja}>
                       <p className={estilos.nota}>
-                        Te llega un aviso cuando un estudiante envía un reporte o un evento queda en revisión. Cuando tú u otro admin lo
-                        resuelve, queda como leído para todos.
+                        Te llega un aviso cuando un estudiante envía un reporte o un evento queda en revisión, y una alerta cuando un
+                        estudiante acumula intentos bloqueados o reportes. Cuando tú u otro admin resuelve un reporte o un evento, queda
+                        como leído para todos.
                       </p>
                     </footer>
                   ) : (

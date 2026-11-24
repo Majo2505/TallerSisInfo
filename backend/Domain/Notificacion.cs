@@ -28,6 +28,10 @@ public class Notificacion
     public const string TipoAsistenciaComunidad = "ASISTENCIA_COMUNIDAD";
     /// <summary>Una conexión de «Libres contigo» te invita a un evento de hoy (migración 032). Lleva <c>evento_id</c>.</summary>
     public const string TipoInvitacionEvento = "INVITACION_EVENTO";
+    /// <summary>HU32, para el admin: un estudiante llegó a 3 intentos bloqueados por seguridad en 24 h. Lleva <c>usuario_objetivo_id</c>.</summary>
+    public const string TipoAlertaUsuarioSospechoso = "ALERTA_USUARIO_SOSPECHOSO";
+    /// <summary>HU32, para el admin: 3 o más reportes pendientes de personas distintas sobre lo que creó un estudiante.</summary>
+    public const string TipoAlertaReportesAcumulados = "ALERTA_REPORTES_ACUMULADOS";
 
     public long Id { get; set; }
     public int UsuarioId { get; set; }
@@ -40,6 +44,8 @@ public class Notificacion
     public int? SancionId { get; set; }
     /// <summary>Solo en CONEXION_SOLICITADA y CONEXION_ACEPTADA: el saludo al que apunta el aviso.</summary>
     public int? ConexionId { get; set; }
+    /// <summary>HU32: solo en las alertas al admin, el estudiante del que se avisa (migración 033).</summary>
+    public int? UsuarioObjetivoId { get; set; }
 
     public DateOnly? PuenteFecha { get; set; }
     public TimeOnly? PuenteHoraInicio { get; set; }

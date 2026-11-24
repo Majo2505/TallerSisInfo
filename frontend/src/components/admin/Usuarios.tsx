@@ -2,16 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconoPersonas } from "@/components/app/Iconos";
-import { UsuarioDetalle, UsuarioLista, levantarSancion, listarUsuarios, obtenerUsuario } from "@/lib/usuarios";
+import { Alerta, UsuarioDetalle, UsuarioLista, levantarSancion, listarAlertas, listarUsuarios, obtenerUsuario } from "@/lib/usuarios";
 import {
   ETIQUETA_ESTADO,
   ETIQUETA_TIPO,
   EstadoUsuario,
   TipoSancion,
   aceptaSanciones,
+  motivoSugeridoDeAlertas,
   sePuedeLevantar,
   sugiereSuspension,
 } from "@/lib/reglasUsuarios";
+import { presentacionNotificacion } from "@/lib/reglasNotificaciones";
 import FormularioSancion from "./FormularioSancion";
 import estilos from "./Usuarios.module.css";
 
@@ -40,6 +42,8 @@ export default function Usuarios({ onAviso, usuarioInicial = null }: Props) {
   const [detalle, setDetalle] = useState<UsuarioDetalle | null>(null);
   const [errorDetalle, setErrorDetalle] = useState("");
   const [formulario, setFormulario] = useState<TipoSancion | null>(null);
+  // HU32: alertas activas del estudiante abierto (se ven llegues desde la campanita, la pestaña Alertas o la lista).
+  const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [levantando, setLevantando] = useState<number | null>(null);
   const pedido = useRef(0);
 
@@ -67,6 +71,9 @@ export default function Usuarios({ onAviso, usuarioInicial = null }: Props) {
         setErrorDetalle("");
       })
       .catch((e: Error) => setErrorDetalle(e.message));
+    void listarAlertas()
+      .then((todas) => setAlertas(todas.find((a) => a.usuarioId === id)?.alertas ?? []))
+      .catch(() => setAlertas([]));
   }, []);
 
   useEffect(() => {
@@ -156,6 +163,21 @@ export default function Usuarios({ onAviso, usuarioInicial = null }: Props) {
               )}
             </section>
 
+            {alertas.length > 0 && (
+              <section className={estilos.tarjeta} aria-labelledby="titulo-alertas">
+                <h3 id="titulo-alertas">Alertas activas ({alertas.length})</h3>
+                <ul className={estilos.alertas}>
+                  {alertas.map((al) => (
+                    <li key={al.tipo} className={estilos.alerta}>
+                      <strong>{presentacionNotificacion(al.tipo).titulo}</strong>
+                      <span>{al.mensaje}</span>
+                      <small>{fecha(al.fecha)}</small>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {aceptaSanciones(detalle.estado) ? (
               <div className={estilos.acciones}>
                 <button type="button" className="hz-btn" onClick={() => setFormulario("ADVERTENCIA")}>
@@ -223,7 +245,13 @@ export default function Usuarios({ onAviso, usuarioInicial = null }: Props) {
             </section>
 
             {formulario && (
-              <FormularioSancion usuario={{ id: detalle.id, nombre: detalle.nombre }} tipo={formulario} onCerrar={() => setFormulario(null)} onAplicada={sancionAplicada} />
+              <FormularioSancion
+                usuario={{ id: detalle.id, nombre: detalle.nombre }}
+                tipo={formulario}
+                motivoInicial={formulario === "ADVERTENCIA" ? motivoSugeridoDeAlertas(alertas) : ""}
+                onCerrar={() => setFormulario(null)}
+                onAplicada={sancionAplicada}
+              />
             )}
           </>
         )}

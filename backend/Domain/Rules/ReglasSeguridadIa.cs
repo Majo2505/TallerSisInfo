@@ -13,7 +13,7 @@ public static class ReglasSeguridadIa
 
     public const string CategoriaFueraDeContexto = "FUERA_DE_CONTEXTO";
 
-    public const string MensajeInyeccion = "La solicitud intenta modificar las instrucciones del asistente.";
+    public const string MensajeInyeccion = "Esta solicitud no está permitida. Escríbela de otra forma.";
     public const string MensajeFueraDeAlcance = "Solo puedo recomendar actividades y lugares del campus para tu puente.";
     public const string MensajeBienestar = "Si estás pasando por un momento difícil, habla con alguien de confianza o con el área de bienestar de tu universidad.";
     public const string MensajeFueraDeReglamento = "Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.";
