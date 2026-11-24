@@ -35,6 +35,20 @@ public class CuentaTests
         Assert.NotNull(ValidarNueva("a1" + new string('ñ', 36), "a1" + new string('ñ', 36))); // 74 bytes: la ñ ocupa 2
     }
 
+    // ---------- HU1: login con correo y contraseña
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", "breaku2026")]
+    [InlineData("ana@ucb.edu.bo", "   ")]
+    [InlineData("   ", "")]
+    public void Si_falta_el_correo_o_la_clave_el_mensaje_es_el_de_HU1(string? correo, string? clave)
+        => Assert.Equal("Por favor, complete todos los campos", ValidarLogin(correo, clave));
+
+    [Fact]
+    public void Con_ambos_campos_se_puede_enviar_el_login()
+        => Assert.Null(ValidarLogin("ana@ucb.edu.bo", "breaku2026"));
+
     // ---------- quién entra con Google
 
     private static IdentidadGoogle G(string correo = "ana.quiroga@ucb.edu.bo", bool verificado = true, string sub = "g-ana")

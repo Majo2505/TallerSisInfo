@@ -17,6 +17,13 @@ public static class ReglasCuenta
     public const int IntentosContrasenaPorMinuto = 5;
     public const string MensajeDemasiadosIntentos = "Hiciste muchos intentos seguidos. Espera un minuto y vuelve a intentarlo.";
 
+    // HU1: el formulario y la API deben dar el mismo mensaje cuando falta alguno de los dos campos.
+    public const string MensajeCamposLogin = "Por favor, complete todos los campos";
+
+    /// <summary>Null si llegaron el correo y la contraseña; si no, el mensaje exacto de HU1.</summary>
+    public static string? ValidarLogin(string? email, string? password)
+        => string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) ? MensajeCamposLogin : null;
+
     // ---------- contraseñas
 
     public const int LargoMinimo = 8;
