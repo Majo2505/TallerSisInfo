@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import AlertaDuplicado from "@/components/eventos/AlertaDuplicado";
 import FotoEvento from "@/components/eventos/FotoEvento";
 import CampoFechaHora from "@/components/eventos/CampoFechaHora";
 import FondoVivo from "@/components/app/FondoVivo";
@@ -24,6 +25,7 @@ import {
   cambiosEventoParaApi,
   camposDesdeEvento,
   CamposFormularioEvento,
+  esMotivoDuplicado,
   validarFormularioEvento,
   validarMotivoModeracion,
 } from "@/lib/reglasEventos";
@@ -264,7 +266,9 @@ export default function EventosPendientesPage() {
               </ul>
               {evento.descripcion && <p className={estilos.descripcion}>{evento.descripcion}</p>}
               {evento.estado === "PENDIENTE" && evento.motivo && (
-                <p className={estilos.motivo}><strong>Por qué está en revisión:</strong> {evento.motivo}</p>
+                esMotivoDuplicado(evento.motivo)
+                  ? <AlertaDuplicado compacta mensaje={evento.motivo} />
+                  : <p className={estilos.motivo}><strong>Por qué está en revisión:</strong> {evento.motivo}</p>
               )}
 
               {evento.estado === "PENDIENTE" && editando?.id === evento.id && (

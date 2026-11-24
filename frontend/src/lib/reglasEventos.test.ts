@@ -4,6 +4,9 @@ import {
   ahoraBoliviaParaFormulario,
   cambiosEventoParaApi,
   camposDesdeEvento,
+  CODIGO_EVENTO_DUPLICADO,
+  esMotivoDuplicado,
+  mensajeErrorEvento,
   validarMotivoModeracion,
   etiquetaFecha,
   fechaHoraCompleta,
@@ -186,4 +189,22 @@ test("HU26: rechazar o bajar exige un motivo de hasta 500 caracteres", () => {
   assert.equal(validarMotivoModeracion("", "bajar"), "Escribe el motivo para bajar el evento.");
   assert.equal(validarMotivoModeracion("x".repeat(501), "bajar"), "El motivo no puede superar 500 caracteres.");
   assert.equal(validarMotivoModeracion("Es spam", "bajar"), null);
+});
+
+test("HU33: el 409 de duplicado explica el rechazo y nombra el evento existente", () => {
+  const servidor = "Ya existe un evento muy parecido: «Feria de ciencias» (evento #7). Revisa el título.";
+  const mensaje = mensajeErrorEvento(CODIGO_EVENTO_DUPLICADO, servidor);
+
+  assert.match(mensaje, /duplicado/i);
+  assert.match(mensaje, /Feria de ciencias/);
+  assert.match(mensaje, /#7/);
+  assert.equal(mensajeErrorEvento("OTRO", "Mensaje del servidor"), "Mensaje del servidor");
+  assert.equal(mensajeErrorEvento(undefined, undefined), "No se pudo guardar el evento. Inténtalo de nuevo.");
+});
+
+test("HU33: el motivo de posible duplicado se reconoce como cualquier otro motivo de PENDIENTE", () => {
+  assert.equal(esMotivoDuplicado("Posible duplicado de «Feria de ciencias» (17/11/2026)."), true);
+  assert.equal(esMotivoDuplicado("  Posible duplicado de «Concierto» (18/11/2026)."), true);
+  assert.equal(esMotivoDuplicado("El lugar no figura en el catálogo."), false);
+  assert.equal(esMotivoDuplicado(null), false);
 });
