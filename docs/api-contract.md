@@ -1262,7 +1262,8 @@ Se considera **posible duplicado** cuando coinciden las tres cosas a la vez:
 |---|---|---|
 | `EVENTO_DUPLICADO` | El **mismo creador** reenvía los mismos datos (doble clic o reenvío) | ✅ 409; el mensaje identifica el evento existente: `Ya existe un evento muy parecido: «Feria de ciencias» (evento #12). …` |
 | — | **Otra persona** crea un evento coincidente | ✅ Se crea `PENDIENTE` con `motivo = Posible duplicado de «Feria de ciencias» (17/11/2026).` La respuesta lo muestra como cualquier otro motivo de PENDIENTE, en «Mis eventos» y en la moderación del admin. No se rechaza automáticamente |
-| — | Un **admin** crea o edita un evento coincidente | ✅ Se publica igual y la respuesta trae `aviso` con el evento con el que coincide. El frontend lo muestra como aviso (no como error) |
+| — | Un **admin** crea o edita un evento coincidente | ✅ Se publica igual y la respuesta trae `aviso` con el evento con el que coincide. El frontend lo muestra como aviso (no como error). Si el que coincide es **un evento del propio admin** (reenvío), responde `409 EVENTO_DUPLICADO` como a cualquier creador |
+| — | Coinciden **varios** eventos a la vez | ✅ Se evalúan todos. Mandan los del **mismo creador** (si hay alguno, `409 EVENTO_DUPLICADO` aunque también coincida un evento ajeno, sin importar el orden); si no hay propios, decide el ajeno de **inicio más cercano** (empate: el de menor id) y su título va en el motivo |
 
 El motivo se suma a los demás motivos de revisión de HU23 (no los reemplaza) y se recorta a 500 caracteres junto con ellos. Las reglas son puras, viven en `Domain/ReglasEvento`, no usan IA ni modifican el esquema. El frontend muestra el 409 con el mensaje del servidor y distingue el motivo de posible duplicado para resaltarlo.
 
