@@ -278,7 +278,8 @@ public class AdminRepository : IAdminRepository
                             WHEN r.comunidad_id IS NOT NULL THEN 'COMUNIDAD'
                             WHEN r.evento_id IS NOT NULL THEN 'EVENTO' END AS ObjetoTipo,
                        COALESCE(r.lugar_id, r.comunidad_id, r.evento_id) AS ObjetoId,
-                       r.respuesta AS Respuesta, r.revisado_en AS RevisadoEn
+                       r.respuesta AS Respuesta, r.revisado_en AS RevisadoEn,
+                       COALESCE(c.estado, e.estado) AS ObjetoEstado
                 FROM reporte r
                 JOIN usuario u ON u.id = r.usuario_id
                 LEFT JOIN lugar l ON l.id = r.lugar_id
@@ -289,7 +290,7 @@ public class AdminRepository : IAdminRepository
                 LIMIT 100
                 """).ToListAsync(ct);
         return filas.Select(f => new ReporteAdminDto(f.Id, f.Motivo, f.Descripcion, f.Estado, f.Objeto, f.Autor, f.CreadoEn,
-            f.UsuarioReportadoId, f.UsuarioReportadoNombre, f.ObjetoTipo, f.ObjetoId, f.Respuesta, f.RevisadoEn)).ToList();
+            f.UsuarioReportadoId, f.UsuarioReportadoNombre, f.ObjetoTipo, f.ObjetoId, f.Respuesta, f.RevisadoEn, f.ObjetoEstado)).ToList();
     }
 
     public async Task<RevisionReporte?> ResolverReporteAsync(int reporteId, string estado, string? respuesta, int adminId,
@@ -477,6 +478,7 @@ public class AdminRepository : IAdminRepository
         public int? ObjetoId { get; set; }
         public string? Respuesta { get; set; }
         public DateTime? RevisadoEn { get; set; }
+        public string? ObjetoEstado { get; set; }
     }
 
     private sealed class FilaEtiquetaLugar

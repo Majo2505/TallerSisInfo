@@ -36,6 +36,9 @@ public static class ReglasEvento
     public const int MaximoHistorialRechazados = 100;
     public const int MaximoAviso = 200;
     public const string MensajeEventoNoPublicado = "El evento ya no está publicado.";
+    public const string CodigoReporteNoCorresponde = "REPORTE_NO_CORRESPONDE";
+    public const string MensajeReporteNoCorresponde = "El reporte no existe o no es sobre este evento.";
+    public const string MensajeReporteYaRevisado = "Ese reporte ya fue revisado.";
     public const string MensajeFaltaMotivoRechazo = "Escribe el motivo del rechazo.";
     public const string MensajeFaltaMotivoBaja = "Escribe el motivo para bajar el evento.";
     public const string MensajeMotivoLargo = "El motivo no puede superar 500 caracteres.";
@@ -170,6 +173,13 @@ public static class ReglasEvento
     /// Texto del aviso al autor cuando el admin aprueba, rechaza o baja su evento. Incluye el motivo y cabe en
     /// <see cref="MaximoAviso"/> caracteres: si no entra, se recorta primero el motivo y después el título, con «…».
     /// </summary>
+    /// <summary>HU38: lo que queda en el reporte (y ve quien reportó en «Mis reportes») cuando se baja el evento desde ahí.</summary>
+    public static string RespuestaReporteBaja(string motivo)
+    {
+        var texto = $"Bajamos el evento. Motivo: {motivo.Trim()}";
+        return texto.Length <= MaximoMotivo ? texto : texto[..(MaximoMotivo - 1)].TrimEnd() + "…";
+    }
+
     public static string AvisoModeracion(string tipo, string titulo, string? motivo)
     {
         string Armar(string t, string? m) => tipo switch

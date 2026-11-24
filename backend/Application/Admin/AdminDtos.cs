@@ -107,7 +107,9 @@ public record ReporteAdminDto(
     string? ObjetoTipo = null,
     int? ObjetoId = null,
     string? Respuesta = null,
-    DateTime? RevisadoEn = null
+    DateTime? RevisadoEn = null,
+    // HU38: estado del evento o de la comunidad reportada (PUBLICADO, RECHAZADO, ACTIVA, BAJADA…), para ofrecer «Bajar evento».
+    string? ObjetoEstado = null
 );
 
 /// <summary>Decisión del admin sobre un reporte.</summary>

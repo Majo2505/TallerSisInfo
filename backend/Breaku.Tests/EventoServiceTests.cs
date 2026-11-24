@@ -112,6 +112,9 @@ public sealed class EventoServiceTests
                 .Select(AListado).ToList());
 
         public List<ModeracionEvento> Moderaciones { get; } = [];
+        /// <summary>HU38: los reportes que existen (id, evento al que apuntan, estado) y los que quedaron resueltos con su respuesta.</summary>
+        public List<(int Id, int EventoId, string Estado)> Reportes { get; } = [];
+        public List<(int Id, string? Respuesta)> ReportesResueltos { get; } = [];
 
         public Task<List<EventoRechazado>> ListarRechazadosAsync(int maximo, CancellationToken ct = default)
             => Task.FromResult(Eventos
@@ -132,6 +135,13 @@ public sealed class EventoServiceTests
             if (evento is null) return Task.FromResult(ResultadoModeracionEvento.NoEncontrado);
             if (evento.Estado != m.EstadoEsperado) return Task.FromResult(ResultadoModeracionEvento.YaRevisado);
             if (evento.Fin <= m.AhoraUtc) return Task.FromResult(ResultadoModeracionEvento.Finalizado);
+            if (m.ReporteId is int idReporte)
+            {
+                var reporte = Reportes.FirstOrDefault(x => x.Id == idReporte);
+                if (reporte.Id == 0 || reporte.EventoId != m.EventoId) return Task.FromResult(ResultadoModeracionEvento.ReporteNoCorresponde);
+                if (reporte.Estado != "PENDIENTE") return Task.FromResult(ResultadoModeracionEvento.ReporteYaRevisado);
+                ReportesResueltos.Add((idReporte, m.RespuestaReporte));
+            }
             if (m.Cambios is { } c)
             {
                 evento.Titulo = c.Titulo;
@@ -921,6 +931,110 @@ public sealed class EventoServiceTests
         var lista = await servicio.ListarPublicadosAdminAsync();
 
         Assert.Equal([2, 1], lista.Select(e => e.Id));
+    }
+
+    // ── HU38: bajar un evento desde un reporte ──
+
+    private static (EventoService Servicio, RepositorioFalso Repo, AvisosAdminTests.AvisosFalsos Avisos) ConEventoYReporte(
+        string estadoReporte = "PENDIENTE", int eventoDelReporte = 1)
+    {
+        var (servicio, repo, avisos) = ConAvisos();
+        var ahora = Ahora.UtcDateTime;
+        repo.Eventos.Add(EventoVisible(1, ahora.AddHours(1), ahora.AddHours(2)));
+        repo.Reportes.Add((31, eventoDelReporte, estadoReporte));
+        return (servicio, repo, avisos);
+    }
+
+    [Fact]
+    public async Task Bajar_desde_un_reporte_baja_el_evento_resuelve_el_reporte_y_cierra_el_aviso_de_los_admins()
+    {
+        var (servicio, repo, avisos) = ConEventoYReporte();
+
+        await servicio.BajarAsync(1, Admin, new BajarEventoRequest("Contenido ofensivo", 31));
+
+        Assert.Equal((Evento.EstadoRechazado, "Contenido ofensivo"), (repo.Eventos[0].Estado, repo.Eventos[0].Motivo));
+        var m = Assert.Single(repo.Moderaciones);
+        Assert.Equal((Notificacion.TipoEventoBajado, 31), (m.TipoAviso, m.ReporteId));
+        var resuelto = Assert.Single(repo.ReportesResueltos);
+        Assert.Equal((31, "Bajamos el evento. Motivo: Contenido ofensivo"), resuelto);
+        Assert.Contains("reporte-revisado:31", avisos.Llamadas);
+    }
+
+    [Fact]
+    public async Task Bajar_sin_reporte_no_toca_ningun_reporte()
+    {
+        var (servicio, repo, avisos) = ConEventoYReporte();
+
+        await servicio.BajarAsync(1, Admin, new BajarEventoRequest("Spam"));
+
+        Assert.Empty(repo.ReportesResueltos);
+        Assert.Null(Assert.Single(repo.Moderaciones).ReporteId);
+        Assert.DoesNotContain(avisos.Llamadas, l => l.StartsWith("reporte-revisado"));
+    }
+
+    [Fact]
+    public async Task Bajar_desde_un_reporte_exige_motivo_y_no_cambia_nada()
+    {
+        var (servicio, repo, _) = ConEventoYReporte();
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(1, Admin, new BajarEventoRequest("  ", 31)));
+
+        Assert.Equal(("VALIDACION", ReglasEvento.MensajeFaltaMotivoBaja), (error.Codigo, error.Message));
+        Assert.Equal(Evento.EstadoPublicado, repo.Eventos[0].Estado);
+        Assert.Empty(repo.ReportesResueltos);
+    }
+
+    [Theory]
+    [InlineData("PENDIENTE", 2, "REPORTE_NO_CORRESPONDE")] // el reporte es de otro evento
+    [InlineData("RESUELTO", 1, "YA_REVISADO")]
+    [InlineData("DESCARTADO", 1, "YA_REVISADO")]
+    public async Task Un_reporte_que_no_corresponde_o_ya_no_esta_pendiente_no_deja_bajar_el_evento(string estado, int eventoDelReporte, string codigo)
+    {
+        var (servicio, repo, avisos) = ConEventoYReporte(estado, eventoDelReporte);
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(1, Admin, new BajarEventoRequest("Spam", 31)));
+
+        Assert.Equal(codigo, error.Codigo);
+        Assert.Equal(Evento.EstadoPublicado, repo.Eventos[0].Estado);
+        Assert.Empty(repo.Moderaciones);
+        Assert.Empty(repo.ReportesResueltos);
+        Assert.DoesNotContain(avisos.Llamadas, l => l.StartsWith("reporte-revisado"));
+    }
+
+    [Fact]
+    public async Task Un_reporte_que_no_existe_no_deja_bajar_el_evento()
+    {
+        var (servicio, repo, _) = ConEventoYReporte();
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(1, Admin, new BajarEventoRequest("Spam", 999)));
+
+        Assert.Equal((ReglasEvento.CodigoReporteNoCorresponde, ReglasEvento.MensajeReporteNoCorresponde), (error.Codigo, error.Message));
+        Assert.Equal(Evento.EstadoPublicado, repo.Eventos[0].Estado);
+    }
+
+    [Fact]
+    public async Task Bajar_un_evento_que_ya_no_esta_publicado_desde_un_reporte_da_conflicto_y_deja_el_reporte_pendiente()
+    {
+        var (servicio, repo, _) = ConEventoYReporte();
+        repo.Eventos[0].Estado = Evento.EstadoRechazado;
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => servicio.BajarAsync(1, Admin, new BajarEventoRequest("Spam", 31)));
+
+        Assert.Equal(("YA_REVISADO", ReglasEvento.MensajeEventoNoPublicado), (error.Codigo, error.Message));
+        Assert.Empty(repo.ReportesResueltos);
+    }
+
+    [Fact]
+    public void La_respuesta_del_reporte_lleva_el_motivo_y_cabe_en_500_caracteres()
+    {
+        Assert.Equal("Bajamos el evento. Motivo: Spam", ReglasEvento.RespuestaReporteBaja("  Spam "));
+        var larga = ReglasEvento.RespuestaReporteBaja(new string('x', 500));
+        Assert.Equal(500, larga.Length);
+        Assert.EndsWith("…", larga);
     }
 
     [Fact]

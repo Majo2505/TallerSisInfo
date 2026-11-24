@@ -1,6 +1,7 @@
 using Breaku.Application.DTOs;
 using Breaku.Application.Eventos;
 using Breaku.Application.Horarios;
+using Breaku.Domain;
 using Breaku.Domain.Rules;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -59,7 +60,10 @@ public sealed class AdminEventosController : ControllerBase
     public Task<IActionResult> Moderar(int id, ResolverEventoRequest request, CancellationToken ct)
         => Ejecutar(() => _service.ModerarAsync(id, AdminId, request, ct));
 
-    /// <summary>HU26: bajar un evento publicado. Queda RECHAZADO (oculto, no se borra) y el autor recibe un aviso.</summary>
+    /// <summary>
+    /// HU26: bajar un evento publicado. Queda RECHAZADO (oculto, no se borra) y el autor recibe un aviso. Con <c>reporteId</c>
+    /// (HU38), ese reporte queda RESUELTO y quien reportó recibe REPORTE_RESUELTO, en la misma transacción. No sanciona.
+    /// </summary>
     [HttpPatch("{id:int}/bajar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorNegocioDto), StatusCodes.Status400BadRequest)]
@@ -83,7 +87,7 @@ public sealed class AdminEventosController : ControllerBase
             return ex.Codigo switch
             {
                 "NO_ENCONTRADO" => NotFound(error),
-                "YA_REVISADO" or "EVENTO_FINALIZADO" => Conflict(error),
+                "YA_REVISADO" or "EVENTO_FINALIZADO" or ReglasEvento.CodigoReporteNoCorresponde => Conflict(error),
                 _ => BadRequest(error)
             };
         }
