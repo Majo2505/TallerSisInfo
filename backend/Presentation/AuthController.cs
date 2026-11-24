@@ -83,6 +83,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorCuentaBloqueadaDto), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
+        var faltanCampos = ReglasCuenta.ValidarLogin(request.Email, request.Password);
+        if (faltanCampos is not null) return BadRequest(new ErrorMensajeDto(faltanCampos));
+
         try
         {
             var result = await _authService.LoginAsync(request);

@@ -101,7 +101,8 @@ paths:
       operationId: iniciarSesion
       summary: Inicia sesión con correo institucional y contraseña.
       description: |
-        Orden de validación: primero el dominio del correo (`@ucb.edu.bo`) y luego las credenciales.
+        Orden de validación: primero los campos obligatorios (si falta el correo o la contraseña, 400 con
+        «Por favor, complete todos los campos»), luego el dominio del correo (`@ucb.edu.bo`) y, por último, las credenciales.
         El token devuelto vence a las 24 horas; envíalo en el header `Authorization: Bearer {token}`.
 
         Usuario de prueba de desarrollo (ver README): `dev.estudiante@ucb.edu.bo` / `Breaku-Dev-2026!`.
@@ -119,13 +120,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponseDto'
         '400':
-          description: El correo no es `@ucb.edu.bo`. El texto viene en `message`.
+          description: Falta el correo o la contraseña, o el correo no es `@ucb.edu.bo`. El texto viene en `message`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMensajeDto'
-              example:
-                message: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
+              examples:
+                camposVacios:
+                  summary: Falta alguno de los dos campos (HU1)
+                  value:
+                    message: Por favor, complete todos los campos
+                correoNoInstitucional:
+                  summary: Dominio incorrecto
+                  value:
+                    message: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
         '401':
           description: Correo no registrado o contraseña incorrecta (mismo mensaje en ambos casos).
           content:
