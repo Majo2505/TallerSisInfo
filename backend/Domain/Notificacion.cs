@@ -32,6 +32,10 @@ public class Notificacion
     public const string TipoAlertaUsuarioSospechoso = "ALERTA_USUARIO_SOSPECHOSO";
     /// <summary>HU32, para el admin: 3 o más reportes pendientes de personas distintas sobre lo que creó un estudiante.</summary>
     public const string TipoAlertaReportesAcumulados = "ALERTA_REPORTES_ACUMULADOS";
+    /// <summary>HU35: el admin quitó una comunidad (con el motivo). Llega a quien la creó y a quienes iban. Lleva <c>comunidad_id</c>.</summary>
+    public const string TipoComunidadBajada = "COMUNIDAD_BAJADA";
+    /// <summary>HU35: el admin restauró una comunidad que había quitado.</summary>
+    public const string TipoComunidadRestaurada = "COMUNIDAD_RESTAURADA";
 
     public long Id { get; set; }
     public int UsuarioId { get; set; }

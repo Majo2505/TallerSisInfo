@@ -46,6 +46,8 @@ export type ReporteAdmin = {
   objetoId?: number | null;
   respuesta?: string | null;
   revisadoEn?: string | null;
+  /** HU38: estado del evento o la comunidad reportada (p. ej. PUBLICADO, RECHAZADO, ACTIVA, BAJADA). */
+  objetoEstado?: string | null;
 };
 
 /** HU27: la respuesta opcional al resolver o descartar un reporte. */

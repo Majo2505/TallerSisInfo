@@ -77,7 +77,8 @@ public sealed record EventoRechazado(EventoListado Listado, bool FueBajado, stri
 public sealed record EventoRechazadoDto(EventoDto Evento, bool FueBajado, string? Admin, DateTimeOffset RechazadoEn);
 
 /// <summary>Bajar un evento ya publicado: queda RECHAZADO, oculto y sin borrarse. El motivo es obligatorio.</summary>
-public sealed record BajarEventoRequest(string? Motivo);
+/// <summary>Bajar un evento publicado. Con <c>ReporteId</c> (HU38), ese reporte queda RESUELTO en la misma transacción.</summary>
+public sealed record BajarEventoRequest(string? Motivo, int? ReporteId = null);
 
 /// <summary>Datos ya validados con los que el admin corrige un evento al aprobarlo.</summary>
 public sealed record CambiosEvento(
@@ -103,14 +104,19 @@ public sealed record ModeracionEvento(
     string? Motivo,
     string TipoAviso,
     CambiosEvento? Cambios,
-    DateTime AhoraUtc);
+    DateTime AhoraUtc,
+    // HU38: si la baja viene de un reporte, el reporte que se resuelve y lo que se le responde a quien reportó.
+    int? ReporteId = null,
+    string? RespuestaReporte = null);
 
 public enum ResultadoModeracionEvento
 {
     Actualizado,
     NoEncontrado,
     YaRevisado,
-    Finalizado
+    Finalizado,
+    ReporteNoCorresponde,
+    ReporteYaRevisado
 }
 
 public sealed record EventoPublicoDto(

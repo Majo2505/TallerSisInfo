@@ -208,6 +208,18 @@ public sealed class EventoRepository : IEventoRepository
         if (evento.Estado != m.EstadoEsperado) return ResultadoModeracionEvento.YaRevisado;
         if (evento.Fin <= m.AhoraUtc) return ResultadoModeracionEvento.Finalizado;
 
+        // HU38: si la baja viene de un reporte, tiene que ser de este evento y seguir pendiente (nada se toca antes de saberlo).
+        FilaReporteBaja? reporte = null;
+        if (m.ReporteId is int idReporte)
+        {
+            reporte = (await _db.Database.SqlQuery<FilaReporteBaja>($"""
+                    SELECT estado AS Estado, evento_id AS EventoId, usuario_id AS UsuarioId, motivo AS Motivo
+                    FROM reporte WHERE id = {idReporte} FOR UPDATE
+                    """).ToListAsync(ct)).FirstOrDefault();
+            if (reporte is null || reporte.EventoId != m.EventoId) return ResultadoModeracionEvento.ReporteNoCorresponde;
+            if (reporte.Estado != ReglasReporte.Pendiente) return ResultadoModeracionEvento.ReporteYaRevisado;
+        }
+
         var antes = Foto(evento);
         if (m.Cambios is { } c)
         {
@@ -242,8 +254,30 @@ public sealed class EventoRepository : IEventoRepository
                 ON DUPLICATE KEY UPDATE mensaje = VALUES(mensaje), leida = FALSE, activa = TRUE,
                                         created_at = VALUES(created_at)
                 """, ct);
+
+        if (reporte is not null)
+        {
+            await _db.Database.ExecuteSqlAsync($"""
+                    UPDATE reporte SET estado = 'RESUELTO', revisor_id = {m.AdminId}, revisado_en = {m.AhoraUtc}, respuesta = {m.RespuestaReporte}
+                    WHERE id = {m.ReporteId} AND estado = 'PENDIENTE'
+                    """, ct);
+            var mensajeReporte = ReglasReporte.MensajeAviso(reporte.Motivo, ReglasReporte.Resuelto, m.RespuestaReporte);
+            await _db.Database.ExecuteSqlAsync($"""
+                    INSERT INTO notificacion (usuario_id, tipo, reporte_id, mensaje, created_at)
+                    VALUES ({reporte.UsuarioId}, 'REPORTE_RESUELTO', {m.ReporteId}, {mensajeReporte}, {m.AhoraUtc})
+                    ON DUPLICATE KEY UPDATE mensaje = VALUES(mensaje), leida = FALSE, activa = TRUE, created_at = VALUES(created_at)
+                    """, ct);
+        }
         await tx.CommitAsync(ct);
         return ResultadoModeracionEvento.Actualizado;
+    }
+
+    private sealed class FilaReporteBaja
+    {
+        public string Estado { get; set; } = "";
+        public int? EventoId { get; set; }
+        public int UsuarioId { get; set; }
+        public string Motivo { get; set; } = "";
     }
 
     /// <summary>Lo que se guarda del evento en historial_cambio (sin la foto).</summary>

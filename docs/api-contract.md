@@ -86,6 +86,7 @@ Errores de validación por campo: además se incluye `errors` (campo → lista d
 }
 ```
 
+- ✅ **Error inesperado (HU37):** cualquier excepción que ningún endpoint haya capturado responde **500** con `{ "codigo": "ERROR_INESPERADO", "mensaje": "No pudimos completar la operación. Código de seguimiento: …", "codigoSeguimiento": "…" }`. No lleva el texto de la excepción ni la traza (eso queda solo en el log del servidor, con el mismo `codigoSeguimiento`). No cambia ninguna respuesta de reglas de negocio (`400`, `401`, `403`, `404`, `409`, `429`), ni los `ERROR_INESPERADO` que ya devuelven los endpoints de `/api/admin`, ni los `400`/`413` de una solicitud mal formada o demasiado grande.
 - ✅ **Definido:** solo existen tres textos de error, los de login (sección 2).
 - 🔴 **Pendiente:** el texto del resto de errores (validación de horarios, solapamiento, no encontrado). Decide la persona dueña de cada área: Maite (horarios) y Majo (puentes).
 
@@ -508,7 +509,7 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `DELETE` | `/api/admin/lugares/{id}` | Elimina un lugar **que nunca se usó**. **`204`**; `404`; `409 EN_USO` si ya aparece en recomendaciones, reportes o comunidades (hay que desactivarlo). Queda `DELETE` en `historial_cambio` |
 | `PUT` | `/api/admin/lugares/{id}/foto` | Sube o reemplaza la **foto real** del lugar: `multipart/form-data` con el archivo en `foto`, JPG, PNG o WebP de hasta **2 MB** (el panel la achica antes). El tipo se revisa por el contenido, no por la extensión. **`200`** `{ "fotoUrl": "/api/lugares/21/foto?v=…" }`; `400 VALIDACION`; `404 NO_ENCONTRADO`. Queda `UPDATE` `{"foto": …}` en `historial_cambio` (sin los bytes) |
 | `DELETE` | `/api/admin/lugares/{id}/foto` | Quita la foto; vuelve la ilustración de la categoría. **`204`** (también si no tenía); `404 NO_ENCONTRADO` |
-| `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`). Cada uno dice a qué apunta: `objetoTipo` (`LUGAR`, `COMUNIDAD` o `EVENTO`; `null` en los generales), `objetoId` y `objeto` (nombre; «General» si no apunta a nada). Los revisados traen `respuesta` y `revisadoEn` (HU27) |
+| `GET` | `/api/admin/reportes` | Reportes de estudiantes (hasta 100, primero `PENDIENTE`). Cada uno dice a qué apunta: `objetoTipo` (`LUGAR`, `COMUNIDAD` o `EVENTO`; `null` en los generales), `objetoId` y `objeto` (nombre; «General» si no apunta a nada). Los revisados traen `respuesta` y `revisadoEn` (HU27). `objetoEstado` (HU38) es el estado del evento (`PUBLICADO`, `RECHAZADO`…) o de la comunidad reportada: el panel ofrece «Bajar evento» solo si el evento sigue `PUBLICADO` |
 | `PATCH` | `/api/admin/reportes/{id}` | Body `{ "estado": "RESUELTO", "respuesta": "…" }` (o `"DESCARTADO"`; `respuesta` opcional, hasta 500 caracteres). Cierra un reporte `PENDIENTE`, guarda al admin como `revisor_id`, la fecha en `revisado_en` y la respuesta, y crea el aviso `REPORTE_RESUELTO` para quien lo envió, **todo en la misma transacción**. **204**; 400 `VALIDACION` (otra decisión, incluida `PENDIENTE`, o respuesta de más de 500); 404 `NO_ENCONTRADO`; 409 `YA_REVISADO` (ya tenía decisión: no se cambia); 500 `ERROR_INESPERADO` con código de seguimiento (no se guarda nada) |
 | `GET` | `/api/admin/auditoria-rag?limite=50` | Últimas **conversaciones** con el asistente (1 a 200): los turnos de una misma conversación (crear una actividad: «jugar cartas» → «¿A qué hora?» → «5») vienen juntos, con `entrada` (el primero), `respuestas` (los siguientes) y `turnos`. Estado, modelo y latencia sumada. Un rechazo de seguridad en cualquier turno marca toda la conversación |
 | `GET` | `/api/admin/metricas` | Últimos 7 días: consultas por resultado, latencia promedio, los 5 lugares más recomendados y `rendimiento` de las recomendaciones (P50, P95, % por debajo de 3,5 s y respuestas del plan B, HU19) |
@@ -1291,8 +1292,8 @@ Todo bajo `/api/admin/eventos`, solo rol `ADMIN` (`401` sin sesión, `403` si no
 | `GET` | `/pendientes` | Eventos `PENDIENTE` que todavía no terminaron, con motivo y foto (los vencidos caducan por fecha, sin cambiar su estado) |
 | `GET` | `/publicados` | Eventos `PUBLICADO` que todavía no terminaron, para poder bajarlos |
 | `GET` | `/rechazados` | Historial de solo lectura: los últimos 100 eventos `RECHAZADO`, del más reciente al más antiguo. Cada uno trae `evento` (con su `motivo`), `fueBajado` (estaba publicado y se bajó, o se rechazó en la revisión), `admin` (nombre) y `rechazadoEn` (hora de Bolivia). `admin` y `fueBajado` salen de `historial_cambio`: los rechazados antes de HU26 vienen con `admin = null`, `fueBajado = false` y `rechazadoEn` igual a su última actualización |
-| `PATCH` | `/{id}/moderacion` | `{ "estado": "PUBLICADO" \| "RECHAZADO", "motivo": "…", "cambios": { …campos del formulario de HU23… } }`. `RECHAZADO` exige motivo. Con `cambios` (solo al aprobar) el admin edita y publica en un paso; se validan con las mismas reglas del formulario y la foto no cambia. Aviso: `EVENTO_APROBADO` o `EVENTO_RECHAZADO` |
-| `PATCH` | `/{id}/bajar` | `{ "motivo": "…" }` (obligatorio). Pasa un `PUBLICADO` a `RECHAZADO`. Aviso: `EVENTO_BAJADO` |
+| `PATCH` | `/{id}/moderacion` | `{ "estado": "PUBLICADO" \| "RECHAZADO", "motivo": "…", "cambios": { …campos del formulario de HU23… } }`. `RECHAZADO` exige motivo. Con `cambios` (solo al aprobar) el admin edita y publica en un paso; se validan con las mismas reglas del formulario, el fin que queda tiene que seguir por delante (si no, `400 VALIDACION`: «Con esos cambios el evento ya habría terminado…», HU37) y la foto no cambia. Aviso: `EVENTO_APROBADO` o `EVENTO_RECHAZADO` |
+| `PATCH` | `/{id}/bajar` | `{ "motivo": "…", "reporteId": 31 }` (`motivo` obligatorio; `reporteId` opcional). Pasa un `PUBLICADO` a `RECHAZADO`. Aviso: `EVENTO_BAJADO`. **Con `reporteId` (HU38)**, en la misma transacción: el reporte (que tiene que ser de ese evento y seguir `PENDIENTE`) queda `RESUELTO` con la respuesta «Bajamos el evento. Motivo: …», quien reportó recibe `REPORTE_RESUELTO` y los `REPORTE_NUEVO` de los demás admins quedan leídos. **No sanciona** a quien lo creó. Errores: `400 VALIDACION` (sin motivo), `404`, `409 YA_REVISADO` (el evento ya no está publicado, o el reporte ya fue revisado) y `409 REPORTE_NO_CORRESPONDE` (el reporte no existe o es de otro evento); en todos los `409` no se guarda nada |
 
 Respuestas: `204` si se aplicó; `400 VALIDACION` (falta el motivo, motivo de más de 500 caracteres, `cambios` al rechazar, campos editados inválidos); `404 NO_ENCONTRADO`; `409 YA_REVISADO` (ya no está en el estado esperado: ya revisado, o ya no está publicado) o `409 EVENTO_FINALIZADO` (ya terminó).
 
@@ -1319,6 +1320,23 @@ Sancionarlo (`POST /api/admin/usuarios/{id}/sanciones`) también resuelve sus al
 - **No rompe la acción original:** si falla la alerta, el reporte o el rechazo se guardan igual; el error queda en el log (`LogWarning`).
 - `REPORTE_NUEVO` y `EVENTO_POR_REVISAR` (030) no cambian.
 - **Purga (HU28/HU29):** al purgar un usuario también se borran las alertas **sobre** él (`usuario_objetivo_id`), en el mismo paso que sus propios avisos.
+
+## 7m. El admin quita y restaura comunidades (HU35)
+
+Todo bajo `/api/admin/comunidades`, solo `ADMIN` (`401` sin sesión, `403` si no es admin). Requiere la migración **034**.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `?estado=ACTIVA` (por defecto) o `?estado=BAJADA` | Las activas que no terminaron (por inicio) o las quitadas (la última primero), hasta 100: actividad, quién la creó, horario (hora de Bolivia), confirmados y cupo, si es privada, reportes pendientes, y en las quitadas `motivoBaja` y `fechaBaja` |
+| `PATCH` | `/{id}/baja` | `{ "motivo": "…", "reporteId": 31 }`. Motivo obligatorio (hasta 500). Pasa una **ACTIVA** a **BAJADA** con motivo y fecha. Avisa `COMUNIDAD_BAJADA` (con el motivo) a quien la creó y a quienes iban (CONFIRMADO), y apaga sus invitaciones pendientes. Con `reporteId` (un reporte **pendiente** de esa comunidad), el reporte queda `RESUELTO` con la respuesta «Quitamos la comunidad. Motivo: …» y quien reportó recibe `REPORTE_RESUELTO`. Todo en una transacción |
+| `PATCH` | `/{id}/restauracion` | Pasa una **BAJADA** a **ACTIVA** (sin motivo ni fecha) y avisa `COMUNIDAD_RESTAURADA`. Si su hora de fin ya pasó responde `409 ESTADO_INVALIDO` ("La comunidad ya terminó: no hay nada que restaurar.") y sigue quitada; el panel no ofrece «Restaurar» en ese caso |
+
+- **No se borra nada:** la comunidad, sus participaciones, avisos y reportes se conservan.
+- **No sanciona** a quien la creó: sancionar sigue siendo aparte (Usuarios, HU28).
+- Una comunidad `BAJADA` no sale en Descubrir ni en Inicio, no acepta invitaciones ni cambios de asistencia, y el cierre automático no la toca (todos esos filtros ya piden `ACTIVA`).
+- Errores: `400 VALIDACION` (sin motivo, motivo largo, reporte que no es de esa comunidad, estado inválido en el listado), `404 NO_ENCONTRADO`, `409 ESTADO_INVALIDO` (quitar una que no está activa, restaurar una que no está quitada, o restaurar una que ya terminó) y `409 YA_REVISADO` (el reporte ya fue revisado).
+- En vivo: las campanitas de los avisados se actualizan, las pantallas abiertas de esa comunidad reciben `comunidadActualizada` con estado `BAJADA` o `ACTIVA`, y Descubrir de su sede se refresca.
+- En el panel: pestaña **Comunidades** (Activas / Quitadas, con «Quitar comunidad» y «Restaurar»), y «Quitar comunidad» en cada reporte pendiente de una comunidad.
 
 ## 8. Resumen de decisiones por responsable
 

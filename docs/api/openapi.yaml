@@ -2857,7 +2857,7 @@ components:
           example: ENTRE_CLASES
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13), `COMUNIDAD_CERRADA` (HU14), `ASISTENCIA_COMUNIDAD` (para quien creó la comunidad, cuando alguien se suma o se baja; uno por comunidad y el siguiente cambio lo reemplaza; migración 031), `CONEXION_SOLICITADA` y `CONEXION_ACEPTADA` (HU12, saludos de Libres contigo), `INVITACION_EVENTO` (una conexión te invita a un evento de hoy; trae `eventoId`; migración 032) o `REPORTE_RESUELTO` (HU27, un administrador revisó tu reporte). Para el administrador, `REPORTE_NUEVO` (un estudiante envió un reporte; trae `reporteId`) y `EVENTO_POR_REVISAR` (un evento quedó pendiente); ambos quedan leídos para todos los admins cuando uno los resuelve (migración 030). HU32 (migración 033), para el administrador: `ALERTA_USUARIO_SOSPECHOSO` (un estudiante llegó a 3 intentos bloqueados por seguridad en 24 h) y `ALERTA_REPORTES_ACUMULADOS` (3 o más personas distintas tienen reportes pendientes sobre lo que creó); traen `usuarioObjetivoId` y, si vuelve a pasar, se actualiza el mismo aviso (sin leer).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13), `COMUNIDAD_CERRADA` (HU14), `ASISTENCIA_COMUNIDAD` (para quien creó la comunidad, cuando alguien se suma o se baja; uno por comunidad y el siguiente cambio lo reemplaza; migración 031), `CONEXION_SOLICITADA` y `CONEXION_ACEPTADA` (HU12, saludos de Libres contigo), `INVITACION_EVENTO` (una conexión te invita a un evento de hoy; trae `eventoId`; migración 032) o `REPORTE_RESUELTO` (HU27, un administrador revisó tu reporte). Para el administrador, `REPORTE_NUEVO` (un estudiante envió un reporte; trae `reporteId`) y `EVENTO_POR_REVISAR` (un evento quedó pendiente); ambos quedan leídos para todos los admins cuando uno los resuelve (migración 030). HU32 (migración 033), para el administrador: `ALERTA_USUARIO_SOSPECHOSO` (un estudiante llegó a 3 intentos bloqueados por seguridad en 24 h) y `ALERTA_REPORTES_ACUMULADOS` (3 o más personas distintas tienen reportes pendientes sobre lo que creó); traen `usuarioObjetivoId` y, si vuelve a pasar, se actualiza el mismo aviso (sin leer). HU35 (migración 034): `COMUNIDAD_BAJADA` (el admin quitó una comunidad en la que estabas; el mensaje trae el motivo) y `COMUNIDAD_RESTAURADA` (volvió a estar activa); traen `comunidadId`.
       properties:
         id:
           type: integer
@@ -2866,7 +2866,7 @@ components:
           example: 31
         tipo:
           type: string
-          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA, CONEXION_SOLICITADA, CONEXION_ACEPTADA, REPORTE_RESUELTO, EVENTO_APROBADO, EVENTO_RECHAZADO, REPORTE_NUEVO, EVENTO_POR_REVISAR, ASISTENCIA_COMUNIDAD, INVITACION_EVENTO, ALERTA_USUARIO_SOSPECHOSO, ALERTA_REPORTES_ACUMULADOS]
+          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA, CONEXION_SOLICITADA, CONEXION_ACEPTADA, REPORTE_RESUELTO, EVENTO_APROBADO, EVENTO_RECHAZADO, REPORTE_NUEVO, EVENTO_POR_REVISAR, ASISTENCIA_COMUNIDAD, INVITACION_EVENTO, ALERTA_USUARIO_SOSPECHOSO, ALERTA_REPORTES_ACUMULADOS, COMUNIDAD_BAJADA, COMUNIDAD_RESTAURADA]
           description: Tipo de aviso.
           example: PUENTE_DISPONIBLE
         mensaje:
@@ -3314,6 +3314,7 @@ components:
         objetoId: { type: integer, format: int32, nullable: true, example: 4 }
         respuesta: { type: string, nullable: true, description: HU27. La respuesta del administrador al revisarlo. }
         revisadoEn: { type: string, format: date-time, nullable: true }
+        objetoEstado: { type: string, nullable: true, example: PUBLICADO, description: 'HU38. Estado del evento o de la comunidad reportada; «Bajar evento» solo si es `PUBLICADO`.' }
     ConsultaRagAdminDto:
       type: object
       properties:

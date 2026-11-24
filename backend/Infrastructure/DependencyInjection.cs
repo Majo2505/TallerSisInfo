@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<IExtraccionRepository, ExtraccionRepository>();
         services.AddScoped<IReporteRepository, ReporteRepository>();
         services.AddScoped<IComunidadRepository, ComunidadRepository>();
+        services.AddScoped<Breaku.Application.Admin.IModeracionComunidadRepository, ModeracionComunidadRepository>();
         services.AddScoped<IDescubrirComunidadesRepository, DescubrirComunidadesRepository>();
         services.AddScoped<IAsistenciaRepository, AsistenciaRepository>();
         services.AddScoped<IActividadRepository, ActividadRepository>();

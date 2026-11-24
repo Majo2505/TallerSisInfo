@@ -243,6 +243,9 @@ public sealed class EventoService
             ? MotivoObligatorio(request.Motivo, ReglasEvento.MensajeFaltaMotivoRechazo)
             : null;
         var cambios = request.Cambios is null ? null : await ValidarCambiosAsync(request.Cambios, ct);
+        // HU37: el repositorio comprueba el fin ANTES de aplicar los cambios; aquí el fin que el admin deja también tiene que estar por delante.
+        if (cambios is not null && !ReglasEvento.FinCorregidoVigente(cambios.FinUtc, _reloj.GetUtcNow().UtcDateTime))
+            throw new ReglaNegocioException("VALIDACION", ReglasEvento.MensajeFinCorregidoPasado);
         var tipo = estado == Evento.EstadoPublicado ? Notificacion.TipoEventoAprobado : Notificacion.TipoEventoRechazado;
 
         var resultado = await _repository.ModerarAsync(new ModeracionEvento(
@@ -258,8 +261,12 @@ public sealed class EventoService
         var motivo = MotivoObligatorio(request.Motivo, ReglasEvento.MensajeFaltaMotivoBaja);
         var resultado = await _repository.ModerarAsync(new ModeracionEvento(
             eventoId, adminId, Evento.EstadoPublicado, Evento.EstadoRechazado, motivo, Notificacion.TipoEventoBajado, null,
-            _reloj.GetUtcNow().UtcDateTime), ct);
+            _reloj.GetUtcNow().UtcDateTime, request.ReporteId,
+            request.ReporteId is null ? null : ReglasEvento.RespuestaReporteBaja(motivo)), ct);
         LanzarSiNoSeAplico(resultado, ReglasEvento.MensajeEventoNoPublicado);
+
+        // HU38: el reporte ya no está pendiente: el aviso «Nuevo reporte» queda leído para todos los admins.
+        if (_avisos is not null && request.ReporteId is int reporteId) await _avisos.ReporteRevisadoAsync(reporteId, ct);
     }
 
     /// <summary>HU26: los eventos PUBLICADOS que todavía no terminaron, para que el admin pueda bajarlos.</summary>
@@ -302,6 +309,10 @@ public sealed class EventoService
                 throw new ReglaNegocioException("YA_REVISADO", mensajeEstado);
             case ResultadoModeracionEvento.Finalizado:
                 throw new ReglaNegocioException("EVENTO_FINALIZADO", ReglasEvento.MensajeEventoFinalizado);
+            case ResultadoModeracionEvento.ReporteNoCorresponde:
+                throw new ReglaNegocioException(ReglasEvento.CodigoReporteNoCorresponde, ReglasEvento.MensajeReporteNoCorresponde);
+            case ResultadoModeracionEvento.ReporteYaRevisado:
+                throw new ReglaNegocioException("YA_REVISADO", ReglasEvento.MensajeReporteYaRevisado);
         }
     }
 

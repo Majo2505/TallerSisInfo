@@ -69,3 +69,7 @@
 .alerta span { color: var(--texto); overflow-wrap: anywhere; }
 .alerta small { color: var(--texto-tenue); font-size: .8rem; }
 
+/* HU35: motivo para quitar una comunidad (pestaña Comunidades). */
+.buscador textarea { box-sizing: border-box; width: 100%; padding: 10px 14px; border: 1.5px solid var(--borde); border-radius: 14px; background: var(--superficie); color: var(--texto); font: inherit; font-weight: 500; resize: vertical; }
+.buscador textarea:focus { outline: none; border-color: var(--ucb-celeste); box-shadow: 0 0 0 4px rgba(47, 127, 209, .16); }
+

@@ -99,3 +99,11 @@ test("HU32: las alertas al admin tienen título e ícono propios y llevan al det
   assert.equal(rutaNotificacion({ tipo: "ALERTA_REPORTES_ACUMULADOS" }), "/admin?pestana=alertas");
 });
 
+test("HU35: quitar y restaurar una comunidad tienen su presentación y su destino", () => {
+  assert.equal(presentacionNotificacion("COMUNIDAD_BAJADA").titulo, "Retiraron una comunidad");
+  assert.equal(presentacionNotificacion("COMUNIDAD_BAJADA").clase, "advertencia");
+  assert.equal(presentacionNotificacion("COMUNIDAD_RESTAURADA").titulo, "Una comunidad volvió");
+  assert.equal(rutaNotificacion({ tipo: "COMUNIDAD_BAJADA", comunidadId: 4 }), null);
+  assert.equal(rutaNotificacion({ tipo: "COMUNIDAD_RESTAURADA", comunidadId: 4 }), "/comunidades?pestana=descubrir&comunidad=4");
+});
+

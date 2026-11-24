@@ -1,14 +1,52 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  accionModeracionDeReporte,
   accionValidacionLugar,
+  debeIrAlInicio,
   ETIQUETA_ACCION_VALIDACION,
   ETIQUETA_CONFIRMAR_DESVALIDAR,
   mensajeValidacionLugar,
   pideConfirmacionValidacion,
   TEXTO_CONFIRMAR_DESVALIDAR,
+  TEXTOS_MODERACION_REPORTE,
   tituloConfirmarDesvalidar,
 } from "./reglasAdmin.ts";
+
+const reporte = (r: object) => ({ estado: "PENDIENTE", objetoId: 7, ...r });
+
+test("HU37: quien no es admin sale de las pantallas del panel; sin sesión o aún cargando no se decide nada", () => {
+  assert.equal(debeIrAlInicio(true, true, false), true);
+  assert.equal(debeIrAlInicio(true, true, true), false);
+  assert.equal(debeIrAlInicio(true, false, false), false);
+  assert.equal(debeIrAlInicio(false, true, false), false);
+});
+
+test("HU38: «Bajar evento» solo aparece en un reporte pendiente de un evento PUBLICADO", () => {
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO", objetoEstado: "PUBLICADO" })), "bajar");
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO", objetoEstado: "RECHAZADO" })), null);
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO", objetoEstado: "PENDIENTE" })), null);
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO" })), null);
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO", objetoEstado: "PUBLICADO", estado: "RESUELTO" })), null);
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO", objetoEstado: "PUBLICADO", objetoId: null })), null);
+});
+
+test("HU35: «Quitar comunidad» sigue saliendo en un reporte pendiente de una comunidad, y los demás reportes no ofrecen nada", () => {
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "COMUNIDAD", objetoEstado: "ACTIVA" })), "quitar");
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "COMUNIDAD", estado: "DESCARTADO" })), null);
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "LUGAR" })), null);
+  assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: null })), null);
+});
+
+test("HU38: los textos del formulario de moderación dicen que se baja, se resuelve el reporte y no se sanciona", () => {
+  assert.equal(TEXTOS_MODERACION_REPORTE.bajar.boton, "Bajar evento");
+  assert.equal(TEXTOS_MODERACION_REPORTE.quitar.boton, "Quitar comunidad");
+  for (const t of Object.values(TEXTOS_MODERACION_REPORTE)) {
+    assert.match(t.pista, /obligatorio/);
+    assert.match(t.ayuda, /no sanciona/);
+    assert.match(t.ayuda, /resuelto/);
+  }
+});
 
 test("HU16: quitar la validación pide confirmación y validar no", () => {
   assert.equal(pideConfirmacionValidacion(accionValidacionLugar(true)), true);

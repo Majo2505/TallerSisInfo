@@ -4,6 +4,8 @@ public class ComunidadEfimera
 {
     public const string EstadoActiva = "ACTIVA";
     public const string EstadoArchivada = "ARCHIVADA";
+    /// <summary>HU35: el admin la quitó por moderación (migración 034). Se puede restaurar; el cierre automático no la toca.</summary>
+    public const string EstadoBajada = "BAJADA";
 
     public int Id { get; set; }
     public int CreadorId { get; set; }

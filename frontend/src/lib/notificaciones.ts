@@ -24,7 +24,10 @@ export type Notificacion = {
     | "EVENTO_POR_REVISAR"
     // HU32 (migración 033), para el administrador: alertas sobre un estudiante. Traen `usuarioObjetivoId`.
     | "ALERTA_USUARIO_SOSPECHOSO"
-    | "ALERTA_REPORTES_ACUMULADOS";
+    | "ALERTA_REPORTES_ACUMULADOS"
+    // HU35 (migración 034): el admin quitó o restauró una comunidad en la que estabas. Traen `comunidadId`.
+    | "COMUNIDAD_BAJADA"
+    | "COMUNIDAD_RESTAURADA";
   mensaje: string;
   fecha: string | null;
   horaInicio: string | null;

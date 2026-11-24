@@ -243,13 +243,20 @@ CREATE TABLE comunidad_efimera (
   -- Plan armado con una conexión de «Libres contigo» (migración 032): no sale en Descubrir ni acepta gente sin invitación.
   privada           BOOLEAN      NOT NULL DEFAULT FALSE,
   estado            VARCHAR(10)  NOT NULL DEFAULT 'ACTIVA',
+  -- HU35 (migración 034): el admin la quitó (BAJADA). Se guarda por qué y cuándo; restaurarla los limpia.
+  motivo_baja       VARCHAR(500) NULL,
+  fecha_baja        DATETIME(6)  NULL,
   created_at        DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   updated_at        DATETIME(6)  NOT NULL DEFAULT (UTC_TIMESTAMP(6)),
   PRIMARY KEY (id),
   KEY ix_comunidad_estado_fin (estado, fin),
   CONSTRAINT uq_com_log    UNIQUE (log_id),
   CONSTRAINT ck_com_fechas CHECK (fin > inicio),
-  CONSTRAINT ck_com_estado CHECK (estado IN ('ACTIVA','ARCHIVADA')),
+  CONSTRAINT ck_com_estado CHECK (estado IN ('ACTIVA','ARCHIVADA','BAJADA')),
+  -- Una comunidad BAJADA tiene motivo y fecha; las demás, ninguno de los dos.
+  CONSTRAINT ck_com_baja   CHECK ((estado = 'BAJADA' AND motivo_baja IS NOT NULL AND CHAR_LENGTH(TRIM(motivo_baja)) > 0
+                                   AND fecha_baja IS NOT NULL)
+                               OR (estado <> 'BAJADA' AND motivo_baja IS NULL AND fecha_baja IS NULL)),
   CONSTRAINT ck_com_max    CHECK (max_participantes BETWEEN 2 AND 30),
   -- HU10: las mismas reglas de la extracción, como última barrera. inicio y fin están en UTC; Bolivia es UTC-4.
   CONSTRAINT ck_com_duracion CHECK (TIMESTAMPDIFF(MINUTE, inicio, fin) BETWEEN 10 AND 240),
@@ -453,13 +460,15 @@ CREATE TABLE notificacion (
                                            'EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','REPORTE_RESUELTO','SANCION_ADVERTENCIA',
                                            'CONEXION_SOLICITADA','CONEXION_ACEPTADA','REPORTE_NUEVO','EVENTO_POR_REVISAR',
                                            'ASISTENCIA_COMUNIDAD','INVITACION_EVENTO',
-                                           'ALERTA_USUARIO_SOSPECHOSO','ALERTA_REPORTES_ACUMULADOS')),
+                                           'ALERTA_USUARIO_SOSPECHOSO','ALERTA_REPORTES_ACUMULADOS',
+                                           'COMUNIDAD_BAJADA','COMUNIDAD_RESTAURADA')),
   -- Cada aviso apunta solo a lo suyo: un puente, una comunidad, un evento, un reporte, una sanción o una conexión.
   CONSTRAINT ck_notif_ref CHECK (
        (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES')
           AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL
           AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
-    OR (tipo IN ('INVITACION_COMUNIDAD','COMUNIDAD_CERRADA','ASISTENCIA_COMUNIDAD') AND comunidad_id IS NOT NULL
+    OR (tipo IN ('INVITACION_COMUNIDAD','COMUNIDAD_CERRADA','ASISTENCIA_COMUNIDAD','COMUNIDAD_BAJADA','COMUNIDAD_RESTAURADA')
+          AND comunidad_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
           AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
     OR (tipo IN ('EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','EVENTO_POR_REVISAR','INVITACION_EVENTO') AND evento_id IS NOT NULL
