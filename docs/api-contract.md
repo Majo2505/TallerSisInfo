@@ -15,7 +15,7 @@ Parte del issue #139 (ítem "Contrato de endpoints").
 > | Registro | Sin endpoint en el sprint 1 | Existe `POST /api/auth/register` |
 > | Formato de errores | `ProblemDetails` con `detail` | Auth: `{ "message" }`. Horarios: `{ "codigo", "mensaje" }` |
 > | Mensaje de login incorrecto (401) | «Correo o contraseña incorrectos» | «Credenciales inválidas.» (el frontend muestra el texto de #9 por su cuenta) |
-> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | Correo vacío: 400 con el mensaje de dominio institucional. Contraseña vacía: 401 |
+> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | ✅ Ahora igual en el frontend y en `POST /api/auth/login` (HU1) |
 > | Login y `activo` | Exige `activo = 1` | No se verifica |
 > | JWT | Claims `sub` y `role`; 60 minutos | Claims `sub`, `email` y `nombre`; 24 horas |
 
