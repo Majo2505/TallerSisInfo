@@ -33,6 +33,7 @@ import {
   obtenerResumen,
 } from "@/lib/admin";
 import { ErrorApi } from "@/lib/api";
+import { accionValidacionLugar, ETIQUETA_ACCION_VALIDACION, mensajeValidacionLugar } from "@/lib/reglasAdmin";
 import { reporteDeUsuario, usuarioParaSancionar } from "@/lib/reglasUsuarios";
 import { MENSAJE_SIN_ETIQUETA, puedeActivarse } from "@/lib/reglasEtiquetas";
 import { useRefrescoAutomatico } from "@/lib/useRefrescoAutomatico";
@@ -216,12 +217,12 @@ function PanelAdminContenido() {
     void obtenerResumen().then(setResumen).catch(() => undefined);
   }
 
-  async function validar(lugar: LugarAdmin) {
+  async function cambiarValidacion(lugar: LugarAdmin, validado: boolean) {
     setCambiando(lugar.id);
     try {
-      await cambiarValidacionLugar(lugar.id, true);
-      setLugares((ls) => ls?.map((l) => (l.id === lugar.id ? { ...l, validado: true } : l)) ?? null);
-      aviso.mostrar(`${lugar.nombre}: validado.`);
+      await cambiarValidacionLugar(lugar.id, validado);
+      setLugares((ls) => ls?.map((l) => (l.id === lugar.id ? { ...l, validado } : l)) ?? null);
+      aviso.mostrar(mensajeValidacionLugar(lugar.nombre, validado));
     } catch (e) {
       aviso.mostrar((e as Error).message);
     } finally {
@@ -409,11 +410,14 @@ function PanelAdminContenido() {
                         <Puntuacion valor={l.puntuacion} votos={l.votos} />
                       </span>
                       <span role="cell" className={estilos.accionesFila}>
-                        {!l.validado && (
-                          <button type="button" className={estilos.validar} disabled={cambiando === l.id} onClick={() => void validar(l)}>
-                            Validar
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className={l.validado ? estilos.desvalidar : estilos.validar}
+                          disabled={cambiando === l.id}
+                          onClick={() => void cambiarValidacion(l, !l.validado)}
+                        >
+                          {ETIQUETA_ACCION_VALIDACION[accionValidacionLugar(l.validado)]}
+                        </button>
                         {l.estado === "EN_REVISION" && (
                           <>
                             <button type="button" className={estilos.aprobar} disabled={cambiando === l.id} onClick={() => void cambiar(l, "ACTIVO")}>

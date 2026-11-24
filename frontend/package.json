@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test src/lib/reglasUsuarios.test.ts src/lib/reglasEliminarCuenta.test.ts src/lib/reglasFlyer.test.ts src/lib/reglasReportes.test.ts src/lib/reglasEtiquetas.test.ts src/lib/reglasEventos.test.ts src/lib/reglasNotificaciones.test.ts src/lib/reglasBorradorFlyer.test.ts src/lib/reglasFotoEvento.test.ts src/lib/reglasRecomendaciones.test.ts src/lib/reglasHoyCampus.test.ts src/lib/reglasSesionesFlyer.test.ts"
+    "test": "node --test src/lib/reglasAdmin.test.ts src/lib/reglasUsuarios.test.ts src/lib/reglasEliminarCuenta.test.ts src/lib/reglasFlyer.test.ts src/lib/reglasReportes.test.ts src/lib/reglasEtiquetas.test.ts src/lib/reglasEventos.test.ts src/lib/reglasNotificaciones.test.ts src/lib/reglasBorradorFlyer.test.ts src/lib/reglasFotoEvento.test.ts src/lib/reglasRecomendaciones.test.ts src/lib/reglasHoyCampus.test.ts src/lib/reglasSesionesFlyer.test.ts"
   },
   "dependencies": {
     "@microsoft/signalr": "^8.0.29",
