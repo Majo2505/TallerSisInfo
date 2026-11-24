@@ -51,6 +51,8 @@ export type EventoCampus = {
   motivo: string | null;
   fotoUrl: string | null;
   createdAt: string;
+  /** HU33: aviso del servidor cuando un admin publica un evento que coincide con otro. */
+  aviso?: string | null;
 };
 
 /** HU26: datos corregidos por el admin al aprobar. Mismos campos que el formulario de HU23, sin la foto. */

@@ -105,6 +105,8 @@ export function resultadoCreado(sesion: SesionFlyer, estado: string, motivo: str
 export function resultadoFallido(sesion: SesionFlyer, codigo: string | undefined, mensaje: string | undefined): ResultadoSesion {
   if (codigo === "LIMITE_DIARIO")
     return { sesion, tono: "error", texto: `No se creó: ya llegaste al máximo de ${MAXIMO_EVENTOS_POR_DIA} eventos por día.` };
+  if (codigo === "EVENTO_DUPLICADO")
+    return { sesion, tono: "error", texto: `No se creó: ${mensaje?.trim() || "ya existe un evento muy parecido ese día."}` };
   return { sesion, tono: "error", texto: `No se creó: ${mensaje?.trim() || "ocurrió un error inesperado. Inténtalo de nuevo."}` };
 }
 

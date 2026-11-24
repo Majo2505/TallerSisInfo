@@ -1,0 +1,101 @@
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 18px 22px;
+  border: 1.5px solid var(--ucb-celeste, #2f7fd1);
+  border-radius: 22px;
+  background: linear-gradient(115deg, #eaf5ff 0%, #fbfdff 62%, #fff9e6 100%);
+  box-shadow: 0 12px 32px rgba(24, 77, 133, 0.12);
+  color: #1d5b98;
+}
+
+.arte {
+  flex: 0 0 68px;
+  width: 68px;
+  height: 68px;
+  filter: drop-shadow(0 6px 10px rgba(24, 77, 133, 0.16));
+}
+
+.arte svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.contenido {
+  min-width: 0;
+}
+
+.contenido strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+}
+
+.contenido p {
+  margin: 6px 0 0;
+  color: var(--texto);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.primario {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #1d5b98;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.primario:hover {
+  background: #174a7c;
+}
+
+.omitir {
+  padding: 9px 14px;
+  border: 1px solid rgba(29, 91, 152, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.omitir:hover {
+  background: rgba(29, 91, 152, 0.08);
+}
+
+.ayuda {
+  font-size: 0.8rem !important;
+  color: var(--texto-suave) !important;
+}
+
+@media (max-width: 560px) {
+  .aviso {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .arte {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+  }
+}

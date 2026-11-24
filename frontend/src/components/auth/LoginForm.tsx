@@ -15,6 +15,7 @@ import {
   suscribirSesion,
   tomarAvisoLogin,
 } from "@/services/authService";
+import { validarLogin } from "@/lib/reglasLogin";
 import BotonGoogle from "./BotonGoogle";
 import { Ojo, OjoTachado } from "./Iconos";
 import styles from "./LoginForm.module.css";
@@ -152,6 +153,14 @@ export default function LoginForm({ modoInicial = "login" }: { modoInicial?: Mod
     evento.preventDefault();
     setErrorServidor("");
     setAvisoSesionVisto(true);
+    if (!esRegistro) {
+      const falta = validarLogin(correo, password);
+      if (falta) {
+        setErrores({});
+        setErrorServidor(falta);
+        return;
+      }
+    }
     const encontrados = validar(modo, { nombre, correo, password, confirmar, terminos });
     setErrores(encontrados);
     if (Object.keys(encontrados).length > 0) return;

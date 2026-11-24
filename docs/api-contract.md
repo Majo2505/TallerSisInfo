@@ -15,7 +15,7 @@ Parte del issue #139 (ítem "Contrato de endpoints").
 > | Registro | Sin endpoint en el sprint 1 | Existe `POST /api/auth/register` |
 > | Formato de errores | `ProblemDetails` con `detail` | Auth: `{ "message" }`. Horarios: `{ "codigo", "mensaje" }` |
 > | Mensaje de login incorrecto (401) | «Correo o contraseña incorrectos» | «Credenciales inválidas.» (el frontend muestra el texto de #9 por su cuenta) |
-> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | Correo vacío: 400 con el mensaje de dominio institucional. Contraseña vacía: 401 |
+> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | ✅ Ahora igual en el frontend y en `POST /api/auth/login` (HU1) |
 > | Login y `activo` | Exige `activo = 1` | No se verifica |
 > | JWT | Claims `sub` y `role`; 60 minutos | Claims `sub`, `email` y `nombre`; 24 horas |
 
@@ -424,6 +424,11 @@ Todos los endpoints requieren JWT. El usuario siempre se obtiene del claim `sub`
 Las coordenadas se envían una sola vez al backend para encontrar la zona más cercana
 dentro de su `radio_max_m`; no se guardan ni se devuelven. Solo se persiste el campus
 seleccionado y, cuando corresponde, la fecha y el consentimiento explícito.
+
+**Interfaz (HU5).** En el primer acceso, si no hay zona elegida ni consentimiento, «Inicio» muestra un aviso que explica para qué
+se usaría la ubicación y ofrece dos caminos: ir a «Configuración de ubicación» (donde hay una casilla de autorización explícita
+antes de pedir el permiso del navegador) o elegir el campus a mano. El aviso se puede descartar y no vuelve a aparecer. Nunca
+llama a la geolocalización por su cuenta; el permiso se puede revocar desde el perfil en cualquier momento.
 
 Los errores usan el mismo formato que horarios y recomendaciones: `{ "codigo": "NO_ENCONTRADO", "mensaje": "..." }`
 (`NO_ENCONTRADO` con 404 y `FUERA_DE_ZONA` con 422).
@@ -1240,6 +1245,27 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
 Errores `400`: `VALIDACION` (vacío, los dos campos, más de 8 MB), `ARCHIVO_NO_ADMITIDO` (firma que no es JPG/PNG/PDF), `PDF_MUCHAS_PAGINAS`, `PDF_PROTEGIDO` (con contraseña), `PDF_INVALIDO` (corrupto), `SOLICITUD_NO_PERMITIDA` (texto que intenta manipular al asistente). `401` sin sesión, `429` por límite, `503 LECTOR_NO_DISPONIBLE` (sin `LLM_API_KEY` o el modelo falla). Cada lectura queda en `log_auditoria_rag` con `tipo = EXTRACCION_EVENTO`; `datos_extraidos` guarda el borrador, los faltantes y las advertencias. La regla «el texto que cae en `ReglasSeguridadIa` pasa a PENDIENTE» es de HU23 al publicar.
 
 **Crear un evento por fecha (HU34).** No hay endpoint nuevo: el cliente llama a `POST /api/eventos` una vez por cada fecha marcada, con el mismo título, descripción, lugar, tipo de asistencia y foto, y `Origen=FLYER`. Cada llamada es independiente y pasa por todas las reglas de HU23 (filtro de texto, lugar, horario 07:15–21:00) y por los duplicados de HU33: una fecha puede quedar `PUBLICADO` y otra `PENDIENTE`. El límite de **3 eventos creados por día** (hora de Bolivia, contando también cancelados) se aplica a cada una: la cuarta responde `409 LIMITE_DIARIO`. El admin no tiene límite. Para saber cuántas caben, el cliente cuenta en `GET /api/eventos/mios` los eventos con `createdAt` de hoy. Sesiones de un mismo evento en días distintos **no** son duplicados.
+
+## 7i-bis. Evitar eventos duplicados (HU33)
+
+`POST /api/eventos` y `PUT /api/eventos/{id}` comparan el evento con los que ya están **PUBLICADOS o PENDIENTES**. Se ignoran los RECHAZADOS y CANCELADOS. Al editar, el evento no se compara consigo mismo. Las sesiones de un mismo afiche en días distintos (HU34) no son duplicados entre sí.
+
+Se considera **posible duplicado** cuando coinciden las tres cosas a la vez:
+
+| Qué se compara | Regla |
+|---|---|
+| Título | Normalizado (minúsculas, sin tildes ni signos ni palabras vacías): igual o con similitud de Jaccard ≥ 0.7 |
+| Fechas | Que se crucen, o que empiecen el mismo día (hora de Bolivia) con diferencia ≤ 3 h |
+| Lugar | Mismo `lugar_id`, o mismo `lugar_texto` normalizado |
+
+| Código | Caso | Estado |
+|---|---|---|
+| `EVENTO_DUPLICADO` | El **mismo creador** reenvía los mismos datos (doble clic o reenvío) | ✅ 409; el mensaje identifica el evento existente: `Ya existe un evento muy parecido: «Feria de ciencias» (evento #12). …` |
+| — | **Otra persona** crea un evento coincidente | ✅ Se crea `PENDIENTE` con `motivo = Posible duplicado de «Feria de ciencias» (17/11/2026).` La respuesta lo muestra como cualquier otro motivo de PENDIENTE, en «Mis eventos» y en la moderación del admin. No se rechaza automáticamente |
+| — | Un **admin** crea o edita un evento coincidente | ✅ Se publica igual y la respuesta trae `aviso` con el evento con el que coincide. El frontend lo muestra como aviso (no como error). Si el que coincide es **un evento del propio admin** (reenvío), responde `409 EVENTO_DUPLICADO` como a cualquier creador |
+| — | Coinciden **varios** eventos a la vez | ✅ Se evalúan todos. Mandan los del **mismo creador** (si hay alguno, `409 EVENTO_DUPLICADO` aunque también coincida un evento ajeno, sin importar el orden); si no hay propios, decide el ajeno de **inicio más cercano** (empate: el de menor id) y su título va en el motivo |
+
+El motivo se suma a los demás motivos de revisión de HU23 (no los reemplaza) y se recorta a 500 caracteres junto con ellos. Las reglas son puras, viven en `Domain/ReglasEvento`, no usan IA ni modifican el esquema. El frontend muestra el 409 con el mensaje del servidor y distingue el motivo de posible duplicado para resaltarlo.
 
 ## 7j. Foto del evento al editar (HU23)
 
