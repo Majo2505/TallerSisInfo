@@ -58,6 +58,14 @@ export const TEXTOS_MODERACION_REPORTE: Record<
   },
 };
 
+/**
+ * HU37: las pantallas del panel son solo para administradores. Con sesión ya cargada y un usuario que no es admin, se lo
+ * manda al inicio (la API ya responde 403, pero no debería ver ni la pantalla).
+ */
+export function debeIrAlInicio(sesionCargada: boolean, haySesion: boolean, esAdministrador: boolean): boolean {
+  return sesionCargada && haySesion && !esAdministrador;
+}
+
 export function mensajeValidacionLugar(nombre: string, validado: boolean): string {
   return `${nombre}: ${validado ? "validado" : "sin validar"}.`;
 }

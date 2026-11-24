@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   accionModeracionDeReporte,
   accionValidacionLugar,
+  debeIrAlInicio,
   ETIQUETA_ACCION_VALIDACION,
   ETIQUETA_CONFIRMAR_DESVALIDAR,
   mensajeValidacionLugar,
@@ -13,6 +14,13 @@ import {
 } from "./reglasAdmin.ts";
 
 const reporte = (r: object) => ({ estado: "PENDIENTE", objetoId: 7, ...r });
+
+test("HU37: quien no es admin sale de las pantallas del panel; sin sesión o aún cargando no se decide nada", () => {
+  assert.equal(debeIrAlInicio(true, true, false), true);
+  assert.equal(debeIrAlInicio(true, true, true), false);
+  assert.equal(debeIrAlInicio(true, false, false), false);
+  assert.equal(debeIrAlInicio(false, true, false), false);
+});
 
 test("HU38: «Bajar evento» solo aparece en un reporte pendiente de un evento PUBLICADO", () => {
   assert.equal(accionModeracionDeReporte(reporte({ objetoTipo: "EVENTO", objetoEstado: "PUBLICADO" })), "bajar");

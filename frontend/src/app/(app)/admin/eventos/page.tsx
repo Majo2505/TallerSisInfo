@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import AlertaDuplicado from "@/components/eventos/AlertaDuplicado";
 import FotoEvento from "@/components/eventos/FotoEvento";
@@ -10,6 +11,9 @@ import { IconoBandera, IconoCalendario, IconoCheck, IconoLapiz, IconoPin, IconoR
 import { Entrada, Odometro, Pieza, seguirPuntero } from "@/components/app/Movimiento";
 import { Selector } from "@/components/app/Selectores";
 import { ErrorApi } from "@/lib/api";
+import { debeIrAlInicio } from "@/lib/reglasAdmin";
+import { useSesion } from "@/lib/useSesion";
+import { esAdmin } from "@/services/authService";
 import {
   bajarEvento,
   EventoCampus,
@@ -47,6 +51,13 @@ const textoError = (e: unknown, porDefecto: string) =>
   e instanceof ErrorApi ? e.message : e instanceof Error ? e.message : porDefecto;
 
 export default function EventosPendientesPage() {
+  const router = useRouter();
+  // HU37: como /admin, esta pantalla es solo para administradores.
+  const { sesion, listo } = useSesion();
+  const fueraDeLugar = debeIrAlInicio(listo, Boolean(sesion), Boolean(sesion && esAdmin(sesion)));
+  useEffect(() => {
+    if (fueraDeLugar) router.replace("/inicio");
+  }, [fueraDeLugar, router]);
   const [pestana, setPestana] = useState<Pestana>("pendientes");
   const [eventos, setEventos] = useState<EventoCampus[]>([]);
   const [publicados, setPublicados] = useState<EventoCampus[]>([]);
@@ -173,6 +184,8 @@ export default function EventosPendientesPage() {
   const lista = pestana === "pendientes" ? eventos : pestana === "publicados" ? publicados : [];
   const cantidad: Record<Pestana, number> = { pendientes: eventos.length, publicados: publicados.length, rechazados: rechazados.length };
   const vacia = pestana === "rechazados" ? rechazados.length === 0 : lista.length === 0;
+
+  if (fueraDeLugar) return null;
 
   return (
     <Entrada as="main" className={estilos.pagina}>
