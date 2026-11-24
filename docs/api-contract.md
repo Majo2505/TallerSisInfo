@@ -1299,6 +1299,23 @@ Sancionarlo (`POST /api/admin/usuarios/{id}/sanciones`) también resuelve sus al
 - `REPORTE_NUEVO` y `EVENTO_POR_REVISAR` (030) no cambian.
 - **Purga (HU28/HU29):** al purgar un usuario también se borran las alertas **sobre** él (`usuario_objetivo_id`), en el mismo paso que sus propios avisos.
 
+## 7m. El admin quita y restaura comunidades (HU35)
+
+Todo bajo `/api/admin/comunidades`, solo `ADMIN` (`401` sin sesión, `403` si no es admin). Requiere la migración **034**.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `?estado=ACTIVA` (por defecto) o `?estado=BAJADA` | Las activas que no terminaron (por inicio) o las quitadas (la última primero), hasta 100: actividad, quién la creó, horario (hora de Bolivia), confirmados y cupo, si es privada, reportes pendientes, y en las quitadas `motivoBaja` y `fechaBaja` |
+| `PATCH` | `/{id}/baja` | `{ "motivo": "…", "reporteId": 31 }`. Motivo obligatorio (hasta 500). Pasa una **ACTIVA** a **BAJADA** con motivo y fecha. Avisa `COMUNIDAD_BAJADA` (con el motivo) a quien la creó y a quienes iban (CONFIRMADO), y apaga sus invitaciones pendientes. Con `reporteId` (un reporte **pendiente** de esa comunidad), el reporte queda `RESUELTO` con la respuesta «Quitamos la comunidad. Motivo: …» y quien reportó recibe `REPORTE_RESUELTO`. Todo en una transacción |
+| `PATCH` | `/{id}/restauracion` | Pasa una **BAJADA** a **ACTIVA** (sin motivo ni fecha) y avisa `COMUNIDAD_RESTAURADA`. Si su hora de fin ya pasó, el cierre automático la archiva como a cualquier otra |
+
+- **No se borra nada:** la comunidad, sus participaciones, avisos y reportes se conservan.
+- **No sanciona** a quien la creó: sancionar sigue siendo aparte (Usuarios, HU28).
+- Una comunidad `BAJADA` no sale en Descubrir ni en Inicio, no acepta invitaciones ni cambios de asistencia, y el cierre automático no la toca (todos esos filtros ya piden `ACTIVA`).
+- Errores: `400 VALIDACION` (sin motivo, motivo largo, reporte que no es de esa comunidad, estado inválido en el listado), `404 NO_ENCONTRADO`, `409 ESTADO_INVALIDO` (quitar una que no está activa, o restaurar una que no está quitada) y `409 YA_REVISADO` (el reporte ya fue revisado).
+- En vivo: las campanitas de los avisados se actualizan, las pantallas abiertas de esa comunidad reciben `comunidadActualizada` con estado `BAJADA` o `ACTIVA`, y Descubrir de su sede se refresca.
+- En el panel: pestaña **Comunidades** (Activas / Quitadas, con «Quitar comunidad» y «Restaurar»), y «Quitar comunidad» en cada reporte pendiente de una comunidad.
+
 ## 8. Resumen de decisiones por responsable
 
 | Responsable | Tema | Valor por defecto | Estado |

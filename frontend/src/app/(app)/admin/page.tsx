@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { quitarComunidad } from "@/lib/comunidadesAdmin";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
 import FormularioSancion from "@/components/admin/FormularioSancion";
 import Alertas from "@/components/admin/Alertas";
+import ComunidadesAdmin from "@/components/admin/ComunidadesAdmin";
 import RevisarReporte from "@/components/admin/RevisarReporte";
 import Usuarios from "@/components/admin/Usuarios";
 import FormularioLugar from "@/components/admin/FormularioLugar";
@@ -41,13 +43,15 @@ import { esAdmin } from "@/services/authService";
 import Puntuacion from "@/components/app/Puntuacion";
 import estilos from "./admin.module.css";
 
-type Pestana = "catalogo" | "reportes" | "alertas" | "usuarios" | "metricas" | "auditoria";
+type Pestana = "catalogo" | "reportes" | "alertas" | "comunidades" | "usuarios" | "metricas" | "auditoria";
 
 const PESTANAS: { id: Pestana; nombre: string; Icono: ReturnType<typeof duo> }[] = [
   { id: "catalogo", nombre: "Catálogo", Icono: duo("catalogo") },
   { id: "reportes", nombre: "Reportes", Icono: duo("bandera") },
   // HU32: estudiantes con intentos bloqueados por seguridad o reportes acumulados, para revisar y decidir.
   { id: "alertas", nombre: "Alertas", Icono: duo("alerta") },
+  // HU35: quitar y restaurar comunidades.
+  { id: "comunidades", nombre: "Comunidades", Icono: duo("grupo") },
   { id: "usuarios", nombre: "Usuarios", Icono: duo("usuarios") },
   { id: "metricas", nombre: "Métricas", Icono: duo("barras") },
   { id: "auditoria", nombre: "Auditoría RAG", Icono: duo("lupa") },
@@ -226,6 +230,24 @@ function PanelAdminContenido() {
       aviso.mostrar((e as Error).message);
     } finally {
       setCambiando(null);
+    }
+  }
+
+  // HU35: quitar la comunidad del reporte (queda oculta y el reporte, resuelto). No sanciona a quien la creó.
+  async function quitarDesdeReporte(reporte: ReporteAdmin, motivo: string): Promise<boolean> {
+    if (!reporte.objetoId) return false;
+    setResolviendoReporte(reporte.id);
+    try {
+      await quitarComunidad(reporte.objetoId, motivo, reporte.id);
+      aviso.mostrar(`Quitamos «${reporte.objeto}» y el reporte quedó resuelto. Le avisamos a ${reporte.autor}.`);
+      void listarReportes().then(setReportes).catch(() => undefined);
+      void obtenerResumen().then(setResumen).catch(() => undefined);
+      return true;
+    } catch (e) {
+      aviso.mostrar((e as Error).message);
+      return false;
+    } finally {
+      setResolviendoReporte(null);
     }
   }
 
@@ -490,6 +512,9 @@ function PanelAdminContenido() {
                           onRevisar={(decision, respuesta) => revisar(r, decision, respuesta)}
                           claseResolver={estilos.aprobar}
                           claseDescartar={estilos.desactivar}
+                          onQuitarComunidad={
+                            r.objetoTipo === "COMUNIDAD" && r.objetoId ? (motivo) => quitarDesdeReporte(r, motivo) : undefined
+                          }
                         />
                       ) : (
                         r.respuesta && (
@@ -518,6 +543,8 @@ function PanelAdminContenido() {
                 onRevisar={(id) => router.replace(`/admin?pestana=usuarios&usuario=${id}`, { scroll: false })}
               />
             )}
+
+            {pestana === "comunidades" && <ComunidadesAdmin onAviso={aviso.mostrar} />}
 
             {pestana === "usuarios" && (
               <Usuarios key={usuarioDelEnlace ?? "lista"} onAviso={aviso.mostrar} usuarioInicial={usuarioDelEnlace} />

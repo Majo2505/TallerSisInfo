@@ -186,4 +186,7 @@ test("HU26: rechazar o bajar exige un motivo de hasta 500 caracteres", () => {
   assert.equal(validarMotivoModeracion("", "bajar"), "Escribe el motivo para bajar el evento.");
   assert.equal(validarMotivoModeracion("x".repeat(501), "bajar"), "El motivo no puede superar 500 caracteres.");
   assert.equal(validarMotivoModeracion("Es spam", "bajar"), null);
+  // HU35: quitar una comunidad usa la misma regla.
+  assert.equal(validarMotivoModeracion(" ", "quitar"), "Escribe el motivo para quitar la comunidad.");
+  assert.equal(validarMotivoModeracion("x".repeat(501), "quitar"), "El motivo no puede superar 500 caracteres.");
 });

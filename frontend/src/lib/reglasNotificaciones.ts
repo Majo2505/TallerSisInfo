@@ -40,6 +40,9 @@ const PRESENTACIONES: Record<string, PresentacionNotificacion> = {
   // HU32: alertas sobre un estudiante. Llevan a su detalle en Admin → Usuarios; el admin decide (el sistema no sanciona).
   ALERTA_USUARIO_SOSPECHOSO: { titulo: "Intentos bloqueados por seguridad", clase: "advertencia", icono: "bandera" },
   ALERTA_REPORTES_ACUMULADOS: { titulo: "Reportes acumulados", clase: "advertencia", icono: "personas" },
+  // HU35: el admin quitó una comunidad (el mensaje trae el motivo) o la restauró.
+  COMUNIDAD_BAJADA: { titulo: "Retiraron una comunidad", clase: "advertencia", icono: "personas" },
+  COMUNIDAD_RESTAURADA: { titulo: "Una comunidad volvió", clase: "invitacion", icono: "personas" },
 };
 
 export const PRESENTACION_GENERICA: PresentacionNotificacion = {
@@ -65,6 +68,8 @@ type AvisoConDestino = {
 export function rutaNotificacion(n: AvisoConDestino): string | null {
   switch (n.tipo) {
     case "SANCION_ADVERTENCIA":
+    // HU35: la comunidad ya no se ve; el aviso mismo dice el motivo.
+    case "COMUNIDAD_BAJADA":
       return null;
     case "REPORTE_NUEVO":
       return "/admin?pestana=reportes";

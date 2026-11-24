@@ -234,9 +234,16 @@ export function cambiosEventoParaApi(campos: CamposFormularioEvento & { descripc
 }
 
 /** HU26: el motivo para rechazar o bajar es obligatorio y llega como mucho a 500 caracteres. */
-export function validarMotivoModeracion(motivo: string, accion: "rechazar" | "bajar"): string | null {
+const FALTA_MOTIVO: Record<"rechazar" | "bajar" | "quitar", string> = {
+  rechazar: "Escribe el motivo del rechazo.",
+  bajar: "Escribe el motivo para bajar el evento.",
+  // HU35: quitar una comunidad.
+  quitar: "Escribe el motivo para quitar la comunidad.",
+};
+
+export function validarMotivoModeracion(motivo: string, accion: "rechazar" | "bajar" | "quitar"): string | null {
   const limpio = motivo.trim();
-  if (!limpio) return accion === "rechazar" ? "Escribe el motivo del rechazo." : "Escribe el motivo para bajar el evento.";
+  if (!limpio) return FALTA_MOTIVO[accion];
   if (limpio.length > 500) return "El motivo no puede superar 500 caracteres.";
   return null;
 }

@@ -246,7 +246,11 @@ function Comunidades() {
     // HU15: si se archiva una en la que estás (tuya, vas o te invitaron), te avisamos en vez de hacerla desaparecer sin más.
     const terminada = descubrirActual.current?.comunidades.find((c) => c.id === evento.comunidadId);
     if (evento.estado !== "ACTIVA" && terminada && (terminada.esMia || terminada.miEstado === "CONFIRMADO" || terminada.miEstado === "PENDIENTE"))
-      aviso.mostrar(`«${terminada.actividad}» ya terminó y se archivó.`);
+      aviso.mostrar(
+        evento.estado === "BAJADA"
+          ? `«${terminada.actividad}» fue retirada por moderación.` // HU35: el motivo llega en la campanita
+          : `«${terminada.actividad}» ya terminó y se archivó.`,
+      );
     setDescubrir((actual) => {
       if (!actual) return actual;
       if (evento.estado !== "ACTIVA") {

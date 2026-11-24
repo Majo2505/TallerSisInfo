@@ -93,6 +93,8 @@ public static class DependencyInjection
         // Campanita del admin: reportes nuevos y eventos por revisar.
         services.AddScoped<IAvisosAdmin, AvisosAdminService>();
         services.AddScoped<AlertasAdminService>();
+        // HU35: quitar y restaurar comunidades.
+        services.AddScoped<Breaku.Application.Admin.ModeracionComunidadesService>();
 
         return services;
     }
