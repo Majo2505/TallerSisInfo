@@ -10,6 +10,16 @@ export function accionValidacionLugar(validado: boolean): AccionValidacionLugar 
   return validado ? "desvalidar" : "validar";
 }
 
+/** HU16: solo quitar la validación pide confirmación; validar se hace de una vez. */
+export function pideConfirmacionValidacion(accion: AccionValidacionLugar): boolean {
+  return accion === "desvalidar";
+}
+
+export const TEXTO_CONFIRMAR_DESVALIDAR = "Al quitar la validación, los eventos nuevos en este lugar quedarán en revisión.";
+export const ETIQUETA_CONFIRMAR_DESVALIDAR = "Quitar validación";
+
+export const tituloConfirmarDesvalidar = (nombre: string): string => `¿Quitar la validación de «${nombre}»?`;
+
 export function mensajeValidacionLugar(nombre: string, validado: boolean): string {
   return `${nombre}: ${validado ? "validado" : "sin validar"}.`;
 }
