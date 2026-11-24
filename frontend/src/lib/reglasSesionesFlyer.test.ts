@@ -82,7 +82,9 @@ test("el resultado de cada evento tiene un mensaje claro", () => {
   assert.equal(resultadoCreado(s(18), "PENDIENTE", "El lugar no está en el catálogo.").texto, "Quedó en revisión. El lugar no está en el catálogo.");
   assert.equal(resultadoFallido(s(18), "LIMITE_DIARIO", "x").texto, "No se creó: ya llegaste al máximo de 3 eventos por día.");
   // 409 de duplicados (HU33): se muestra lo que dice el servidor
+  assert.equal(resultadoFallido(s(18), "EVENTO_DUPLICADO", "Ya existe un evento parecido ese día.").texto, "No se creó: Ya existe un evento parecido ese día.");
   assert.equal(resultadoFallido(s(18), "DUPLICADO", "Ya existe un evento igual ese día.").texto, "No se creó: Ya existe un evento igual ese día.");
+  assert.match(resultadoFallido(s(18), "EVENTO_DUPLICADO", undefined).texto, /evento muy parecido/);
   assert.match(resultadoFallido(s(18), undefined, undefined).texto, /error inesperado/);
 });
 

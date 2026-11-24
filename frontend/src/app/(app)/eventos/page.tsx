@@ -7,6 +7,7 @@ import FondoVivo from "@/components/app/FondoVivo";
 import fotoEventos from "@/components/app/fotos/eventos.webp";
 import { IconoCalendario, IconoCamara } from "@/components/app/Iconos";
 import { Selector } from "@/components/app/Selectores";
+import AlertaDuplicado from "@/components/eventos/AlertaDuplicado";
 import CampoFechaHora from "@/components/eventos/CampoFechaHora";
 import SubirFlyer, { BorradorFlyer } from "@/components/eventos/SubirFlyer";
 import EventosDelCampus from "@/components/eventos/EventosDelCampus";
@@ -46,9 +47,12 @@ import {
 import {
   ahoraBoliviaParaFormulario,
   CamposFormularioEvento,
+  CODIGO_EVENTO_DUPLICADO,
+  esMotivoDuplicado,
   fechaBoliviaParaFormulario,
   formDataEvento,
   FOTO_EVENTO_MAX_BYTES,
+  mensajeErrorEvento,
   motivosDeRevision,
   presentacionEvento,
   validarFotoEvento,
@@ -134,6 +138,8 @@ function Eventos({ inicial }: { inicial: Pestana }) {
   const turnoFoto = useRef(0);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [duplicado, setDuplicado] = useState("");
+  const [avisoAdmin, setAvisoAdmin] = useState("");
   // HU34: con 2 o más fechas elegidas del afiche se crea un evento por cada una; el resultado se muestra por fecha.
   const [sesiones, setSesiones] = useState<SesionFlyer[]>([]);
   const [resultados, setResultados] = useState<ResultadoSesion[]>([]);
@@ -215,6 +221,8 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     setGuardando(true);
     setError("");
     setMensaje("");
+    setDuplicado("");
+    setAvisoAdmin("");
     setResultados([]);
     const nombreLugar = lugares.find((l) => String(l.id) === campos.lugarId)?.nombre;
     const { foto: fotoNueva } = datosDeFoto(estadoFoto);
@@ -265,6 +273,8 @@ function Eventos({ inicial }: { inicial: Pestana }) {
     setResultados([]);
     setError("");
     setMensaje("");
+    setDuplicado("");
+    setAvisoAdmin("");
     try {
       const nombreLugar = lugares.find((l) => String(l.id) === campos.lugarId)?.nombre;
       const origen = editando !== null ? undefined : desdeFlyer ? "FLYER" : "FORMULARIO";
@@ -280,6 +290,7 @@ function Eventos({ inicial }: { inicial: Pestana }) {
             ? `Tu evento quedó en revisión. ${resultado.motivo ?? ""}`.trim()
             : `El evento se guardó con estado: ${ETIQUETAS_ESTADO[resultado.estado].toLowerCase()}.`,
       );
+      if (resultado.aviso) setAvisoAdmin(resultado.aviso);
       if (resultado.estado === "PUBLICADO") limpiarFormulario();
       else if (editando !== null) {
         // el formulario sigue en edición: ahora la foto actual es la que quedó guardada
@@ -293,7 +304,9 @@ function Eventos({ inicial }: { inicial: Pestana }) {
         setError(`El evento sí se guardó, pero no se pudo actualizar la lista: ${e instanceof Error ? e.message : "error inesperado"}`);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo guardar el evento.");
+      if (e instanceof ErrorApi && e.codigo === CODIGO_EVENTO_DUPLICADO)
+        setDuplicado(mensajeErrorEvento(e.codigo, e.message));
+      else setError(e instanceof Error ? e.message : "No se pudo guardar el evento.");
     } finally {
       setGuardando(false);
     }
@@ -440,6 +453,12 @@ function Eventos({ inicial }: { inicial: Pestana }) {
           <motion.p key={mensaje} className={estilos.mensaje} role="status" initial={reducir ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             {mensaje}
           </motion.p>
+        )}
+        {duplicado && (
+          <AlertaDuplicado key={duplicado} mensaje={duplicado} tono="error" onCerrar={() => setDuplicado("")} />
+        )}
+        {avisoAdmin && (
+          <AlertaDuplicado key={avisoAdmin} mensaje={avisoAdmin} tono="aviso" onCerrar={() => setAvisoAdmin("")} />
         )}
       </AnimatePresence>
 
@@ -673,7 +692,11 @@ function Eventos({ inicial }: { inicial: Pestana }) {
                 <p className={estilos.lugar}>{evento.lugarId === null ? `Fuera del campus · ${evento.lugar}` : evento.lugar}</p>
                 {evento.descripcion && <p className={estilos.descripcionEvento}>{evento.descripcion}</p>}
                 {evento.asistencia === "FIJA" ? <p className={estilos.ayuda}>Hay que llegar a la hora</p> : <p className={estilos.ayuda}>Visita libre: {evento.visitaMin}–{evento.visitaMax} min</p>}
-                {(evento.estado === "PENDIENTE" || evento.estado === "RECHAZADO") && evento.motivo && <p className={estilos.motivo}><strong>Motivo:</strong> {evento.motivo}</p>}
+                {(evento.estado === "PENDIENTE" || evento.estado === "RECHAZADO") && evento.motivo && (
+                  esMotivoDuplicado(evento.motivo)
+                    ? <AlertaDuplicado compacta mensaje={evento.motivo} />
+                    : <p className={estilos.motivo}><strong>Motivo:</strong> {evento.motivo}</p>
+                )}
                 {(vista.editable || vista.cancelable) && (
                   <div className={estilos.accionesEvento}>
                     {vista.editable && <button type="button" className={estilos.botonSecundario} onClick={() => editar(evento)} disabled={guardando}>Editar</button>}

@@ -32,7 +32,9 @@ public sealed record EventoDto(
     short? VisitaMax,
     string? Motivo,
     string? FotoUrl,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    /// <summary>HU33: aviso para el admin cuando publica un evento que coincide con otro.</summary>
+    string? Aviso = null);
 
 public sealed record EventoLugarDto(int Id, string Nombre);
 

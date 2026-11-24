@@ -1,6 +1,23 @@
 export const FOTO_EVENTO_MAX_BYTES = 2 * 1024 * 1024;
 const FOTO_EVENTO_TIPOS = ["image/jpeg", "image/png"];
 
+export const CODIGO_EVENTO_DUPLICADO = "EVENTO_DUPLICADO";
+export const PREFIJO_MOTIVO_DUPLICADO = "Posible duplicado de";
+const MENSAJES_ERROR_EVENTO: Record<string, string> = {
+  [CODIGO_EVENTO_DUPLICADO]: "Duplicado detectado.",
+};
+
+export function esMotivoDuplicado(motivo: string | null | undefined): boolean {
+  return Boolean(motivo?.trimStart().startsWith(PREFIJO_MOTIVO_DUPLICADO));
+}
+
+export function mensajeErrorEvento(codigo: string | undefined, mensajeServidor: string | undefined): string {
+  const propio = codigo ? MENSAJES_ERROR_EVENTO[codigo] : undefined;
+  const detalle = mensajeServidor?.trim();
+  if (propio && detalle) return `${propio} ${detalle}`;
+  return detalle || propio || "No se pudo guardar el evento. Inténtalo de nuevo.";
+}
+
 export type CamposFormularioEvento = {
   titulo: string;
   inicio: string;
