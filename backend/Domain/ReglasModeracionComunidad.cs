@@ -21,6 +21,7 @@ public static class ReglasModeracionComunidad
     public const string MensajeNoEncontrada = "La comunidad no existe.";
     public const string MensajeNoActiva = "Solo se puede quitar una comunidad activa (esta ya fue quitada o se archivó).";
     public const string MensajeNoBajada = "Solo se puede restaurar una comunidad que fue quitada.";
+    public const string MensajeYaTermino = "La comunidad ya terminó: no hay nada que restaurar.";
     public const string MensajeReporteNoCorresponde = "El reporte no existe o no es sobre esta comunidad.";
     public const string MensajeReporteYaRevisado = "Ese reporte ya fue revisado.";
 
@@ -32,6 +33,12 @@ public static class ReglasModeracionComunidad
         if (limpio.Length > MaximoMotivo) return (null, MensajeMotivoLargo);
         return (limpio, null);
     }
+
+    /// <summary>
+    /// Restaurar solo tiene sentido mientras la comunidad no termina: si ya pasó su fin, volver a ACTIVA solo la dejaría a la
+    /// espera del cierre automático y avisaría «volvió a estar disponible» de algo que ya no existe.
+    /// </summary>
+    public static bool PuedeRestaurarse(DateTime finUtc, DateTime ahoraUtc) => finUtc > ahoraUtc;
 
     /// <summary>Aviso a quien la creó y a quienes iban: el motivo, recortado para caber en 200 caracteres.</summary>
     public static string AvisoBajada(string actividad, string motivo)

@@ -26,6 +26,7 @@ public sealed class ModeracionComunidadesTests
         public (int Id, int ComunidadId, string Estado)? Reporte { get; init; }
         public int Sanciones { get; } = 0; // la moderación nunca crea sanciones
         public string? EstadoPedido { get; private set; }
+        public DateTime FinUtc { get; init; } = Ahora.AddHours(3);
 
         public Task<List<FilaComunidadAdmin>> ListarAsync(string estado, DateTime ahoraUtc, int maximo, CancellationToken ct = default)
         {
@@ -62,6 +63,8 @@ public sealed class ModeracionComunidadesTests
         {
             if (Estado != ComunidadEfimera.EstadoBajada)
                 return Task.FromResult(new CambioComunidad(ResultadoModeracionComunidad.EstadoInvalido, [], 0, null));
+            if (!ReglasModeracionComunidad.PuedeRestaurarse(FinUtc, ahoraUtc))
+                return Task.FromResult(new CambioComunidad(ResultadoModeracionComunidad.YaTermino, [], 0, null));
             Estado = ComunidadEfimera.EstadoActiva;
             Motivo = null;
             AvisoEnviado = aviso("jugar cartas");
@@ -201,6 +204,26 @@ public sealed class ModeracionComunidadesTests
         var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.RestaurarAsync(1));
         Assert.Equal((ReglasModeracionComunidad.ErrorEstado, ReglasModeracionComunidad.MensajeNoBajada), (error.Codigo, error.Message));
     }
+
+    [Fact]
+    public async Task Una_comunidad_que_ya_termino_no_se_restaura_y_sigue_bajada()
+    {
+        var (servicio, repo, enVivo, _) = Crear(new RepoFalso { Estado = ComunidadEfimera.EstadoBajada, FinUtc = Ahora.AddMinutes(-1) });
+
+        var error = await Assert.ThrowsAsync<ReglaNegocioException>(() => servicio.RestaurarAsync(1));
+
+        Assert.Equal((ReglasModeracionComunidad.ErrorEstado, ReglasModeracionComunidad.MensajeYaTermino), (error.Codigo, error.Message));
+        Assert.Equal(ComunidadEfimera.EstadoBajada, repo.Estado);
+        Assert.Null(repo.AvisoEnviado);
+        Assert.Empty(enVivo.Hechos);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(0, false)]
+    [InlineData(-1, false)]
+    public void Solo_se_restaura_mientras_la_comunidad_no_termina(int minutosHastaElFin, bool puede)
+        => Assert.Equal(puede, ReglasModeracionComunidad.PuedeRestaurarse(Ahora.AddMinutes(minutosHastaElFin), Ahora));
 
     // ── Listado ──
 

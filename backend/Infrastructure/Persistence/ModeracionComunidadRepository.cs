@@ -95,6 +95,7 @@ public sealed class ModeracionComunidadRepository : IModeracionComunidadReposito
         var comunidad = await BloquearAsync(comunidadId, ct);
         if (comunidad is null) return Sin(ResultadoModeracionComunidad.NoEncontrada);
         if (comunidad.Estado != ComunidadEfimera.EstadoBajada) return Sin(ResultadoModeracionComunidad.EstadoInvalido);
+        if (!ReglasModeracionComunidad.PuedeRestaurarse(Utc(comunidad.FinUtc), ahoraUtc)) return Sin(ResultadoModeracionComunidad.YaTermino);
 
         await _db.Database.ExecuteSqlAsync($"""
                 UPDATE comunidad_efimera SET estado = 'ACTIVA', motivo_baja = NULL, fecha_baja = NULL, updated_at = {ahoraUtc}
@@ -138,7 +139,7 @@ public sealed class ModeracionComunidadRepository : IModeracionComunidadReposito
 
     private async Task<FilaComunidad?> BloquearAsync(int comunidadId, CancellationToken ct)
         => (await _db.Database.SqlQuery<FilaComunidad>($"""
-                SELECT estado AS Estado, creador_id AS CreadorId, actividad AS Actividad
+                SELECT estado AS Estado, creador_id AS CreadorId, actividad AS Actividad, fin AS FinUtc
                 FROM comunidad_efimera WHERE id = {comunidadId} FOR UPDATE
                 """).ToListAsync(ct)).FirstOrDefault();
 
@@ -151,6 +152,7 @@ public sealed class ModeracionComunidadRepository : IModeracionComunidadReposito
         public string Estado { get; set; } = "";
         public int CreadorId { get; set; }
         public string Actividad { get; set; } = "";
+        public DateTime FinUtc { get; set; }
     }
 
     private sealed class FilaReporte

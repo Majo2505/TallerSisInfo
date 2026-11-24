@@ -31,7 +31,7 @@ public sealed record FilaComunidadAdmin(
     bool CreadorEnTabla, int MaxParticipantes, bool Privada, string Estado, int ReportesPendientes, string? MotivoBaja,
     DateTime? FechaBajaUtc);
 
-public enum ResultadoModeracionComunidad { Aplicado, NoEncontrada, EstadoInvalido, ReporteNoCorresponde, ReporteYaRevisado }
+public enum ResultadoModeracionComunidad { Aplicado, NoEncontrada, EstadoInvalido, YaTermino, ReporteNoCorresponde, ReporteYaRevisado }
 
 /// <summary>
 /// Lo que pasó al quitar o restaurar: a quiénes se avisó (para refrescar sus campanitas en vivo), cuántos van (para las
@@ -120,6 +120,8 @@ public sealed class ModeracionComunidadesService
                 throw new ReglaNegocioException(ReglasModeracionComunidad.ErrorNoEncontrada, ReglasModeracionComunidad.MensajeNoEncontrada);
             case ResultadoModeracionComunidad.EstadoInvalido:
                 throw new ReglaNegocioException(ReglasModeracionComunidad.ErrorEstado, mensajeEstado);
+            case ResultadoModeracionComunidad.YaTermino:
+                throw new ReglaNegocioException(ReglasModeracionComunidad.ErrorEstado, ReglasModeracionComunidad.MensajeYaTermino);
             case ResultadoModeracionComunidad.ReporteNoCorresponde:
                 throw new ReglaNegocioException(ReglasModeracionComunidad.ErrorValidacion, ReglasModeracionComunidad.MensajeReporteNoCorresponde);
             case ResultadoModeracionComunidad.ReporteYaRevisado:

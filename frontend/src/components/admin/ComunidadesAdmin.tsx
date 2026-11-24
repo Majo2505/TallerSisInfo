@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ComunidadAdmin, listarComunidadesAdmin, quitarComunidad, restaurarComunidad } from "@/lib/comunidadesAdmin";
+import { puedeRestaurarComunidad, TEXTO_COMUNIDAD_TERMINADA } from "@/lib/reglasComunidadesAdmin";
 import { validarMotivoModeracion } from "@/lib/reglasEventos";
 import { useRefrescoAutomatico } from "@/lib/useRefrescoAutomatico";
 import estilos from "./Usuarios.module.css";
@@ -133,9 +134,13 @@ export default function ComunidadesAdmin({ onAviso }: Props) {
                     <span>Motivo: {c.motivoBaja}</span>
                   </div>
                   <div className={estilos.acciones}>
-                    <button type="button" className="hz-btn" disabled={ocupada !== null} onClick={() => void restaurar(c)}>
-                      {ocupada === c.id ? "Restaurando…" : "Restaurar"}
-                    </button>
+                    {puedeRestaurarComunidad(c.fin, new Date()) ? (
+                      <button type="button" className="hz-btn" disabled={ocupada !== null} onClick={() => void restaurar(c)}>
+                        {ocupada === c.id ? "Restaurando…" : "Restaurar"}
+                      </button>
+                    ) : (
+                      <small>{TEXTO_COMUNIDAD_TERMINADA}</small>
+                    )}
                   </div>
                 </>
               ) : quitando === c.id ? (
