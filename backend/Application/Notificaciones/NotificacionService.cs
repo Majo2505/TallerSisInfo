@@ -108,5 +108,5 @@ public class NotificacionService
             n.PuenteHoraInicio?.ToString("HH:mm:ss"),
             n.PuenteHoraFin?.ToString("HH:mm:ss"),
             n is { PuenteHoraInicio: { } ini, PuenteHoraFin: { } fin } ? ReglasNotificacion.DuracionMinutos(ini, fin) : null,
-            n.Leida, n.CreatedAt, n.ComunidadId, n.ReporteId, n.EventoId);
+            n.Leida, n.CreatedAt, n.ComunidadId, n.ReporteId, n.EventoId, n.UsuarioObjetivoId);
 }

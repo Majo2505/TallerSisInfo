@@ -37,6 +37,9 @@ const PRESENTACIONES: Record<string, PresentacionNotificacion> = {
   // Campanita del admin: algo espera su decisión. Llevan a la pestaña o pantalla donde se resuelve.
   REPORTE_NUEVO: { titulo: "Nuevo reporte", clase: "reporte", icono: "bandera" },
   EVENTO_POR_REVISAR: { titulo: "Evento por revisar", clase: "invitacion", icono: "calendario" },
+  // HU32: alertas sobre un estudiante. Llevan a su detalle en Admin → Usuarios; el admin decide (el sistema no sanciona).
+  ALERTA_USUARIO_SOSPECHOSO: { titulo: "Intentos bloqueados por seguridad", clase: "advertencia", icono: "bandera" },
+  ALERTA_REPORTES_ACUMULADOS: { titulo: "Reportes acumulados", clase: "advertencia", icono: "personas" },
 };
 
 export const PRESENTACION_GENERICA: PresentacionNotificacion = {
@@ -55,6 +58,7 @@ type AvisoConDestino = {
   comunidadId?: number | null;
   reporteId?: number | null;
   eventoId?: number | null;
+  usuarioObjetivoId?: number | null;
 };
 
 /** A dónde lleva «Ver» (o «Revisar», en el admin). `null` = el aviso no lleva a ninguna pantalla. */
@@ -66,6 +70,9 @@ export function rutaNotificacion(n: AvisoConDestino): string | null {
       return "/admin?pestana=reportes";
     case "EVENTO_POR_REVISAR":
       return "/admin/eventos";
+    case "ALERTA_USUARIO_SOSPECHOSO":
+    case "ALERTA_REPORTES_ACUMULADOS":
+      return n.usuarioObjetivoId ? `/admin?pestana=usuarios&usuario=${n.usuarioObjetivoId}` : "/admin?pestana=alertas";
     case "REPORTE_RESUELTO":
       return enlaceMisReportes(n.reporteId);
     case "INVITACION_EVENTO":

@@ -59,7 +59,12 @@ public class ReporteService
         var nuevo = await _repo.CrearAsync(usuarioId, motivo, req.LugarId, req.ComunidadId, req.EventoId, descripcion, ct);
 
         // La campanita de los admins (nunca rompe el envío: el reporte ya quedó guardado).
-        if (_avisos is not null) await _avisos.ReporteNuevoAsync(nuevo, motivo, descripcion, ct);
+        if (_avisos is not null)
+        {
+            await _avisos.ReporteNuevoAsync(nuevo, motivo, descripcion, ct);
+            // HU32: si quien creó lo reportado ya acumula reportes de 3 o más personas, alerta aparte.
+            await _avisos.ReportesAcumuladosAsync(nuevo, ct);
+        }
         return new ReporteCreadoDto(nuevo, ReglasReporte.Pendiente);
     }
 }

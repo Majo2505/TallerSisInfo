@@ -101,7 +101,8 @@ paths:
       operationId: iniciarSesion
       summary: Inicia sesión con correo institucional y contraseña.
       description: |
-        Orden de validación: primero el dominio del correo (`@ucb.edu.bo`) y luego las credenciales.
+        Orden de validación: primero los campos obligatorios (si falta el correo o la contraseña, 400 con
+        «Por favor, complete todos los campos»), luego el dominio del correo (`@ucb.edu.bo`) y, por último, las credenciales.
         El token devuelto vence a las 24 horas; envíalo en el header `Authorization: Bearer {token}`.
 
         Usuario de prueba de desarrollo (ver README): `dev.estudiante@ucb.edu.bo` / `Breaku-Dev-2026!`.
@@ -119,13 +120,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponseDto'
         '400':
-          description: El correo no es `@ucb.edu.bo`. El texto viene en `message`.
+          description: Falta el correo o la contraseña, o el correo no es `@ucb.edu.bo`. El texto viene en `message`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorMensajeDto'
-              example:
-                message: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
+              examples:
+                camposVacios:
+                  summary: Falta alguno de los dos campos (HU1)
+                  value:
+                    message: Por favor, complete todos los campos
+                correoNoInstitucional:
+                  summary: Dominio incorrecto
+                  value:
+                    message: Solo se permite el acceso con un correo institucional (@ucb.edu.bo)
         '401':
           description: Correo no registrado o contraseña incorrecta (mismo mensaje en ambos casos).
           content:
@@ -2849,7 +2857,7 @@ components:
           example: ENTRE_CLASES
     NotificacionDto:
       type: object
-      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13), `COMUNIDAD_CERRADA` (HU14), `ASISTENCIA_COMUNIDAD` (para quien creó la comunidad, cuando alguien se suma o se baja; uno por comunidad y el siguiente cambio lo reemplaza; migración 031), `CONEXION_SOLICITADA` y `CONEXION_ACEPTADA` (HU12, saludos de Libres contigo), `INVITACION_EVENTO` (una conexión te invita a un evento de hoy; trae `eventoId`; migración 032) o `REPORTE_RESUELTO` (HU27, un administrador revisó tu reporte). Para el administrador, `REPORTE_NUEVO` (un estudiante envió un reporte; trae `reporteId`) y `EVENTO_POR_REVISAR` (un evento quedó pendiente); ambos quedan leídos para todos los admins cuando uno los resuelve (migración 030).
+      description: Aviso para el estudiante. `PUENTE_DISPONIBLE` y `DESPUES_DE_CLASES` (HU4), `INVITACION_COMUNIDAD` (HU13), `COMUNIDAD_CERRADA` (HU14), `ASISTENCIA_COMUNIDAD` (para quien creó la comunidad, cuando alguien se suma o se baja; uno por comunidad y el siguiente cambio lo reemplaza; migración 031), `CONEXION_SOLICITADA` y `CONEXION_ACEPTADA` (HU12, saludos de Libres contigo), `INVITACION_EVENTO` (una conexión te invita a un evento de hoy; trae `eventoId`; migración 032) o `REPORTE_RESUELTO` (HU27, un administrador revisó tu reporte). Para el administrador, `REPORTE_NUEVO` (un estudiante envió un reporte; trae `reporteId`) y `EVENTO_POR_REVISAR` (un evento quedó pendiente); ambos quedan leídos para todos los admins cuando uno los resuelve (migración 030). HU32 (migración 033), para el administrador: `ALERTA_USUARIO_SOSPECHOSO` (un estudiante llegó a 3 intentos bloqueados por seguridad en 24 h) y `ALERTA_REPORTES_ACUMULADOS` (3 o más personas distintas tienen reportes pendientes sobre lo que creó); traen `usuarioObjetivoId` y, si vuelve a pasar, se actualiza el mismo aviso (sin leer).
       properties:
         id:
           type: integer
@@ -2858,7 +2866,7 @@ components:
           example: 31
         tipo:
           type: string
-          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA, CONEXION_SOLICITADA, CONEXION_ACEPTADA, REPORTE_RESUELTO, EVENTO_APROBADO, EVENTO_RECHAZADO, REPORTE_NUEVO, EVENTO_POR_REVISAR, ASISTENCIA_COMUNIDAD, INVITACION_EVENTO]
+          enum: [PUENTE_DISPONIBLE, DESPUES_DE_CLASES, INVITACION_COMUNIDAD, COMUNIDAD_CERRADA, CONEXION_SOLICITADA, CONEXION_ACEPTADA, REPORTE_RESUELTO, EVENTO_APROBADO, EVENTO_RECHAZADO, REPORTE_NUEVO, EVENTO_POR_REVISAR, ASISTENCIA_COMUNIDAD, INVITACION_EVENTO, ALERTA_USUARIO_SOSPECHOSO, ALERTA_REPORTES_ACUMULADOS]
           description: Tipo de aviso.
           example: PUENTE_DISPONIBLE
         mensaje:
@@ -2907,6 +2915,18 @@ components:
           format: int32
           nullable: true
           description: HU27. En `REPORTE_RESUELTO`, el reporte revisado (la campanita lleva a «Mis reportes»); en `REPORTE_NUEVO` (admin), el reporte por revisar. `null` en los demás.
+          example: null
+        eventoId:
+          type: integer
+          format: int32
+          nullable: true
+          description: En los avisos de eventos (por ejemplo `INVITACION_EVENTO`), el evento. `null` en los demás.
+          example: null
+        usuarioObjetivoId:
+          type: integer
+          format: int32
+          nullable: true
+          description: HU32. En `ALERTA_USUARIO_SOSPECHOSO` y `ALERTA_REPORTES_ACUMULADOS` (admin), el estudiante del que se avisa; la campanita lleva a su detalle en Admin → Usuarios. `null` en los demás.
           example: null
     ConfiguracionNotificacionesDto:
       type: object

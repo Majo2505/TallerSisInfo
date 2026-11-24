@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
 import FormularioSancion from "@/components/admin/FormularioSancion";
+import Alertas from "@/components/admin/Alertas";
 import RevisarReporte from "@/components/admin/RevisarReporte";
 import Usuarios from "@/components/admin/Usuarios";
 import FormularioLugar from "@/components/admin/FormularioLugar";
@@ -40,11 +41,13 @@ import { esAdmin } from "@/services/authService";
 import Puntuacion from "@/components/app/Puntuacion";
 import estilos from "./admin.module.css";
 
-type Pestana = "catalogo" | "reportes" | "usuarios" | "metricas" | "auditoria";
+type Pestana = "catalogo" | "reportes" | "alertas" | "usuarios" | "metricas" | "auditoria";
 
 const PESTANAS: { id: Pestana; nombre: string; Icono: ReturnType<typeof duo> }[] = [
   { id: "catalogo", nombre: "Catálogo", Icono: duo("catalogo") },
   { id: "reportes", nombre: "Reportes", Icono: duo("bandera") },
+  // HU32: estudiantes con intentos bloqueados por seguridad o reportes acumulados, para revisar y decidir.
+  { id: "alertas", nombre: "Alertas", Icono: duo("alerta") },
   { id: "usuarios", nombre: "Usuarios", Icono: duo("usuarios") },
   { id: "metricas", nombre: "Métricas", Icono: duo("barras") },
   { id: "auditoria", nombre: "Auditoría RAG", Icono: duo("lupa") },
@@ -133,6 +136,8 @@ export default function PanelAdmin() {
 function PanelAdminContenido() {
   const router = useRouter();
   const parametros = useSearchParams();
+  // ?usuario=… abre el detalle de ese estudiante (desde la campanita o desde la pestaña Alertas).
+  const usuarioDelEnlace = Number(parametros.get("usuario")) || null;
   const { sesion, listo } = useSesion();
   const reducir = useReducedMotion();
   const aviso = useAviso();
@@ -507,7 +512,16 @@ function PanelAdminContenido() {
                 </div>
               ))}
 
-            {pestana === "usuarios" && <Usuarios onAviso={aviso.mostrar} />}
+            {pestana === "alertas" && (
+              <Alertas
+                onAviso={aviso.mostrar}
+                onRevisar={(id) => router.replace(`/admin?pestana=usuarios&usuario=${id}`, { scroll: false })}
+              />
+            )}
+
+            {pestana === "usuarios" && (
+              <Usuarios key={usuarioDelEnlace ?? "lista"} onAviso={aviso.mostrar} usuarioInicial={usuarioDelEnlace} />
+            )}
 
             {pestana === "metricas" && metricas && (
               <div className={estilos.metricas}>

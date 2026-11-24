@@ -25,6 +25,8 @@ type Props = {
   elegirTipo?: boolean;
   /** Reporte que originó la sanción, si se abrió desde uno. */
   reporteId?: number | null;
+  /** HU32: motivo sugerido por una alerta. Se puede editar o borrar; nunca se envía sin que el admin confirme. */
+  motivoInicial?: string;
   onCerrar: () => void;
   onAplicada: (mensaje: string) => void;
 };
@@ -36,12 +38,20 @@ const TITULO: Record<TipoSancion, string> = {
 };
 
 /** Formulario de sanción. Motivo obligatorio; fecha de fin solo en la suspensión; la baja pide confirmación explícita. */
-export default function FormularioSancion({ usuario, tipo: tipoInicial, elegirTipo = false, reporteId = null, onCerrar, onAplicada }: Props) {
+export default function FormularioSancion({
+  usuario,
+  tipo: tipoInicial,
+  elegirTipo = false,
+  reporteId = null,
+  motivoInicial = "",
+  onCerrar,
+  onAplicada,
+}: Props) {
   const reducir = useReducedMotion();
   const enCliente = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const idTitulo = useId();
   const [tipo, setTipo] = useState<TipoSancion>(tipoInicial);
-  const [motivo, setMotivo] = useState("");
+  const [motivo, setMotivo] = useState(motivoInicial);
   const [hasta, setHasta] = useState("");
   const [confirmacion, setConfirmacion] = useState("");
   const [intentado, setIntentado] = useState(false);

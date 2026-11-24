@@ -1,3 +1,4 @@
+using Breaku.Application.Notificaciones;
 using System.Security.Claims;
 using Breaku.Application.DTOs;
 using Breaku.Application.Horarios;
@@ -18,11 +19,13 @@ public class AdminUsuariosController : ControllerBase
 {
     private readonly SancionService _service;
     private readonly ILogger<AdminUsuariosController> _logger;
+    private readonly IAvisosAdmin? _avisos;
 
-    public AdminUsuariosController(SancionService service, ILogger<AdminUsuariosController> logger)
+    public AdminUsuariosController(SancionService service, ILogger<AdminUsuariosController> logger, IAvisosAdmin? avisos = null)
     {
         _service = service;
         _logger = logger;
+        _avisos = avisos;
     }
 
     private int AdminId =>
@@ -61,6 +64,8 @@ public class AdminUsuariosController : ControllerBase
         => Responder(async () =>
         {
             var aplicada = await _service.AplicarAsync(AdminId, id, req, ct);
+            // HU32: el admin ya decidió sobre este estudiante: sus alertas salen de la lista (vuelven si vuelve a pasar).
+            if (_avisos is not null) await _avisos.AlertasResueltasAsync(id, ct);
             return Created($"/api/admin/usuarios/{id}", aplicada);
         });
 

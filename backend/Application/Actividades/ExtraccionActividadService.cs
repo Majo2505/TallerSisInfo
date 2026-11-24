@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Breaku.Application.Horarios;
+using Breaku.Application.Notificaciones;
 using Breaku.Application.Recomendaciones;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
@@ -17,6 +18,7 @@ public class ExtraccionActividadService
     private readonly IExtraccionRepository _repo;
     private readonly TimeProvider _reloj;
     private readonly ILogger<ExtraccionActividadService>? _logger;
+    private readonly IAvisosAdmin? _avisos;
 
     public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo)
         : this(extractor, repo, TimeProvider.System) { }
@@ -24,13 +26,18 @@ public class ExtraccionActividadService
     public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, ILogger<ExtraccionActividadService> logger)
         : this(extractor, repo, TimeProvider.System, logger) { }
 
+    public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo,
+        ILogger<ExtraccionActividadService> logger, IAvisosAdmin avisos)
+        : this(extractor, repo, TimeProvider.System, logger, avisos) { }
+
     public ExtraccionActividadService(IExtractorActividad extractor, IExtraccionRepository repo, TimeProvider reloj,
-        ILogger<ExtraccionActividadService>? logger = null)
+        ILogger<ExtraccionActividadService>? logger = null, IAvisosAdmin? avisos = null)
     {
         _extractor = extractor;
         _repo = repo;
         _reloj = reloj;
         _logger = logger;
+        _avisos = avisos;
     }
 
     public async Task<RespuestaExtraccionDto> ExtraerAsync(int usuarioId, SolicitudExtraccionDto req, CancellationToken ct = default)
@@ -142,6 +149,9 @@ public class ExtraccionActividadService
         log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
         log.MotivoRechazo = rechazo.Categoria;
         await _repo.GuardarLogAsync(log, ct);
+        // HU32: si lo bloqueado lo escribió el estudiante (no la respuesta del modelo), cuenta para la alerta al admin.
+        if (_avisos is not null && ReglasAlertasAdmin.CuentaComoIntento(log.Modelo, ModeloCorreccionManual))
+            await _avisos.IntentoBloqueadoAsync(log.UsuarioId, ct);
         throw new ReglaNegocioException(RecomendacionService.CodigoSolicitudNoPermitida, rechazo.Mensaje);
     }
 

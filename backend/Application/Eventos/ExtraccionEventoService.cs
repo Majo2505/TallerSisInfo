@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Breaku.Application.Actividades;
 using Breaku.Application.Horarios;
+using Breaku.Application.Notificaciones;
 using Breaku.Application.Recomendaciones;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
@@ -31,10 +32,12 @@ public class ExtraccionEventoService
     private readonly IExtraccionRepository _repo;
     private readonly TimeProvider _reloj;
     private readonly ILogger<ExtraccionEventoService>? _logger;
+    private readonly IAvisosAdmin? _avisos;
 
     public ExtraccionEventoService(ILectorEventoFlyer lector, IConvertidorPdf pdf, IExtraccionRepository repo,
-        TimeProvider? reloj = null, ILogger<ExtraccionEventoService>? logger = null)
+        TimeProvider? reloj = null, ILogger<ExtraccionEventoService>? logger = null, IAvisosAdmin? avisos = null)
     {
+        _avisos = avisos;
         _lector = lector;
         _pdf = pdf;
         _repo = repo;
@@ -70,6 +73,8 @@ public class ExtraccionEventoService
                 log.Estado = LogAuditoriaRag.EstadoRechazadoSeguridad;
                 log.MotivoRechazo = rechazo.Categoria;
                 await _repo.GuardarLogAsync(log, ct);
+                // HU32: texto escrito por el estudiante: cuenta para la alerta al admin.
+                if (_avisos is not null) await _avisos.IntentoBloqueadoAsync(usuarioId, ct);
                 throw new ReglaNegocioException(RecomendacionService.CodigoSolicitudNoPermitida, rechazo.Mensaje);
             }
         }

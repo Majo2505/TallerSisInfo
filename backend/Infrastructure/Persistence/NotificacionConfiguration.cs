@@ -13,12 +13,13 @@ public class NotificacionConfiguration : IEntityTypeConfiguration<Notificacion>
 
         builder.Property(n => n.Id).HasColumnName("id");
         builder.Property(n => n.UsuarioId).HasColumnName("usuario_id");
-        builder.Property(n => n.Tipo).HasColumnName("tipo").HasMaxLength(25).IsRequired();
+        builder.Property(n => n.Tipo).HasColumnName("tipo").HasMaxLength(30).IsRequired();
         builder.Property(n => n.ComunidadId).HasColumnName("comunidad_id");
         builder.Property(n => n.EventoId).HasColumnName("evento_id");
         builder.Property(n => n.ReporteId).HasColumnName("reporte_id");
         builder.Property(n => n.SancionId).HasColumnName("sancion_id");
         builder.Property(n => n.ConexionId).HasColumnName("conexion_id");
+        builder.Property(n => n.UsuarioObjetivoId).HasColumnName("usuario_objetivo_id");
         builder.Property(n => n.PuenteFecha).HasColumnName("puente_fecha").HasColumnType("date");
         builder.Property(n => n.PuenteHoraInicio).HasColumnName("puente_hora_inicio").HasColumnType("time");
         builder.Property(n => n.PuenteHoraFin).HasColumnName("puente_hora_fin").HasColumnType("time");

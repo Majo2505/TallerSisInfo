@@ -21,7 +21,10 @@ export type Notificacion = {
     | "EVENTO_BAJADO"
     // Para el administrador (migración 030): quedan leídos para todos los admins cuando uno los resuelve.
     | "REPORTE_NUEVO"
-    | "EVENTO_POR_REVISAR";
+    | "EVENTO_POR_REVISAR"
+    // HU32 (migración 033), para el administrador: alertas sobre un estudiante. Traen `usuarioObjetivoId`.
+    | "ALERTA_USUARIO_SOSPECHOSO"
+    | "ALERTA_REPORTES_ACUMULADOS";
   mensaje: string;
   fecha: string | null;
   horaInicio: string | null;
@@ -34,6 +37,8 @@ export type Notificacion = {
   reporteId?: number | null;
   /** En los avisos de eventos (por ejemplo INVITACION_EVENTO): la campanita lleva al detalle del evento. */
   eventoId?: number | null;
+  /** HU32: en las alertas al admin, el estudiante del que se avisa (la campanita lleva a Admin → Usuarios). */
+  usuarioObjetivoId?: number | null;
 };
 
 export type ConfiguracionNotificaciones = { notificacionesActivas: boolean };

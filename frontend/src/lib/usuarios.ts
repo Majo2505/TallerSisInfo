@@ -63,3 +63,14 @@ export const sancionarUsuario = (id: number, tipo: TipoSancion, motivo: string, 
 
 export const levantarSancion = (usuarioId: number, sancionId: number) =>
   pedirApi<Sancion>(`/api/admin/usuarios/${usuarioId}/sanciones/${sancionId}/levantar`, { method: "POST" });
+
+/** HU32: alertas activas sobre un estudiante (pestaña «Alertas» del panel y detalle del estudiante). */
+export type TipoAlerta = "ALERTA_USUARIO_SOSPECHOSO" | "ALERTA_REPORTES_ACUMULADOS";
+export type Alerta = { tipo: TipoAlerta; mensaje: string; fecha: string };
+export type AlertaEstudiante = { usuarioId: number; nombre: string; correo: string; activo: boolean; ultima: string; alertas: Alerta[] };
+
+export const listarAlertas = () => pedirApi<AlertaEstudiante[]>("/api/admin/alertas");
+/** Saca sus alertas de la lista sin sancionarlo. Vuelven solas si vuelve a pasar. */
+export const descartarAlertas = (usuarioId: number) =>
+  pedirApi<void>(`/api/admin/alertas/${usuarioId}/descartar`, { method: "PATCH" });
+

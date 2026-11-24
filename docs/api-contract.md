@@ -15,7 +15,7 @@ Parte del issue #139 (ítem "Contrato de endpoints").
 > | Registro | Sin endpoint en el sprint 1 | Existe `POST /api/auth/register` |
 > | Formato de errores | `ProblemDetails` con `detail` | Auth: `{ "message" }`. Horarios: `{ "codigo", "mensaje" }` |
 > | Mensaje de login incorrecto (401) | «Correo o contraseña incorrectos» | «Credenciales inválidas.» (el frontend muestra el texto de #9 por su cuenta) |
-> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | Correo vacío: 400 con el mensaje de dominio institucional. Contraseña vacía: 401 |
+> | Login con campos vacíos | 400 «Por favor, complete todos los campos» | ✅ Ahora igual en el frontend y en `POST /api/auth/login` (HU1) |
 > | Login y `activo` | Exige `activo = 1` | No se verifica |
 > | JWT | Claims `sub` y `role`; 60 minutos | Claims `sub`, `email` y `nombre`; 24 horas |
 
@@ -424,6 +424,11 @@ Todos los endpoints requieren JWT. El usuario siempre se obtiene del claim `sub`
 Las coordenadas se envían una sola vez al backend para encontrar la zona más cercana
 dentro de su `radio_max_m`; no se guardan ni se devuelven. Solo se persiste el campus
 seleccionado y, cuando corresponde, la fecha y el consentimiento explícito.
+
+**Interfaz (HU5).** En el primer acceso, si no hay zona elegida ni consentimiento, «Inicio» muestra un aviso que explica para qué
+se usaría la ubicación y ofrece dos caminos: ir a «Configuración de ubicación» (donde hay una casilla de autorización explícita
+antes de pedir el permiso del navegador) o elegir el campus a mano. El aviso se puede descartar y no vuelve a aparecer. Nunca
+llama a la geolocalización por su cuenta; el permiso se puede revocar desde el perfil en cualquier momento.
 
 Los errores usan el mismo formato que horarios y recomendaciones: `{ "codigo": "NO_ENCONTRADO", "mensaje": "..." }`
 (`NO_ENCONTRADO` con 404 y `FUERA_DE_ZONA` con 422).
@@ -1180,7 +1185,7 @@ Todo texto que llega al asistente o sale de él pasa por los guardrails (`Reglas
 
 | `motivo_rechazo` | Cuándo | Mensaje al estudiante |
 |---|---|---|
-| `INYECCION` | Intenta cambiar las reglas, ver el prompt o cambiar de rol («ignora tus instrucciones», «modo desarrollador», «DAN») | «La solicitud intenta modificar las instrucciones del asistente.» |
+| `INYECCION` | Intenta cambiar las reglas, ver el prompt o cambiar de rol («ignora tus instrucciones», «modo desarrollador», «DAN») | «Esta solicitud no está permitida. Escríbela de otra forma.» (general a propósito: no revela qué se detectó; el motivo `INYECCION` queda en la auditoría para el admin) |
 | `FUERA_DE_ALCANCE` | Pide datos internos: contraseñas, tokens, API keys, código fuente, datos personales | «Solo puedo recomendar actividades y lugares del campus para tu puente.» |
 | `BIENESTAR` | Menciona autolesión | Deriva al área de bienestar universitario |
 | `FUERA_DE_REGLAMENTO` | Alcohol, drogas, apuestas, contenido sexual, ocultismo, violencia, deshonestidad académica, groserías | «Solo puedo recomendar actividades académicas y respetuosas, dentro del reglamento de la universidad.» |
@@ -1291,6 +1296,28 @@ Todo bajo `/api/admin/eventos`, solo rol `ADMIN` (`401` sin sesión, `403` si no
 Respuestas: `204` si se aplicó; `400 VALIDACION` (falta el motivo, motivo de más de 500 caracteres, `cambios` al rechazar, campos editados inválidos); `404 NO_ENCONTRADO`; `409 YA_REVISADO` (ya no está en el estado esperado: ya revisado, o ya no está publicado) o `409 EVENTO_FINALIZADO` (ya terminó).
 
 El aviso al autor incluye el motivo y cabe en 200 caracteres: si no entra, se recorta el motivo (y si hace falta el título) con «…». El motivo completo queda en el evento y se ve en «Mis eventos». Como `uq_notif_evento` no admite dos avisos iguales, un segundo aviso del mismo tipo reactiva el anterior con el texto nuevo.
+
+## 7l. Alertas al administrador (HU32)
+
+El sistema **solo avisa**: nunca advierte ni sanciona por su cuenta. Las alertas llegan a la campanita de cada admin activo, con `usuarioObjetivoId` (el estudiante), y llevan a **Admin → Usuarios** con su detalle abierto (`/admin?pestana=usuarios&usuario={id}`). El panel tiene además la pestaña **Alertas**, con todos los estudiantes que tienen alertas activas. El detalle de un estudiante muestra sus **alertas activas** (llegues desde la campanita, la pestaña Alertas o la lista), y «Advertir» abre el formulario con un **motivo sugerido editable** (el de su alerta más reciente) que no se envía hasta que el admin confirma. Requiere la migración **033**.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `/api/admin/alertas` | Estudiantes con alertas activas, del más reciente al más antiguo: `usuarioId`, `nombre`, `correo`, `activo`, `ultima` y `alertas` (`tipo`, `mensaje`, `fecha`). Cada admin tiene su copia: se cuenta una por estudiante y tipo |
+| `PATCH` | `/api/admin/alertas/{usuarioId}/descartar` | Saca sus alertas de la lista y de la campanita de todos los admins, **sin sancionar** (`204`). Si vuelve a pasar, la alerta vuelve sola |
+
+Sancionarlo (`POST /api/admin/usuarios/{id}/sanciones`) también resuelve sus alertas.
+
+| Alerta | Cuándo | Texto |
+|---|---|---|
+| `ALERTA_USUARIO_SOSPECHOSO` | El estudiante llega a **3 intentos bloqueados por seguridad en 24 h** (`RECHAZADO_SEGURIDAD` en `log_auditoria_rag`, de recomendaciones, actividades o afiches). Solo cuenta lo que **escribió** el estudiante: si lo bloqueado fue la respuesta del modelo, no cuenta. Motivo sugerido: «Intentos repetidos bloqueados por seguridad» | «Ana Pérez tuvo 3 intentos bloqueados por seguridad en las últimas 24 horas.» |
+| `ALERTA_REPORTES_ACUMULADOS` | Al crearse un reporte de una comunidad o un evento: **3 o más personas distintas** tienen reportes `PENDIENTE` sobre las comunidades o eventos que creó la misma persona. Motivo sugerido: «Reportes acumulados» | «Ana Pérez acumula reportes pendientes de 3 personas distintas sobre sus comunidades o eventos.» |
+
+- **Una alerta por admin, estudiante y tipo** (`uq_notif_objetivo`): si vuelve a pasar, se actualiza la misma (mensaje nuevo, sin leer), no se crea otra.
+- **Nunca sobre un admin** (no se sancionan), y un admin no recibe alertas sobre sí mismo.
+- **No rompe la acción original:** si falla la alerta, el reporte o el rechazo se guardan igual; el error queda en el log (`LogWarning`).
+- `REPORTE_NUEVO` y `EVENTO_POR_REVISAR` (030) no cambian.
+- **Purga (HU28/HU29):** al purgar un usuario también se borran las alertas **sobre** él (`usuario_objetivo_id`), en el mismo paso que sus propios avisos.
 
 ## 8. Resumen de decisiones por responsable
 
