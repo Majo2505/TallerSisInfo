@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Breaku.Application.Horarios;
+using Breaku.Application.Notificaciones;
 using Breaku.Application.Puentes;
 using Breaku.Domain;
 using Breaku.Domain.Rules;
@@ -17,13 +18,19 @@ public class RecomendacionService
     private readonly IAsistenteIa _asistente;
     private readonly IRecomendacionRepository _repo;
     private readonly TimeSpan _presupuestoIa;
+    private readonly IAvisosAdmin? _avisos;
 
     public RecomendacionService(IPuenteRepository puentes, IRecuperadorLugares recuperador, IAsistenteIa asistente, IRecomendacionRepository repo)
         : this(puentes, recuperador, asistente, repo, TimeSpan.FromMilliseconds(ReglasRendimiento.PresupuestoIaMs)) { }
 
     public RecomendacionService(IPuenteRepository puentes, IRecuperadorLugares recuperador, IAsistenteIa asistente, IRecomendacionRepository repo,
-        TimeSpan presupuestoIa)
+        IAvisosAdmin avisos)
+        : this(puentes, recuperador, asistente, repo, TimeSpan.FromMilliseconds(ReglasRendimiento.PresupuestoIaMs), avisos) { }
+
+    public RecomendacionService(IPuenteRepository puentes, IRecuperadorLugares recuperador, IAsistenteIa asistente, IRecomendacionRepository repo,
+        TimeSpan presupuestoIa, IAvisosAdmin? avisos = null)
     {
+        _avisos = avisos;
         _puentes = puentes;
         _recuperador = recuperador;
         _asistente = asistente;
@@ -55,6 +62,8 @@ public class RecomendacionService
                 MotivoRechazo = rechazo.Categoria,
                 CreatedAt = DateTime.UtcNow
             }, [], ct);
+            // HU32: lo escribió el estudiante: cuenta para la alerta al admin.
+            if (_avisos is not null) await _avisos.IntentoBloqueadoAsync(usuarioId, ct);
             throw new ReglaNegocioException(CodigoSolicitudNoPermitida, rechazo.Mensaje);
         }
 

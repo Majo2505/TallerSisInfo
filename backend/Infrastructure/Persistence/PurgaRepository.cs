@@ -65,8 +65,10 @@ public sealed class PurgaRepository : IPurgaRepository
         return resultado;
     }
 
+    // HU32: también las alertas de los admins SOBRE este usuario (fk_notif_usuario_objetivo no lleva ON DELETE).
     public Task EliminarNotificacionesAsync(int usuarioId, CancellationToken ct = default)
-        => _db.Database.ExecuteSqlAsync($"DELETE FROM notificacion WHERE usuario_id = {usuarioId}", ct);
+        => _db.Database.ExecuteSqlAsync(
+            $"DELETE FROM notificacion WHERE usuario_id = {usuarioId} OR usuario_objetivo_id = {usuarioId}", ct);
 
     public async Task EliminarConexionesAsync(int usuarioId, CancellationToken ct = default)
     {

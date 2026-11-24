@@ -19,7 +19,8 @@ export type NombreIconoDuo =
   | "bandera"
   | "barras"
   | "lupa"
-  | "usuarios";
+  | "usuarios"
+  | "alerta";
 
 /** `vivo`: el acento se mece lento todo el tiempo (para tarjetas grandes de Inicio, no para listas). */
 type Props = { nombre: NombreIconoDuo; tamano?: number; vivo?: boolean };
@@ -46,6 +47,14 @@ const l = estilos.linea;
 const b = estilos.blanco;
 
 const FORMAS: Record<NombreIconoDuo, React.ReactNode> = {
+  // Triángulo con signo de exclamación: alertas al admin (HU32).
+  alerta: (
+    <>
+      <path d="M10.3 3.6a2 2 0 0 1 3.4 0l8 13.9a2 2 0 0 1-1.7 3H4a2 2 0 0 1-1.7-3Z" className={a} />
+      <path d="M12 9v4.5" className={l} />
+      <circle cx="12" cy="16.8" r="1.1" className={m} />
+    </>
+  ),
   // Taza humeante con una luna: un descanso.
   descanso: (
     <>

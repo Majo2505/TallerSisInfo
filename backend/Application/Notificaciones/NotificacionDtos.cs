@@ -14,7 +14,9 @@ public record NotificacionDto(
     // HU27: en REPORTE_RESUELTO, el reporte (la campanita lleva a «Mis reportes»).
     int? ReporteId = null,
     // Avisos de eventos (por ejemplo INVITACION_EVENTO): la campanita lleva al detalle del evento.
-    int? EventoId = null
+    int? EventoId = null,
+    // HU32: en las alertas al admin, el estudiante del que se avisa (la campanita lleva a Admin → Usuarios).
+    int? UsuarioObjetivoId = null
 );
 
 public record ConfiguracionNotificacionesDto(bool NotificacionesActivas);

@@ -424,12 +424,14 @@ CREATE TABLE conexion (
 CREATE TABLE notificacion (
   id                  BIGINT       NOT NULL AUTO_INCREMENT,
   usuario_id          INT          NOT NULL,
-  tipo                VARCHAR(25)  NOT NULL,
+  tipo                VARCHAR(30)  NOT NULL,   -- 30 desde la 033: ALERTA_REPORTES_ACUMULADOS tiene 26 letras
   comunidad_id        INT          NULL,
   evento_id           INT          NULL,
   reporte_id          INT          NULL,
   sancion_id          INT          NULL,
   conexion_id         INT          NULL,
+  -- HU32: en las alertas al admin, el estudiante del que se avisa (enlace a Admin → Usuarios).
+  usuario_objetivo_id INT          NULL,
   puente_fecha        DATE         NULL,
   puente_hora_inicio  TIME         NULL,
   puente_hora_fin     TIME         NULL,
@@ -444,38 +446,46 @@ CREATE TABLE notificacion (
   CONSTRAINT uq_notif_reporte UNIQUE (usuario_id, reporte_id, tipo),
   CONSTRAINT uq_notif_sancion UNIQUE (usuario_id, sancion_id, tipo),
   CONSTRAINT uq_notif_conexion UNIQUE (usuario_id, conexion_id, tipo),
+  -- HU32: una alerta por admin, estudiante y tipo; si vuelve a pasar, se actualiza la misma (upsert).
+  CONSTRAINT uq_notif_objetivo UNIQUE (usuario_id, usuario_objetivo_id, tipo),
   KEY ix_notif_usuario (usuario_id, activa, leida, created_at),
   CONSTRAINT ck_notif_tipo CHECK (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES','INVITACION_COMUNIDAD','COMUNIDAD_CERRADA',
                                            'EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','REPORTE_RESUELTO','SANCION_ADVERTENCIA',
                                            'CONEXION_SOLICITADA','CONEXION_ACEPTADA','REPORTE_NUEVO','EVENTO_POR_REVISAR',
-                                           'ASISTENCIA_COMUNIDAD','INVITACION_EVENTO')),
+                                           'ASISTENCIA_COMUNIDAD','INVITACION_EVENTO',
+                                           'ALERTA_USUARIO_SOSPECHOSO','ALERTA_REPORTES_ACUMULADOS')),
   -- Cada aviso apunta solo a lo suyo: un puente, una comunidad, un evento, un reporte, una sanción o una conexión.
   CONSTRAINT ck_notif_ref CHECK (
        (tipo IN ('PUENTE_DISPONIBLE','DESPUES_DE_CLASES')
           AND puente_fecha IS NOT NULL AND puente_hora_inicio IS NOT NULL AND puente_hora_fin IS NOT NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
     OR (tipo IN ('INVITACION_COMUNIDAD','COMUNIDAD_CERRADA','ASISTENCIA_COMUNIDAD') AND comunidad_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
+          AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
     OR (tipo IN ('EVENTO_APROBADO','EVENTO_RECHAZADO','EVENTO_BAJADO','EVENTO_POR_REVISAR','INVITACION_EVENTO') AND evento_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
+          AND comunidad_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
     OR (tipo IN ('REPORTE_RESUELTO','REPORTE_NUEVO') AND reporte_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)
+          AND comunidad_id IS NULL AND evento_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
     OR (tipo = 'SANCION_ADVERTENCIA' AND sancion_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND conexion_id IS NULL)
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND conexion_id IS NULL AND usuario_objetivo_id IS NULL)
     OR (tipo IN ('CONEXION_SOLICITADA','CONEXION_ACEPTADA') AND conexion_id IS NOT NULL
           AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
-          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL)),
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND usuario_objetivo_id IS NULL)
+    -- HU32: alertas al admin sobre un estudiante (intentos bloqueados por seguridad o reportes acumulados).
+    OR (tipo IN ('ALERTA_USUARIO_SOSPECHOSO','ALERTA_REPORTES_ACUMULADOS') AND usuario_objetivo_id IS NOT NULL
+          AND puente_fecha IS NULL AND puente_hora_inicio IS NULL AND puente_hora_fin IS NULL
+          AND comunidad_id IS NULL AND evento_id IS NULL AND reporte_id IS NULL AND sancion_id IS NULL AND conexion_id IS NULL)),
   CONSTRAINT ck_notif_puente_horas CHECK (puente_hora_fin > puente_hora_inicio),
   CONSTRAINT fk_notif_usuario   FOREIGN KEY (usuario_id)   REFERENCES usuario (id),
   CONSTRAINT fk_notif_comunidad FOREIGN KEY (comunidad_id) REFERENCES comunidad_efimera (id),
   CONSTRAINT fk_notif_evento    FOREIGN KEY (evento_id)    REFERENCES evento (id),
   CONSTRAINT fk_notif_reporte   FOREIGN KEY (reporte_id)   REFERENCES reporte (id),
   CONSTRAINT fk_notif_sancion   FOREIGN KEY (sancion_id)   REFERENCES sancion (id),
-  CONSTRAINT fk_notif_conexion  FOREIGN KEY (conexion_id)  REFERENCES conexion (id)
+  CONSTRAINT fk_notif_conexion  FOREIGN KEY (conexion_id)  REFERENCES conexion (id),
+  CONSTRAINT fk_notif_usuario_objetivo FOREIGN KEY (usuario_objetivo_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE historial_cambio (

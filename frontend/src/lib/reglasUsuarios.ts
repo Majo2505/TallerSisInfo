@@ -95,3 +95,17 @@ export function mensajeDeLoginBloqueado(estado: number, cuerpo: { message?: unkn
   const texto = cuerpo?.message ?? cuerpo?.mensaje;
   return typeof texto === "string" && texto.trim() ? texto : null;
 }
+
+/**
+ * HU32: el motivo con el que se abre la advertencia si el estudiante tiene alertas activas: el de la más reciente. Es solo
+ * una sugerencia editable; nunca se envía sin que el admin confirme. Sin alertas, vacío.
+ */
+export const MOTIVO_SUGERIDO: Record<"ALERTA_USUARIO_SOSPECHOSO" | "ALERTA_REPORTES_ACUMULADOS", string> = {
+  ALERTA_USUARIO_SOSPECHOSO: "Intentos repetidos bloqueados por seguridad",
+  ALERTA_REPORTES_ACUMULADOS: "Reportes acumulados",
+};
+
+export function motivoSugeridoDeAlertas(alertas: readonly { tipo: string; fecha: string }[]): string {
+  const reciente = [...alertas].sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
+  return reciente && reciente.tipo in MOTIVO_SUGERIDO ? MOTIVO_SUGERIDO[reciente.tipo as keyof typeof MOTIVO_SUGERIDO] : "";
+}
