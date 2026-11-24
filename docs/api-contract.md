@@ -497,7 +497,7 @@ Requiere JWT con rol **`ADMIN`** (claim `role`). Con otro rol responde `403`. El
 | `GET` | `/api/admin/resumen` | Lugares activos y en revisión, estudiantes activos, comunidades de hoy, consultas al asistente de la semana y reportes pendientes |
 | `GET` | `/api/admin/lugares` | Catálogo completo (primero `EN_REVISION`) con cuántas veces se recomendó cada lugar y sus `etiquetas` (HU30) |
 | `PATCH` | `/api/admin/lugares/{id}/estado` | Cambia el estado a `ACTIVO`, `EN_REVISION` o `INACTIVO`; queda en `historial_cambio`. `204`, `400 VALIDACION` (también si se activa un lugar **recomendable sin ninguna etiqueta**, HU30) o `404 NO_ENCONTRADO` |
-| `PATCH` | `/api/admin/lugares/{id}/validacion` | Marca un lugar como validado (`{ "validado": true }`) o le quita la validación (`false`). Es independiente del estado: un lugar `ACTIVO` puede seguir «Por validar» hasta que el equipo revise sus datos. Queda en `historial_cambio`. `204`, `400 VALIDACION` o `404 NO_ENCONTRADO` |
+| `PATCH` | `/api/admin/lugares/{id}/validacion` | Marca un lugar como validado (`{ "validado": true }`) o le quita la validación (`false`). Es independiente del estado: un lugar `ACTIVO` puede seguir «Por validar» hasta que el equipo revise sus datos. El panel ofrece «Validar» o «Desvalidar» según el estado actual. Queda en `historial_cambio`. `204`, `400 VALIDACION` o `404 NO_ENCONTRADO` |
 | `GET` | `/api/admin/categorias` | Categorías del catálogo (para el formulario de lugar) |
 | `GET` | `/api/admin/campus` | Campus activos con su centro (`latitud`, `longitud`) y su radio (`radioMaxM`): un lugar tiene que quedar dentro de alguno |
 | `GET` | `/api/admin/etiquetas` | HU30: catálogo de etiquetas de tipo de actividad `[{ "id", "nombre" }]`, por nombre |

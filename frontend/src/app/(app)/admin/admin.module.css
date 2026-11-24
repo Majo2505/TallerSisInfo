@@ -771,3 +771,13 @@
   outline: 3px solid var(--ucb-celeste);
   outline-offset: 2px;
 }
+
+.desvalidar {
+  composes: validar;
+  border-color: var(--ucb-amarillo);
+  color: #725600;
+}
+
+.desvalidar:focus-visible {
+  outline: 3px solid var(--ucb-amarillo);
+}

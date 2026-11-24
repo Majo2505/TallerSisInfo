@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import EliminarLugar from "@/components/admin/EliminarLugar";
+import QuitarValidacion from "@/components/admin/QuitarValidacion";
 import FormularioSancion from "@/components/admin/FormularioSancion";
 import Alertas from "@/components/admin/Alertas";
 import RevisarReporte from "@/components/admin/RevisarReporte";
@@ -33,6 +34,7 @@ import {
   obtenerResumen,
 } from "@/lib/admin";
 import { ErrorApi } from "@/lib/api";
+import { accionValidacionLugar, ETIQUETA_ACCION_VALIDACION, mensajeValidacionLugar, pideConfirmacionValidacion } from "@/lib/reglasAdmin";
 import { reporteDeUsuario, usuarioParaSancionar } from "@/lib/reglasUsuarios";
 import { MENSAJE_SIN_ETIQUETA, puedeActivarse } from "@/lib/reglasEtiquetas";
 import { useRefrescoAutomatico } from "@/lib/useRefrescoAutomatico";
@@ -159,6 +161,7 @@ function PanelAdminContenido() {
   // HU30: `activar` = se abrió desde «Aprobar»/«Activar» de un lugar sin tipo de actividad; al guardar, queda activo.
   const [formulario, setFormulario] = useState<{ id: number | null; activar?: boolean } | null>(null);
   const [aEliminar, setAEliminar] = useState<LugarAdmin | null>(null);
+  const [aQuitarValidacion, setAQuitarValidacion] = useState<LugarAdmin | null>(null);
 
   useEffect(() => {
     if (listo && sesion && !esAdmin(sesion)) router.replace("/inicio");
@@ -216,12 +219,20 @@ function PanelAdminContenido() {
     void obtenerResumen().then(setResumen).catch(() => undefined);
   }
 
-  async function validar(lugar: LugarAdmin) {
+  /** Validar se hace de una vez; quitar la validación pide confirmación antes de llamar a la API. */
+  function pedirCambioValidacion(lugar: LugarAdmin) {
+    if (cambiando === lugar.id) return;
+    if (pideConfirmacionValidacion(accionValidacionLugar(lugar.validado))) setAQuitarValidacion(lugar);
+    else void cambiarValidacion(lugar, true);
+  }
+
+  async function cambiarValidacion(lugar: LugarAdmin, validado: boolean) {
+    if (cambiando === lugar.id) return;
     setCambiando(lugar.id);
     try {
-      await cambiarValidacionLugar(lugar.id, true);
-      setLugares((ls) => ls?.map((l) => (l.id === lugar.id ? { ...l, validado: true } : l)) ?? null);
-      aviso.mostrar(`${lugar.nombre}: validado.`);
+      await cambiarValidacionLugar(lugar.id, validado);
+      setLugares((ls) => ls?.map((l) => (l.id === lugar.id ? { ...l, validado } : l)) ?? null);
+      aviso.mostrar(mensajeValidacionLugar(lugar.nombre, validado));
     } catch (e) {
       aviso.mostrar((e as Error).message);
     } finally {
@@ -409,11 +420,14 @@ function PanelAdminContenido() {
                         <Puntuacion valor={l.puntuacion} votos={l.votos} />
                       </span>
                       <span role="cell" className={estilos.accionesFila}>
-                        {!l.validado && (
-                          <button type="button" className={estilos.validar} disabled={cambiando === l.id} onClick={() => void validar(l)}>
-                            Validar
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className={l.validado ? estilos.desvalidar : estilos.validar}
+                          disabled={cambiando === l.id}
+                          onClick={() => pedirCambioValidacion(l)}
+                        >
+                          {ETIQUETA_ACCION_VALIDACION[accionValidacionLugar(l.validado)]}
+                        </button>
                         {l.estado === "EN_REVISION" && (
                           <>
                             <button type="button" className={estilos.aprobar} disabled={cambiando === l.id} onClick={() => void cambiar(l, "ACTIVO")}>
@@ -726,6 +740,17 @@ function PanelAdminContenido() {
             activarAlGuardar={formulario.activar}
             onCerrar={() => setFormulario(null)}
             onGuardado={catalogoCambio}
+          />
+        )}
+        {aQuitarValidacion && (
+          <QuitarValidacion
+            key="quitar-validacion"
+            lugar={aQuitarValidacion}
+            onCerrar={() => setAQuitarValidacion(null)}
+            onConfirmar={async (l) => {
+              await cambiarValidacion(l, false);
+              setAQuitarValidacion(null);
+            }}
           />
         )}
         {aEliminar && (
