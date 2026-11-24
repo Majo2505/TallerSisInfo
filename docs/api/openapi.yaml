@@ -3314,6 +3314,7 @@ components:
         objetoId: { type: integer, format: int32, nullable: true, example: 4 }
         respuesta: { type: string, nullable: true, description: HU27. La respuesta del administrador al revisarlo. }
         revisadoEn: { type: string, format: date-time, nullable: true }
+        objetoEstado: { type: string, nullable: true, example: PUBLICADO, description: 'HU38. Estado del evento o de la comunidad reportada; «Bajar evento» solo si es `PUBLICADO`.' }
     ConsultaRagAdminDto:
       type: object
       properties:
